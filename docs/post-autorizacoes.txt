@@ -1,0 +1,19 @@
+{
+  "dataFimVigencia": null,
+  "valor": 5000.00,
+  "idAutorizacaoEmpresa": "{{$randomUUID}}",
+  "valorLimite": 10000.00,
+  "frequencia": 1,
+  "quantidadeDividasCiclo": 1,
+  "indicadorUsoLimiteConta": 1,
+  "codigoCanalContratacao": "C4",
+  "descricao": "Autorização de débito automático para pagamento de mensalidade",
+  "idUnicoContaContratante": "550e8400-e29b-41d4-a716-446655440000",
+  "idPessoaPagadora": "550e8400-e29b-41d4-a716-446655440001",
+  "idPessoaDevedora": "550e8400-e29b-41d4-a716-446655440002",
+  "idPessoaRecebedora": "550e8400-e29b-41d4-a716-446655440003",
+  "metadados": {
+    "nomePessoaRecebedora": "João Silva",
+    "apelidoPessoaRecebedora": "João"
+  }
+}

@@ -1,0 +1,16 @@
+FROM postgres:16
+
+LABEL maintainer="postgres:16" \
+    version="16" \
+    description="PostgreSQL padrao sem pg_cron e pg_partman"
+
+# Install build dependencies, pg_cron, and pg_partman
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        postgresql-server-dev-16 \
+        postgresql-16-partman\
+        postgresql-16-cron \
+        build-essential \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+    

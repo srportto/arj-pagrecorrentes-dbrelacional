@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  postgres: 
+    build: . # Build the image from the Dockerfile in the current directory
+    image: postgres16-kiq-extras-partman_cron:1.0 # Specify PostgreSQL 16 image
+    command: [
+      "postgres", 
+      "-c", "shared_preload_libraries=pg_partman_bgw",
+      "-c", "shared_preload_libraries=pg_cron",
+      "-c", "cron.database_name=db-csp-postgres", # Set the database name for pg_cron
+      ]
+    container_name: postgres16-partman-cron-kiq # Optional: Name the container for easier identification
+    environment:
+      POSTGRES_DB: db-csp-postgres # Set the default database name
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: JTMQ9YxDkHfRQbX2
+      # Optional: Explicitly set PGDATA for clarity or if customizing
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - pg_data:/var/lib/postgresql/data # Mount the named volume to the correct data path
+    ports:
+      - "5432:5432" # Map port 5432 from container to host
+    restart: unless-stopped
+
+volumes:
+  pg_data: # Define the named volume
