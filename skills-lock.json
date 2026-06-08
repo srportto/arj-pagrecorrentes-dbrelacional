@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "java-pro": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/java-pro/SKILL.md",
+      "computedHash": "47baa85dbc511d22db28a2507835e94a7d2bbc608e208e338fc62b947f22c96b"
+    }
+  }
+}

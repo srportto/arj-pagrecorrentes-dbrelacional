@@ -1,0 +1,50 @@
+{
+    // veja mais em: https://code.visualstudio.com/docs/java/java-debugging
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "GeraDatasPorParticao",
+            "request": "launch",
+            "mainClass": "br.com.srportto.contratocommand.domain.utilities.GeraDatasPorParticao",
+            "projectName": "contratocommand"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch) - Current File",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": "<debug port of the debuggee>"
+        },
+        {
+            "type": "java",
+            "name": "current file",
+            "request": "launch",
+            "mainClass": "br.com.srportto.contratocommand.ContratocommandApplication",
+            "stepFilters": {
+                "skipClasses": [
+                    "$JDK",
+                    "junit.*"
+                ],
+                "skipSynthetics": false,
+                "skipStaticInitializers": false,
+                "skipConstructors": false
+            }
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ContratocommandApplication",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "br.com.srportto.contratocommand.ContratocommandApplication",
+            "env": {
+                "DB_NAME": "db-csp-postgres",
+                "DB_USER_NAME": "docker",
+                "DB_PASSWORD": "JTMQ9YxDkHfRQbX2"
+            },
+            "projectName": "contratocommand",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
