@@ -1,12 +1,17 @@
 {
-    "workbench.colorCustomizations": {
-        "activityBar.activeBackground": "#6e5c6e",
-        "activityBar.background": "#6e5c6e",
-        "activityBar.foreground": "#e7e7e7",
-        "activityBar.inactiveForeground": "#e7e7e799",
-        "activityBarBadge.background": "#303010",
-        "activityBarBadge.foreground": "#e7e7e7",
-        "sash.hoverBorder": "#6e5c6e"
-    },
-    "peacock.color": "#524552"
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#515f7b",
+    "activityBar.background": "#515f7b",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#b38c99",
+    "activityBarBadge.foreground": "#15202b",
+    "sash.hoverBorder": "#515f7b"
+  },
+  "peacock.color": "#3d475c",
+  "maven.view": "hierarchical",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.dependency.packagePresentation": "flat",
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

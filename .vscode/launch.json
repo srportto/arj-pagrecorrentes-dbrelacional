@@ -4,6 +4,21 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Spring Boot-ContratoqueryApplication",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "br.com.srportto.contratoquery.ContratoqueryApplication",
+            "env": {
+                "DB_NAME": "db-csp-postgres",
+                "DB_USER_NAME": "docker",
+                "DB_PASSWORD": "JTMQ9YxDkHfRQbX2"
+            },
+            "projectName": "contratoquery",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
             "name": "GeraDatasPorParticao",
             "request": "launch",
             "mainClass": "br.com.srportto.contratocommand.domain.utilities.GeraDatasPorParticao",

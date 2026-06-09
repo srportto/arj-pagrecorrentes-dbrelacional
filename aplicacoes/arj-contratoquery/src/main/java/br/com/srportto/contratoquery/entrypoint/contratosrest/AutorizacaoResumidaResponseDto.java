@@ -1,22 +1,18 @@
-package br.com.srportto.contratocommand.entrypoint.contratosrest;
+package br.com.srportto.contratoquery.entrypoint.contratosrest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
+import br.com.srportto.contratoquery.domain.entities.Autorizacao;
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import tools.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO de resposta resumida para listagem de autorizações.
- * Contém apenas os campos essenciais para exibição em listas paginadas.
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,12 +29,6 @@ public class AutorizacaoResumidaResponseDto {
     private String status;
     private JsonNode metadado;
 
-    /**
-     * Converte uma entidade Autorizacao para DTO resumido.
-     *
-     * @param autorizacao a entidade de autorização
-     * @return DTO resumido com campos mínimos
-     */
     public static AutorizacaoResumidaResponseDto from(Autorizacao autorizacao) {
         JsonNode metadadoNode = null;
         if (autorizacao.getMetadados() != null) {
@@ -56,19 +46,13 @@ public class AutorizacaoResumidaResponseDto {
                 .dataInicioVigencia(autorizacao.getDataInicioVigencia())
                 .dataFimVigencia(autorizacao.getDataFimVigencia())
                 .idPessoaRecebedora(autorizacao.getIdPessoaRecebedora())
-                .nomeRecebedor(null) // Placeholder: integração posterior com serviço de pessoas
+                .nomeRecebedor(null)
                 .valor(autorizacao.getValorAutorizacao())
                 .status(mapearStatus(autorizacao.getStatus()))
                 .metadado(metadadoNode)
                 .build();
     }
 
-    /**
-     * Traduz o código de status persistido para o nome do enum {@link StatusAutorizacao}.
-     *
-     * @param status código inteiro do status na entidade (pode ser nulo)
-     * @return nome do enum (ex.: "ATIVA") ou {@code null} se o status for nulo
-     */
     private static String mapearStatus(Integer status) {
         if (status == null) {
             return null;
