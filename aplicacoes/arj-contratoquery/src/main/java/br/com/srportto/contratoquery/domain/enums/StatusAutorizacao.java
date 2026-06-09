@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.domain.enums;
+package br.com.srportto.contratoquery.domain.enums;
 
 import lombok.NoArgsConstructor;
 
@@ -32,12 +32,11 @@ public enum StatusAutorizacao {
             }
         }
         throw new IllegalArgumentException(
-                String.format("Status de autorização %i não conhecido ", statusAutorizacaoId));
+                String.format("Status de autorização %d não conhecido ", statusAutorizacaoId));
     }
 
     public boolean isStatusFinalizador(Long statusAutorizacaoId) {
         StatusAutorizacao statusEnum = obterStatusEnumPorIdStatus(statusAutorizacaoId);
         return statusEnum.isFinalizador;
     }
-
 }

@@ -25,7 +25,7 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
-Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest`, `ControleExpurgoAutorizacaoTest` (+ helper `GeraDatasPorParticao`).
+Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutorizacaoServiceTest`, `ControleExpurgoAutorizacaoTest` (+ helper `GeraDatasPorParticao`). `ListarAutorizacoesServiceTest` foi movido para `arj-contratoquery`.
 
 ## Pré-requisitos
 
@@ -53,9 +53,8 @@ Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutoriza
 |--------|---------|-----------|
 | POST | `/api/autorizacoes` | Criar autorização (multi-produto). Body `CriarAutorizacaoRequest`. → 201 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar. **Header obrigatório `tipoProduto`**. → 200 |
-| GET | `/api/autorizacoes/listar` | Listar paginado por conta. Params: `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`. → 200 |
 
-> A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`.
+> A base é `/api/autorizacoes` (**plural**). O endpoint `GET /listar` foi movido para o `arj-contratoquery` (porta 8081).
 
 ## Arquitetura (hexagonal, 4 camadas)
 

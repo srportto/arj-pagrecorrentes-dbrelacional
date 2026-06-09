@@ -20,6 +20,8 @@ Esta fase engloba cinco pilares fundamentais:
 
 A maioria das aplicações foi desenhada numa stack focada em performance (*Cloud-Native*), utilizando **Java 25**, encapsuladas em contentores **ECS** na AWS e suportadas pelo servidor web embutido **Undertow**.
 
+> ⚠️ **Nota de implementação (Spring Boot 4.0):** o **Undertow foi REMOVIDO no Spring Boot 4.0** — o BOM 4.0.x gerencia apenas **Tomcat** e **Jetty** para web MVC (mais `reactor-netty` para reativo). Como a stack fixada do projeto é Spring Boot **4.0.4**, as aplicações **não podem** usar Undertow sem downgrade para a linha 3.x. O substituto leve recomendado nesta stack é o **Jetty** (ex.: `arj-contratoquery` usa Jetty). Mantenha esta referência ao Undertow apenas como intenção arquitetural histórica até que a stack seja reavaliada.
+
 ### 1. `contratocommand`
 
 * **Tipo**: Aplicação Java (25) em contentor ECS com Undertow.

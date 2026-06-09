@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
+package br.com.srportto.contratoquery.application.autorizacao;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,18 +26,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoResumidaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.PaginacaoResponseDto;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratoquery.domain.entities.Autorizacao;
+import br.com.srportto.contratoquery.domain.entities.IdAutorizacao;
+import br.com.srportto.contratoquery.entrypoint.contratosrest.AutorizacaoResumidaResponseDto;
+import br.com.srportto.contratoquery.entrypoint.contratosrest.PaginacaoResponseDto;
+import br.com.srportto.contratoquery.shared.exceptions.BusinessException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do ListarAutorizacoesService")
 class ListarAutorizacoesServiceTest {
 
     @Mock
-    private PixAutoRepository pixAutoRepository;
+    private AutorizacaoQueryRepository autorizacaoQueryRepository;
 
     @InjectMocks
     private ListarAutorizacoesService listarAutorizacoesService;
@@ -49,8 +49,6 @@ class ListarAutorizacoesServiceTest {
     @BeforeEach
     void setUp() {
         idUnicoContaContratante = UUID.randomUUID();
-        
-        // Criar autorizações de teste
         autorizacao1 = criarAutorizacao(1, 100.00);
         autorizacao2 = criarAutorizacao(4, 500.00);
     }
@@ -77,120 +75,94 @@ class ListarAutorizacoesServiceTest {
     }
 
     @Test
-    @DisplayName("Deve retornar erro 400 quando idUnicoContaContratante é nulo")
+    @DisplayName("Deve retornar erro quando idUnicoContaContratante é nulo")
     void testListarComIdUnicoContaNulo() {
-        assertThrows(BusinessException.class, () -> {
-            listarAutorizacoesService.listar(null, null, 0, 20, null);
-        });
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(null, null, 0, 20, null));
     }
 
     @Test
     @DisplayName("Deve listar todas as autorizações sem filtro de status")
     void testListarSemFiltroStatus() {
-        // Arrange
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1, autorizacao2);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 2);
-        
-        when(pixAutoRepository.findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class)))
+
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        // Act
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado = 
-            listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
 
-        // Assert
         assertNotNull(resultado);
         assertEquals(2, resultado.getConteudo().size());
         assertEquals(0, resultado.getPaginaAtual());
         assertEquals(1, resultado.getTotalPaginas());
         assertEquals(2L, resultado.getTotalElementos());
         assertEquals(20, resultado.getTamanho());
-        
-        verify(pixAutoRepository, times(1)).findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class));
+
+        verify(autorizacaoQueryRepository, times(1)).findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class));
     }
 
     @Test
     @DisplayName("Deve listar autorizações com filtro de status")
     void testListarComFiltroStatus() {
-        // Arrange
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 1);
-        
-        when(pixAutoRepository.findByIdUnicoContaContratanteAndStatusIn(
-                eq(idUnicoContaContratante),
-                eq(Arrays.asList(1)),
-                any(Pageable.class)))
+
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratanteAndStatusIn(
+                eq(idUnicoContaContratante), eq(Arrays.asList(1)), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        // Act
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado = 
-            listarAutorizacoesService.listar(idUnicoContaContratante, Arrays.asList("RECEBIDA"), 0, 20, null);
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, Arrays.asList("RECEBIDA"), 0, 20, null);
 
-        // Assert
         assertNotNull(resultado);
         assertEquals(1, resultado.getConteudo().size());
         assertEquals(0, resultado.getPaginaAtual());
-        
-        verify(pixAutoRepository, times(1)).findByIdUnicoContaContratanteAndStatusIn(
-                eq(idUnicoContaContratante),
-                eq(Arrays.asList(1)),
-                any(Pageable.class));
+
+        verify(autorizacaoQueryRepository, times(1)).findByIdUnicoContaContratanteAndStatusIn(
+                eq(idUnicoContaContratante), eq(Arrays.asList(1)), any(Pageable.class));
     }
 
     @Test
     @DisplayName("Deve retornar erro quando status é inválido")
     void testListarComStatusInvalido() {
-        assertThrows(BusinessException.class, () -> {
-            listarAutorizacoesService.listar(idUnicoContaContratante, Arrays.asList("STATUS_INVALIDO"), 0, 20, null);
-        });
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(idUnicoContaContratante, Arrays.asList("STATUS_INVALIDO"), 0, 20, null));
     }
 
     @Test
     @DisplayName("Deve aplicar valores padrão de paginação")
-    void testListarComValoresPadraoDeAPaginacao() {
-        // Arrange
+    void testListarComValoresPadrao() {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 1);
-        
-        when(pixAutoRepository.findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class)))
+
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        // Act
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado = 
-            listarAutorizacoesService.listar(idUnicoContaContratante, null, null, null, null);
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, null, null, null);
 
-        // Assert
         assertNotNull(resultado);
-        assertEquals(0, resultado.getPaginaAtual()); // página padrão 0
-        assertEquals(20, resultado.getTamanho()); // tamanho padrão 20
-        
-        verify(pixAutoRepository, times(1)).findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class));
+        assertEquals(0, resultado.getPaginaAtual());
+        assertEquals(20, resultado.getTamanho());
     }
 
     @Test
     @DisplayName("Deve retornar lista vazia sem erro quando nenhuma autorização encontrada")
     void testListarSemResultados() {
-        // Arrange
         Page<Autorizacao> paginaVazia = new PageImpl<>(Arrays.asList(), PageRequest.of(0, 20), 0);
-        
-        when(pixAutoRepository.findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class)))
+
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(paginaVazia);
 
-        // Act
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado = 
-            listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
 
-        // Assert
         assertNotNull(resultado);
         assertEquals(0, resultado.getConteudo().size());
         assertEquals(0L, resultado.getTotalElementos());
@@ -199,21 +171,16 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve suportar múltiplos status no filtro")
     void testListarComMultiplosStatus() {
-        // Arrange
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1, autorizacao2);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 2);
-        
-        when(pixAutoRepository.findByIdUnicoContaContratanteAndStatusIn(
-                eq(idUnicoContaContratante),
-                eq(Arrays.asList(1, 4)),
-                any(Pageable.class)))
+
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratanteAndStatusIn(
+                eq(idUnicoContaContratante), eq(Arrays.asList(1, 4)), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        // Act
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado = 
-            listarAutorizacoesService.listar(idUnicoContaContratante, Arrays.asList("RECEBIDA", "ATIVA"), 0, 20, null);
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, Arrays.asList("RECEBIDA", "ATIVA"), 0, 20, null);
 
-        // Assert
         assertNotNull(resultado);
         assertEquals(2, resultado.getConteudo().size());
     }
@@ -221,20 +188,16 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve converter autorização para DTO resumido corretamente")
     void testConversaoParaDtoResumido() {
-        // Arrange
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 1);
-        
-        when(pixAutoRepository.findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class)))
+
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        // Act
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado = 
-            listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
 
-        // Assert
         assertNotNull(resultado);
         AutorizacaoResumidaResponseDto dto = resultado.getConteudo().get(0);
         assertEquals(autorizacao1.getIdAutorizacao().getIdAutorizacao(), dto.getIdAutorizacao());
@@ -243,27 +206,22 @@ class ListarAutorizacoesServiceTest {
         assertEquals(autorizacao1.getDataFimVigencia(), dto.getDataFimVigencia());
         assertEquals(autorizacao1.getIdPessoaRecebedora(), dto.getIdPessoaRecebedora());
         assertEquals(autorizacao1.getValorAutorizacao(), dto.getValor());
-        // status (código 1) deve ser traduzido para o nome do enum
         assertEquals("RECEBIDA", dto.getStatus());
     }
 
     @Test
     @DisplayName("Deve retornar o status como nome do enum para cada item da página")
     void testStatusRetornadoPorItem() {
-        // Arrange: autorizacao1 = status 1 (RECEBIDA), autorizacao2 = status 4 (ATIVA)
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1, autorizacao2);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 2);
 
-        when(pixAutoRepository.findByIdUnicoContaContratante(
-                eq(idUnicoContaContratante),
-                any(Pageable.class)))
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        // Act
         PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
-            listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, null);
 
-        // Assert: cada item reflete seu próprio status
         assertEquals(2, resultado.getConteudo().size());
         assertEquals("RECEBIDA", resultado.getConteudo().get(0).getStatus());
         assertEquals("ATIVA", resultado.getConteudo().get(1).getStatus());

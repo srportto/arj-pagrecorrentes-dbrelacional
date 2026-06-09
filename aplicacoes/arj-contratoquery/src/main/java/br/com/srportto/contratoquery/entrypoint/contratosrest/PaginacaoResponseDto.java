@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.entrypoint.contratosrest;
+package br.com.srportto.contratoquery.entrypoint.contratosrest;
 
 import java.util.List;
 
@@ -7,12 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO genérico para resposta paginada.
- * Encapsula uma lista de elementos com metadados de paginação.
- *
- * @param <T> tipo do elemento contido na lista
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

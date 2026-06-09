@@ -1,7 +1,5 @@
 package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,33 +38,5 @@ public interface PixAutoRepository extends JpaRepository<Autorizacao, IdAutoriza
       */
      @Query("SELECT a FROM Autorizacao a WHERE a.idAutorizacao.idAutorizacao = :idAutorizacao")
      List<Autorizacao> findByIdAutorizacao(@Param("idAutorizacao") UUID idAutorizacao);
-
-      /**
-       * Busca autorizações por conta contratante e status, com paginação.
-       * Retorna apenas autorizações com status específicos da conta.
-       *
-       * @param idUnicoContaContratante UUID da conta contratante
-       * @param statuses lista de status a filtrar (como Integer)
-       * @param pageable objeto de paginação e ordenação
-       * @return página de autorizações encontradas
-       */
-      @Query("SELECT a FROM Autorizacao a WHERE a.idUnicoContaContratante = :idUnicoContaContratante AND a.status IN :statuses")
-      Page<Autorizacao> findByIdUnicoContaContratanteAndStatusIn(
-              @Param("idUnicoContaContratante") UUID idUnicoContaContratante,
-              @Param("statuses") List<Integer> statuses,
-              Pageable pageable);
-
-      /**
-       * Busca todas as autorizações por conta contratante, com paginação.
-       * Sem filtro de status, retorna todas as autorizações da conta.
-       *
-       * @param idUnicoContaContratante UUID da conta contratante
-       * @param pageable objeto de paginação e ordenação
-       * @return página de autorizações encontradas
-       */
-      @Query("SELECT a FROM Autorizacao a WHERE a.idUnicoContaContratante = :idUnicoContaContratante")
-      Page<Autorizacao> findByIdUnicoContaContratante(
-              @Param("idUnicoContaContratante") UUID idUnicoContaContratante,
-              Pageable pageable);
 
 }
