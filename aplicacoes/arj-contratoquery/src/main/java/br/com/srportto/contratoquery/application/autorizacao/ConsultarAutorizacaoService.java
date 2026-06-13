@@ -15,8 +15,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ConsultarAutorizacaoService {
 
-    private static final int PARTICAO_MIN = 900;
-    private static final int PARTICAO_MAX = 999;
+    private static final int PARTICAO_MIN = 0;
+    private static final int PARTICAO_MAX = 889;
 
     private final AutorizacaoQueryRepository autorizacaoQueryRepository;
 
