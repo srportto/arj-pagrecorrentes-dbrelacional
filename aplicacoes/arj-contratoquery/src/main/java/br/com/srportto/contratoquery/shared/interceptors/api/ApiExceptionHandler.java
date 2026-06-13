@@ -11,6 +11,7 @@ import java.time.Instant;
 
 import br.com.srportto.contratoquery.shared.exceptions.ApplicationException;
 import br.com.srportto.contratoquery.shared.exceptions.BusinessException;
+import br.com.srportto.contratoquery.shared.exceptions.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
@@ -27,6 +28,19 @@ public class ApiExceptionHandler {
 		layoutError.setPath(req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(layoutError);
+	}
+
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<LayoutErrosApiResponse> recursoNaoEncontrado(ResourceNotFoundException exception,
+			HttpServletRequest req) {
+
+		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
+		layoutError.setTimestamp(Instant.now());
+		layoutError.setError("Recurso nao encontrado");
+		layoutError.setMessage(exception.getMessage());
+		layoutError.setPath(req.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(layoutError);
 	}
 
 	@ExceptionHandler(ApplicationException.class)

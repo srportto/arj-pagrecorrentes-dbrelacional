@@ -1,10 +1,4 @@
-# listar-autorizacoes
-
-## Purpose
-
-Definir a listagem paginada de autorizações resumidas por conta contratante no `contratoquery` via `GET /api/autorizacoes`, com filtro por status, paginação e ordenação, e a estrutura do DTO de resposta. A listagem pertence exclusivamente ao `contratoquery` (lado de leitura do CQRS).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Listar autorizações paginadas por conta contratante
 O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes` que retorna uma página de autorizações resumidas de uma conta contratante, com suporte a filtro por status, paginação e ordenação configuráveis.
@@ -36,17 +30,6 @@ O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes` que retorna uma
 #### Scenario: Conta sem autorizações retorna lista vazia sem erro
 - **WHEN** o `idUnicoContaContratante` não possui nenhuma autorização cadastrada
 - **THEN** o sistema retorna HTTP 200 com `conteudo=[]` e `totalElementos=0`
-
-### Requirement: Estrutura do DTO de resposta de listagem
-Cada item da listagem SHALL conter os campos resumidos de uma autorização: `idAutorizacao`, `dataCriacao`, `dataInicioVigencia`, `dataFimVigencia`, `idPessoaRecebedora`, `nomeRecebedor`, `valor`, `status` (nome do enum, não o código inteiro) e `metadado`.
-
-#### Scenario: Status é retornado como nome do enum
-- **WHEN** a autorização tem `status = 4` (código do `ATIVA`)
-- **THEN** o campo `status` no DTO retornado é a string `"ATIVA"`
-
-#### Scenario: Campo nomeRecebedor está presente mas pode ser nulo
-- **WHEN** a autorização é retornada na listagem
-- **THEN** o campo `nomeRecebedor` está presente na resposta (podendo ser `null` até integração posterior)
 
 ### Requirement: Listagem de autorizações pertence ao contratoquery
 O endpoint de listagem `GET /api/autorizacoes` SHALL existir apenas no `contratoquery`; o `contratocommand` SHALL expor apenas `POST /api/autorizacoes` e `PATCH /api/autorizacoes/{idAutorizacao}/cancelar`.

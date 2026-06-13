@@ -53,9 +53,9 @@ Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutoriza
 |--------|---------|-----------|
 | POST | `/api/autorizacoes` | Criar autorização (multi-produto). Body `CriarAutorizacaoRequest`. → 201 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar. **Header obrigatório `tipoProduto`**. → 200 |
-| GET | `/api/autorizacoes/listar` | Listar paginado por conta. Params: `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`. → 200 |
+| GET | `/actuator/health` | Health-check (Actuator) com readiness de banco (indicador `db`). → 200 (UP) / 503 (DOWN) |
 
-> A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`.
+> A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `arj-contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
 
 ## Arquitetura (hexagonal, 4 camadas)
 
