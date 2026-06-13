@@ -32,8 +32,8 @@ import br.com.srportto.contratoquery.shared.exceptions.ResourceNotFoundException
 @DisplayName("Testes do ConsultarAutorizacaoService")
 class ConsultarAutorizacaoServiceTest {
 
-    private static final int PARTICAO_VALIDA = 950;
-    private static final int PARTICAO_INVALIDA = 50;
+    private static final int PARTICAO_VALIDA = 500;
+    private static final int PARTICAO_INVALIDA = 950;
 
     @Mock
     private AutorizacaoQueryRepository autorizacaoQueryRepository;

@@ -32,6 +32,10 @@ Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutoriza
 - **Java 25** (JDK 25+) — usa `void main()` em vez de `public static void main()`
 - **PostgreSQL 16+** com `pg_partman` e `pg_cron` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
+- Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):
+  - `DB_TRANSACTION_ISOLATION` — nível de isolamento (default `TRANSACTION_READ_COMMITTED`; aceita `TRANSACTION_READ_UNCOMMITTED`, `TRANSACTION_READ_COMMITTED`, `TRANSACTION_REPEATABLE_READ`, `TRANSACTION_SERIALIZABLE`).
+  - `DB_READ_ONLY` — modo de acesso (default `false` no `contratocommand`, `true` no `contratoquery`).
+  - Pool HikariCP: `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT`, `DB_POOL_IDLE_TIMEOUT`, `DB_POOL_MAX_LIFETIME`.
 - Docker com PostgreSQL em `run_postgres16_ja_com_cron_partman/`. Exemplos de payloads em `docs/post-autorizacoes.txt`.
 
 ## Stack
