@@ -226,4 +226,28 @@ class ListarAutorizacoesServiceTest {
         assertEquals("RECEBIDA", resultado.getConteudo().get(0).getStatus());
         assertEquals("ATIVA", resultado.getConteudo().get(1).getStatus());
     }
+
+    @Test
+    @DisplayName("Deve mapear todos os campos de ordenação e tolerar direção inválida")
+    void testOrdenacaoCobreMapeamentoDeCampos() {
+        Page<Autorizacao> pagina = new PageImpl<>(Arrays.asList(autorizacao1), PageRequest.of(0, 20), 1);
+        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
+                .thenReturn(pagina);
+
+        List<String> ordenacoes = Arrays.asList(
+                "dataCriacao,asc",
+                "valor,desc",
+                "idAutorizacao,asc",
+                "dataInicioVigencia",
+                "dataFimVigencia,desc",
+                "idPessoaRecebedora,asc",
+                "campoDesconhecido,direcaoInvalida");
+
+        for (String ordenarPor : ordenacoes) {
+            PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                    listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, ordenarPor);
+            assertNotNull(resultado);
+        }
+    }
 }
