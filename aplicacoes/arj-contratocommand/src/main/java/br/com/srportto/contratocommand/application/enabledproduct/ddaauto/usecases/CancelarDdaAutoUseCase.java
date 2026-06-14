@@ -1,15 +1,15 @@
 package br.com.srportto.contratocommand.application.enabledproduct.ddaauto.usecases;
 
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
 import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoRepository;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
@@ -19,7 +19,6 @@ import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompl
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import lombok.AllArgsConstructor;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @AllArgsConstructor
@@ -45,7 +44,7 @@ public class CancelarDdaAutoUseCase {
 
         cancelamentoValidator.validar(request);
 
-        autorizacao.setStatus(3); // cancelada
+        autorizacao.setStatus(5); // cancelada
         var dadosCancelamento = new Cancelamento();
 
         var dataHoraCancelamento = LocalDateTime.now();

@@ -1,12 +1,20 @@
+# listar-autorizacoes
+
+## Purpose
+
+Definir a listagem paginada de autorizações resumidas por conta contratante no `contratoquery` via `GET /api/autorizacoes`, com filtro por status, paginação e ordenação, e a estrutura do DTO de resposta. A listagem pertence exclusivamente ao `contratoquery` (lado de leitura do CQRS).
+
+## Requirements
+
 ### Requirement: Listar autorizações paginadas por conta contratante
-O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes/listar` que retorna uma página de autorizações resumidas de uma conta contratante, com suporte a filtro por status, paginação e ordenação configuráveis.
+O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes` que retorna uma página de autorizações resumidas de uma conta contratante, com suporte a filtro por status, paginação e ordenação configuráveis.
 
 #### Scenario: Listagem sem filtro de status retorna todas as autorizações da conta
-- **WHEN** o cliente envia `GET /api/autorizacoes/listar?idUnicoContaContratante={uuid}`
+- **WHEN** o cliente envia `GET /api/autorizacoes?idUnicoContaContratante={uuid}`
 - **THEN** o sistema retorna HTTP 200 com `PaginacaoResponseDto` contendo todas as autorizações da conta, ordenadas por `dataHoraInclusao` DESC, página 0, tamanho 20
 
 #### Scenario: Listagem com filtro de status retorna apenas as autorizações filtradas
-- **WHEN** o cliente envia `GET /api/autorizacoes/listar?idUnicoContaContratante={uuid}&status=ATIVA&status=RECEBIDA`
+- **WHEN** o cliente envia `GET /api/autorizacoes?idUnicoContaContratante={uuid}&status=ATIVA&status=RECEBIDA`
 - **THEN** o sistema retorna HTTP 200 apenas com autorizações cujo status corresponda a `ATIVA` ou `RECEBIDA`
 
 #### Scenario: idUnicoContaContratante ausente resulta em erro de negócio
@@ -41,11 +49,11 @@ Cada item da listagem SHALL conter os campos resumidos de uma autorização: `id
 - **THEN** o campo `nomeRecebedor` está presente na resposta (podendo ser `null` até integração posterior)
 
 ### Requirement: Listagem de autorizações pertence ao contratoquery
-O endpoint `GET /api/autorizacoes/listar` SHALL existir apenas no `contratoquery`; o `contratocommand` SHALL expor apenas `POST /api/autorizacoes` e `PATCH /api/autorizacoes/{idAutorizacao}/cancelar`.
+O endpoint de listagem `GET /api/autorizacoes` SHALL existir apenas no `contratoquery`; o `contratocommand` SHALL expor apenas `POST /api/autorizacoes` e `PATCH /api/autorizacoes/{idAutorizacao}/cancelar`.
 
-#### Scenario: contratocommand não expõe a rota de listagem
-- **WHEN** o cliente envia `GET /api/autorizacoes/listar` para o `contratocommand`
-- **THEN** o sistema retorna HTTP 404 (rota não existente)
+#### Scenario: contratocommand não oferece a listagem GET
+- **WHEN** o cliente envia `GET /api/autorizacoes` para o `contratocommand`
+- **THEN** o sistema não processa a listagem (retorna erro de método/rota não suportado, ex.: HTTP 405), pois o `contratocommand` não expõe o handler GET
 
 #### Scenario: contratocommand continua respondendo às rotas de escrita
 - **WHEN** o cliente envia `POST /api/autorizacoes` ou `PATCH /api/autorizacoes/{id}/cancelar` para o `contratocommand`
