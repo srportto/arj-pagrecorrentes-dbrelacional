@@ -1,13 +1,12 @@
 package br.com.srportto.contratocommand.entrypoint.contratosrest;
 
+import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
-
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 
 import static org.junit.jupiter.api.Assertions.*;
 

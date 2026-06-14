@@ -1,13 +1,13 @@
 package br.com.srportto.contratocommand.entrypoint.contratosrest;
 
-import java.util.UUID;
-
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 
 @Data

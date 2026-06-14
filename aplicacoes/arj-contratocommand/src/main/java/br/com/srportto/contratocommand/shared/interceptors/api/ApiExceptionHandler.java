@@ -1,5 +1,8 @@
 package br.com.srportto.contratocommand.shared.interceptors.api;
 
+import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -8,10 +11,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.Instant;
-
-import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
 public class ApiExceptionHandler {

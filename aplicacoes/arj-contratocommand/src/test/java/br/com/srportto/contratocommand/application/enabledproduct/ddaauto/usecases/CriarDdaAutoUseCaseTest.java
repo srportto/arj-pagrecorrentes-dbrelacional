@@ -1,5 +1,13 @@
 package br.com.srportto.contratocommand.application.enabledproduct.ddaauto.usecases;
 
+import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoValidator;
+import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoMapper;
+import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoRepository;
+import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,16 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
-import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoValidator;
-import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoMapper;
-import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoRepository;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

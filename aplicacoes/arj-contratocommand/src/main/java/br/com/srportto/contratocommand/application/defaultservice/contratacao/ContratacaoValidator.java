@@ -1,12 +1,11 @@
 package br.com.srportto.contratocommand.application.defaultservice.contratacao;
 
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
+import br.com.srportto.contratocommand.shared.validationsetup.Validator;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-
-import br.com.srportto.contratocommand.shared.validationsetup.Validator;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
-import lombok.AllArgsConstructor;
 
 @Component
 @AllArgsConstructor

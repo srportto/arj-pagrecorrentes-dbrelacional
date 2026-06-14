@@ -1,13 +1,14 @@
 package br.com.srportto.contratocommand.entrypoint.contratosrest;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.UUID;
-
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import tools.jackson.databind.JsonNode;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
 
 public record CriarAutorizacaoRequest(
 
@@ -50,9 +51,11 @@ public record CriarAutorizacaoRequest(
     @NotNull(message = "O campo 'idPessoaDevedora' é obrigatório.") 
     UUID idPessoaDevedora,
 
-    @NotNull(message = "O campo 'idPessoaRecebedora' é obrigatório.") 
+    @NotNull(message = "O campo 'idPessoaRecebedora' é obrigatório.")
     UUID idPessoaRecebedora,
 
-    JsonNode metadados) {
+    JsonNode metadados,
+
+    TipoJornadaAutorizacao tipoJornada) {
 
 }

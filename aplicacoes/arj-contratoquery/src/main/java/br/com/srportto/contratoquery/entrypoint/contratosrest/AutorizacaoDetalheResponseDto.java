@@ -30,6 +30,7 @@ public class AutorizacaoDetalheResponseDto {
     private UUID idAutorizacao;
     private TipoProduto tipoProduto;
     private String status;
+    private String motivoStatus;
     private LocalDate dataInicioVigencia;
     private LocalDate dataFimVigencia;
     private LocalDateTime dataCriacao;
@@ -49,6 +50,7 @@ public class AutorizacaoDetalheResponseDto {
                 .idAutorizacao(autorizacao.getIdAutorizacao().getIdAutorizacao())
                 .tipoProduto(autorizacao.getTipoProduto())
                 .status(mapearStatus(autorizacao.getStatus()))
+                .motivoStatus(autorizacao.getMotivoStatus())
                 .dataInicioVigencia(autorizacao.getDataInicioVigencia())
                 .dataFimVigencia(autorizacao.getDataFimVigencia())
                 .dataCriacao(autorizacao.getDataHoraInclusao())

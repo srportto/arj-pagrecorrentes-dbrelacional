@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public enum StatusAutorizacao {
     RECEBIDA(1L, false),
-    PENDENTE_ATIVACAO(2L, false),
+    PENDENTE_ACEITE(2L, false),
     EM_PROCESSO_ATIVACAO(3L, false),
     ATIVA(4L, false),
     CANCELADA(5L, true),

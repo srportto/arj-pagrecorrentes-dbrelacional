@@ -1,11 +1,11 @@
 package br.com.srportto.contratocommand.domain.enums;
 
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DisplayName("Testes do enum TipoProduto")
 class TipoProdutoTest {

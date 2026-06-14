@@ -3,7 +3,7 @@ package br.com.srportto.contratocommand.domain.enums;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Testes do enum TipoConta")
 class TipoContaTest {

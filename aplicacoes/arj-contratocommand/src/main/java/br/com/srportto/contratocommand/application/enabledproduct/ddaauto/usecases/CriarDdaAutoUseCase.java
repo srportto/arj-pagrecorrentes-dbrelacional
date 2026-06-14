@@ -1,17 +1,15 @@
 package br.com.srportto.contratocommand.application.enabledproduct.ddaauto.usecases;
 
-import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
-
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoValidator;
+import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoMapper;
 import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoRepository;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @AllArgsConstructor

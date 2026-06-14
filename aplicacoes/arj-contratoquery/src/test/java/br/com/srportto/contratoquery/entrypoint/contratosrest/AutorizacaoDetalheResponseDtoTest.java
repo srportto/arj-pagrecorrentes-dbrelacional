@@ -34,6 +34,7 @@ class AutorizacaoDetalheResponseDtoTest {
         a.setIdPessoaRecebedora(UUID.randomUUID());
         a.setIdAutorizacaoEmpresa("EMP1");
         a.setDescricao("desc");
+        a.setMotivoStatus("RECEPCAO_SPI_J1");
         a.setMetadados(metadados);
         return a;
     }
@@ -47,6 +48,7 @@ class AutorizacaoDetalheResponseDtoTest {
         assertEquals(a.getIdAutorizacao().getIdAutorizacao(), dto.getIdAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, dto.getTipoProduto());
         assertEquals("ATIVA", dto.getStatus());
+        assertEquals("RECEPCAO_SPI_J1", dto.getMotivoStatus());
         assertEquals(a.getValorLimite(), dto.getValorLimite());
         assertEquals(a.getIdPessoaPagadora(), dto.getIdPessoaPagadora());
         assertNotNull(dto.getMetadado());

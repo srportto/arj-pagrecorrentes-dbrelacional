@@ -1,11 +1,11 @@
 package br.com.srportto.contratocommand.shared.interceptors.api;
 
-import java.time.Instant;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 //?---------------------------------------------------------------------------------------
 //? Essa classe eh usada para montar a "cara" das mensagens de erro do projeto para api

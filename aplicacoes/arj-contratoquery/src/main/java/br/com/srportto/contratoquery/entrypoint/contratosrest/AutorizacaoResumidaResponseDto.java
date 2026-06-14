@@ -27,6 +27,7 @@ public class AutorizacaoResumidaResponseDto {
     private String nomeRecebedor;
     private BigDecimal valor;
     private String status;
+    private String motivoStatus;
     private JsonNode metadado;
 
     public static AutorizacaoResumidaResponseDto from(Autorizacao autorizacao) {
@@ -49,6 +50,7 @@ public class AutorizacaoResumidaResponseDto {
                 .nomeRecebedor(null)
                 .valor(autorizacao.getValorAutorizacao())
                 .status(mapearStatus(autorizacao.getStatus()))
+                .motivoStatus(autorizacao.getMotivoStatus())
                 .metadado(metadadoNode)
                 .build();
     }

@@ -1,14 +1,13 @@
 package br.com.srportto.contratocommand.application.enabledproduct.ddaauto;
 
+import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-
-
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 
 @Mapper(componentModel = "spring")
 public interface DdaAutoMapper {
@@ -39,6 +38,10 @@ public interface DdaAutoMapper {
         }
 
         autorizacao.inicializaCriacao(autorizacao);
+
+        var motivo = MotivoStatusAutorizacao.obterMotivoStatusEnumPorIdMotivo(
+                request.tipoJornada().getCodigoJornada());
+        autorizacao.setMotivoStatus(motivo.name());
     }
 
 }
