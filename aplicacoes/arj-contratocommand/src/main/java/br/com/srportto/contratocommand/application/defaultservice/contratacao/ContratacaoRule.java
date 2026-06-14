@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.application.defaultservice.contratacao;
 
-import br.com.srportto.contratocommand.shared.validationsetup.Rule;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
+import br.com.srportto.contratocommand.shared.validationsetup.Rule;
 
 public interface ContratacaoRule extends Rule<CriarAutorizacaoRequest> {
 

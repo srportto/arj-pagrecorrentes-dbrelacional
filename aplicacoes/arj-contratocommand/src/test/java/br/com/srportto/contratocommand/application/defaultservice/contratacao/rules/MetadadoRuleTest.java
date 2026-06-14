@@ -1,17 +1,18 @@
 package br.com.srportto.contratocommand.application.defaultservice.contratacao.rules;
 
+import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DisplayName("Testes da regra MetadadoRule")
 class MetadadoRuleTest {
@@ -27,7 +28,7 @@ class MetadadoRuleTest {
     @DisplayName("metadado nulo é aceito")
     void metadadoNulo() {
         assertDoesNotThrow(() -> regra.validar(TestFixtures.criarRequest(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), null)));
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -35,7 +36,7 @@ class MetadadoRuleTest {
     void metadadoValido() {
         JsonNode meta = json("{\"nomePessoaRecebedora\":\"Joao\",\"apelidoPessoaRecebedora\":\"Jo\"}");
         assertDoesNotThrow(() -> regra.validar(TestFixtures.criarRequest(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta)));
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -43,7 +44,7 @@ class MetadadoRuleTest {
     void nomeMuitoLongo() {
         JsonNode meta = json("{\"nomePessoaRecebedora\":\"" + "a".repeat(256) + "\"}");
         assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta)));
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -51,6 +52,6 @@ class MetadadoRuleTest {
     void apelidoMuitoLongo() {
         JsonNode meta = json("{\"apelidoPessoaRecebedora\":\"" + "b".repeat(256) + "\"}");
         assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta)));
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 }

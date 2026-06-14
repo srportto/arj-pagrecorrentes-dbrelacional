@@ -1,12 +1,11 @@
 package br.com.srportto.contratocommand.application.defaultservice.contratacao.rules;
 
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
-
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoRule;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
 
 @Component
 public class DataFimVigenciaInvalida implements ContratacaoRule {

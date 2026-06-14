@@ -1,5 +1,8 @@
 package br.com.srportto.contratocommand.shared.interceptors.api;
 
+import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -10,11 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.List;
 
-import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-import jakarta.servlet.http.HttpServletRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

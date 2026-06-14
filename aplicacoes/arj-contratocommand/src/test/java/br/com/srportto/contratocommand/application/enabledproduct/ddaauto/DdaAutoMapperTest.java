@@ -1,15 +1,16 @@
 package br.com.srportto.contratocommand.application.enabledproduct.ddaauto;
 
+import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("Testes do DdaAutoMapper (impl gerado)")
 class DdaAutoMapperTest {
@@ -27,5 +28,6 @@ class DdaAutoMapperTest {
         assertNotNull(aut.getIdAutorizacao());
         assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
         assertEquals(1, aut.getStatus());
+        assertEquals(MotivoStatusAutorizacao.RECEPCAO_SPI_J1.name(), aut.getMotivoStatus());
     }
 }

@@ -1,5 +1,11 @@
 package br.com.srportto.contratocommand.entrypoint;
 
+import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoOrquestradorService;
+import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,16 +21,11 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.UUID;
 
-import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoOrquestradorService;
-import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoOrquestradorService;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do AutorizacaoController")
@@ -51,12 +52,13 @@ class AutorizacaoControllerTest {
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder()
                 .idAutorizacao(UUID.randomUUID())
                 .build();
-        when(orquestradorContratacaoService.criar(request)).thenReturn(dto);
+        when(orquestradorContratacaoService.criar(any(CriarAutorizacaoRequest.class))).thenReturn(dto);
 
-        ResponseEntity<AutorizacaoCompletaResponseDto> resp = controller.insert(request);
+        ResponseEntity<AutorizacaoCompletaResponseDto> resp = controller.insert(request, "SPI_J1");
 
         assertEquals(HttpStatus.CREATED, resp.getStatusCode());
         assertSame(dto, resp.getBody());
+        verify(orquestradorContratacaoService).criar(any(CriarAutorizacaoRequest.class));
     }
 
     @Test

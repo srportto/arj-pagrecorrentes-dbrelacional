@@ -1,8 +1,8 @@
 package br.com.srportto.contratocommand.domain.converters;
 
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 
 @Converter(autoApply = true)
 public class TipoProdutoConverter implements AttributeConverter<TipoProduto, Long> {

@@ -2,6 +2,7 @@ package br.com.srportto.contratocommand.entrypoint;
 
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoOrquestradorService;
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
@@ -24,8 +25,27 @@ public class AutorizacaoController {
 
     @PostMapping
     public ResponseEntity<AutorizacaoCompletaResponseDto> insert(
-            @RequestBody @Valid CriarAutorizacaoRequest requestRecord) {
-        AutorizacaoCompletaResponseDto autorizadaResponse = orquestradorContratacaoService.criar(requestRecord);
+            @RequestBody @Valid CriarAutorizacaoRequest requestRecord,
+            @RequestHeader String tipoJornada) {
+        var jornada = TipoJornadaAutorizacao.obterJornadaAutorizacaoEnumPorNome(tipoJornada);
+        var request = new CriarAutorizacaoRequest(
+                requestRecord.dataFimVigencia(),
+                requestRecord.tipoProduto(),
+                requestRecord.valor(),
+                requestRecord.idAutorizacaoEmpresa(),
+                requestRecord.valorLimite(),
+                requestRecord.frequencia(),
+                requestRecord.quantidadeDividasCiclo(),
+                requestRecord.indicadorUsoLimiteConta(),
+                requestRecord.codigoCanalContratacao(),
+                requestRecord.descricao(),
+                requestRecord.idUnicoContaContratante(),
+                requestRecord.idPessoaPagadora(),
+                requestRecord.idPessoaDevedora(),
+                requestRecord.idPessoaRecebedora(),
+                requestRecord.metadados(),
+                jornada);
+        AutorizacaoCompletaResponseDto autorizadaResponse = orquestradorContratacaoService.criar(request);
 
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")

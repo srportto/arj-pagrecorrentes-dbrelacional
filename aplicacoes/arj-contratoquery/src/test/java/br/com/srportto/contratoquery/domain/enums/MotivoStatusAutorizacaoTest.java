@@ -30,6 +30,6 @@ class MotivoStatusAutorizacaoTest {
     @DisplayName("getCodigoMotivo expõe o código numérico")
     void exposeCodigo() {
         assertEquals(1L, MotivoStatusAutorizacao.RECEPCAO_SPI_J1.getCodigoMotivo());
-        assertEquals(21L, MotivoStatusAutorizacao.FINALIZADA_01.getCodigoMotivo());
+        assertEquals(24L, MotivoStatusAutorizacao.FINALIZADA_01.getCodigoMotivo());
     }
 }

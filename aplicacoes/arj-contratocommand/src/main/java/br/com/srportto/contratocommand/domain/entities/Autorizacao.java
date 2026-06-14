@@ -1,7 +1,11 @@
 package br.com.srportto.contratocommand.domain.entities;
 
+import br.com.srportto.contratocommand.domain.converters.TipoProdutoConverter;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
+import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -9,21 +13,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import br.com.srportto.contratocommand.domain.converters.TipoProdutoConverter;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 
 @Data
 @AllArgsConstructor

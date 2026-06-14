@@ -18,14 +18,18 @@ public enum MotivoStatusAutorizacao {
     REJEITADA_PSP_PAGADOR_007(14L, "RN/RR invalido"),
     REJEITADA_PSP_PAGADOR_008(15L, "PSP recebedor excedeu limite tempo resposta(time-out)"),
     REJEITADA_PSP_PAGADOR_009(16L, "Erros operacionais do PSP pagador"),
-    AUTORIZACAO_ACEITA_POR_TODOS(17L,
+    REJEITADA_PSP_RECEBEDOR_001(17L, "Erros operacionais do PSP recebedor"),
+    REJEITADA_PSP_RECEBEDOR_002(18L, "dados divergentes autorizacao"),
+    AUTORIZACAO_ACEITA_POR_TODOS(19L,
             "Autorização foi aceita por todos os envolvidos via troca de mensagens entre os PSPs e o cliente pagador, ou seja, autorização apta a ser ativada"),
-    CANCELADA_CLIENTE_PAGADOR(18L,
+    CANCELADA_CLIENTE_PAGADOR(20L,
             "Em algum canal de atendimento, o cliente pagador solicitou ou fez o cancelamento da autorização"),
-    CANCELADA_PSP_RECEBEDOR(19L, "Pedido de cancelamento da autorização feito pelo PSP recebedor via mensageria SPI"),
-    EXPIRADA_01(20L,
+    CANCELADA_PSP_RECEBEDOR(21L, "Pedido de cancelamento da autorização feito pelo PSP recebedor via mensageria SPI"),
+    EXPIRADA_01(22L,
             "Autorizaco expirou por limite de tempo para o cliente pagador aceitar ou rejeitar a autorização, ou seja, expirada por falta de resposta do cliente pagador"),
-    FINALIZADA_01(21L,
+    EXPIRADA_02(23L,
+            "PSP recebedor excedeu tempo limite resposta pos autorizacao do cliente"),
+    FINALIZADA_01(24L,
             "Autorizacao chegou ao fim do seu ciclo de vida, ou seja, autorizacao ativa chegou ao fim do seu prazo de vigencia");
 
     private long codigoMotivo;
@@ -51,6 +55,7 @@ public enum MotivoStatusAutorizacao {
             }
         }
         throw new IllegalArgumentException(
-                String.format("Motivo de status de autorização %d não conhecido ", codigoMotivo));
+                String.format("Motivo de status de autorização %i não conhecido ", codigoMotivo));
     }
+
 }

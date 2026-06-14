@@ -1,9 +1,9 @@
 package br.com.srportto.contratocommand.domain.utilities;
 
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 
 public class ControleExpurgoAutorizacao {
 

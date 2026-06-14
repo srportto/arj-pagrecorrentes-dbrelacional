@@ -1,15 +1,15 @@
 package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
 
+import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import tools.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,6 +30,7 @@ class PixAutoMapperTest {
         assertNotNull(aut.getIdAutorizacao());
         assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
         assertEquals(1, aut.getStatus());
+        assertEquals("RECEPCAO_SPI_J1", aut.getMotivoStatus());
     }
 
     @Test
@@ -37,7 +38,8 @@ class PixAutoMapperTest {
     void toDomainComMetadado() {
         var meta = new ObjectMapper().readTree("{\"k\":\"v\"}");
         Autorizacao aut = mapper.toDomain(TestFixtures.criarRequest(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta));
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta,
+                TipoJornadaAutorizacao.QRC_J2));
 
         assertNotNull(aut.getMetadados());
         assertTrue(aut.getMetadados().contains("k"));

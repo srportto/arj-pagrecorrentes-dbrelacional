@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MotivoStatusAutorizacaoTest {
 
     @Test
-    @DisplayName("obterMotivoStatusEnumPorIdMotivo resolve todos os códigos e expõe descrição")
+    @DisplayName("obterJornadaAutorizacaoEnumPorIdJornada resolve todos os códigos e expõe descrição")
     void obtemPorIdParaTodos() {
         for (MotivoStatusAutorizacao motivo : MotivoStatusAutorizacao.values()) {
             MotivoStatusAutorizacao encontrado =
@@ -20,7 +20,7 @@ class MotivoStatusAutorizacaoTest {
     }
 
     @Test
-    @DisplayName("obterMotivoStatusEnumPorIdMotivo lança IllegalArgumentException para código desconhecido")
+    @DisplayName("obterJornadaAutorizacaoEnumPorIdJornada lança IllegalArgumentException para código desconhecido")
     void lancaParaDesconhecido() {
         assertThrows(IllegalArgumentException.class,
                 () -> MotivoStatusAutorizacao.obterMotivoStatusEnumPorIdMotivo(9999L));
@@ -30,6 +30,6 @@ class MotivoStatusAutorizacaoTest {
     @DisplayName("getCodigoMotivo expõe o código numérico")
     void exposeCodigo() {
         assertEquals(1L, MotivoStatusAutorizacao.RECEPCAO_SPI_J1.getCodigoMotivo());
-        assertEquals(21L, MotivoStatusAutorizacao.FINALIZADA_01.getCodigoMotivo());
+        assertEquals(24L, MotivoStatusAutorizacao.FINALIZADA_01.getCodigoMotivo());
     }
 }

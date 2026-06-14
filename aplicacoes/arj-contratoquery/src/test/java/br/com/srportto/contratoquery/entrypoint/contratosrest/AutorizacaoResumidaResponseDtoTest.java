@@ -25,6 +25,7 @@ class AutorizacaoResumidaResponseDtoTest {
         a.setDataFimVigencia(LocalDate.now().plusDays(30));
         a.setValorAutorizacao(BigDecimal.TEN);
         a.setIdPessoaRecebedora(UUID.randomUUID());
+        a.setMotivoStatus("LEITURA_QRC_J2");
         a.setMetadados(metadados);
         return a;
     }
@@ -40,6 +41,7 @@ class AutorizacaoResumidaResponseDtoTest {
         assertEquals(a.getDataHoraInclusao(), dto.getDataCriacao());
         assertEquals(a.getValorAutorizacao(), dto.getValor());
         assertEquals("ATIVA", dto.getStatus());
+        assertEquals("LEITURA_QRC_J2", dto.getMotivoStatus());
         assertNotNull(dto.getMetadado());
         assertTrue(dto.getMetadado().has("origem"));
         assertNull(dto.getNomeRecebedor());
