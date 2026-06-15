@@ -1,12 +1,17 @@
 spring:
     application:
         name: contratocommand
+    profiles:
+        active: dev
+    threads:
+        virtual:
+            enabled: true
     datasource:
         url: jdbc:postgresql://localhost:5432/${DB_NAME}
         username: ${DB_USER_NAME}
         password: ${DB_PASSWORD}
         hikari:
-            maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+            maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
             minimum-idle: ${DB_POOL_MIN_IDLE:2}
             connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:30000}
             idle-timeout: ${DB_POOL_IDLE_TIMEOUT:600000}
@@ -15,7 +20,7 @@ spring:
             read-only: ${DB_READ_ONLY:false}
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: none
 #        properties:
 #            hibernate:
 #                dialect: org.hibernate.dialect.PostgreSQLDialect
