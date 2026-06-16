@@ -1,0 +1,9 @@
+{
+  "app": "floci-demo",
+  "version": "1.0.0",
+  "environment": "local",
+  "features": {
+    "notifications": true,
+    "logging": true
+  }
+}

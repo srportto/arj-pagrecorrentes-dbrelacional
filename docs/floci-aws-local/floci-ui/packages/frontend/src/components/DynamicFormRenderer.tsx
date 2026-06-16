@@ -1,0 +1,132 @@
+import {FormEvent, useEffect, useState} from 'react'
+import {Plus} from 'lucide-react'
+import type {FieldSchema, ServiceSchema} from '@/types/schema'
+
+interface DynamicFormRendererProps {
+    schema: ServiceSchema
+    isSubmitting: boolean
+    submitLabel?: string
+    pendingLabel?: string
+    submitError?: string | null
+    onSubmit: (values: Record<string, unknown>) => void
+}
+
+export function DynamicFormRenderer({schema, isSubmitting, submitLabel = 'Create', pendingLabel = 'Creating', submitError, onSubmit}: DynamicFormRendererProps) {
+    const [values, setValues] = useState<Record<string, string>>({})
+    const [errors, setErrors] = useState<Record<string, string>>({})
+
+    useEffect(() => {
+        setValues(defaultValues(schema.fields))
+        setErrors({})
+    }, [schema])
+
+    function submit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        const nextErrors = validateValues(schema.fields, values)
+        setErrors(nextErrors)
+        if (Object.keys(nextErrors).length > 0) return
+        onSubmit(values)
+    }
+
+    return (
+        <form className="dynamic-form" onSubmit={submit}>
+            {schema.fields.map((field) => (
+                <FieldRow
+                    key={field.name}
+                    field={field}
+                    value={values[field.name] ?? ''}
+                    error={errors[field.name]}
+                    onChange={(value) => {
+                        setValues((prev) => ({...prev, [field.name]: value}))
+                        setErrors((prev) => {
+                            const next = {...prev}
+                            delete next[field.name]
+                            return next
+                        })
+                    }}
+                />
+            ))}
+            <button className="button primary" type="submit" disabled={isSubmitting}>
+                <Plus size={14}/>
+                {isSubmitting ? pendingLabel : submitLabel}
+            </button>
+            {submitError && <div className="form-error">{submitError}</div>}
+        </form>
+    )
+}
+
+function FieldRow({field, value, error, onChange}: {field: FieldSchema; value: string; error?: string; onChange: (value: string) => void}) {
+    return (
+        <>
+            {field.group && <div className="dynamic-form-group">{field.group}</div>}
+            <label className={`dynamic-field${field.span ? ' dynamic-field--span' : ''}`}>
+                <span>
+                    {field.label}
+                    {field.required && <em className="field-required">*</em>}
+                </span>
+                <FieldInput field={field} value={value} invalid={Boolean(error)} onChange={onChange}/>
+                {(error || field.description) && (
+                    <small className={error ? 'field-error' : undefined}>
+                        {error ?? field.description}
+                    </small>
+                )}
+            </label>
+        </>
+    )
+}
+
+function FieldInput({field, value, invalid, onChange}: {field: FieldSchema; value: string; invalid: boolean; onChange: (value: string) => void}) {
+    if (field.type === 'select') {
+        return (
+            <select className={`input ${invalid ? 'invalid' : ''}`} value={value} required={field.required} onChange={(event) => onChange(event.target.value)}>
+                <option value="">Default</option>
+                {(field.options ?? []).map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+        )
+    }
+
+    return (
+        <input
+            className={`input ${invalid ? 'invalid' : ''}`}
+            value={value}
+            required={field.required}
+            minLength={field.validation?.minLength}
+            maxLength={field.validation?.maxLength}
+            pattern={field.validation?.pattern}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={field.label}
+        />
+    )
+}
+
+function defaultValues(fields: FieldSchema[]): Record<string, string> {
+    return Object.fromEntries(fields.map((field) => [field.name, '']))
+}
+
+function validateValues(fields: FieldSchema[], values: Record<string, string>): Record<string, string> {
+    const errors: Record<string, string> = {}
+
+    for (const field of fields) {
+        const value = (values[field.name] ?? '').trim()
+        if (field.required && !value) {
+            errors[field.name] = `${field.label} is required.`
+            continue
+        }
+        if (!value) continue
+        if (field.validation?.minLength && value.length < field.validation.minLength) {
+            errors[field.name] = field.validation.message ?? `${field.label} is too short.`
+            continue
+        }
+        if (field.validation?.maxLength && value.length > field.validation.maxLength) {
+            errors[field.name] = field.validation.message ?? `${field.label} is too long.`
+            continue
+        }
+        if (field.validation?.pattern && !new RegExp(field.validation.pattern).test(value)) {
+            errors[field.name] = field.validation.message ?? `${field.label} is invalid.`
+        }
+    }
+
+    return errors
+}

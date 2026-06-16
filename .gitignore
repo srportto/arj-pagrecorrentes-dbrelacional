@@ -63,4 +63,4 @@ build/
 *.drawio.bkp
 
 ### floci-ui (clone externo, gerenciado fora deste repo) ###
-docs/floci-aws-local/floci-ui/
+###docs/floci-aws-local/floci-ui/
