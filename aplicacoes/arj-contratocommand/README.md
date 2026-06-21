@@ -38,31 +38,29 @@ O **Contrato Command** é um microserviço backend construído com **Spring Boot
 src/main/java/br/com/srportto/contratocommand/
 ├── ContratocommandApplication.java
 ├── application/
+│   ├── autorizacao/          # COMPARTILHADO: AutorizacaoRepository, AutorizacaoMapper
+│   │   └── usecases/         # CriarAutorizacaoUseCase, CancelarAutorizacaoUseCase
 │   ├── defaultservice/
 │   │   ├── contratacao/      # ContratacaoOrquestradorService, ContratacaoService (Strategy),
 │   │   │   │                 # ContratacaoRule, ContratacaoValidator
 │   │   │   └── rules/        # DataFimVigenciaInvalida, ValorLimiteContrato, MetadadoRule
 │   │   └── cancelamento/     # CancelamentoOrquestradorService, CancelamentoService,
-│   │       │                 # CancelamentoRule, CancelamentoValidator
+│   │       │                 # CancelamentoContext, CancelamentoRule, CancelamentoValidator
 │   │       └── rules/        # TipoProdutoCancelamento
-│   └── enabledproduct/
-│       ├── pixauto/          # PixAutoService, PixAutoMapper, PixAutoRepository, ListarAutorizacoesService
-│       │   └── usecases/     # CriarPixAutoUseCase, CancelarPixAutoUseCase
-│       └── ddaauto/          # DdaAutoService, DdaAutoMapper, DdaAutoRepository
-│           └── usecases/     # CriarDdaAutoUseCase, CancelarDdaAutoUseCase
+│   └── enabledproduct/       # strategies finas (só TipoProduto + delegação)
+│       ├── pixauto/          # PixAutoService
+│       └── ddaauto/          # DdaAutoService
 ├── domain/
 │   ├── entities/             # Autorizacao, Cancelamento, IdAutorizacao
 │   ├── enums/                # TipoProduto, StatusAutorizacao, MotivoStatusAutorizacao,
 │   │                         # CanaisConhecidosEnum, TipoConta
 │   ├── converters/           # TipoProdutoConverter
-│   ├── model/                # ContratoBase
 │   └── utilities/            # ControleExpurgoAutorizacao, IdContaUUIDPartitionDistributor,
 │                             # ReversibleUUIDv7, AchaQtdeSemanas
 ├── entrypoint/
 │   ├── AutorizacaoController.java
-│   └── contratosrest/        # CriarAutorizacaoRequest, CancelarAutorizacaoRequestDto,
-│                             # AutorizacaoCompletaResponseDto, AutorizacaoResumidaResponseDto,
-│                             # PaginacaoResponseDto
+│   └── contratosrest/        # CriarAutorizacaoRequest, CancelarAutorizacaoRequest (records),
+│                             # AutorizacaoCompletaResponseDto
 └── shared/
     ├── exceptions/           # BusinessException (422), ApplicationException (500)
     ├── interceptors/api/     # ApiExceptionHandler + DTOs de erro

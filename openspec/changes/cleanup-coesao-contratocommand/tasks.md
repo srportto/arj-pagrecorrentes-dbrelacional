@@ -16,12 +16,12 @@
 - [x] 1.2 Introduzir contexto/comando interno de cancelamento (ex.: record `CancelamentoContext`) carregando `idAutorizacao` (path), `tipoProdutoHeader` e `tipoProdutoDaAutorizacao` (lido do banco) como parâmetros explícitos. _(`tipoProdutoAutorizacao` preenchido imutavelmente via `comProdutoAutorizacao` no use case, antes da validação)._
 - [x] 1.3 Ajustar `AutorizacaoController.cancelar` para montar o contexto em vez de mutar o DTO via setters.
 - [x] 1.4 Ajustar `CancelamentoValidator`/`Validator` e a `Rule` `TipoProdutoCancelamento` para receber os dois produtos como parâmetros do contexto, sem ler campos injetados no request.
-- [ ] 1.5 Padronizar sufixos de DTO (`...Request` / `...Response`) e remover o sufixo divergente; alinhar `CriarAutorizacaoRequest` se necessário.
+- [x] 1.5 Padronizar sufixos de DTO (`...Request` / `...Response`) e remover o sufixo divergente; alinhar `CriarAutorizacaoRequest` se necessário. _(sufixo divergente `CancelarAutorizacaoRequestDto`→`CancelarAutorizacaoRequest`; response mantém `ResponseDto` conforme convenção documentada)._
 - [x] 1.6 Converter `tipoProduto` cru: trocar `TipoProduto.valueOf(...)` no mapper por `TipoProduto.obterTipoProdutoEnumPorNome(...)` (lança `BusinessException`/422). _(aplicado já no `AutorizacaoMapper` da fusão)._
-- [ ] 1.7 Refatorar `AutorizacaoCompletaResponseDto` para record; remover o `ObjectMapper` estático interno e o método `from()` manual, movendo o mapeamento entidade→response para MapStruct.
-- [ ] 1.8 Parar de expor a entidade de domínio `Cancelamento` no response: mapear para um tipo de resposta dedicado (ou campos planos).
-- [ ] 1.9 Atualizar testes afetados (`AutorizacaoControllerTest`, `TipoProdutoCancelamentoTest`, `CancelamentoValidatorTest`, `AutorizacaoCompletaResponseDtoTest`) para o novo contrato imutável.
-- [ ] 1.10 Rodar `mvn clean test` e confirmar verde.
+- [ ] 1.7 Refatorar `AutorizacaoCompletaResponseDto` para record; remover o `ObjectMapper` estático interno e o método `from()` manual, movendo o mapeamento entidade→response para MapStruct. _(ADIADO — follow-up aberto: não é requisito da spec; a imutabilidade exigida é só dos request DTOs)._
+- [ ] 1.8 Parar de expor a entidade de domínio `Cancelamento` no response: mapear para um tipo de resposta dedicado (ou campos planos). _(ADIADO junto da 1.7)._
+- [x] 1.9 Atualizar testes afetados (`AutorizacaoControllerTest`, `TipoProdutoCancelamentoTest`, `CancelamentoValidatorTest`, `AutorizacaoCompletaResponseDtoTest`) para o novo contrato imutável. _(testes do fluxo de cancelamento atualizados; testes do response intactos pois 1.7/1.8 foram adiadas)._
+- [x] 1.10 Rodar `mvn clean test` e confirmar verde. _(94 testes verdes)._
 
 ## 2. Fase 2 — Eliminar duplicação Pix/DDA (decisão B1)
 
@@ -49,7 +49,7 @@
 
 ## 4. Fechamento e verificação
 
-- [ ] 4.1 `mvn clean package` sem erros; aplicação buildável e o JAR gerado.
-- [ ] 4.2 Revisão final contra a spec `coesao-contratocommand`: cada requisito tem teste correspondente verde.
-- [ ] 4.3 Atualizar `CLAUDE.md`/`AGENTS.md` e o doc de arquitetura para refletir o eixo produto unificado e os contratos normalizados.
-- [ ] 4.4 Confirmar que os três contratos REST e o health-check permanecem inalterados (exceto `status` coerente com enum).
+- [x] 4.1 `mvn clean package` sem erros; aplicação buildável e o JAR gerado. _(contratocommand-0.0.1-SNAPSHOT.jar; 94 testes verdes)._
+- [x] 4.2 Revisão final contra a spec `coesao-contratocommand`: cada requisito tem teste correspondente verde. _(7/7 requirements satisfeitos; imutabilidade exigida é só dos request DTOs — response normalization 1.7/1.8 fica como follow-up fora da spec)._
+- [x] 4.3 Atualizar `CLAUDE.md`/`AGENTS.md` e o doc de arquitetura para refletir o eixo produto unificado e os contratos normalizados. _(CLAUDE.md + AGENTS.md + README.md atualizados)._
+- [x] 4.4 Confirmar que os três contratos REST e o health-check permanecem inalterados (exceto `status` coerente com enum). _(corpos/headers preservados; única mudança observável: status ativo = 4)._
