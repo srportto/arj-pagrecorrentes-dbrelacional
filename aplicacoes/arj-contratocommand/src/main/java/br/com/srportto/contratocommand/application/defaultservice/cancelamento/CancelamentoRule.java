@@ -1,9 +1,8 @@
 package br.com.srportto.contratocommand.application.defaultservice.cancelamento;
 
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
 import br.com.srportto.contratocommand.shared.validationsetup.Rule;
 
-public interface CancelamentoRule extends Rule<CancelarAutorizacaoRequestDto> {
+public interface CancelamentoRule extends Rule<CancelamentoContext> {
 
     @Override
     default String getLogCode() {

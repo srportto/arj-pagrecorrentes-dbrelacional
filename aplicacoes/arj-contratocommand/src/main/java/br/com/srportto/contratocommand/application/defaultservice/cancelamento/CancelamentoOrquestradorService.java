@@ -2,7 +2,6 @@ package br.com.srportto.contratocommand.application.defaultservice.cancelamento;
 
 
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,12 +14,12 @@ public class CancelamentoOrquestradorService {
 
     private final List<CancelamentoService> produtosHabilitados;
 
-    public AutorizacaoCompletaResponseDto cancelar(CancelarAutorizacaoRequestDto request) {
+    public AutorizacaoCompletaResponseDto cancelar(CancelamentoContext context) {
         CancelamentoService produtoHabilitado = produtosHabilitados.stream()
-                .filter(s -> s.validaCancelamentoSuportado(request))
+                .filter(s -> s.validaCancelamentoSuportado(context))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("Produto nao suportado ou invalido (tipoProduto: " + request.getProdutoHeaderRequest().name()+ ")"));
+                .orElseThrow(() -> new BusinessException("Produto nao suportado ou invalido (tipoProduto: " + context.tipoProduto().name() + ")"));
 
-        return produtoHabilitado.cancelarAutorizacao(request);
+        return produtoHabilitado.cancelarAutorizacao(context);
     }
 }

@@ -2,11 +2,11 @@ package br.com.srportto.contratocommand.application.enabledproduct.ddaauto;
 
 import br.com.srportto.contratocommand.application.autorizacao.usecases.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.application.autorizacao.usecases.CriarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoService;
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoService;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,13 +33,13 @@ public class DdaAutoService implements ContratacaoService, CancelamentoService {
     }
 
     @Override
-    public boolean validaCancelamentoSuportado(CancelarAutorizacaoRequestDto request) {
-        return request.getProdutoHeaderRequest() != null
-                && TipoProduto.DDA_AUTO.name().equalsIgnoreCase(request.getProdutoHeaderRequest().name());
+    public boolean validaCancelamentoSuportado(CancelamentoContext context) {
+        return context.tipoProduto() != null
+                && TipoProduto.DDA_AUTO.name().equalsIgnoreCase(context.tipoProduto().name());
     }
 
     @Override
-    public AutorizacaoCompletaResponseDto cancelarAutorizacao(CancelarAutorizacaoRequestDto request) {
-        return cancelarAutorizacaoUseCase.execute(request);
+    public AutorizacaoCompletaResponseDto cancelarAutorizacao(CancelamentoContext context) {
+        return cancelarAutorizacaoUseCase.execute(context);
     }
 }

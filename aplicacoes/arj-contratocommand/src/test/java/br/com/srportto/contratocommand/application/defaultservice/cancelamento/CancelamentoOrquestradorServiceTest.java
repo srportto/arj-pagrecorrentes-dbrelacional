@@ -3,7 +3,6 @@ package br.com.srportto.contratocommand.application.defaultservice.cancelamento;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +20,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do CancelamentoOrquestradorService")
 class CancelamentoOrquestradorServiceTest {
+    // CancelamentoContext é resolvido no mesmo pacote (defaultservice.cancelamento)
 
     @Mock
     private CancelamentoService produtoA;
@@ -31,7 +31,7 @@ class CancelamentoOrquestradorServiceTest {
     @Test
     @DisplayName("seleciona o primeiro produto suportado e delega o cancelamento")
     void selecionaSuportado() {
-        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO);
+        CancelamentoContext request = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO);
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder().build();
         when(produtoA.validaCancelamentoSuportado(request)).thenReturn(false);
         when(produtoB.validaCancelamentoSuportado(request)).thenReturn(true);
@@ -47,7 +47,7 @@ class CancelamentoOrquestradorServiceTest {
     @Test
     @DisplayName("lança BusinessException quando nenhum produto suporta o cancelamento")
     void nenhumSuportado() {
-        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO);
+        CancelamentoContext request = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO);
         when(produtoA.validaCancelamentoSuportado(request)).thenReturn(false);
 
         CancelamentoOrquestradorService orquestrador =

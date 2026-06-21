@@ -1,15 +1,18 @@
 package br.com.srportto.contratocommand.entrypoint;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoOrquestradorService;
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,21 +65,22 @@ class AutorizacaoControllerTest {
     }
 
     @Test
-    @DisplayName("cancelar resolve o produto pelo header e responde 200")
+    @DisplayName("cancelar resolve o produto pelo header, monta o contexto e responde 200")
     void cancelarRetornaOk() {
-        CancelarAutorizacaoRequestDto request = CancelarAutorizacaoRequestDto.builder()
-                .codigoCanalCancelamento("C1")
-                .idPessoaCancelamento(UUID.randomUUID())
-                .motivoCancelamento("teste")
-                .build();
+        CancelarAutorizacaoRequest dados = new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste");
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder().build();
         when(orquestradorCancelamentoService.cancelar(any())).thenReturn(dto);
 
         ResponseEntity<AutorizacaoCompletaResponseDto> resp =
-                controller.cancelar("550e8400-e29b-41d4-a716-446655440000", "PIX_AUTO", request);
+                controller.cancelar("550e8400-e29b-41d4-a716-446655440000", "PIX_AUTO", dados);
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertSame(dto, resp.getBody());
-        assertEquals("550e8400-e29b-41d4-a716-446655440000", request.getIdAutorizacao());
+
+        ArgumentCaptor<CancelamentoContext> captor = ArgumentCaptor.forClass(CancelamentoContext.class);
+        verify(orquestradorCancelamentoService).cancelar(captor.capture());
+        assertEquals("550e8400-e29b-41d4-a716-446655440000", captor.getValue().idAutorizacao());
+        assertEquals(TipoProduto.PIX_AUTO, captor.getValue().tipoProduto());
+        assertSame(dados, captor.getValue().dados());
     }
 }

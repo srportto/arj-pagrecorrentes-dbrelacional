@@ -3,7 +3,6 @@ package br.com.srportto.contratocommand.application.defaultservice.cancelamento;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.rules.TipoProdutoCancelamento;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,16 +27,16 @@ class CancelamentoValidatorTest {
     @Test
     @DisplayName("validar passa quando produto do header e da autorização coincidem")
     void validarOk() {
-        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO);
-        request.setTipoProdutoDoIdAutorizacao(TipoProduto.PIX_AUTO);
-        assertDoesNotThrow(() -> validator.validar(request));
+        CancelamentoContext context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+                .comProdutoAutorizacao(TipoProduto.PIX_AUTO);
+        assertDoesNotThrow(() -> validator.validar(context));
     }
 
     @Test
     @DisplayName("validar propaga BusinessException quando produtos divergem")
     void validarDivergente() {
-        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO);
-        request.setTipoProdutoDoIdAutorizacao(TipoProduto.DDA_AUTO);
-        assertThrows(BusinessException.class, () -> validator.validar(request));
+        CancelamentoContext context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+                .comProdutoAutorizacao(TipoProduto.DDA_AUTO);
+        assertThrows(BusinessException.class, () -> validator.validar(context));
     }
 }

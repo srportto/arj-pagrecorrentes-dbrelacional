@@ -12,10 +12,10 @@
 
 ## 1. Fase 1 — Normalizar DTOs e contrato (eixo C/D)
 
-- [ ] 1.1 Converter `CancelarAutorizacaoRequestDto` em record imutável contendo apenas campos de corpo (`codigoCanalCancelamento`, `idPessoaCancelamento`, `motivoCancelamento`); renomear para `CancelarAutorizacaoRequest` conforme convenção de sufixo.
-- [ ] 1.2 Introduzir contexto/comando interno de cancelamento (ex.: record `CancelamentoContext`) carregando `idAutorizacao` (path), `tipoProdutoHeader` e `tipoProdutoDaAutorizacao` (lido do banco) como parâmetros explícitos.
-- [ ] 1.3 Ajustar `AutorizacaoController.cancelar` para montar o contexto em vez de mutar o DTO via setters.
-- [ ] 1.4 Ajustar `CancelamentoValidator`/`Validator` e a `Rule` `TipoProdutoCancelamento` para receber os dois produtos como parâmetros do contexto, sem ler campos injetados no request.
+- [x] 1.1 Converter `CancelarAutorizacaoRequestDto` em record imutável contendo apenas campos de corpo (`codigoCanalCancelamento`, `idPessoaCancelamento`, `motivoCancelamento`); renomear para `CancelarAutorizacaoRequest` conforme convenção de sufixo.
+- [x] 1.2 Introduzir contexto/comando interno de cancelamento (ex.: record `CancelamentoContext`) carregando `idAutorizacao` (path), `tipoProdutoHeader` e `tipoProdutoDaAutorizacao` (lido do banco) como parâmetros explícitos. _(`tipoProdutoAutorizacao` preenchido imutavelmente via `comProdutoAutorizacao` no use case, antes da validação)._
+- [x] 1.3 Ajustar `AutorizacaoController.cancelar` para montar o contexto em vez de mutar o DTO via setters.
+- [x] 1.4 Ajustar `CancelamentoValidator`/`Validator` e a `Rule` `TipoProdutoCancelamento` para receber os dois produtos como parâmetros do contexto, sem ler campos injetados no request.
 - [ ] 1.5 Padronizar sufixos de DTO (`...Request` / `...Response`) e remover o sufixo divergente; alinhar `CriarAutorizacaoRequest` se necessário.
 - [x] 1.6 Converter `tipoProduto` cru: trocar `TipoProduto.valueOf(...)` no mapper por `TipoProduto.obterTipoProdutoEnumPorNome(...)` (lança `BusinessException`/422). _(aplicado já no `AutorizacaoMapper` da fusão)._
 - [ ] 1.7 Refatorar `AutorizacaoCompletaResponseDto` para record; remover o `ObjectMapper` estático interno e o método `from()` manual, movendo o mapeamento entidade→response para MapStruct.

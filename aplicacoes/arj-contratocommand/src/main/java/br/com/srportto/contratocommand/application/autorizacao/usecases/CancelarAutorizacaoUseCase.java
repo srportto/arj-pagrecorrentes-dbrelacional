@@ -1,13 +1,14 @@
 package br.com.srportto.contratocommand.application.autorizacao.usecases;
 
 import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import lombok.AllArgsConstructor;
@@ -34,31 +35,32 @@ public class CancelarAutorizacaoUseCase {
     private final CancelamentoValidator cancelamentoValidator;
 
     @Transactional
-    public AutorizacaoCompletaResponseDto execute(CancelarAutorizacaoRequestDto request) {
-        log.info("Iniciando cancelamento de autorização {}", request.getIdAutorizacao());
+    public AutorizacaoCompletaResponseDto execute(CancelamentoContext context) {
+        log.info("Iniciando cancelamento de autorização {}", context.idAutorizacao());
 
-        var idAutorizacaoStr = request.getIdAutorizacao();
+        var idAutorizacaoStr = context.idAutorizacao();
 
         var idParticaoAutorizacao = ReversibleUUIDv7.extract(UUID.fromString(idAutorizacaoStr));
 
         var autorizacao = obterAutorizacaoPorIdEParticao(idAutorizacaoStr, idParticaoAutorizacao);
-        var idProdutoAutorizacao = autorizacao.getTipoProduto();
-        request.setTipoProdutoDoIdAutorizacao(idProdutoAutorizacao);
 
-        cancelamentoValidator.validar(request);
+        var contextoValidado = context.comProdutoAutorizacao(autorizacao.getTipoProduto());
+        cancelamentoValidator.validar(contextoValidado);
+
+        CancelarAutorizacaoRequest dados = context.dados();
 
         autorizacao.setStatus(5); // cancelada
         var dadosCancelamento = new Cancelamento();
 
         var dataHoraCancelamento = LocalDateTime.now();
         dadosCancelamento.setDataHoraCancelamento(dataHoraCancelamento);
-        dadosCancelamento.setCodigoCanalCancelamento(request.getCodigoCanalCancelamento());
-        dadosCancelamento.setIdPessoaCancelamento(request.getIdPessoaCancelamento());
+        dadosCancelamento.setCodigoCanalCancelamento(dados.codigoCanalCancelamento());
+        dadosCancelamento.setIdPessoaCancelamento(dados.idPessoaCancelamento());
 
         autorizacao.setDataHoraUltimaAtualizacao(dataHoraCancelamento);
 
-        if (request.getMotivoCancelamento() != null) {
-            dadosCancelamento.setMotivoCancelamento(request.getMotivoCancelamento());
+        if (dados.motivoCancelamento() != null) {
+            dadosCancelamento.setMotivoCancelamento(dados.motivoCancelamento());
         }
 
         autorizacao.setCancelamento(dadosCancelamento);
