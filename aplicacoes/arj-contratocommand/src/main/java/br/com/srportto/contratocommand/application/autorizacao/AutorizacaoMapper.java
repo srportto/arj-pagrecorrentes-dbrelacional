@@ -41,7 +41,7 @@ public interface AutorizacaoMapper {
             autorizacao.setMetadados(request.metadados().toString());
         }
 
-        autorizacao.inicializaCriacao(autorizacao);
+        autorizacao.inicializaCriacao();
 
         var motivo = MotivoStatusAutorizacao.obterMotivoStatusEnumPorIdMotivo(
                 request.tipoJornada().getCodigoJornada());

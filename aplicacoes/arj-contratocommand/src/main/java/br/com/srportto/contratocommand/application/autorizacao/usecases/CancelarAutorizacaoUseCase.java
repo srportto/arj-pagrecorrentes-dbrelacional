@@ -5,6 +5,7 @@ import br.com.srportto.contratocommand.application.defaultservice.cancelamento.C
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
+import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
@@ -49,7 +50,7 @@ public class CancelarAutorizacaoUseCase {
 
         CancelarAutorizacaoRequest dados = context.dados();
 
-        autorizacao.setStatus(5); // cancelada
+        autorizacao.setStatus((int) StatusAutorizacao.CANCELADA.getStatusAutorizacao());
         var dadosCancelamento = new Cancelamento();
 
         var dataHoraCancelamento = LocalDateTime.now();

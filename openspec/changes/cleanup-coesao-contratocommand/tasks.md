@@ -37,15 +37,15 @@
 
 ## 3. Fase 3 — Limpeza de domínio e dead code (eixo E + A3)
 
-- [ ] 3.1 Refatorar `Autorizacao.inicializaCriacao(Autorizacao)` para `inicializaCriacao()` operando sobre `this`; atualizar chamadas no(s) mapper(s).
-- [ ] 3.2 Introduzir conversão de `status` via `StatusAutorizacao` + JPA `@Converter` (análogo a `TipoProdutoConverter`) ou centralizar as constantes; eliminar os literais mágicos `1`/`5`.
-- [ ] 3.3 Resolver a Open Question do valor "ativa" (`1` vs `4`) com o time e aplicar a decisão de forma consistente em código e testes.
-- [ ] 3.4 Tornar `motivoStatus` consistente (sempre derivado de `MotivoStatusAutorizacao`), removendo o texto livre em `inicializaCriacao`.
-- [ ] 3.5 Trocar `@JoinColumn` por `@Column` nos campos básicos de `IdAutorizacao` e `Cancelamento`.
-- [ ] 3.6 Remover `domain/model/ContratoBase` (dead code) ou fazê-lo ser efetivamente usado por `Autorizacao`.
-- [ ] 3.7 Corrigir comentários enganosos: tabela `autorizacoes` ("roles/perfis") e semântica de `frequenciaPagamento` (alinhar com `@Min(1)@Max(4)`).
-- [ ] 3.8 (Opcional) Renomear o UUID interno de `IdAutorizacao.idAutorizacao` para nome não-ambíguo (ex.: `idAutos`/`uuid`) para evitar `getIdAutorizacao().getIdAutorizacao()`.
-- [ ] 3.9 Rodar `mvn clean test` e confirmar verde.
+- [x] 3.1 Refatorar `Autorizacao.inicializaCriacao(Autorizacao)` para `inicializaCriacao()` operando sobre `this`; atualizar chamadas no(s) mapper(s).
+- [x] 3.2 Introduzir conversão de `status` via `StatusAutorizacao` + JPA `@Converter` (análogo a `TipoProdutoConverter`) ou centralizar as constantes; eliminar os literais mágicos `1`/`5`. _(escolhido: usar `StatusAutorizacao.ATIVA/CANCELADA.getStatusAutorizacao()` como fonte da verdade; entidade mantém `Integer status`, sem converter)._
+- [x] 3.3 Resolver a Open Question do valor "ativa" (`1` vs `4`) com o time e aplicar a decisão de forma consistente em código e testes. _(decidido: `ATIVA = 4`)._
+- [x] 3.4 Tornar `motivoStatus` consistente (sempre derivado de `MotivoStatusAutorizacao`), removendo o texto livre em `inicializaCriacao`.
+- [x] 3.5 Trocar `@JoinColumn` por `@Column` nos campos básicos de `IdAutorizacao` e `Cancelamento`.
+- [x] 3.6 Remover `domain/model/ContratoBase` (dead code) ou fazê-lo ser efetivamente usado por `Autorizacao`. _(removido; pacote `domain/model` eliminado)._
+- [x] 3.7 Corrigir comentários enganosos: tabela `autorizacoes` ("roles/perfis") e semântica de `frequenciaPagamento` (alinhar com `@Min(1)@Max(4)`).
+- [ ] 3.8 (Opcional) Renomear o UUID interno de `IdAutorizacao.idAutorizacao` para nome não-ambíguo (ex.: `idAutos`/`uuid`) para evitar `getIdAutorizacao().getIdAutorizacao()`. _(adiado: opcional e de alta dispersão — toca repositório/JPQL e muitos call sites)._
+- [x] 3.9 Rodar `mvn clean test` e confirmar verde. _(94 testes verdes — BUILD SUCCESS)._
 
 ## 4. Fechamento e verificação
 

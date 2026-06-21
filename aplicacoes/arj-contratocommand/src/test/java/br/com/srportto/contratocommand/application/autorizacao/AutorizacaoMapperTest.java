@@ -29,7 +29,7 @@ class AutorizacaoMapperTest {
         assertEquals((short) 2, aut.getFrequenciaPagamento());
         assertNotNull(aut.getIdAutorizacao());
         assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
-        assertEquals(1, aut.getStatus());
+        assertEquals(4, aut.getStatus()); // StatusAutorizacao.ATIVA
         assertEquals("RECEPCAO_SPI_J1", aut.getMotivoStatus());
     }
 
