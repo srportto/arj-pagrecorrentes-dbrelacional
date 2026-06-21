@@ -70,4 +70,22 @@ class CancelarPixAutoUseCaseTest {
 
         assertThrows(BusinessException.class, () -> useCase.execute(request));
     }
+
+    @Test
+    @DisplayName("propaga a exceção quando a reinserção falha após o delete (limite transacional do execute garante rollback)")
+    void rollbackQuandoReinsercaoFalha() {
+        UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest(uuid.toString(), TipoProduto.PIX_AUTO);
+
+        Autorizacao aut = new Autorizacao();
+        aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+        aut.setTipoProduto(TipoProduto.PIX_AUTO);
+        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+        when(repository.save(any())).thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
+
+        // O delete ocorre antes do save; como o save falha e a exceção propaga para fora do
+        // execute() (anotado com @Transactional), o container faz rollback do delete.
+        assertThrows(RuntimeException.class, () -> useCase.execute(request));
+        verify(repository).deleteById(any());
+    }
 }

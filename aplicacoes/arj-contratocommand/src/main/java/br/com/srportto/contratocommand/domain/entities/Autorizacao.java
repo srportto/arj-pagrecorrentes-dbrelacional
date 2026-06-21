@@ -66,7 +66,7 @@ public class Autorizacao {
     @Column(name = "indicador_uso_limite_conta", nullable = false)
     private short indicadorUsoLimiteConta; // 0 - nao utiliza limite de conta, 1 - utiliza limite de conta
 
-    @Column(name = "indicador_tipo_mensageria ", nullable = false)
+    @Column(name = "indicador_tipo_mensageria", nullable = false)
     private short indicadorTipoMensageria; // 0 - nao utiliza mensageria, 1 - utiliza mensageria SPI , 2 ...
 
     @Column(name = "codigo_canal_contratacao", nullable = false)

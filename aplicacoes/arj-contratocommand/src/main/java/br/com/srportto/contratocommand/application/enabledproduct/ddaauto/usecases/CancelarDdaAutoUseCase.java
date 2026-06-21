@@ -8,11 +8,11 @@ import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizac
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
+import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContextException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +29,7 @@ public class CancelarDdaAutoUseCase {
     private final CancelamentoValidator cancelamentoValidator;
 
 
+    @Transactional
     public AutorizacaoCompletaResponseDto execute(CancelarAutorizacaoRequestDto request) {
         log.info("Iniciando cancelamento de autorização DDA {}", request.getIdAutorizacao());
 
@@ -77,11 +78,10 @@ public class CancelarDdaAutoUseCase {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            throw new ApplicationContextException(e.getMessage());
+            throw new ApplicationException(e.getMessage());
         }
     }
 
-    @Transactional
     private Autorizacao transferirParaNovaParticao(Autorizacao autorizacao, Integer novaParticao) {
         UUID idAutorizacaoUuid = autorizacao.getIdAutorizacao().getIdAutorizacao();
         Integer particaoAntiga = autorizacao.getIdAutorizacao().getIdParticaoConta();
