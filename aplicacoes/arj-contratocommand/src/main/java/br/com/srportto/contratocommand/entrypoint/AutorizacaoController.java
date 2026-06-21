@@ -1,8 +1,8 @@
 package br.com.srportto.contratocommand.entrypoint;
 
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoContext;
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoOrquestradorService;
-import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.application.services.cancelamento.CancelamentoOrquestradorService;
+import br.com.srportto.contratocommand.application.services.contratacao.ContratacaoOrquestradorService;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;

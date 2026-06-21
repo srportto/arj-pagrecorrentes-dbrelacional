@@ -2,7 +2,7 @@ package br.com.srportto.contratocommand.application.autorizacao.usecases;
 
 import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
-import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoValidator;
+import br.com.srportto.contratocommand.domain.services.contratacao.ContratacaoValidator;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import lombok.AllArgsConstructor;

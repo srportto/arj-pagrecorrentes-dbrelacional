@@ -1,8 +1,8 @@
 package br.com.srportto.contratocommand.application.autorizacao.usecases;
 
 import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoContext;
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
+import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoValidator;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;

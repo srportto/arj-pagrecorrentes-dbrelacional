@@ -19,19 +19,20 @@
 src/main/java/br/com/srportto/contratocommand/
 ├── ContratocommandApplication.java
 ├── application/
-│   ├── defaultservice/
-│   │   ├── contratacao/      # ContratacaoOrquestradorService, ContratacaoService (Strategy),
-│   │   │   │                 # ContratacaoRule, ContratacaoValidator
-│   │   │   └── rules/        # DataFimVigenciaInvalida, ValorLimiteContrato, MetadadoRule
-│   │   └── cancelamento/     # CancelamentoOrquestradorService, CancelamentoService,
-│   │       │                 # CancelamentoRule, CancelamentoValidator
-│   │       └── rules/        # TipoProdutoCancelamento
+│   ├── services/
+│   │   ├── contratacao/      # ContratacaoOrquestradorService (orquestra strategies por produto)
+│   │   └── cancelamento/     # CancelamentoOrquestradorService
 │   └── enabledproduct/
 │       ├── pixauto/          # PixAutoService, PixAutoMapper, PixAutoRepository, ListarAutorizacoesService
 │       │   └── usecases/     # CriarPixAutoUseCase, CancelarPixAutoUseCase
 │       └── ddaauto/          # DdaAutoService, DdaAutoMapper, DdaAutoRepository
 │           └── usecases/     # CriarDdaAutoUseCase, CancelarDdaAutoUseCase
 ├── domain/
+│   ├── services/             # Regras de negócio por operação:
+│   │   ├── contratacao/      # ContratacaoService (Strategy), ContratacaoRule, ContratacaoValidator
+│   │   │   └── rules/        # DataFimVigenciaInvalida, ValorLimiteContrato, MetadadoRule
+│   │   └── cancelamento/     # CancelamentoService, CancelamentoContext, CancelamentoRule, CancelamentoValidator
+│   │       └── rules/        # TipoProdutoCancelamento
 │   ├── entities/             # Autorizacao, Cancelamento, IdAutorizacao
 │   ├── enums/                # TipoProduto, StatusAutorizacao, MotivoStatusAutorizacao,
 │   │                         # CanaisConhecidosEnum, TipoConta
@@ -59,8 +60,8 @@ O projeto segue **arquitetura hexagonal** com camadas bem isoladas e responsabil
 | Camada | Pacote | Responsabilidade | Exemplos |
 |--------|--------|------------------|----------|
 | **Entrypoint** | `entrypoint/` | Adaptadores de entrada (REST Controllers) | `AutorizacaoController`, DTOs `Request/Response` |
-| **Application** | `application/` | Orquestração de casos de uso e regras de negócio | `PixAutoService`, `ContratacaoOrquestradorService`, `Mappers` |
-| **Domain** | `domain/` | Lógica pura independente de frameworks | `Entidades`, `Enums`, `Utilities`, regras de negócio |
+| **Application** | `application/` | Orquestração de casos de uso e seleção de strategy por produto | `ContratacaoOrquestradorService`, `PixAutoService`, Use Cases, `Mappers` |
+| **Domain** | `domain/` | Lógica de negócio pura independente de frameworks | `Entidades`, `Enums`, `Utilities`, `services/` (validators, rules) |
 | **Shared** | `shared/` | Infraestrutura compartilhada | `Exceções`, `Configurações`, `Interceptadores` |
 
 ### Diagrama de Fluxo

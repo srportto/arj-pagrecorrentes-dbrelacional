@@ -3,7 +3,7 @@ package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.autorizacao.usecases.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.application.autorizacao.usecases.CriarAutorizacaoUseCase;
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
