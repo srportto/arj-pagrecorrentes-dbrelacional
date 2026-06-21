@@ -18,8 +18,8 @@
 - [x] 1.4 Ajustar `CancelamentoValidator`/`Validator` e a `Rule` `TipoProdutoCancelamento` para receber os dois produtos como parâmetros do contexto, sem ler campos injetados no request.
 - [x] 1.5 Padronizar sufixos de DTO (`...Request` / `...Response`) e remover o sufixo divergente; alinhar `CriarAutorizacaoRequest` se necessário. _(sufixo divergente `CancelarAutorizacaoRequestDto`→`CancelarAutorizacaoRequest`; response mantém `ResponseDto` conforme convenção documentada)._
 - [x] 1.6 Converter `tipoProduto` cru: trocar `TipoProduto.valueOf(...)` no mapper por `TipoProduto.obterTipoProdutoEnumPorNome(...)` (lança `BusinessException`/422). _(aplicado já no `AutorizacaoMapper` da fusão)._
-- [ ] 1.7 Refatorar `AutorizacaoCompletaResponseDto` para record; remover o `ObjectMapper` estático interno e o método `from()` manual, movendo o mapeamento entidade→response para MapStruct. _(ADIADO — follow-up aberto: não é requisito da spec; a imutabilidade exigida é só dos request DTOs)._
-- [ ] 1.8 Parar de expor a entidade de domínio `Cancelamento` no response: mapear para um tipo de resposta dedicado (ou campos planos). _(ADIADO junto da 1.7)._
+- [x] 1.7 ~~Refatorar `AutorizacaoCompletaResponseDto` para record; remover o `ObjectMapper` estático interno e o método `from()` manual, movendo o mapeamento entidade→response para MapStruct.~~ **DESCARTADO** por decisão — fora do escopo desta change (não é requisito da spec; a imutabilidade exigida é só dos request DTOs).
+- [x] 1.8 ~~Parar de expor a entidade de domínio `Cancelamento` no response.~~ **DESCARTADO** junto da 1.7.
 - [x] 1.9 Atualizar testes afetados (`AutorizacaoControllerTest`, `TipoProdutoCancelamentoTest`, `CancelamentoValidatorTest`, `AutorizacaoCompletaResponseDtoTest`) para o novo contrato imutável. _(testes do fluxo de cancelamento atualizados; testes do response intactos pois 1.7/1.8 foram adiadas)._
 - [x] 1.10 Rodar `mvn clean test` e confirmar verde. _(94 testes verdes)._
 
@@ -44,7 +44,7 @@
 - [x] 3.5 Trocar `@JoinColumn` por `@Column` nos campos básicos de `IdAutorizacao` e `Cancelamento`.
 - [x] 3.6 Remover `domain/model/ContratoBase` (dead code) ou fazê-lo ser efetivamente usado por `Autorizacao`. _(removido; pacote `domain/model` eliminado)._
 - [x] 3.7 Corrigir comentários enganosos: tabela `autorizacoes` ("roles/perfis") e semântica de `frequenciaPagamento` (alinhar com `@Min(1)@Max(4)`).
-- [ ] 3.8 (Opcional) Renomear o UUID interno de `IdAutorizacao.idAutorizacao` para nome não-ambíguo (ex.: `idAutos`/`uuid`) para evitar `getIdAutorizacao().getIdAutorizacao()`. _(adiado: opcional e de alta dispersão — toca repositório/JPQL e muitos call sites)._
+- [x] 3.8 ~~(Opcional) Renomear o UUID interno de `IdAutorizacao.idAutorizacao`.~~ **DESCARTADO** — opcional e de alta dispersão (repositório/JPQL e muitos call sites).
 - [x] 3.9 Rodar `mvn clean test` e confirmar verde. _(94 testes verdes — BUILD SUCCESS)._
 
 ## 4. Fechamento e verificação
