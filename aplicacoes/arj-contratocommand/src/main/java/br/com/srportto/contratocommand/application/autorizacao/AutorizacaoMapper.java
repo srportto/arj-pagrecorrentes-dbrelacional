@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application.enabledproduct.ddaauto;
+package br.com.srportto.contratocommand.application.autorizacao;
 
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
@@ -9,8 +9,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+/**
+ * Mapper único request→entidade compartilhado por todos os produtos. O mapeamento é idêntico
+ * para PIX_AUTO e DDA_AUTO (mesma entidade {@link Autorizacao}); por isso não há mapper por produto.
+ */
 @Mapper(componentModel = "spring")
-public interface DdaAutoMapper {
+public interface AutorizacaoMapper {
 
     @Mapping(source = "valor", target = "valorAutorizacao")
     @Mapping(source = "frequencia", target = "frequenciaPagamento")
@@ -31,7 +35,7 @@ public interface DdaAutoMapper {
     @AfterMapping
     default void afterMapping(CriarAutorizacaoRequest request, @MappingTarget Autorizacao autorizacao) {
 
-        autorizacao.setTipoProduto(TipoProduto.valueOf(request.tipoProduto()));
+        autorizacao.setTipoProduto(TipoProduto.obterTipoProdutoEnumPorNome(request.tipoProduto()));
 
         if (request.metadados() != null) {
             autorizacao.setMetadados(request.metadados().toString());

@@ -1,9 +1,9 @@
-package br.com.srportto.contratocommand.application.enabledproduct.ddaauto.usecases;
+package br.com.srportto.contratocommand.application.autorizacao.usecases;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoMapper;
+import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoValidator;
-import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoMapper;
-import br.com.srportto.contratocommand.application.enabledproduct.ddaauto.DdaAutoRepository;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
@@ -23,23 +23,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Testes do CriarDdaAutoUseCase")
-class CriarDdaAutoUseCaseTest {
+@DisplayName("Testes do CriarAutorizacaoUseCase")
+class CriarAutorizacaoUseCaseTest {
 
     @Mock
-    private DdaAutoRepository repository;
+    private AutorizacaoRepository repository;
     @Mock
-    private DdaAutoMapper mapper;
+    private AutorizacaoMapper mapper;
     @Mock
     private ContratacaoValidator contratacaoValidator;
 
     @InjectMocks
-    private CriarDdaAutoUseCase useCase;
+    private CriarAutorizacaoUseCase useCase;
 
     @Test
     @DisplayName("valida, mapeia, persiste e retorna o DTO")
     void executa() {
-        CriarAutorizacaoRequest request = TestFixtures.criarRequestDda();
+        CriarAutorizacaoRequest request = TestFixtures.criarRequestPix();
         Autorizacao aut = new Autorizacao();
         aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 10));
         when(mapper.toDomain(request)).thenReturn(aut);

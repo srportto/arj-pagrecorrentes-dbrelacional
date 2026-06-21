@@ -7,9 +7,6 @@ public interface CancelamentoService {
 
    boolean validaCancelamentoSuportado(CancelarAutorizacaoRequestDto request);
 
-
-   default AutorizacaoCompletaResponseDto cancelarAutorizacao(CancelarAutorizacaoRequestDto request) {
-      throw new UnsupportedOperationException("Método cancelarAutorizacao não implementado");
-   }
+   AutorizacaoCompletaResponseDto cancelarAutorizacao(CancelarAutorizacaoRequestDto request);
 
 }

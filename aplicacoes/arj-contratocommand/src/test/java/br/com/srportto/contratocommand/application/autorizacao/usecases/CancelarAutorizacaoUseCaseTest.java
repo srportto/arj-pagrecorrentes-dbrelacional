@@ -1,8 +1,8 @@
-package br.com.srportto.contratocommand.application.enabledproduct.pixauto.usecases;
+package br.com.srportto.contratocommand.application.autorizacao.usecases;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
-import br.com.srportto.contratocommand.application.enabledproduct.pixauto.PixAutoRepository;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -26,18 +26,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Testes do CancelarPixAutoUseCase")
-class CancelarPixAutoUseCaseTest {
+@DisplayName("Testes do CancelarAutorizacaoUseCase")
+class CancelarAutorizacaoUseCaseTest {
 
     private static final int PARTICAO = 50;
 
     @Mock
-    private PixAutoRepository repository;
+    private AutorizacaoRepository repository;
     @Mock
     private CancelamentoValidator cancelamentoValidator;
 
     @InjectMocks
-    private CancelarPixAutoUseCase useCase;
+    private CancelarAutorizacaoUseCase useCase;
 
     @Test
     @DisplayName("cancela: marca status 5, registra cancelamento e persiste na nova partição")

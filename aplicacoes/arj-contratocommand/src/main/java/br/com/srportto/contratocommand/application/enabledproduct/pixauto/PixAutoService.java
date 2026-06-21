@@ -1,9 +1,9 @@
 package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
 
+import br.com.srportto.contratocommand.application.autorizacao.usecases.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.autorizacao.usecases.CriarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoService;
 import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoService;
-import br.com.srportto.contratocommand.application.enabledproduct.pixauto.usecases.CancelarPixAutoUseCase;
-import br.com.srportto.contratocommand.application.enabledproduct.pixauto.usecases.CriarPixAutoUseCase;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
@@ -11,12 +11,16 @@ import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacao
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Strategy de PIX_AUTO: declara o produto suportado e delega aos casos de uso compartilhados.
+ * Não há lógica de persistência/mapeamento aqui — apenas a identidade do produto.
+ */
 @Service
 @AllArgsConstructor
 public class PixAutoService implements ContratacaoService, CancelamentoService {
 
-    private final CriarPixAutoUseCase criarPixAutoUseCase;
-    private final CancelarPixAutoUseCase cancelarPixAutoUseCase;
+    private final CriarAutorizacaoUseCase criarAutorizacaoUseCase;
+    private final CancelarAutorizacaoUseCase cancelarAutorizacaoUseCase;
 
     @Override
     public boolean validaContratacaoSuportada(CriarAutorizacaoRequest request) {
@@ -25,17 +29,17 @@ public class PixAutoService implements ContratacaoService, CancelamentoService {
 
     @Override
     public AutorizacaoCompletaResponseDto criarAutorizacao(CriarAutorizacaoRequest request) {
-        return criarPixAutoUseCase.execute(request);
+        return criarAutorizacaoUseCase.execute(request);
     }
-
 
     @Override
     public boolean validaCancelamentoSuportado(CancelarAutorizacaoRequestDto request) {
-        return request.getProdutoHeaderRequest() != null && TipoProduto.PIX_AUTO.name().equalsIgnoreCase(request.getProdutoHeaderRequest().name());
+        return request.getProdutoHeaderRequest() != null
+                && TipoProduto.PIX_AUTO.name().equalsIgnoreCase(request.getProdutoHeaderRequest().name());
     }
 
     @Override
     public AutorizacaoCompletaResponseDto cancelarAutorizacao(CancelarAutorizacaoRequestDto request) {
-        return cancelarPixAutoUseCase.execute(request);
+        return cancelarAutorizacaoUseCase.execute(request);
     }
 }

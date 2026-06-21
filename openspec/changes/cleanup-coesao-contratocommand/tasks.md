@@ -8,6 +8,8 @@
 - [x] 0.6 Corrigir o nome de coluna com espaço em `Autorizacao` (`indicador_tipo_mensageria ` → `indicador_tipo_mensageria`), validando contra o DDL real antes. _(schema vem da entidade via `ddl-auto: update`; sem DDL externo conflitante)._
 - [x] 0.7 Rodar `mvn clean test` e confirmar verde antes de prosseguir. _(98 testes, 0 falhas, 1 skipped — BUILD SUCCESS)._
 
+> **Nota de execução:** as Fases 1 e 2 foram trocadas na ordem de execução. A fusão Pix/DDA (Fase 2) roda **antes** da normalização de contratos (Fase 1), porque o threading de contexto do cancelamento e o response→mapper recairiam sobre os 4 use cases duplicados que a fusão funde em 2 — fazer a fusão primeiro evita editar tudo em dobro. Estado final idêntico.
+
 ## 1. Fase 1 — Normalizar DTOs e contrato (eixo C/D)
 
 - [ ] 1.1 Converter `CancelarAutorizacaoRequestDto` em record imutável contendo apenas campos de corpo (`codigoCanalCancelamento`, `idPessoaCancelamento`, `motivoCancelamento`); renomear para `CancelarAutorizacaoRequest` conforme convenção de sufixo.
@@ -15,7 +17,7 @@
 - [ ] 1.3 Ajustar `AutorizacaoController.cancelar` para montar o contexto em vez de mutar o DTO via setters.
 - [ ] 1.4 Ajustar `CancelamentoValidator`/`Validator` e a `Rule` `TipoProdutoCancelamento` para receber os dois produtos como parâmetros do contexto, sem ler campos injetados no request.
 - [ ] 1.5 Padronizar sufixos de DTO (`...Request` / `...Response`) e remover o sufixo divergente; alinhar `CriarAutorizacaoRequest` se necessário.
-- [ ] 1.6 Converter `tipoProduto` cru: trocar `TipoProduto.valueOf(...)` no mapper por `TipoProduto.obterTipoProdutoEnumPorNome(...)` (lança `BusinessException`/422).
+- [x] 1.6 Converter `tipoProduto` cru: trocar `TipoProduto.valueOf(...)` no mapper por `TipoProduto.obterTipoProdutoEnumPorNome(...)` (lança `BusinessException`/422). _(aplicado já no `AutorizacaoMapper` da fusão)._
 - [ ] 1.7 Refatorar `AutorizacaoCompletaResponseDto` para record; remover o `ObjectMapper` estático interno e o método `from()` manual, movendo o mapeamento entidade→response para MapStruct.
 - [ ] 1.8 Parar de expor a entidade de domínio `Cancelamento` no response: mapear para um tipo de resposta dedicado (ou campos planos).
 - [ ] 1.9 Atualizar testes afetados (`AutorizacaoControllerTest`, `TipoProdutoCancelamentoTest`, `CancelamentoValidatorTest`, `AutorizacaoCompletaResponseDtoTest`) para o novo contrato imutável.
@@ -23,15 +25,15 @@
 
 ## 2. Fase 2 — Eliminar duplicação Pix/DDA (decisão B1)
 
-- [ ] 2.1 Verificar que `arj-contratoquery` não importa classes de `enabledproduct` do contratocommand antes de fundir (grep cross-app); registrar achado.
-- [ ] 2.2 Criar `AutorizacaoMapper` compartilhado (unifica `PixAutoMapper` + `DdaAutoMapper` idênticos) e remover os dois mappers por produto.
-- [ ] 2.3 Criar `AutorizacaoRepository` compartilhado (unifica `PixAutoRepository` + `DdaAutoRepository`) e atualizar referências.
-- [ ] 2.4 Criar `CriarAutorizacaoUseCase` e `CancelarAutorizacaoUseCase` compartilhados (unificam os use cases por produto, parametrizando log por produto se necessário).
-- [ ] 2.5 Tornar `PixAutoService`/`DdaAutoService` finos: declaram o `TipoProduto` suportado e delegam aos use cases compartilhados; manter implementação de `ContratacaoService`/`CancelamentoService`.
-- [ ] 2.6 Avaliar transformar os métodos `default`-que-lançam-`UnsupportedOperationException` das interfaces Strategy em métodos abstratos (remover o default leaky), conforme requisito de strategy fino.
-- [ ] 2.7 Consolidar os testes duplicados (`PixAutoMapperTest`+`DdaAutoMapperTest`, `Criar/Cancelar{Pix,Dda}UseCaseTest`, `DdaAutoServiceTest`+`PixAutoAutorizacaoServiceTest`) em testes compartilhados do fluxo + testes finos de strategy; garantir que cada cenário previamente coberto continue coberto.
-- [ ] 2.8 Mover o teste `application/pixauto/PixAutoAutorizacaoServiceTest` para o pacote correto e/ou substituí-lo pelos testes consolidados.
-- [ ] 2.9 Rodar `mvn clean test` e confirmar verde; comparar contagem/cobertura de cenários antes vs depois.
+- [x] 2.1 Verificar que `arj-contratoquery` não importa classes de `enabledproduct` do contratocommand antes de fundir (grep cross-app); registrar achado. _(achado: `arj-contratoquery` não existe neste repo — sem acoplamento cross-app)._
+- [x] 2.2 Criar `AutorizacaoMapper` compartilhado (unifica `PixAutoMapper` + `DdaAutoMapper` idênticos) e remover os dois mappers por produto. _(em `application/autorizacao/`)._
+- [x] 2.3 Criar `AutorizacaoRepository` compartilhado (unifica `PixAutoRepository` + `DdaAutoRepository`) e atualizar referências.
+- [x] 2.4 Criar `CriarAutorizacaoUseCase` e `CancelarAutorizacaoUseCase` compartilhados (unificam os use cases por produto, parametrizando log por produto se necessário). _(log usa `request.tipoProduto()`; `@Transactional` no `execute`)._
+- [x] 2.5 Tornar `PixAutoService`/`DdaAutoService` finos: declaram o `TipoProduto` suportado e delegam aos use cases compartilhados; manter implementação de `ContratacaoService`/`CancelamentoService`.
+- [x] 2.6 Avaliar transformar os métodos `default`-que-lançam-`UnsupportedOperationException` das interfaces Strategy em métodos abstratos (remover o default leaky), conforme requisito de strategy fino. _(feito: métodos agora abstratos)._
+- [x] 2.7 Consolidar os testes duplicados (`PixAutoMapperTest`+`DdaAutoMapperTest`, `Criar/Cancelar{Pix,Dda}UseCaseTest`, `DdaAutoServiceTest`+`PixAutoAutorizacaoServiceTest`) em testes compartilhados do fluxo + testes finos de strategy; garantir que cada cenário previamente coberto continue coberto.
+- [x] 2.8 Mover o teste `application/pixauto/PixAutoAutorizacaoServiceTest` para o pacote correto e/ou substituí-lo pelos testes consolidados. _(substituído por `enabledproduct/pixauto/PixAutoServiceTest`)._
+- [x] 2.9 Rodar `mvn clean test` e confirmar verde; comparar contagem/cobertura de cenários antes vs depois. _(94 testes verdes; queda 98→94 = de-duplicação de cenários Pix/DDA idênticos)._
 
 ## 3. Fase 3 — Limpeza de domínio e dead code (eixo E + A3)
 

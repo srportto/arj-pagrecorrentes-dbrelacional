@@ -1,8 +1,7 @@
-package br.com.srportto.contratocommand.application.enabledproduct.pixauto.usecases;
+package br.com.srportto.contratocommand.application.autorizacao.usecases;
 
-
+import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoValidator;
-import br.com.srportto.contratocommand.application.enabledproduct.pixauto.PixAutoRepository;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
@@ -20,19 +19,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Caso de uso único de cancelamento de autorização, compartilhado por todos os produtos.
+ * Marca o status como cancelada, registra os dados de cancelamento e transfere a autorização
+ * para a partição de expurgo via delete+insert, tudo dentro do mesmo limite transacional.
+ */
 @Component
 @AllArgsConstructor
-public class CancelarPixAutoUseCase {
+public class CancelarAutorizacaoUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(CancelarPixAutoUseCase.class);
+    private static final Logger log = LoggerFactory.getLogger(CancelarAutorizacaoUseCase.class);
 
-    private final PixAutoRepository repository;
+    private final AutorizacaoRepository repository;
     private final CancelamentoValidator cancelamentoValidator;
-
 
     @Transactional
     public AutorizacaoCompletaResponseDto execute(CancelarAutorizacaoRequestDto request) {
-        log.info("Iniciando cancelamento de autorização Pix {}", request.getIdAutorizacao());
+        log.info("Iniciando cancelamento de autorização {}", request.getIdAutorizacao());
 
         var idAutorizacaoStr = request.getIdAutorizacao();
 
@@ -74,7 +77,7 @@ public class CancelarPixAutoUseCase {
         try {
             var idAutorizacaoUuid = UUID.fromString(idAutorizacao);
             return repository.findByIdAutorizacaoAndParticao(idAutorizacaoUuid, idParticaoAutorizacao)
-                    .orElseThrow(() -> new BusinessException("Autorização Pix não encontrada com ID: " + idAutorizacao));
+                    .orElseThrow(() -> new BusinessException("Autorização não encontrada com ID: " + idAutorizacao));
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -91,11 +94,11 @@ public class CancelarPixAutoUseCase {
             return repository.save(autorizacao);
         }
 
-        log.info("Transferindo autorização Pix {} da partição {} para partição {}",
+        log.info("Transferindo autorização {} da partição {} para partição {}",
                 idAutorizacaoUuid, particaoAntiga, novaParticao);
 
         // Delete do banco com a chave antiga
-         repository.deleteById(autorizacao.getIdAutorizacao());
+        repository.deleteById(autorizacao.getIdAutorizacao());
 
         // Altera a partição e salva novamente na nova partição
         autorizacao.getIdAutorizacao().setIdParticaoConta(novaParticao);

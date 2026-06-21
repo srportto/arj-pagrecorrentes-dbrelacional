@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application.enabledproduct.ddaauto;
+package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.autorizacao.usecases.CancelarAutorizacaoUseCase;
@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Testes do DdaAutoService")
-class DdaAutoServiceTest {
+@DisplayName("Testes do PixAutoService")
+class PixAutoServiceTest {
 
     @Mock
     private CriarAutorizacaoUseCase criarAutorizacaoUseCase;
@@ -31,13 +31,13 @@ class DdaAutoServiceTest {
     private CancelarAutorizacaoUseCase cancelarAutorizacaoUseCase;
 
     @InjectMocks
-    private DdaAutoService service;
+    private PixAutoService service;
 
     @Test
-    @DisplayName("validaContratacaoSuportada: true só para DDA_AUTO")
+    @DisplayName("validaContratacaoSuportada: true só para PIX_AUTO")
     void validaContratacao() {
-        assertTrue(service.validaContratacaoSuportada(TestFixtures.criarRequestDda()));
-        assertFalse(service.validaContratacaoSuportada(TestFixtures.criarRequestPix()));
+        assertTrue(service.validaContratacaoSuportada(TestFixtures.criarRequestPix()));
+        assertFalse(service.validaContratacaoSuportada(TestFixtures.criarRequestDda()));
         assertFalse(service.validaContratacaoSuportada(TestFixtures.criarRequest(
                 null, BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
@@ -45,7 +45,7 @@ class DdaAutoServiceTest {
     @Test
     @DisplayName("criarAutorizacao delega ao CriarAutorizacaoUseCase")
     void criarDelega() {
-        CriarAutorizacaoRequest request = TestFixtures.criarRequestDda();
+        CriarAutorizacaoRequest request = TestFixtures.criarRequestPix();
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder().build();
         when(criarAutorizacaoUseCase.execute(request)).thenReturn(dto);
 
@@ -53,16 +53,16 @@ class DdaAutoServiceTest {
     }
 
     @Test
-    @DisplayName("validaCancelamentoSuportado: true só para DDA_AUTO")
+    @DisplayName("validaCancelamentoSuportado: true só para PIX_AUTO")
     void validaCancelamento() {
-        assertTrue(service.validaCancelamentoSuportado(TestFixtures.cancelarRequest("id", TipoProduto.DDA_AUTO)));
-        assertFalse(service.validaCancelamentoSuportado(TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO)));
+        assertTrue(service.validaCancelamentoSuportado(TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO)));
+        assertFalse(service.validaCancelamentoSuportado(TestFixtures.cancelarRequest("id", TipoProduto.DDA_AUTO)));
     }
 
     @Test
     @DisplayName("cancelarAutorizacao delega ao CancelarAutorizacaoUseCase")
     void cancelarDelega() {
-        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest("id", TipoProduto.DDA_AUTO);
+        CancelarAutorizacaoRequestDto request = TestFixtures.cancelarRequest("id", TipoProduto.PIX_AUTO);
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder().build();
         when(cancelarAutorizacaoUseCase.execute(request)).thenReturn(dto);
 

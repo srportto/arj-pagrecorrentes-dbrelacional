@@ -7,8 +7,6 @@ public interface ContratacaoService {
 
    boolean validaContratacaoSuportada(CriarAutorizacaoRequest request);
 
-   default AutorizacaoCompletaResponseDto criarAutorizacao(CriarAutorizacaoRequest request) {
-      throw new UnsupportedOperationException("Método criarAutorizacao não implementado");
-   }
+   AutorizacaoCompletaResponseDto criarAutorizacao(CriarAutorizacaoRequest request);
 
 }

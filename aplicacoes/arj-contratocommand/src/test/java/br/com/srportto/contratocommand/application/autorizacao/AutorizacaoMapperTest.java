@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application.enabledproduct.pixauto;
+package br.com.srportto.contratocommand.application.autorizacao;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
@@ -13,14 +13,14 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Testes do PixAutoMapper (impl gerado)")
-class PixAutoMapperTest {
+@DisplayName("Testes do AutorizacaoMapper (impl gerado)")
+class AutorizacaoMapperTest {
 
-    private final PixAutoMapper mapper = new PixAutoMapperImpl();
+    private final AutorizacaoMapper mapper = new AutorizacaoMapperImpl();
 
     @Test
-    @DisplayName("toDomain mapeia campos e o afterMapping aplica produto e inicializaCriacao")
-    void toDomain() {
+    @DisplayName("toDomain mapeia campos e o afterMapping aplica produto e inicializaCriacao (PIX)")
+    void toDomainPix() {
         Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestPix());
 
         assertNotNull(aut);
@@ -31,6 +31,15 @@ class PixAutoMapperTest {
         assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
         assertEquals(1, aut.getStatus());
         assertEquals("RECEPCAO_SPI_J1", aut.getMotivoStatus());
+    }
+
+    @Test
+    @DisplayName("toDomain mapeia produto DDA pelo nome do request")
+    void toDomainDda() {
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestDda());
+
+        assertNotNull(aut);
+        assertEquals(TipoProduto.DDA_AUTO, aut.getTipoProduto());
     }
 
     @Test
