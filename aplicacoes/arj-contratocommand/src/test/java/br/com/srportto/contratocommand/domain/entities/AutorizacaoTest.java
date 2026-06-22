@@ -17,15 +17,15 @@ class AutorizacaoTest {
         Autorizacao autorizacao = new Autorizacao();
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
 
-        Autorizacao resultado = autorizacao.inicializaCriacao(autorizacao);
+        Autorizacao resultado = autorizacao.inicializaCriacao();
 
         assertNotNull(resultado.getIdAutorizacao());
         assertNotNull(resultado.getIdAutorizacao().getIdAutorizacao());
         int particao = resultado.getIdAutorizacao().getIdParticaoConta();
         assertTrue(particao >= 0 && particao < 889, "partição embutida deve estar em 0..888, foi " + particao);
 
-        assertEquals(1, resultado.getStatus());
-        assertNotNull(resultado.getMotivoStatus());
+        assertEquals((int) br.com.srportto.contratocommand.domain.enums.StatusAutorizacao.ATIVA.getStatusAutorizacao(),
+                resultado.getStatus());
         assertEquals(LocalDate.now(), resultado.getDataInicioVigencia());
         assertNotNull(resultado.getDataHoraInclusao());
         assertNotNull(resultado.getDataHoraUltimaAtualizacao());
@@ -41,7 +41,7 @@ class AutorizacaoTest {
         LocalDate fim = LocalDate.of(2030, 1, 1);
         autorizacao.setDataFimVigencia(fim);
 
-        autorizacao.inicializaCriacao(autorizacao);
+        autorizacao.inicializaCriacao();
 
         assertEquals(fim, autorizacao.getDataFimVigencia());
     }

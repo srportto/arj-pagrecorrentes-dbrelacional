@@ -1,11 +1,12 @@
 package br.com.srportto.contratocommand.entrypoint;
 
-import br.com.srportto.contratocommand.application.defaultservice.cancelamento.CancelamentoOrquestradorService;
-import br.com.srportto.contratocommand.application.defaultservice.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.application.services.cancelamento.CancelamentoOrquestradorService;
+import br.com.srportto.contratocommand.application.services.contratacao.ContratacaoOrquestradorService;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -59,13 +60,12 @@ public class AutorizacaoController {
     public ResponseEntity<AutorizacaoCompletaResponseDto> cancelar(
             @PathVariable String idAutorizacao,
             @RequestHeader String tipoProduto,
-            @RequestBody @Valid CancelarAutorizacaoRequestDto request) {
+            @RequestBody @Valid CancelarAutorizacaoRequest dados) {
 
-        request.setIdAutorizacao(idAutorizacao);
         var produto = TipoProduto.obterTipoProdutoEnumPorNome(tipoProduto);
-        request.setProdutoHeaderRequest(produto);
+        var context = CancelamentoContext.doRequest(idAutorizacao, produto, dados);
 
-        AutorizacaoCompletaResponseDto autorizacaoCanceladaResponse = orquestradorCancelamentoService.cancelar(request);
+        AutorizacaoCompletaResponseDto autorizacaoCanceladaResponse = orquestradorCancelamentoService.cancelar(context);
 
         return ResponseEntity.ok(autorizacaoCanceladaResponse);
     }

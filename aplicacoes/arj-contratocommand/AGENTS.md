@@ -9,8 +9,8 @@ API REST de **autorizações de produtos financeiros** (PIX Automático e DDA Au
 
 Leia nesta ordem:
 1. [AutorizacaoController.java](src/main/java/br/com/srportto/contratocommand/entrypoint/AutorizacaoController.java) — os 3 endpoints REST
-2. [ContratacaoOrquestradorService.java](src/main/java/br/com/srportto/contratocommand/application/defaultservice/contratacao/ContratacaoOrquestradorService.java) — orquestração via Strategy
-3. [CriarPixAutoUseCase.java](src/main/java/br/com/srportto/contratocommand/application/enabledproduct/pixauto/usecases/CriarPixAutoUseCase.java) — caso de uso completo (validação → mapper → save)
+2. [ContratacaoOrquestradorService.java](src/main/java/br/com/srportto/contratocommand/application/services/contratacao/ContratacaoOrquestradorService.java) — orquestração via Strategy
+3. [CriarAutorizacaoUseCase.java](src/main/java/br/com/srportto/contratocommand/application/autorizacao/usecases/CriarAutorizacaoUseCase.java) — caso de uso compartilhado (validação → mapper → save)
 4. [Autorizacao.java](src/main/java/br/com/srportto/contratocommand/domain/entities/Autorizacao.java) — entidade de domínio com particionamento
 
 ## Build & Testes
@@ -65,41 +65,41 @@ Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutoriza
 
 ```
 entrypoint/   → AutorizacaoController + DTOs (records imutáveis em contratosrest/)
-application/  → Orquestradores, Services de produto, Use Cases, Mappers, Repositories, Validators
-domain/       → Entidades, Enums, Converters, Utilities (lógica pura, sem frameworks)
+application/  → Orquestradores (services/), Strategies de produto (enabledproduct/), Use Cases, Mappers, Repositories
+domain/       → Entidades, Enums, Converters, Utilities, services/ (regras: validators, rules, contexto) — lógica pura
 shared/       → Exceções, Interceptadores (ApiExceptionHandler), framework de validação
 ```
 
 `application/` divide-se em:
-- `defaultservice/contratacao` e `defaultservice/cancelamento` — orquestração + framework de regras
-- `enabledproduct/pixauto` e `enabledproduct/ddaauto` — implementação por produto
+- `autorizacao/` — componentes **compartilhados** por todos os produtos: `AutorizacaoRepository`, `AutorizacaoMapper` e `usecases/{Criar,Cancelar}AutorizacaoUseCase`
+- `services/contratacao` e `services/cancelamento` — **orquestradores** que selecionam a strategy do produto (as regras de negócio vivem em `domain/services/{contratacao,cancelamento}`)
+- `enabledproduct/pixauto` e `enabledproduct/ddaauto` — **strategies finas** por produto (só declaram o `TipoProduto` e delegam aos use cases compartilhados)
 
 ### Fluxo de uma requisição POST (criar)
 
 ```
 AutorizacaoController.insert()
-  └─ ContratacaoOrquestradorService.criar()            (defaultservice/contratacao)
+  └─ ContratacaoOrquestradorService.criar()            (application/services/contratacao)
        └─ percorre List<ContratacaoService> e chama validaContratacaoSuportada(request)
-            └─ PixAutoService.criarAutorizacao()        (enabledproduct/pixauto)
-                 └─ CriarPixAutoUseCase.execute()       (@Transactional)
+            └─ PixAutoService.criarAutorizacao()        (enabledproduct/pixauto, thin)
+                 └─ CriarAutorizacaoUseCase.execute()   (application/autorizacao, @Transactional)
                       ├─ ContratacaoValidator.validar() ← roda todas as ContratacaoRule
-                      ├─ PixAutoMapper.toDomain()        ← MapStruct + @AfterMapping
+                      ├─ AutorizacaoMapper.toDomain()    ← MapStruct + @AfterMapping
                       │    └─ Autorizacao.inicializaCriacao()  ← gera UUID+partição, defaults
-                      └─ PixAutoRepository.save()
+                      └─ AutorizacaoRepository.save()
 ```
 
-O cancelamento segue o mesmo padrão via `CancelamentoOrquestradorService` + `CancelamentoService` + `CancelarPixAutoUseCase`.
+O cancelamento segue o mesmo padrão via `CancelamentoOrquestradorService` + `CancelamentoService` + `CancelarAutorizacaoUseCase`, que recebe um `CancelamentoContext` imutável (path `idAutorizacao` + header `tipoProduto` + corpo).
 
 ### Strategy Pattern para múltiplos produtos
 
 `ContratacaoOrquestradorService` injeta `List<ContratacaoService>` e seleciona o primeiro cujo `validaContratacaoSuportada(request)` retorna `true`; senão lança `BusinessException` ("Produto nao suportado").
 
-- `PixAutoService` → `CriarPixAutoUseCase` / `CancelarPixAutoUseCase`
-- `DdaAutoService` → `CriarDdaAutoUseCase` / `CancelarDdaAutoUseCase`
+- `PixAutoService` e `DdaAutoService` são **strategies finas**: declaram o `TipoProduto` suportado e delegam aos use cases **compartilhados** `CriarAutorizacaoUseCase` / `CancelarAutorizacaoUseCase` (em `application/autorizacao`). Não há mais Mapper/Repository/UseCase por produto.
 
-`PixAutoService` implementa **as duas** interfaces (`ContratacaoService` e `CancelamentoService`).
+Cada service implementa **as duas** interfaces (`ContratacaoService` e `CancelamentoService`).
 
-**Adicionar um produto novo**: crie um `*Service` que implemente `ContratacaoService` e/ou `CancelamentoService`, mais os Use Cases. O orquestrador o descobre automaticamente via injeção de lista. (Não há `ProdutoStrategyFactory` em `src/` — os arquivos em `docs/strategyProduto/` são apenas exemplos didáticos.)
+**Adicionar um produto novo**: crie um `*Service` fino que implemente `ContratacaoService` e/ou `CancelamentoService`, declarando seu `TipoProduto` e delegando aos use cases compartilhados (sem duplicar mapper/repo/use case). O orquestrador o descobre automaticamente via injeção de lista. (Não há `ProdutoStrategyFactory` em `src/` — os arquivos em `docs/strategyProduto/` são apenas exemplos didáticos.)
 
 ### Framework de validação de regras de negócio
 
@@ -111,8 +111,8 @@ ContratacaoValidator → implements Validator<ContratacaoRule, CriarAutorizacaoR
                        Spring injeta List<ContratacaoRule> automaticamente
 ```
 
-Regras de contratação existentes (`defaultservice/contratacao/rules/`): `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`.
-Regra de cancelamento (`defaultservice/cancelamento/rules/`): `TipoProdutoCancelamento`.
+Regras de contratação existentes (`domain/services/contratacao/rules/`): `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`.
+Regra de cancelamento (`domain/services/cancelamento/rules/`): `TipoProdutoCancelamento`.
 
 **Adicionar regra de criação**: crie um `@Component` que implemente `ContratacaoRule` — é injetado automaticamente no `ContratacaoValidator`.
 
@@ -129,7 +129,7 @@ Chave composta: `IdAutorizacao(UUID idAutorizacao, Integer idParticaoConta)` com
 
 ### Mapeamento de status
 
-`status` na entidade `Autorizacao` é `Integer` (`1 = ATIVO`), **não** enum. O enum `StatusAutorizacao` existe para conversão em `ListarAutorizacoesService`.
+`status` na entidade `Autorizacao` é `Integer`, **não** enum — mas o enum `StatusAutorizacao` é a **fonte da verdade** dos valores: criação grava `ATIVA` (= 4) e cancelamento grava `CANCELADA` (= 5), via `StatusAutorizacao.X.getStatusAutorizacao()` (sem números mágicos).
 
 ### Exceções e códigos HTTP
 
@@ -143,7 +143,7 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 
 ### Convenções
 
-- DTOs são **records imutáveis** (`entrypoint/contratosrest/`) — para alterar, recrie: `new CriarAutorizacaoRequest(...)`. (`tipoProduto` é `String` no request; `metadados` é `JsonNode`.)
+- DTOs de **request** são **records imutáveis** (`entrypoint/contratosrest/`): `CriarAutorizacaoRequest` e `CancelarAutorizacaoRequest`. O cancelamento não muta o request — usa o record `CancelamentoContext` (`domain/services/cancelamento`) para carregar `idAutorizacao` (path), `tipoProduto` (header) e o produto lido do banco como parâmetros explícitos. (`tipoProduto` é `String` no request de criação; `metadados` é `JsonNode`. O response `AutorizacaoCompletaResponseDto` ainda é `@Data @Builder`.)
 - Mappers `@Mapper(componentModel = "spring")` com callbacks `@AfterMapping`.
 - `@Transactional` nos **Use Cases** (não nos Services/Orquestradores).
 - Testes de domínio (`domain/utilities/`) são lógica pura, sem Spring.
@@ -153,7 +153,7 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 1. **Base de URL é `/api/autorizacoes`** (plural). README/diagramas antigos citam `/api/autorizacao`.
 2. **Só existem `PIX_AUTO` e `DDA_AUTO`** — `CARTAO_CREDITO` não existe.
 3. **Partições vão de 900 a 999**, não de 1 a 100.
-4. **`Autorizacao` está em `domain/entities/`**, não em `domain/model/` (lá só existe `ContratoBase`).
+4. **`Autorizacao` está em `domain/entities/`**. (O antigo `domain/model/ContratoBase` — dead code — foi removido junto com o pacote `domain/model`.)
 5. **PostgreSQL obrigatório** — sem fallback H2; dialeto Hibernate específico.
 6. **Records imutáveis** — não tente reatribuir campos; recrie o record.
 

@@ -55,7 +55,7 @@ public enum MotivoStatusAutorizacao {
             }
         }
         throw new IllegalArgumentException(
-                String.format("Motivo de status de autorização %i não conhecido ", codigoMotivo));
+                String.format("Motivo de status de autorização %d não conhecido ", codigoMotivo));
     }
 
 }

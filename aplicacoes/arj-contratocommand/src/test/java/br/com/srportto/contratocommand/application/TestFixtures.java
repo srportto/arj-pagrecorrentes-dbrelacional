@@ -1,8 +1,9 @@
 package br.com.srportto.contratocommand.application;
 
+import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequestDto;
+import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import tools.jackson.databind.JsonNode;
 
@@ -49,13 +50,11 @@ public final class TestFixtures {
                 TipoJornadaAutorizacao.SPI_J1);
     }
 
-    public static CancelarAutorizacaoRequestDto cancelarRequest(String idAutorizacao, TipoProduto produtoHeader) {
-        return CancelarAutorizacaoRequestDto.builder()
-                .idAutorizacao(idAutorizacao)
-                .codigoCanalCancelamento("C1")
-                .idPessoaCancelamento(UUID.randomUUID())
-                .motivoCancelamento("teste cancelamento")
-                .produtoHeaderRequest(produtoHeader)
-                .build();
+    public static CancelarAutorizacaoRequest cancelarDados() {
+        return new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste cancelamento");
+    }
+
+    public static CancelamentoContext cancelarContext(String idAutorizacao, TipoProduto produtoHeader) {
+        return CancelamentoContext.doRequest(idAutorizacao, produtoHeader, cancelarDados());
     }
 }

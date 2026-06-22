@@ -1,0 +1,56 @@
+package br.com.srportto.contratocommand.application.autorizacao;
+
+import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("Testes do AutorizacaoMapper (impl gerado)")
+class AutorizacaoMapperTest {
+
+    private final AutorizacaoMapper mapper = new AutorizacaoMapperImpl();
+
+    @Test
+    @DisplayName("toDomain mapeia campos e o afterMapping aplica produto e inicializaCriacao (PIX)")
+    void toDomainPix() {
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestPix());
+
+        assertNotNull(aut);
+        assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
+        assertEquals(0, aut.getValorAutorizacao().compareTo(new BigDecimal("1000.00")));
+        assertEquals((short) 2, aut.getFrequenciaPagamento());
+        assertNotNull(aut.getIdAutorizacao());
+        assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
+        assertEquals(4, aut.getStatus()); // StatusAutorizacao.ATIVA
+        assertEquals("RECEPCAO_SPI_J1", aut.getMotivoStatus());
+    }
+
+    @Test
+    @DisplayName("toDomain mapeia produto DDA pelo nome do request")
+    void toDomainDda() {
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestDda());
+
+        assertNotNull(aut);
+        assertEquals(TipoProduto.DDA_AUTO, aut.getTipoProduto());
+    }
+
+    @Test
+    @DisplayName("toDomain serializa metadados quando presentes")
+    void toDomainComMetadado() {
+        var meta = new ObjectMapper().readTree("{\"k\":\"v\"}");
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequest(
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta,
+                TipoJornadaAutorizacao.QRC_J2));
+
+        assertNotNull(aut.getMetadados());
+        assertTrue(aut.getMetadados().contains("k"));
+    }
+}

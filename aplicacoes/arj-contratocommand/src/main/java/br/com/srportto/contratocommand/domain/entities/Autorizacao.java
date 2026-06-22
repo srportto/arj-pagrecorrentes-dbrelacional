@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.domain.entities;
 
 import br.com.srportto.contratocommand.domain.converters.TipoProdutoConverter;
+import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "autorizacoes") // tabela que guarda as roles/perfis de usuarios conhecidos da aplicacao
+@Table(name = "autorizacoes") // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
 public class Autorizacao {
 
     @EmbeddedId
@@ -58,7 +59,7 @@ public class Autorizacao {
     private BigDecimal valorLimite;
 
     @Column(name = "frequencia", nullable = false)
-    private short frequenciaPagamento; // 1 - mensal, 2 - bimestral, 3 - trimestral, 4 - semestral, 5 - anual
+    private short frequenciaPagamento; // frequencia de pagamento na faixa 1..4 (ver @Min(1)@Max(4) no request)
 
     @Column(name = "quantidade_dividas_ciclo", nullable = false)
     private short quantidadeDividasCiclo;
@@ -66,7 +67,7 @@ public class Autorizacao {
     @Column(name = "indicador_uso_limite_conta", nullable = false)
     private short indicadorUsoLimiteConta; // 0 - nao utiliza limite de conta, 1 - utiliza limite de conta
 
-    @Column(name = "indicador_tipo_mensageria ", nullable = false)
+    @Column(name = "indicador_tipo_mensageria", nullable = false)
     private short indicadorTipoMensageria; // 0 - nao utiliza mensageria, 1 - utiliza mensageria SPI , 2 ...
 
     @Column(name = "codigo_canal_contratacao", nullable = false)
@@ -96,31 +97,35 @@ public class Autorizacao {
     private String metadados;
 
 
-    public Autorizacao inicializaCriacao(Autorizacao autorizacao){
+    /**
+     * Inicializa esta autorização para criação: gera a chave composta (UUID + partição embutida),
+     * marca o status como ativa (fonte da verdade: {@link StatusAutorizacao#ATIVA}) e aplica os
+     * defaults de datas/indicadores. O {@code motivoStatus} é responsabilidade do mapper (derivado
+     * de {@code MotivoStatusAutorizacao} conforme a jornada), não deste método.
+     */
+    public Autorizacao inicializaCriacao() {
 
-        var idUnicoContaContratante = autorizacao.getIdUnicoContaContratante();
-        var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(idUnicoContaContratante);
-        var idAutorizacao = ReversibleUUIDv7.generate(idParticaoConta);
+        var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(this.idUnicoContaContratante);
+        var idAutorizacaoGerado = ReversibleUUIDv7.generate(idParticaoConta);
         var dataHoraCorrente = LocalDateTime.now();
         var dataCorrente = LocalDate.now();
 
         // Preenchimento PK e valores padrão para criação de nova autorização
-        autorizacao.setIdAutorizacao(new IdAutorizacao());
-        autorizacao.getIdAutorizacao().setIdAutorizacao(idAutorizacao);
-        autorizacao.getIdAutorizacao().setIdParticaoConta(idParticaoConta);
+        this.idAutorizacao = new IdAutorizacao();
+        this.idAutorizacao.setIdAutorizacao(idAutorizacaoGerado);
+        this.idAutorizacao.setIdParticaoConta(idParticaoConta);
 
-        autorizacao.setStatus(1); // ATIVO
-        autorizacao.setMotivoStatus("Autorizacao criada com sucesso");
-        autorizacao.setDataInicioVigencia(dataCorrente);
-        autorizacao.setDataHoraInclusao(dataHoraCorrente);
-        autorizacao.setDataHoraUltimaAtualizacao(dataHoraCorrente);
-        autorizacao.setIndicadorTipoMensageria((short) 0); // não utiliza mensageria
+        this.status = (int) StatusAutorizacao.ATIVA.getStatusAutorizacao();
+        this.dataInicioVigencia = dataCorrente;
+        this.dataHoraInclusao = dataHoraCorrente;
+        this.dataHoraUltimaAtualizacao = dataHoraCorrente;
+        this.indicadorTipoMensageria = (short) 0; // não utiliza mensageria
 
-        if( autorizacao.getDataFimVigencia() == null){
-            autorizacao.setDataFimVigencia(LocalDate.of(9999, 12, 31));
+        if (this.dataFimVigencia == null) {
+            this.dataFimVigencia = LocalDate.of(9999, 12, 31);
         }
 
-        return autorizacao;
+        return this;
     }
 
 }
