@@ -12,6 +12,7 @@ import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompl
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class CancelarAutorizacaoUseCase {
 
     private final AutorizacaoRepository repository;
     private final CancelamentoValidator cancelamentoValidator;
+    private final EntityManager entityManager;
 
     @Transactional
     public AutorizacaoCompletaResponseDto execute(CancelamentoContext context) {
@@ -102,6 +104,13 @@ public class CancelarAutorizacaoUseCase {
 
         // Delete do banco com a chave antiga
         repository.deleteById(autorizacao.getIdAutorizacao());
+
+        // Dentro do mesmo persistence context (@Transactional no execute), o JPA não permite
+        // alterar o @EmbeddedId de uma entidade gerenciada nem fazer merge de uma instância já
+        // removida (ObjectDeletedException). O flush executa o DELETE imediatamente e o detach
+        // desanexa a instância, permitindo reaproveitá-la como nova linha na partição de expurgo.
+        repository.flush();
+        entityManager.detach(autorizacao);
 
         // Altera a partição e salva novamente na nova partição
         autorizacao.getIdAutorizacao().setIdParticaoConta(novaParticao);
