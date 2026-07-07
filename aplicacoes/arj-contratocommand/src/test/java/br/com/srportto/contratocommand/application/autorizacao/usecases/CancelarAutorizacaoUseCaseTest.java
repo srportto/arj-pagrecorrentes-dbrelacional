@@ -10,9 +10,11 @@ import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +24,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,6 +38,8 @@ class CancelarAutorizacaoUseCaseTest {
     private AutorizacaoRepository repository;
     @Mock
     private CancelamentoValidator cancelamentoValidator;
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private CancelarAutorizacaoUseCase useCase;
@@ -58,7 +63,14 @@ class CancelarAutorizacaoUseCaseTest {
         assertNotNull(aut.getCancelamento());
         assertEquals("C1", aut.getCancelamento().getCodigoCanalCancelamento());
         verify(cancelamentoValidator).validar(any(CancelamentoContext.class));
-        verify(repository).save(any());
+
+        // A troca de partição exige delete -> flush -> detach -> save na mesma transação;
+        // sem o flush+detach o merge de instância removida estoura ObjectDeletedException.
+        InOrder inOrder = inOrder(repository, entityManager);
+        inOrder.verify(repository).deleteById(any());
+        inOrder.verify(repository).flush();
+        inOrder.verify(entityManager).detach(aut);
+        inOrder.verify(repository).save(any());
     }
 
     @Test
