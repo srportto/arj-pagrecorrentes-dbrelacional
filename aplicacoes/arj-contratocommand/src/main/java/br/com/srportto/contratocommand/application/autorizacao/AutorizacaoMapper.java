@@ -21,6 +21,10 @@ public interface AutorizacaoMapper {
     @Mapping(source = "quantidadeDividasCiclo", target = "quantidadeDividasCiclo")
     @Mapping(source = "indicadorUsoLimiteConta", target = "indicadorUsoLimiteConta")
     @Mapping(target = "idAutorizacao", ignore = true)
+    // Ignorado para nao deixar o MapStruct gerar um Enum.valueOf implicito (case-sensitive, lanca
+    // IllegalArgumentException nao mapeada); a resolucao real e feita via obterTipoProdutoEnumPorNome
+    // no afterMapping abaixo.
+    @Mapping(target = "tipoProduto", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "motivoStatus", ignore = true)
     @Mapping(target = "dataInicioVigencia", ignore = true)

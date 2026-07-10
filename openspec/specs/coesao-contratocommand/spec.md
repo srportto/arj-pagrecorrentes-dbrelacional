@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Definir as invariantes de coesão e organização da aplicação `contratocommand` que o refactor de limpeza estabeleceu e que trabalhos futuros (incluindo a operação de alteração de contrato) devem manter: cancelamento transacional, exceções do próprio projeto, status via enum, DTOs de request imutáveis sem estado-carteiro, variação por produto em strategy fino sem duplicação, contratos REST preservados, domínio sem dead code e organização em camadas (regras de negócio no domínio em `domain/services`, orquestradores na aplicação em `application/services`).
+Definir as invariantes de coesão e organização da aplicação `contratocommand` que o refactor de limpeza estabeleceu e que trabalhos futuros (incluindo a operação de alteração de contrato) devem manter: cancelamento transacional, exceções do próprio projeto, status via enum, DTOs de request imutáveis sem estado-carteiro, fluxo único compartilhado por produto com variação apenas em rules, contratos REST preservados, domínio sem dead code e organização por feature na aplicação (`application/{contratacao,cancelamento}`, com `AutorizacaoRepository`/`AutorizacaoMapper` compartilhados em `application/autorizacao`) e domínio puro, sem dependências de `entrypoint`/`application` nem anotações Spring.
 
 ## Requirements
 
@@ -62,24 +62,39 @@ Os DTOs de entrada SHALL ser records imutáveis e MUST conter apenas dados receb
 - **WHEN** a regra que compara o produto do header com o produto da autorização é executada
 - **THEN** ambos os valores chegam como parâmetros/contexto explícitos da validação, não como campos previamente injetados no DTO de request
 
-### Requirement: Variação por produto vive em strategy fino, sem duplicação de encanamento
+### Requirement: Fluxo único compartilhado por produto, com variação apenas em rules
 
-A persistência (`Repository`), o mapeamento request→entidade (`Mapper`) e o fluxo de cada operação (`UseCase`) sobre a entidade `Autorizacao` SHALL ser compartilhados entre produtos. Cada produto (PIX_AUTO, DDA_AUTO) MUST ser representado por uma classe de strategy fina que declara o `TipoProduto` suportado e delega ao fluxo compartilhado. Adicionar um novo produto MUST NOT exigir duplicar Mapper, Repository ou UseCases.
+A persistência (`AutorizacaoRepository`), o mapeamento request→entidade (`AutorizacaoMapper`) e o fluxo de cada operação (`CriarAutorizacaoUseCase`, `CancelarAutorizacaoUseCase`) SHALL ser únicos e compartilhados entre produtos (PIX_AUTO, DDA_AUTO). O `AutorizacaoController` SHALL invocar os use cases diretamente, sem camada intermediária de orquestrador ou strategy por produto. A rejeição de produto não suportado na criação SHALL ser feita por uma `ContratacaoRule` (`ProdutoSuportado`) que resolve o `TipoProduto` do request (case-insensitive) e lança `BusinessException` (HTTP 422) preservando a mensagem atual de produto não suportado; essa rule MUST executar antes das demais rules de contratação. Variação de comportamento por produto MUST ser expressa exclusivamente via rules (usando `aceita()`), não via classes de strategy. Adicionar um novo produto MUST NOT exigir duplicar Mapper, Repository ou UseCases.
 
-#### Scenario: Seleção de produto continua via orquestrador
+#### Scenario: Criação com produto suportado
 
-- **WHEN** uma requisição de criação/cancelamento chega com um `tipoProduto` suportado
-- **THEN** o orquestrador seleciona a strategy correspondente e o resultado é idêntico ao comportamento anterior ao refactor
+- **WHEN** uma requisição `POST /api/autorizacoes` chega com `tipoProduto` suportado (ex.: `PIX_AUTO`, em qualquer caixa)
+- **THEN** o controller invoca `CriarAutorizacaoUseCase` diretamente e a resposta é 201, idêntica ao comportamento anterior ao refactor
 
-#### Scenario: Produto não suportado
+#### Scenario: Criação com produto não suportado
 
-- **WHEN** uma requisição chega com `tipoProduto` não suportado
-- **THEN** é lançada `BusinessException` (HTTP 422) com mensagem de produto não suportado
+- **WHEN** uma requisição `POST /api/autorizacoes` chega com `tipoProduto` desconhecido ou nulo
+- **THEN** a rule `ProdutoSuportado` lança `BusinessException` (HTTP 422) com a mensagem de produto não suportado usada antes do refactor
+
+#### Scenario: ProdutoSuportado executa antes das demais rules
+
+- **WHEN** uma requisição de criação com produto desconhecido também viola outra regra de negócio (ex.: data de vigência no passado)
+- **THEN** o erro reportado é o de produto não suportado, pois `ProdutoSuportado` executa primeiro
+
+#### Scenario: Ausência da camada de strategy
+
+- **WHEN** o código da aplicação `contratocommand` é inspecionado
+- **THEN** não existem orquestradores (`ContratacaoOrquestradorService`, `CancelamentoOrquestradorService`), strategies por produto (`PixAutoService`, `DdaAutoService`) nem interfaces de strategy (`ContratacaoService`, `CancelamentoService`)
 
 #### Scenario: Sem duplicação de componentes por produto
 
-- **WHEN** o código da camada de aplicação é inspecionado
-- **THEN** existe um único Mapper, um único Repository e use cases compartilhados para a entidade `Autorizacao`, sem cópias por produto
+- **WHEN** a camada de aplicação é inspecionada
+- **THEN** existe um único Mapper, um único Repository e um único use case por operação para a entidade `Autorizacao`, sem cópias por produto
+
+#### Scenario: Cancelamento com produto divergente
+
+- **WHEN** uma requisição `PATCH /api/autorizacoes/{id}/cancelar` chega com header `tipoProduto` diferente do produto atrelado à autorização
+- **THEN** a rule `TipoProdutoCancelamento` lança `BusinessException` (HTTP 422), como antes do refactor
 
 ### Requirement: Contratos REST públicos preservados
 
@@ -109,26 +124,21 @@ A entidade e seus value objects SHALL estar livres de inicialização que recebe
 - **WHEN** os value objects embutidos (`IdAutorizacao`, `Cancelamento`) são inspecionados
 - **THEN** seus campos básicos usam `@Column` e nenhum nome de coluna contém espaços em branco
 
-### Requirement: Regras de negócio residem no domínio e orquestradores na aplicação
+### Requirement: Organização por feature na aplicação e domínio puro
 
-As regras de negócio de contratação e cancelamento — contratos de strategy (`ContratacaoService`, `CancelamentoService`), validators, rules e o `CancelamentoContext` — SHALL residir na camada de domínio, no pacote `domain/services`, preservando os subpacotes por operação (`contratacao`, `cancelamento`) e seus `rules`. Os orquestradores de seleção por produto (`ContratacaoOrquestradorService`, `CancelamentoOrquestradorService`) SHALL residir na camada de aplicação, em `application/services`, pois representam orquestração de caso de uso. O pacote `application/defaultservice` MUST NOT existir; nenhuma classe MUST declarar pacote ou `import` sob `...application.defaultservice...`. Nenhuma classe da camada de domínio MUST importar a camada de aplicação. A relocação SHALL preservar comportamento, assinaturas públicas e contratos REST — somente a localização e o nome do pacote mudam.
+Os componentes de cada operação SHALL residir agrupados por feature na camada de aplicação: `application/contratacao` (use case de criação, `ContratacaoValidator`, `ContratacaoRule` e suas rules, incluindo `ProdutoSuportado`) e `application/cancelamento` (use case de cancelamento, `CancelamentoContext`, `CancelamentoValidator`, `CancelamentoRule` e suas rules). `AutorizacaoRepository` e `AutorizacaoMapper` SHALL permanecer compartilhados em `application/autorizacao`. Os pacotes `application/services`, `application/enabledproduct`, `application/autorizacao/usecases` e `domain/services` MUST NOT existir. Nenhuma classe da camada de domínio (`domain/`) MUST importar `entrypoint` ou `application`, nem usar estereótipos/anotações Spring — o domínio contém apenas `entities`, `enums`, `converters` e `utilities`. O framework de validação (`shared/validationsetup`) permanece inalterado.
 
-#### Scenario: Regras de negócio estão no domínio
+#### Scenario: Árvore de pacotes organizada por feature
 
 - **WHEN** a árvore de pacotes da aplicação `contratocommand` é inspecionada
-- **THEN** os contratos de strategy, validators, rules e o contexto de cancelamento estão sob `domain/services/{contratacao,cancelamento}` e não existe pacote `application/defaultservice`
+- **THEN** use case, validator, rules (e contexto, no cancelamento) de cada operação estão sob `application/{contratacao,cancelamento}`, o repository e o mapper estão em `application/autorizacao`, e não existem os pacotes `application/services`, `application/enabledproduct`, `application/autorizacao/usecases` e `domain/services`
 
-#### Scenario: Orquestradores permanecem na aplicação
+#### Scenario: Domínio sem dependências de borda ou framework
 
-- **WHEN** a localização dos orquestradores de contratação e cancelamento é inspecionada
-- **THEN** `ContratacaoOrquestradorService` e `CancelamentoOrquestradorService` estão sob `application/services/{contratacao,cancelamento}`
+- **WHEN** as classes sob `domain/` são inspecionadas
+- **THEN** nenhuma importa pacotes de `entrypoint` ou `application` e nenhuma usa anotações Spring (`@Component`, `@Service`, etc.)
 
-#### Scenario: Sem referência ao pacote antigo e sem dependência domínio→aplicação
+#### Scenario: Comportamento preservado após a reorganização
 
-- **WHEN** o código de produção e de teste é compilado
-- **THEN** nenhuma declaração `package` ou `import` referencia `...application.defaultservice...`, nenhuma classe de `domain` importa `application`, e o build compila sem erros
-
-#### Scenario: Comportamento preservado após a relocação
-
-- **WHEN** os fluxos de criação (`POST /api/autorizacoes`) e cancelamento (`PATCH /api/autorizacoes/{id}/cancelar`) são exercitados após a mudança
-- **THEN** o resultado é idêntico ao comportamento anterior, sem alteração de contrato REST, status HTTP ou regra de negócio
+- **WHEN** a suíte de testes é executada após a mudança de pacotes
+- **THEN** todos os testes passam e os contratos REST (endpoints, headers, códigos HTTP e mensagens) permanecem os mesmos

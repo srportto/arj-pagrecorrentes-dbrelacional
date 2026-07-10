@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.application;
 
-import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;

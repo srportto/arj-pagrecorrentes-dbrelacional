@@ -1,13 +1,14 @@
 package br.com.srportto.contratocommand.entrypoint;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
-import br.com.srportto.contratocommand.application.services.cancelamento.CancelamentoOrquestradorService;
-import br.com.srportto.contratocommand.application.services.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.contratacao.CriarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,18 +27,20 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do AutorizacaoController")
 class AutorizacaoControllerTest {
 
     @Mock
-    private ContratacaoOrquestradorService orquestradorContratacaoService;
+    private CriarAutorizacaoUseCase criarAutorizacaoUseCase;
     @Mock
-    private CancelamentoOrquestradorService orquestradorCancelamentoService;
+    private CancelarAutorizacaoUseCase cancelarAutorizacaoUseCase;
 
     @InjectMocks
     private AutorizacaoController controller;
@@ -48,20 +51,20 @@ class AutorizacaoControllerTest {
     }
 
     @Test
-    @DisplayName("insert delega ao orquestrador e responde 201 com Location")
+    @DisplayName("insert delega ao CriarAutorizacaoUseCase e responde 201 com Location")
     void insertRetornaCreated() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
         CriarAutorizacaoRequest request = TestFixtures.criarRequestPix();
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder()
                 .idAutorizacao(UUID.randomUUID())
                 .build();
-        when(orquestradorContratacaoService.criar(any(CriarAutorizacaoRequest.class))).thenReturn(dto);
+        when(criarAutorizacaoUseCase.execute(any(CriarAutorizacaoRequest.class))).thenReturn(dto);
 
         ResponseEntity<AutorizacaoCompletaResponseDto> resp = controller.insert(request, "SPI_J1");
 
         assertEquals(HttpStatus.CREATED, resp.getStatusCode());
         assertSame(dto, resp.getBody());
-        verify(orquestradorContratacaoService).criar(any(CriarAutorizacaoRequest.class));
+        verify(criarAutorizacaoUseCase).execute(any(CriarAutorizacaoRequest.class));
     }
 
     @Test
@@ -69,7 +72,7 @@ class AutorizacaoControllerTest {
     void cancelarRetornaOk() {
         CancelarAutorizacaoRequest dados = new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste");
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder().build();
-        when(orquestradorCancelamentoService.cancelar(any())).thenReturn(dto);
+        when(cancelarAutorizacaoUseCase.execute(any())).thenReturn(dto);
 
         ResponseEntity<AutorizacaoCompletaResponseDto> resp =
                 controller.cancelar("550e8400-e29b-41d4-a716-446655440000", "PIX_AUTO", dados);
@@ -78,9 +81,20 @@ class AutorizacaoControllerTest {
         assertSame(dto, resp.getBody());
 
         ArgumentCaptor<CancelamentoContext> captor = ArgumentCaptor.forClass(CancelamentoContext.class);
-        verify(orquestradorCancelamentoService).cancelar(captor.capture());
+        verify(cancelarAutorizacaoUseCase).execute(captor.capture());
         assertEquals("550e8400-e29b-41d4-a716-446655440000", captor.getValue().idAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, captor.getValue().tipoProduto());
         assertSame(dados, captor.getValue().dados());
+    }
+
+    @Test
+    @DisplayName("cancelar com header tipoProduto desconhecido lança BusinessException antes de chamar o use case")
+    void cancelarComTipoProdutoDesconhecidoLancaAntesDoUseCase() {
+        CancelarAutorizacaoRequest dados = new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste");
+
+        assertThrows(BusinessException.class,
+                () -> controller.cancelar("550e8400-e29b-41d4-a716-446655440000", "CARTAO_CREDITO", dados));
+
+        verifyNoInteractions(cancelarAutorizacaoUseCase);
     }
 }

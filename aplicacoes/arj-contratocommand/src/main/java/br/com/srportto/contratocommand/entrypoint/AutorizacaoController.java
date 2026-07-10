@@ -1,8 +1,8 @@
 package br.com.srportto.contratocommand.entrypoint;
 
-import br.com.srportto.contratocommand.domain.services.cancelamento.CancelamentoContext;
-import br.com.srportto.contratocommand.application.services.cancelamento.CancelamentoOrquestradorService;
-import br.com.srportto.contratocommand.application.services.contratacao.ContratacaoOrquestradorService;
+import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.contratacao.CriarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
@@ -21,8 +21,8 @@ import java.net.URI;
 @AllArgsConstructor
 public class AutorizacaoController {
 
-    private final ContratacaoOrquestradorService orquestradorContratacaoService;
-    private final CancelamentoOrquestradorService orquestradorCancelamentoService;
+    private final CriarAutorizacaoUseCase criarAutorizacaoUseCase;
+    private final CancelarAutorizacaoUseCase cancelarAutorizacaoUseCase;
 
     @PostMapping
     public ResponseEntity<AutorizacaoCompletaResponseDto> insert(
@@ -46,7 +46,7 @@ public class AutorizacaoController {
                 requestRecord.idPessoaRecebedora(),
                 requestRecord.metadados(),
                 jornada);
-        AutorizacaoCompletaResponseDto autorizadaResponse = orquestradorContratacaoService.criar(request);
+        AutorizacaoCompletaResponseDto autorizadaResponse = criarAutorizacaoUseCase.execute(request);
 
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
@@ -65,7 +65,7 @@ public class AutorizacaoController {
         var produto = TipoProduto.obterTipoProdutoEnumPorNome(tipoProduto);
         var context = CancelamentoContext.doRequest(idAutorizacao, produto, dados);
 
-        AutorizacaoCompletaResponseDto autorizacaoCanceladaResponse = orquestradorCancelamentoService.cancelar(context);
+        AutorizacaoCompletaResponseDto autorizacaoCanceladaResponse = cancelarAutorizacaoUseCase.execute(context);
 
         return ResponseEntity.ok(autorizacaoCanceladaResponse);
     }
