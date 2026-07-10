@@ -49,6 +49,16 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Exception genérica não mapeada → 500 no layout padrão da API")
+    void erroNaoMapeado500() {
+        ResponseEntity<LayoutErrosApiResponse> resp =
+                handler.erroInesperadoResponseEntity(new NullPointerException("npe inesperada"), req());
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
+        assertEquals("npe inesperada", resp.getBody().getMessage());
+    }
+
+    @Test
     @DisplayName("MethodArgumentNotValidException → 422 com ocorrências por campo")
     void validacao422() {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);

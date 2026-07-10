@@ -1,5 +1,7 @@
 package br.com.srportto.contratocommand.domain.enums;
 
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+
 public enum MotivoStatusAutorizacao {
     RECEPCAO_SPI_J1(1L, "Recepcao de PAIN.009 , jornada 1"),
     LEITURA_QRC_J2(2L, "Leitura do QR Code na jornada 2"),
@@ -54,7 +56,7 @@ public enum MotivoStatusAutorizacao {
                 return motivoStatusEnum;
             }
         }
-        throw new IllegalArgumentException(
+        throw new BusinessException(
                 String.format("Motivo de status de autorização %d não conhecido ", codigoMotivo));
     }
 

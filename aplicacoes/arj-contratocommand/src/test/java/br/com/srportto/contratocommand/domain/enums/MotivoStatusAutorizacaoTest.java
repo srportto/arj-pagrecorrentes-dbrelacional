@@ -1,5 +1,6 @@
 package br.com.srportto.contratocommand.domain.enums;
 
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,9 +21,9 @@ class MotivoStatusAutorizacaoTest {
     }
 
     @Test
-    @DisplayName("obterJornadaAutorizacaoEnumPorIdJornada lança IllegalArgumentException para código desconhecido")
+    @DisplayName("obterJornadaAutorizacaoEnumPorIdJornada lança BusinessException para código desconhecido")
     void lancaParaDesconhecido() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BusinessException.class,
                 () -> MotivoStatusAutorizacao.obterMotivoStatusEnumPorIdMotivo(9999L));
     }
 

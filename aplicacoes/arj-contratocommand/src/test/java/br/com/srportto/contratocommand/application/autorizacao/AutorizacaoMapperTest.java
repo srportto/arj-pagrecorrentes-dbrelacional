@@ -4,6 +4,7 @@ import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
@@ -40,6 +41,24 @@ class AutorizacaoMapperTest {
 
         assertNotNull(aut);
         assertEquals(TipoProduto.DDA_AUTO, aut.getTipoProduto());
+    }
+
+    @Test
+    @DisplayName("toDomain resolve tipoProduto com case diferente via obterTipoProdutoEnumPorNome (nao usa Enum.valueOf implicito)")
+    void toDomainProdutoCaseInsensitivo() {
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequest(
+                "pix_auto", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
+                TipoJornadaAutorizacao.QRC_J2));
+
+        assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
+    }
+
+    @Test
+    @DisplayName("toDomain lança BusinessException (nao IllegalArgumentException) para produto desconhecido")
+    void toDomainProdutoDesconhecidoLancaBusinessException() {
+        assertThrows(BusinessException.class, () -> mapper.toDomain(TestFixtures.criarRequest(
+                "CARTAO_CREDITO", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
+                TipoJornadaAutorizacao.QRC_J2)));
     }
 
     @Test
