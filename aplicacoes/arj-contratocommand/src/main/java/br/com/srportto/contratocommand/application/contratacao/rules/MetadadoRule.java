@@ -30,7 +30,7 @@ public class MetadadoRule implements ContratacaoRule {
 
     private void validarNomePessoaRecebedora(JsonNode metadados) {
         if (metadados.has("nomePessoaRecebedora")) {
-            String nome = metadados.get("nomePessoaRecebedora").asText();
+            String nome = metadados.get("nomePessoaRecebedora").asString();
             if (nome != null && nome.length() > MAX_LENGTH) {
                 throw new BusinessException(
                         String.format(
@@ -42,7 +42,7 @@ public class MetadadoRule implements ContratacaoRule {
 
     private void validarApelidoPessoaRecebedora(JsonNode metadados) {
         if (metadados.has("apelidoPessoaRecebedora")) {
-            String apelido = metadados.get("apelidoPessoaRecebedora").asText();
+            String apelido = metadados.get("apelidoPessoaRecebedora").asString();
             if (apelido != null && apelido.length() > MAX_LENGTH) {
                 throw new BusinessException(
                         String.format(

@@ -43,7 +43,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 | Componente | Versão | Notas |
 |---|---|---|
 | Java | 25 | `void main()`; records imutáveis |
-| Spring Boot | 4.0.4 | Web MVC, Data JPA, Validation, Actuator |
+| Spring Boot | 4.0.7 | Web MVC, Data JPA, Validation, Actuator |
 | Jetty | embutido | Container web (Tomcat excluído no `pom.xml`) |
 | Lombok | 1.18.40 | `@Data`, `@Getter`, `@Builder`, `@AllArgsConstructor` |
 | PostgreSQL | 16+ | Particionamento com `pg_partman` + `pg_cron` |

@@ -43,7 +43,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 | Componente | Versão | Notas |
 |---|---|---|
 | Java | 25 | `void main()`; records imutáveis |
-| Spring Boot | 4.0.4 | Web MVC, Data JPA, Validation |
+| Spring Boot | 4.0.7 | Web MVC, Data JPA, Validation |
 | Lombok | 1.18.40 | `@Data`, `@Getter`, `@Setter`, `@AllArgsConstructor` |
 | MapStruct | 1.5.5.Final | Mapeamento DTO↔Entity com `@AfterMapping` |
 | Yasson | 3.0.3 | Jakarta JSON Binding |

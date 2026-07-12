@@ -29,7 +29,7 @@ public class ProdutoSuportado implements ContratacaoRule {
 
         boolean suportado = tipoProduto != null && Arrays.stream(TipoProduto.values())
                 .filter(produto -> produto.name().equalsIgnoreCase(tipoProduto))
-                .anyMatch(TipoProduto::habilitadoParaContratar);
+                .anyMatch(produto -> produto.habilitadoParaContratar());
 
         if (!suportado) {
             throw new BusinessException("Produto nao suportado ou invalido (tipoProduto: " + tipoProduto + ")");

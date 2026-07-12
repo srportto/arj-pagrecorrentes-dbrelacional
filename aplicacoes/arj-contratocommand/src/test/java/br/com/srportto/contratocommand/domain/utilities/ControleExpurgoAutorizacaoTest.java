@@ -188,14 +188,4 @@ class ControleExpurgoAutorizacaoTest {
     assertTrue(faltantes.size() <= 1,
         "Deveria faltar no máximo 1 partição. Faltantes: " + faltantes);
   }
-
-  private static String getMissingPartitions(Set<Integer> geradas) {
-    Set<Integer> faltantes = new HashSet<>();
-    for (int i = 900; i <= 999; i++) {
-      if (!geradas.contains(i)) {
-        faltantes.add(i);
-      }
-    }
-    return faltantes.toString();
-  }
 }
