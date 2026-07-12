@@ -7,9 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-//?---------------------------------------------------------------------------------------
-//? Essa classe eh usada para montar a "cara" das mensagens de erro do projeto para api
-//?---------------------------------------------------------------------------------------
 @Builder
 @Data
 @NoArgsConstructor

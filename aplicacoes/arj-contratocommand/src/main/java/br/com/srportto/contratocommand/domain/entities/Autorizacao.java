@@ -110,7 +110,6 @@ public class Autorizacao {
         var dataHoraCorrente = LocalDateTime.now();
         var dataCorrente = LocalDate.now();
 
-        // Preenchimento PK e valores padrão para criação de nova autorização
         this.idAutorizacao = new IdAutorizacao();
         this.idAutorizacao.setIdAutorizacao(idAutorizacaoGerado);
         this.idAutorizacao.setIdParticaoConta(idParticaoConta);
@@ -119,7 +118,7 @@ public class Autorizacao {
         this.dataInicioVigencia = dataCorrente;
         this.dataHoraInclusao = dataHoraCorrente;
         this.dataHoraUltimaAtualizacao = dataHoraCorrente;
-        this.indicadorTipoMensageria = (short) 0; // não utiliza mensageria
+        this.indicadorTipoMensageria = (short) 0;
 
         if (this.dataFimVigencia == null) {
             this.dataFimVigencia = LocalDate.of(9999, 12, 31);

@@ -1,20 +1,20 @@
 package br.com.srportto.contratocommand.application.contratacao;
 
-import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoMapper;
-import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.AutorizacaoMapper;
+import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Caso de uso único de criação de autorização, compartilhado por todos os produtos. A variação
  * por produto vive nas regras de negócio ({@link ContratacaoValidator}), não aqui.
  */
-@Component
+@Service
 @AllArgsConstructor
 public class CriarAutorizacaoUseCase {
 

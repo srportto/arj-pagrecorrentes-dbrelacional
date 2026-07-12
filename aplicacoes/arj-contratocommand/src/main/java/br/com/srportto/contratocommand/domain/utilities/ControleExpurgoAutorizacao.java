@@ -40,12 +40,7 @@ public class ControleExpurgoAutorizacao {
             throw new BusinessException("A particao de expurgo selecionada para delete e a mesma que a particao de escrita atual, o que pode causar perda de dados. Data de referencia: " + dataReferenciaCalculoParticaoExpurgo);
         }
 
-        //calcula diferenca para a próxima partição de expurgo
-        //int particaoExpurgoMaxima = 999;
-        //int diferencaParaProximaParticao = (particaoExpurgoMaxima - particaoExpurgoWriteMoment + 1) % 100;
-
         return particaoExpurgoDelete;
-
     }
 
 }

@@ -2,11 +2,11 @@ package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.shared.validationsetup.Validator;
 import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Component
+@Service
 @AllArgsConstructor
 public class CancelamentoValidator implements Validator<CancelamentoRule, CancelamentoContext> {
 

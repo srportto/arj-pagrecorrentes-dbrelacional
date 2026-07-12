@@ -28,7 +28,8 @@ public class ProdutoSuportado implements ContratacaoRule {
         var tipoProduto = request.tipoProduto();
 
         boolean suportado = tipoProduto != null && Arrays.stream(TipoProduto.values())
-                .anyMatch(produto -> produto.name().equalsIgnoreCase(tipoProduto));
+                .filter(produto -> produto.name().equalsIgnoreCase(tipoProduto))
+                .anyMatch(TipoProduto::habilitadoParaContratar);
 
         if (!suportado) {
             throw new BusinessException("Produto nao suportado ou invalido (tipoProduto: " + tipoProduto + ")");

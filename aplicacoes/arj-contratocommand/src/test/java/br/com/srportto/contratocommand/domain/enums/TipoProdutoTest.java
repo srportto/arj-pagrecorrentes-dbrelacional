@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Testes do enum TipoProduto")
 class TipoProdutoTest {
@@ -41,5 +42,19 @@ class TipoProdutoTest {
     void exposeCodigo() {
         assertEquals(1L, TipoProduto.PIX_AUTO.getTipoProduto());
         assertEquals(2L, TipoProduto.DDA_AUTO.getTipoProduto());
+    }
+
+    @Test
+    @DisplayName("PIX_AUTO e DDA_AUTO estão habilitados para contratar")
+    void habilitadosParaContratar() {
+        assertTrue(TipoProduto.PIX_AUTO.habilitadoParaContratar());
+        assertTrue(TipoProduto.DDA_AUTO.habilitadoParaContratar());
+    }
+
+    @Test
+    @DisplayName("PIX_AUTO e DDA_AUTO estão habilitados para cancelar")
+    void habilitadosParaCancelar() {
+        assertTrue(TipoProduto.PIX_AUTO.habilitadoParaCancelar());
+        assertTrue(TipoProduto.DDA_AUTO.habilitadoParaCancelar());
     }
 }

@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.application.cancelamento;
 
-import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -14,7 +14,7 @@ import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -25,7 +25,7 @@ import java.util.UUID;
  * Marca o status como cancelada, registra os dados de cancelamento e transfere a autorização
  * para a partição de expurgo via delete+insert, tudo dentro do mesmo limite transacional.
  */
-@Component
+@Service
 @AllArgsConstructor
 public class CancelarAutorizacaoUseCase {
 
@@ -66,11 +66,9 @@ public class CancelarAutorizacaoUseCase {
 
         autorizacao.setCancelamento(dadosCancelamento);
 
-        // Captura partição de expurgo do momento do cancelamento
         var dataCancelamento = dataHoraCancelamento.toLocalDate();
         var particaoExpurgoWrite = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataCancelamento);
 
-        // Como a chave composta foi modificada, precisamos fazer delete+insert
         var autorizacaoCanceladaEmNovaParticao = transferirParaNovaParticao(autorizacao, particaoExpurgoWrite);
 
         return AutorizacaoCompletaResponseDto.from(autorizacaoCanceladaEmNovaParticao);
@@ -92,7 +90,6 @@ public class CancelarAutorizacaoUseCase {
         UUID idAutorizacaoUuid = autorizacao.getIdAutorizacao().getIdAutorizacao();
         Integer particaoAntiga = autorizacao.getIdAutorizacao().getIdParticaoConta();
 
-        // Se a partição não mudou, apenas persistir normalmente
         if (novaParticao.equals(particaoAntiga)) {
             return repository.save(autorizacao);
         }
@@ -100,7 +97,6 @@ public class CancelarAutorizacaoUseCase {
         log.info("Transferindo autorização {} da partição {} para partição {}",
                 idAutorizacaoUuid, particaoAntiga, novaParticao);
 
-        // Delete do banco com a chave antiga
         repository.deleteById(autorizacao.getIdAutorizacao());
 
         // Dentro do mesmo persistence context (@Transactional no execute), o JPA não permite
@@ -110,7 +106,6 @@ public class CancelarAutorizacaoUseCase {
         repository.flush();
         entityManager.detach(autorizacao);
 
-        // Altera a partição e salva novamente na nova partição
         autorizacao.getIdAutorizacao().setIdParticaoConta(novaParticao);
         return repository.save(autorizacao);
     }

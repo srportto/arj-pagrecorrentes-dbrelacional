@@ -1,8 +1,8 @@
 package br.com.srportto.contratocommand.application.contratacao;
 
+import br.com.srportto.contratocommand.application.AutorizacaoMapper;
+import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoMapper;
-import br.com.srportto.contratocommand.application.autorizacao.AutorizacaoRepository;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
