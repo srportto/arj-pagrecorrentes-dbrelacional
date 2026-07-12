@@ -2,8 +2,6 @@ package br.com.srportto.contratoquery.domain.entities;
 
 import br.com.srportto.contratoquery.domain.converters.TipoProdutoConverter;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
-import br.com.srportto.contratoquery.domain.utilities.IdContaUUIDPartitionDistributor;
-import br.com.srportto.contratoquery.domain.utilities.ReversibleUUIDv7;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -20,15 +18,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 @Entity
 @Table(name = "autorizacoes")
 public class Autorizacao {
@@ -103,29 +97,4 @@ public class Autorizacao {
     @Column(name = "metadados", nullable = false, unique = false, columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private String metadados;
-
-    public Autorizacao inicializaCriacao(Autorizacao autorizacao) {
-        var idUnicoContaContratante = autorizacao.getIdUnicoContaContratante();
-        var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(idUnicoContaContratante);
-        var idAutorizacao = ReversibleUUIDv7.generate(idParticaoConta);
-        var dataHoraCorrente = LocalDateTime.now();
-        var dataCorrente = LocalDate.now();
-
-        autorizacao.setIdAutorizacao(new IdAutorizacao());
-        autorizacao.getIdAutorizacao().setIdAutorizacao(idAutorizacao);
-        autorizacao.getIdAutorizacao().setIdParticaoConta(idParticaoConta);
-
-        autorizacao.setStatus(1);
-        autorizacao.setMotivoStatus("Autorizacao criada com sucesso");
-        autorizacao.setDataInicioVigencia(dataCorrente);
-        autorizacao.setDataHoraInclusao(dataHoraCorrente);
-        autorizacao.setDataHoraUltimaAtualizacao(dataHoraCorrente);
-        autorizacao.setIndicadorTipoMensageria((short) 0);
-
-        if (autorizacao.getDataFimVigencia() == null) {
-            autorizacao.setDataFimVigencia(LocalDate.of(9999, 12, 31));
-        }
-
-        return autorizacao;
-    }
 }

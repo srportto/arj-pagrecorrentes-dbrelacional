@@ -25,7 +25,7 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
-Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest`, `ControleExpurgoAutorizacaoTest` (+ helper `GeraDatasPorParticao`).
+Classes de teste existentes: `ContratocommandApplicationTests`, testes de use cases, validators e rules (`contratacao/` e `cancelamento/`), `AutorizacaoControllerTest`, `AutorizacaoMapperTest`, `ApiExceptionHandlerTest`, `AutorizacaoCompletaResponseDtoTest`, `AutorizacaoTest` e testes de domínio (`ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`, `ReversibleUUIDv7Test`, `AchaQtdeSemanasTest`, `TipoProdutoTest`, `TipoProdutoConverterTest`, `MotivoStatusAutorizacaoTest`). Helpers em `src/test`: `TestFixtures`, `GeraDatasPorParticao` e a utility `AchaQtdeSemanas` (usada apenas por testes — vive no source set de teste, não em `src/main`).
 
 ## Pré-requisitos
 

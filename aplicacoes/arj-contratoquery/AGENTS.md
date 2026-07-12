@@ -25,7 +25,7 @@ mvn test -Dtest=ListarAutorizacoesServiceTest#metodo # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
-Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoesServiceTest`, `ConsultarAutorizacaoServiceTest`, `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `TipoProdutoConverterTest`, `AutorizacaoTest` + testes de enums e utilities.
+Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoesServiceTest`, `ConsultarAutorizacaoServiceTest`, `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `TipoProdutoConverterTest`, `TipoProdutoTest`, `StatusAutorizacaoTest`, `ReversibleUUIDv7Test`.
 
 ## Pré-requisitos
 

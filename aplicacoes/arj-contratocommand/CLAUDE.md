@@ -25,7 +25,7 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
-Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutorizacaoServiceTest`, `ControleExpurgoAutorizacaoTest` (+ helper `GeraDatasPorParticao`). `ListarAutorizacoesServiceTest` foi movido para `arj-contratoquery`.
+Classes de teste existentes: `ContratocommandApplicationTests`, testes de use cases, validators e rules (`contratacao/` e `cancelamento/`), `AutorizacaoControllerTest`, `AutorizacaoMapperTest`, `ApiExceptionHandlerTest`, `AutorizacaoCompletaResponseDtoTest`, `AutorizacaoTest` e testes de domínio (`ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`, `ReversibleUUIDv7Test`, `AchaQtdeSemanasTest`, `TipoProdutoTest`, `TipoProdutoConverterTest`, `MotivoStatusAutorizacaoTest`). Helpers em `src/test`: `TestFixtures`, `GeraDatasPorParticao` e a utility `AchaQtdeSemanas` (usada apenas por testes — vive no source set de teste, não em `src/main`).
 
 ## Pré-requisitos
 
@@ -59,7 +59,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutoriza
 | PATCH | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar. **Header obrigatório `tipoProduto`**. → 200 |
 | GET | `/actuator/health` | Health-check (Actuator) com readiness de banco (indicador `db`). → 200 (UP) / 503 (DOWN) |
 
-> A base é `/api/autorizacoes` (**plural**). As leituras ficam no `arj-contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada — antes `GET /listar`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
+> A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `arj-contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
 
 ## Arquitetura (hexagonal, 4 camadas)
 
