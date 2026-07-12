@@ -29,7 +29,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, `PixAutoAutoriza
 
 ## Pré-requisitos
 
-- **Java 25** (JDK 25+) — usa `void main()` em vez de `public static void main()`
+- **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
 - **PostgreSQL 16+** com `pg_partman` e `pg_cron` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
 - Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):
@@ -71,9 +71,11 @@ shared/       → Exceções, Interceptadores (ApiExceptionHandler), framework d
 ```
 
 `application/` divide-se em:
-- `autorizacao/` — componentes **compartilhados** por todos os produtos: `AutorizacaoRepository`, `AutorizacaoMapper`
+- raiz de `application/` — componentes **compartilhados** por todos os produtos e por ambas as features: `AutorizacaoRepository`, `AutorizacaoMapper`. Não têm subpacote próprio (não são uma feature).
 - `contratacao/` — `CriarAutorizacaoUseCase`, `ContratacaoValidator`, `ContratacaoRule` e `rules/` (inclui `ProdutoSuportado`)
 - `cancelamento/` — `CancelarAutorizacaoUseCase`, `CancelamentoContext`, `CancelamentoValidator`, `CancelamentoRule` e `rules/`
+
+Dentro de cada feature, o estereótipo Spring reflete o papel: `@Service` nos orquestradores (`ContratacaoValidator`, `CancelamentoValidator`, `CriarAutorizacaoUseCase`, `CancelarAutorizacaoUseCase` — a lógica de negócio principal da operação), `@Component` nas rules individuais (estratégias plugáveis, injetadas coletivamente via `List<ContratacaoRule>`/`List<CancelamentoRule>`).
 
 Não há mais orquestradores nem strategies por produto: o controller chama os use cases diretamente, e a variação por produto (incluindo a rejeição de produto desconhecido) vive inteiramente nas rules.
 
@@ -109,7 +111,7 @@ ContratacaoValidator → implements Validator<ContratacaoRule, CriarAutorizacaoR
 Regras de contratação existentes (`application/contratacao/rules/`): `ProdutoSuportado` (roda primeiro), `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`.
 Regra de cancelamento (`application/cancelamento/rules/`): `TipoProdutoCancelamento`.
 
-**Adicionar regra de criação**: crie um `@Component` que implemente `ContratacaoRule` — é injetado automaticamente no `ContratacaoValidator`. Use `@Order` se a regra precisar rodar antes/depois de outra.
+**Adicionar regra de criação**: crie um `@Component` (não `@Service` — rules são estratégias plugáveis, não o orquestrador) que implemente `ContratacaoRule` — é injetado automaticamente no `ContratacaoValidator`. Use `@Order` se a regra precisar rodar antes/depois de outra.
 
 ### Particionamento temporal (crítico)
 

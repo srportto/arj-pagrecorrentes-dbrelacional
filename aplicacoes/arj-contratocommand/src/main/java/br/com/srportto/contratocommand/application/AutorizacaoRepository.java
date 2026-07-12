@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application.autorizacao;
+package br.com.srportto.contratocommand.application;
 
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
@@ -13,8 +13,8 @@ import java.util.UUID;
 
 /**
  * Repositório único da entidade {@link Autorizacao}, compartilhado por todos os produtos
- * (PIX_AUTO, DDA_AUTO). A variação por produto vive nas strategies e nas regras de negócio,
- * não na persistência — todos os produtos gravam na mesma tabela {@code autorizacoes}.
+ * (PIX_AUTO, DDA_AUTO). A variação por produto vive nas rules, não na persistência — todos
+ * os produtos gravam na mesma tabela {@code autorizacoes}.
  */
 @Repository
 public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {

@@ -7,7 +7,6 @@ public class IdContaUUIDPartitionDistributor {
 
   // Metodo ultra rápido (bom o suficiente para a maioria dos casos)
     public static int getPartitionFast(UUID uuid) {
-        // Pega o hashCode (32 bits), garante que é positivo e tira o módulo
         int hash = uuid.hashCode();
         return Math.abs(hash) % 889;
     }

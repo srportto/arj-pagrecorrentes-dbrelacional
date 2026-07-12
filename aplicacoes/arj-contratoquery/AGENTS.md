@@ -29,7 +29,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 
 ## Pré-requisitos
 
-- **Java 25** (JDK 25+) — usa `void main()` em vez de `public static void main()`
+- **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
 - **PostgreSQL 16+** com `pg_partman` e `pg_cron` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
 - Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):

@@ -1,6 +1,5 @@
-package br.com.srportto.contratocommand.application.autorizacao;
+package br.com.srportto.contratocommand.application;
 
-import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;

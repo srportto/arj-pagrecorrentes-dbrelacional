@@ -1,21 +1,30 @@
 package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.cancelamento.rules.ProdutoSuportadoCancelamento;
 import br.com.srportto.contratocommand.application.cancelamento.rules.TipoProdutoCancelamento;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do CancelamentoValidator")
 class CancelamentoValidatorTest {
 
     private final CancelamentoValidator validator =
             new CancelamentoValidator(List.of(new TipoProdutoCancelamento()));
+
+    private final CancelamentoValidator validatorComOrdemDeProducao = new CancelamentoValidator(
+            List.of(new ProdutoSuportadoCancelamento(), new TipoProdutoCancelamento()));
 
     @Test
     @DisplayName("expõe getLogCode e getRules")
@@ -38,5 +47,19 @@ class CancelamentoValidatorTest {
         CancelamentoContext context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
                 .comProdutoAutorizacao(TipoProduto.DDA_AUTO);
         assertThrows(BusinessException.class, () -> validator.validar(context));
+    }
+
+    @Test
+    @DisplayName("ProdutoSuportadoCancelamento executa antes de TipoProdutoCancelamento")
+    void produtoSuportadoCancelamentoExecutaPrimeiro() {
+        TipoProduto produtoDesabilitado = mock(TipoProduto.class);
+        when(produtoDesabilitado.habilitadoParaCancelar()).thenReturn(false);
+
+        CancelamentoContext context = TestFixtures.cancelarContext("id", produtoDesabilitado)
+                .comProdutoAutorizacao(TipoProduto.DDA_AUTO);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> validatorComOrdemDeProducao.validar(context));
+        assertTrue(ex.getMessage().contains("nao habilitado para cancelamento"));
     }
 }
