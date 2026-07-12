@@ -27,7 +27,7 @@ class MetadadoRuleTest {
     @Test
     @DisplayName("metadado nulo é aceito")
     void metadadoNulo() {
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarRequest(
+        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
@@ -35,7 +35,7 @@ class MetadadoRuleTest {
     @DisplayName("metadado com nome/apelido dentro do limite é aceito")
     void metadadoValido() {
         JsonNode meta = json("{\"nomePessoaRecebedora\":\"Joao\",\"apelidoPessoaRecebedora\":\"Jo\"}");
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarRequest(
+        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 
@@ -43,7 +43,7 @@ class MetadadoRuleTest {
     @DisplayName("nomePessoaRecebedora acima de 255 caracteres lança BusinessException")
     void nomeMuitoLongo() {
         JsonNode meta = json("{\"nomePessoaRecebedora\":\"" + "a".repeat(256) + "\"}");
-        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 
@@ -51,7 +51,7 @@ class MetadadoRuleTest {
     @DisplayName("apelidoPessoaRecebedora acima de 255 caracteres lança BusinessException")
     void apelidoMuitoLongo() {
         JsonNode meta = json("{\"apelidoPessoaRecebedora\":\"" + "b".repeat(256) + "\"}");
-        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 }

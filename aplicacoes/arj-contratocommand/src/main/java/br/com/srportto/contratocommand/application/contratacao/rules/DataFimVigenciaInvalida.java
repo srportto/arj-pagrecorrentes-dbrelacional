@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.application.contratacao.rules;
 
+import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.application.contratacao.ContratacaoRule;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.springframework.stereotype.Component;
 
@@ -11,13 +11,13 @@ import java.time.LocalDate;
 public class DataFimVigenciaInvalida implements ContratacaoRule {
 
     @Override
-    public boolean aceita(CriarAutorizacaoRequest request) {
+    public boolean aceita(ContratacaoContext contexto) {
         return true;
     }
 
     @Override
-    public void validar(CriarAutorizacaoRequest request) {
-        var dataFimVigencia = request.dataFimVigencia();
+    public void validar(ContratacaoContext contexto) {
+        var dataFimVigencia = contexto.dados().dataFimVigencia();
 
         if (dataFimVigencia != null && dataFimVigencia.isBefore(LocalDate.now())) {
             throw new BusinessException(

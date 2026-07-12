@@ -4,7 +4,7 @@ API REST Java 25 para **consulta e listagem de autorizações de contratos** (PI
 
 ## Sobre o Projeto
 
-O **Contrato Query** é o microserviço de leitura responsável por expor consultas sobre as autorizações persistidas pelo `arj-contratocommand`. Construído com **Spring Boot 4.0.4** e **arquitetura hexagonal**, ele é estritamente **somente leitura** (`DB_READ_ONLY=true`): não possui endpoints de escrita, orquestradores, use cases de criação/cancelamento nem mappers.
+O **Contrato Query** é o microserviço de leitura responsável por expor consultas sobre as autorizações persistidas pelo `arj-contratocommand`. Construído com **Spring Boot 4.0.7** e **arquitetura hexagonal**, ele é estritamente **somente leitura** (`DB_READ_ONLY=true`): não possui endpoints de escrita, orquestradores, use cases de criação/cancelamento nem mappers.
 
 ### Funcionalidades
 
@@ -17,7 +17,7 @@ O **Contrato Query** é o microserviço de leitura responsável por expor consul
 | Componente | Versão | Descrição |
 |---|---|---|
 | **Java** | 25 | `void main()`; records imutáveis |
-| **Spring Boot** | 4.0.4 | Web MVC, Data JPA, Validation, Actuator |
+| **Spring Boot** | 4.0.7 | Web MVC, Data JPA, Validation, Actuator |
 | **Jetty** | embutido | Container web (Tomcat excluído no `pom.xml`) |
 | **Spring Data JPA** | Latest | ORM via Hibernate; JPQL explícito no repositório |
 | **Jakarta Validation** | 3.0 | Validação de entrada |
@@ -335,4 +335,4 @@ AutorizacaoResumidaResponseDto novoDto = new AutorizacaoResumidaResponseDto(...)
 **Grupo:** br.com.srportto
 **Artifact:** contratoquery
 **Versão:** 0.0.1-SNAPSHOT
-**Java:** 25 | **Spring Boot:** 4.0.4 | **Porta:** 8081
+**Java:** 25 | **Spring Boot:** 4.0.7 | **Porta:** 8081

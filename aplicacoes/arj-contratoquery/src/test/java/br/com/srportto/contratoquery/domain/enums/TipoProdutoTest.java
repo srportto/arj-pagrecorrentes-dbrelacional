@@ -24,19 +24,6 @@ class TipoProdutoTest {
     }
 
     @Test
-    @DisplayName("obterTipoProdutoEnumPorNome é case-insensitive")
-    void obtemPorNome() {
-        assertEquals(TipoProduto.PIX_AUTO, TipoProduto.obterTipoProdutoEnumPorNome("pix_auto"));
-        assertEquals(TipoProduto.DDA_AUTO, TipoProduto.obterTipoProdutoEnumPorNome("DDA_AUTO"));
-    }
-
-    @Test
-    @DisplayName("obterTipoProdutoEnumPorNome lança BusinessException para nome desconhecido")
-    void lancaPorNomeDesconhecido() {
-        assertThrows(BusinessException.class, () -> TipoProduto.obterTipoProdutoEnumPorNome("CARTAO"));
-    }
-
-    @Test
     @DisplayName("getTipoProduto expõe o código")
     void exposeCodigo() {
         assertEquals(1L, TipoProduto.PIX_AUTO.getTipoProduto());

@@ -4,7 +4,7 @@
 
 ## 📋 Sobre o Projetox
 
-O **Contrato Command** é um microserviço backend construído com **Spring Boot 4.0.4** seguindo princípios de **Domain-Driven Design (DDD)** e **arquitetura hexagonal**. É um exemplo de arquitetura corporativa escalável para gerenciar contratos de produtos financeiros com orquestração de operações e particionamento inteligente de dados.
+O **Contrato Command** é um microserviço backend construído com **Spring Boot 4.0.7** seguindo princípios de **Domain-Driven Design (DDD)** e **arquitetura hexagonal**. É um exemplo de arquitetura corporativa escalável para gerenciar contratos de produtos financeiros com orquestração de operações e particionamento inteligente de dados.
 
 ### Funcionalidades Principais
 - ✅ **Autorizações de Contratos**: Criação, listagem, cancelamento e orquestração
@@ -23,7 +23,7 @@ O **Contrato Command** é um microserviço backend construído com **Spring Boot
 | Componente | Versão | Descrição |
 |---|---|---|
 | **Java** | 25 | Novo `void main()` em lugar de `public static void main()`, records imutáveis |
-| **Spring Boot** | 4.0.4 | Framework web, IoC, autowiring, data persistence |
+| **Spring Boot** | 4.0.7 | Framework web, IoC, autowiring, data persistence |
 | **Spring Data JPA** | Latest | ORM via Hibernate com suporte a queries customizadas |
 | **Jakarta Validation** | 3.0 | Validação de entrada com anotações e validadores customizados |
 | **Lombok** | 1.18.40 | Reduz boilerplate: `@Data`, `@Getter`, `@Setter`, `@Builder` |
@@ -801,7 +801,7 @@ CriarAutorizacaoRequest novoRequest = new CriarAutorizacaoRequest(..., 5000, ...
 
 ## 📖 Documentação External
 
-- [Spring Boot 4.0.4 Documentation](https://spring.io/projects/spring-boot)
+- [Spring Boot 4.0.7 Documentation](https://spring.io/projects/spring-boot)
 - [Spring Data JPA](https://spring.io/projects/spring-data-jpa)  
 - [MapStruct Documentation](https://mapstruct.org/)
 - [Jakarta Bean Validation 3.0](https://jakarta.ee/specifications/validate/)
@@ -837,7 +837,7 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](./LI
 **Grupo**: br.com.srportto  
 **Versão**: 0.0.1-SNAPSHOT  
 **Java Version**: 25 (JDK 25+ com preview features)  
-**Spring Boot**: 4.0.4  
+**Spring Boot**: 4.0.7  
 **Última atualização**: 17 de maio de 2026
 
 ## 📞 Suporte

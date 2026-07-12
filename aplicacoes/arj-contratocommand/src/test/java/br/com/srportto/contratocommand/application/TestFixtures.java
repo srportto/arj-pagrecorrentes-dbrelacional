@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.application;
 
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
@@ -20,7 +21,7 @@ public final class TestFixtures {
     }
 
     public static CriarAutorizacaoRequest criarRequest(String tipoProduto, BigDecimal valor,
-            LocalDate dataFimVigencia, JsonNode metadados, TipoJornadaAutorizacao tipoJornada) {
+            LocalDate dataFimVigencia, JsonNode metadados) {
         return new CriarAutorizacaoRequest(
                 dataFimVigencia,
                 tipoProduto,
@@ -36,17 +37,29 @@ public final class TestFixtures {
                 UUID.randomUUID(),
                 UUID.randomUUID(),
                 UUID.randomUUID(),
-                metadados,
-                tipoJornada);
+                metadados);
     }
 
     public static CriarAutorizacaoRequest criarRequestPix() {
-        return criarRequest("PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
-                TipoJornadaAutorizacao.SPI_J1);
+        return criarRequest("PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null);
     }
 
     public static CriarAutorizacaoRequest criarRequestDda() {
-        return criarRequest("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
+        return criarRequest("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null);
+    }
+
+    public static ContratacaoContext criarContext(String tipoProduto, BigDecimal valor,
+            LocalDate dataFimVigencia, JsonNode metadados, TipoJornadaAutorizacao tipoJornada) {
+        return ContratacaoContext.doRequest(tipoJornada, criarRequest(tipoProduto, valor, dataFimVigencia, metadados));
+    }
+
+    public static ContratacaoContext criarContextPix() {
+        return criarContext("PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
+                TipoJornadaAutorizacao.SPI_J1);
+    }
+
+    public static ContratacaoContext criarContextDda() {
+        return criarContext("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
                 TipoJornadaAutorizacao.SPI_J1);
     }
 

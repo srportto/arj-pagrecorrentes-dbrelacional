@@ -3,7 +3,6 @@ package br.com.srportto.contratocommand.application.contratacao;
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,17 +24,18 @@ public class CriarAutorizacaoUseCase {
     private final ContratacaoValidator contratacaoValidator;
 
     @Transactional
-    public AutorizacaoCompletaResponseDto execute(CriarAutorizacaoRequest request) {
+    public AutorizacaoCompletaResponseDto execute(ContratacaoContext context) {
+        var dados = context.dados();
         log.info("Iniciando criação de autorização {} para empresa: {}",
-                request.tipoProduto(), request.idAutorizacaoEmpresa());
+                dados.tipoProduto(), dados.idAutorizacaoEmpresa());
 
-        contratacaoValidator.validar(request);
+        contratacaoValidator.validar(context);
 
-        var autorizacaoMontada = mapper.toDomain(request);
+        var autorizacaoMontada = mapper.toDomain(dados, context.tipoJornada());
         var autorizadaPersistida = repository.save(autorizacaoMontada);
 
         log.info("Autorização {} criada com sucesso. ID: {}, Empresa: {}",
-                request.tipoProduto(),
+                dados.tipoProduto(),
                 autorizadaPersistida.getIdAutorizacao().getIdAutorizacao(),
                 autorizadaPersistida.getIdAutorizacaoEmpresa());
 

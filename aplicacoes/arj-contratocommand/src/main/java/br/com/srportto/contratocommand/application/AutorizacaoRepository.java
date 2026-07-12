@@ -5,7 +5,6 @@ import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +15,6 @@ import java.util.UUID;
  * (PIX_AUTO, DDA_AUTO). A variação por produto vive nas rules, não na persistência — todos
  * os produtos gravam na mesma tabela {@code autorizacoes}.
  */
-@Repository
 public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {
 
     List<Autorizacao> findByStatus(Integer status);

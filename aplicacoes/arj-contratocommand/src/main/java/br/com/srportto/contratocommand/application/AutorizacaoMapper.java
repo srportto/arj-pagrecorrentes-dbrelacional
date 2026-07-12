@@ -2,6 +2,7 @@ package br.com.srportto.contratocommand.application;
 
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import org.mapstruct.AfterMapping;
@@ -16,10 +17,11 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface AutorizacaoMapper {
 
-    @Mapping(source = "valor", target = "valorAutorizacao")
-    @Mapping(source = "frequencia", target = "frequenciaPagamento")
-    @Mapping(source = "quantidadeDividasCiclo", target = "quantidadeDividasCiclo")
-    @Mapping(source = "indicadorUsoLimiteConta", target = "indicadorUsoLimiteConta")
+    @Mapping(source = "dados.valor", target = "valorAutorizacao")
+    @Mapping(source = "dados.frequencia", target = "frequenciaPagamento")
+    @Mapping(source = "dados.quantidadeDividasCiclo", target = "quantidadeDividasCiclo")
+    @Mapping(source = "dados.indicadorUsoLimiteConta", target = "indicadorUsoLimiteConta")
+    @Mapping(source = "dados.descricao", target = "descricao")
     @Mapping(target = "idAutorizacao", ignore = true)
     // Ignorado para nao deixar o MapStruct gerar um Enum.valueOf implicito (case-sensitive, lanca
     // IllegalArgumentException nao mapeada); a resolucao real e feita via obterTipoProdutoEnumPorNome
@@ -28,27 +30,28 @@ public interface AutorizacaoMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "motivoStatus", ignore = true)
     @Mapping(target = "dataInicioVigencia", ignore = true)
-    @Mapping(source = "dataFimVigencia", target = "dataFimVigencia")
+    @Mapping(source = "dados.dataFimVigencia", target = "dataFimVigencia")
     @Mapping(target = "dataHoraInclusao", ignore = true)
     @Mapping(target = "dataHoraUltimaAtualizacao", ignore = true)
     @Mapping(target = "indicadorTipoMensageria", ignore = true)
     @Mapping(target = "cancelamento", ignore = true)
     @Mapping(target = "metadados", ignore = true)
-    Autorizacao toDomain(CriarAutorizacaoRequest request);
+    Autorizacao toDomain(CriarAutorizacaoRequest dados, TipoJornadaAutorizacao tipoJornada);
 
     @AfterMapping
-    default void afterMapping(CriarAutorizacaoRequest request, @MappingTarget Autorizacao autorizacao) {
+    default void afterMapping(CriarAutorizacaoRequest dados, TipoJornadaAutorizacao tipoJornada,
+            @MappingTarget Autorizacao autorizacao) {
 
-        autorizacao.setTipoProduto(TipoProduto.obterTipoProdutoEnumPorNome(request.tipoProduto()));
+        autorizacao.setTipoProduto(TipoProduto.obterTipoProdutoEnumPorNome(dados.tipoProduto()));
 
-        if (request.metadados() != null) {
-            autorizacao.setMetadados(request.metadados().toString());
+        if (dados.metadados() != null) {
+            autorizacao.setMetadados(dados.metadados().toString());
         }
 
         autorizacao.inicializaCriacao();
 
         var motivo = MotivoStatusAutorizacao.obterMotivoStatusEnumPorIdMotivo(
-                request.tipoJornada().getCodigoJornada());
+                tipoJornada.getCodigoJornada());
         autorizacao.setMotivoStatus(motivo.name());
     }
 

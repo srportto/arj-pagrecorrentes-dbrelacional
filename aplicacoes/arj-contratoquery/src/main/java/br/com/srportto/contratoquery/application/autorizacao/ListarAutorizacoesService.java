@@ -113,7 +113,7 @@ public class ListarAutorizacoesService {
                                 String.format("Status inválido: %s. Use um dos valores: %s",
                                         statusStr, String.join(", ",
                                                 java.util.Arrays.stream(StatusAutorizacao.values())
-                                                        .map(Enum::name)
+                                                        .map(status -> status.name())
                                                         .collect(Collectors.toList()))));
                     }
                 })

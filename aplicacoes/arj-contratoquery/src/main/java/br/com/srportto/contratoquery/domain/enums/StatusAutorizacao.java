@@ -4,21 +4,19 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public enum StatusAutorizacao {
-    RECEBIDA(1L, false),
-    PENDENTE_ACEITE(2L, false),
-    EM_PROCESSO_ATIVACAO(3L, false),
-    ATIVA(4L, false),
-    CANCELADA(5L, true),
-    REJEITADA(6L, true),
-    EXPIRADA(7L, true),
-    FINALIZADA(8L, true);
+    RECEBIDA(1L),
+    PENDENTE_ACEITE(2L),
+    EM_PROCESSO_ATIVACAO(3L),
+    ATIVA(4L),
+    CANCELADA(5L),
+    REJEITADA(6L),
+    EXPIRADA(7L),
+    FINALIZADA(8L);
 
     private long statusAutorizacao;
-    private boolean isFinalizador;
 
-    StatusAutorizacao(long statusAutorizacao, boolean isFinalizador) {
+    StatusAutorizacao(long statusAutorizacao) {
         this.statusAutorizacao = statusAutorizacao;
-        this.isFinalizador = isFinalizador;
     }
 
     public long getStatusAutorizacao() {
@@ -33,10 +31,5 @@ public enum StatusAutorizacao {
         }
         throw new IllegalArgumentException(
                 String.format("Status de autorização %d não conhecido ", statusAutorizacaoId));
-    }
-
-    public boolean isStatusFinalizador(Long statusAutorizacaoId) {
-        StatusAutorizacao statusEnum = obterStatusEnumPorIdStatus(statusAutorizacaoId);
-        return statusEnum.isFinalizador;
     }
 }

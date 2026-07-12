@@ -1,9 +1,8 @@
 package br.com.srportto.contratocommand.application.contratacao;
 
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.validationsetup.Rule;
 
-public interface ContratacaoRule extends Rule<CriarAutorizacaoRequest> {
+public interface ContratacaoRule extends Rule<ContratacaoContext> {
 
     @Override
     default String getLogCode() {

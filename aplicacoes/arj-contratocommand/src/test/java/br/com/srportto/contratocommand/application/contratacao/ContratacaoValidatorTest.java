@@ -32,13 +32,13 @@ class ContratacaoValidatorTest {
     @Test
     @DisplayName("validar percorre as regras e passa para requisição válida")
     void validarRequisicaoValida() {
-        assertDoesNotThrow(() -> validator.validar(TestFixtures.criarRequestPix()));
+        assertDoesNotThrow(() -> validator.validar(TestFixtures.criarContextPix()));
     }
 
     @Test
     @DisplayName("validar propaga BusinessException de uma regra violada")
     void validarRequisicaoInvalida() {
-        assertThrows(BusinessException.class, () -> validator.validar(TestFixtures.criarRequest(
+        assertThrows(BusinessException.class, () -> validator.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("100"), LocalDate.now().minusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
@@ -51,7 +51,7 @@ class ContratacaoValidatorTest {
         // produto desconhecido E data de vigência no passado: ambas as regras violariam,
         // mas ProdutoSuportado (primeira na lista) deve reportar o erro antes da data.
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> validatorComProdutoSuportadoPrimeiro.validar(TestFixtures.criarRequest(
+                () -> validatorComProdutoSuportadoPrimeiro.validar(TestFixtures.criarContext(
                         "CARTAO_CREDITO", new BigDecimal("100"), LocalDate.now().minusDays(1), null,
                         TipoJornadaAutorizacao.SPI_J1)));
 

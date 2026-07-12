@@ -26,15 +26,6 @@ class StatusAutorizacaoTest {
     }
 
     @Test
-    @DisplayName("isStatusFinalizador distingue status finais de não-finais")
-    void identificaStatusFinalizador() {
-        assertTrue(StatusAutorizacao.CANCELADA.isStatusFinalizador(StatusAutorizacao.CANCELADA.getStatusAutorizacao()));
-        assertTrue(StatusAutorizacao.EXPIRADA.isStatusFinalizador(StatusAutorizacao.EXPIRADA.getStatusAutorizacao()));
-        assertFalse(StatusAutorizacao.ATIVA.isStatusFinalizador(StatusAutorizacao.ATIVA.getStatusAutorizacao()));
-        assertFalse(StatusAutorizacao.RECEBIDA.isStatusFinalizador(StatusAutorizacao.RECEBIDA.getStatusAutorizacao()));
-    }
-
-    @Test
     @DisplayName("getStatusAutorizacao expõe o código numérico")
     void exposeCodigo() {
         assertEquals(4L, StatusAutorizacao.ATIVA.getStatusAutorizacao());

@@ -2,6 +2,7 @@ package br.com.srportto.contratocommand.entrypoint;
 
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.application.contratacao.CriarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -26,27 +27,12 @@ public class AutorizacaoController {
 
     @PostMapping
     public ResponseEntity<AutorizacaoCompletaResponseDto> insert(
-            @RequestBody @Valid CriarAutorizacaoRequest requestRecord,
+            @RequestBody @Valid CriarAutorizacaoRequest request,
             @RequestHeader String tipoJornada) {
         var jornada = TipoJornadaAutorizacao.obterJornadaAutorizacaoEnumPorNome(tipoJornada);
-        var request = new CriarAutorizacaoRequest(
-                requestRecord.dataFimVigencia(),
-                requestRecord.tipoProduto(),
-                requestRecord.valor(),
-                requestRecord.idAutorizacaoEmpresa(),
-                requestRecord.valorLimite(),
-                requestRecord.frequencia(),
-                requestRecord.quantidadeDividasCiclo(),
-                requestRecord.indicadorUsoLimiteConta(),
-                requestRecord.codigoCanalContratacao(),
-                requestRecord.descricao(),
-                requestRecord.idUnicoContaContratante(),
-                requestRecord.idPessoaPagadora(),
-                requestRecord.idPessoaDevedora(),
-                requestRecord.idPessoaRecebedora(),
-                requestRecord.metadados(),
-                jornada);
-        AutorizacaoCompletaResponseDto autorizadaResponse = criarAutorizacaoUseCase.execute(request);
+        var context = ContratacaoContext.doRequest(jornada, request);
+
+        AutorizacaoCompletaResponseDto autorizadaResponse = criarAutorizacaoUseCase.execute(context);
 
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
