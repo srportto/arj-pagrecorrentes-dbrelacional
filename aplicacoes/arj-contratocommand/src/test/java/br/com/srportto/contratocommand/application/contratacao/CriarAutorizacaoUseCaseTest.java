@@ -6,7 +6,6 @@ import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,17 +37,17 @@ class CriarAutorizacaoUseCaseTest {
     @Test
     @DisplayName("valida, mapeia, persiste e retorna o DTO")
     void executa() {
-        CriarAutorizacaoRequest request = TestFixtures.criarRequestPix();
+        ContratacaoContext context = TestFixtures.criarContextPix();
         Autorizacao aut = new Autorizacao();
         aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 10));
-        when(mapper.toDomain(request)).thenReturn(aut);
+        when(mapper.toDomain(context.dados(), context.tipoJornada())).thenReturn(aut);
         when(repository.save(aut)).thenReturn(aut);
 
-        AutorizacaoCompletaResponseDto resp = useCase.execute(request);
+        AutorizacaoCompletaResponseDto resp = useCase.execute(context);
 
         assertNotNull(resp);
         assertEquals(aut.getIdAutorizacao().getIdAutorizacao(), resp.getIdAutorizacao());
-        verify(contratacaoValidator).validar(request);
+        verify(contratacaoValidator).validar(context);
         verify(repository).save(aut);
     }
 }

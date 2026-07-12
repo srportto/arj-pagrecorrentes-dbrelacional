@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.application.contratacao.rules;
 
+import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.application.contratacao.ContratacaoRule;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.springframework.core.Ordered;
@@ -19,13 +19,13 @@ import java.util.Arrays;
 public class ProdutoSuportado implements ContratacaoRule {
 
     @Override
-    public boolean aceita(CriarAutorizacaoRequest request) {
+    public boolean aceita(ContratacaoContext contexto) {
         return true;
     }
 
     @Override
-    public void validar(CriarAutorizacaoRequest request) {
-        var tipoProduto = request.tipoProduto();
+    public void validar(ContratacaoContext contexto) {
+        var tipoProduto = contexto.dados().tipoProduto();
 
         boolean suportado = tipoProduto != null && Arrays.stream(TipoProduto.values())
                 .filter(produto -> produto.name().equalsIgnoreCase(tipoProduto))

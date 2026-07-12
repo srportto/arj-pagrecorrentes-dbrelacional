@@ -72,7 +72,7 @@ shared/       → Exceções, Interceptadores (ApiExceptionHandler), framework d
 
 `application/` divide-se em:
 - raiz de `application/` — componentes **compartilhados** por todos os produtos e por ambas as features: `AutorizacaoRepository`, `AutorizacaoMapper`. Não têm subpacote próprio (não são uma feature).
-- `contratacao/` — `CriarAutorizacaoUseCase`, `ContratacaoValidator`, `ContratacaoRule` e `rules/` (inclui `ProdutoSuportado`)
+- `contratacao/` — `CriarAutorizacaoUseCase`, `ContratacaoContext`, `ContratacaoValidator`, `ContratacaoRule` e `rules/` (inclui `ProdutoSuportado`)
 - `cancelamento/` — `CancelarAutorizacaoUseCase`, `CancelamentoContext`, `CancelamentoValidator`, `CancelamentoRule` e `rules/`
 
 Dentro de cada feature, o estereótipo Spring reflete o papel: `@Service` nos orquestradores (`ContratacaoValidator`, `CancelamentoValidator`, `CriarAutorizacaoUseCase`, `CancelarAutorizacaoUseCase` — a lógica de negócio principal da operação), `@Component` nas rules individuais (estratégias plugáveis, injetadas coletivamente via `List<ContratacaoRule>`/`List<CancelamentoRule>`).
@@ -83,35 +83,37 @@ Não há mais orquestradores nem strategies por produto: o controller chama os u
 
 ```
 AutorizacaoController.insert()
-  └─ CriarAutorizacaoUseCase.execute()   (application/contratacao, @Transactional)
-       ├─ ContratacaoValidator.validar() ← roda todas as ContratacaoRule (ProdutoSuportado primeiro)
-       ├─ AutorizacaoMapper.toDomain()    ← MapStruct + @AfterMapping
-       │    └─ Autorizacao.inicializaCriacao()  ← gera UUID+partição, defaults
-       └─ AutorizacaoRepository.save()
+  ├─ resolve tipoJornada do header (TipoJornadaAutorizacao.obterJornadaAutorizacaoEnumPorNome)
+  └─ ContratacaoContext.doRequest(jornada, request)   ← contexto imutável (header + corpo)
+       └─ CriarAutorizacaoUseCase.execute(context)   (application/contratacao, @Transactional)
+            ├─ ContratacaoValidator.validar(context) ← roda todas as ContratacaoRule (ProdutoSuportado primeiro)
+            ├─ AutorizacaoMapper.toDomain(context.dados(), context.tipoJornada())  ← MapStruct + @AfterMapping
+            │    └─ Autorizacao.inicializaCriacao()  ← gera UUID+partição, defaults
+            └─ AutorizacaoRepository.save()
 ```
 
-O cancelamento segue o mesmo padrão: o controller chama `CancelarAutorizacaoUseCase.execute()` (application/cancelamento) diretamente, passando um `CancelamentoContext` imutável (path `idAutorizacao` + header `tipoProduto` + corpo).
+O cancelamento segue o mesmo padrão simétrico: o controller resolve o header, monta `CancelamentoContext.doRequest(...)` (path `idAutorizacao` + header `tipoProduto` + corpo) e chama `CancelarAutorizacaoUseCase.execute()` (application/cancelamento) diretamente.
 
 ### Variação por produto vive em rules, não em strategies
 
 Não existem mais `*OrquestradorService`, `*Service` (strategy) nem `ContratacaoService`/`CancelamentoService`. A rejeição de `tipoProduto` desconhecido na criação é feita pela rule `ProdutoSuportado` (`application/contratacao/rules/`), anotada com `@Order(Ordered.HIGHEST_PRECEDENCE)` para rodar antes das demais `ContratacaoRule` — ela lança `BusinessException` ("Produto nao suportado ou invalido...") do mesmo jeito que o antigo orquestrador. No cancelamento, o header `tipoProduto` já é resolvido para o enum no controller (`TipoProduto.obterTipoProdutoEnumPorNome`) e a rule `TipoProdutoCancelamento` valida a divergência contra o produto lido do banco.
 
-**Adicionar um produto novo**: adicione o valor em `TipoProduto` e, se houver regras específicas do produto, expresse-as em uma rule usando `aceita(request)` para filtrar por produto. Não crie classes de strategy — `Repository`, `Mapper` e `UseCase` são únicos e compartilhados. (Os arquivos em `docs/strategyProduto/` são só exemplos didáticos — não refletem o código de produção.)
+**Adicionar um produto novo**: adicione o valor em `TipoProduto` e, se houver regras específicas do produto, expresse-as em uma rule usando `aceita(contexto)` para filtrar por produto (via `contexto.dados().tipoProduto()`). Não crie classes de strategy — `Repository`, `Mapper` e `UseCase` são únicos e compartilhados. (Os arquivos em `docs/strategyProduto/` são só exemplos didáticos — não refletem o código de produção.)
 
 ### Framework de validação de regras de negócio
 
 ```
 Rule<T>              → interface (shared/validationsetup): aceita(T) + validar(T)
 Validator<R,T>       → interface: getRules() + validar(T) default que itera as regras
-ContratacaoRule      → extends Rule<CriarAutorizacaoRequest> (marker)
-ContratacaoValidator → implements Validator<ContratacaoRule, CriarAutorizacaoRequest>;
+ContratacaoRule      → extends Rule<ContratacaoContext> (marker)
+ContratacaoValidator → implements Validator<ContratacaoRule, ContratacaoContext>;
                        Spring injeta List<ContratacaoRule> automaticamente (ordenado por @Order)
 ```
 
-Regras de contratação existentes (`application/contratacao/rules/`): `ProdutoSuportado` (roda primeiro), `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`.
+Regras de contratação existentes (`application/contratacao/rules/`): `ProdutoSuportado` (roda primeiro), `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`. Todas recebem `ContratacaoContext` e acessam o body via `contexto.dados()`.
 Regra de cancelamento (`application/cancelamento/rules/`): `TipoProdutoCancelamento`.
 
-**Adicionar regra de criação**: crie um `@Component` (não `@Service` — rules são estratégias plugáveis, não o orquestrador) que implemente `ContratacaoRule` — é injetado automaticamente no `ContratacaoValidator`. Use `@Order` se a regra precisar rodar antes/depois de outra.
+**Adicionar regra de criação**: crie um `@Component` (não `@Service` — rules são estratégias plugáveis, não o orquestrador) que implemente `ContratacaoRule` com `aceita(ContratacaoContext contexto)`/`validar(ContratacaoContext contexto)` — é injetado automaticamente no `ContratacaoValidator`. Use `@Order` se a regra precisar rodar antes/depois de outra.
 
 ### Particionamento temporal (crítico)
 
@@ -140,7 +142,7 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 
 ### Convenções
 
-- DTOs de **request** são **records imutáveis** (`entrypoint/contratosrest/`): `CriarAutorizacaoRequest` e `CancelarAutorizacaoRequest`. O cancelamento não muta o request — usa o record `CancelamentoContext` (`application/cancelamento`) para carregar `idAutorizacao` (path), `tipoProduto` (header) e o produto lido do banco como parâmetros explícitos. (`tipoProduto` é `String` no request de criação; `metadados` é `JsonNode`. O response `AutorizacaoCompletaResponseDto` ainda é `@Data @Builder`.)
+- DTOs de **request** são **records imutáveis** (`entrypoint/contratosrest/`): `CriarAutorizacaoRequest` (só os 15 campos do body) e `CancelarAutorizacaoRequest`. Nenhuma das duas features muta o request — cada uma tem seu próprio record de contexto imutável em `application/{contratacao,cancelamento}`: `ContratacaoContext` carrega `tipoJornada` (header) + `dados` (o request do body); `CancelamentoContext` carrega `idAutorizacao` (path), `tipoProduto` (header), o produto lido do banco e `dados` (o request do body) como parâmetros explícitos. (`tipoProduto` é `String` no request de criação; `metadados` é `JsonNode`. O response `AutorizacaoCompletaResponseDto` ainda é `@Data @Builder`.)
 - Mappers `@Mapper(componentModel = "spring")` com callbacks `@AfterMapping`.
 - `@Transactional` nos **Use Cases**, chamados diretamente pelo `AutorizacaoController` (sem orquestrador/strategy intermediário).
 - Testes de domínio (`domain/utilities/`) são lógica pura, sem Spring.

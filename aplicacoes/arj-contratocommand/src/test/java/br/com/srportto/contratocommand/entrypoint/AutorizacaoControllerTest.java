@@ -2,8 +2,10 @@ package br.com.srportto.contratocommand.entrypoint;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.application.contratacao.CriarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
@@ -58,13 +60,17 @@ class AutorizacaoControllerTest {
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.builder()
                 .idAutorizacao(UUID.randomUUID())
                 .build();
-        when(criarAutorizacaoUseCase.execute(any(CriarAutorizacaoRequest.class))).thenReturn(dto);
+        when(criarAutorizacaoUseCase.execute(any(ContratacaoContext.class))).thenReturn(dto);
 
         ResponseEntity<AutorizacaoCompletaResponseDto> resp = controller.insert(request, "SPI_J1");
 
         assertEquals(HttpStatus.CREATED, resp.getStatusCode());
         assertSame(dto, resp.getBody());
-        verify(criarAutorizacaoUseCase).execute(any(CriarAutorizacaoRequest.class));
+
+        ArgumentCaptor<ContratacaoContext> captor = ArgumentCaptor.forClass(ContratacaoContext.class);
+        verify(criarAutorizacaoUseCase).execute(captor.capture());
+        assertEquals(TipoJornadaAutorizacao.SPI_J1, captor.getValue().tipoJornada());
+        assertSame(request, captor.getValue().dados());
     }
 
     @Test

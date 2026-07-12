@@ -20,25 +20,25 @@ class ValorLimiteContratoTest {
     @Test
     @DisplayName("PIX_AUTO dentro do limite passa, acima de 1.000.000 lança")
     void pixAuto() {
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarRequest(
+        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("1000000"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
-        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("1000000.01"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
     @DisplayName("DDA_AUTO dentro do limite passa, acima de 250.000 lança")
     void ddaAuto() {
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarRequest(
+        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
                 "DDA_AUTO", new BigDecimal("250000"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
-        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
                 "DDA_AUTO", new BigDecimal("250000.01"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
     @DisplayName("produto sem configuração de limite lança BusinessException")
     void produtoDesconhecido() {
-        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarRequest(
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
                 "CARTAO", new BigDecimal("10"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 }

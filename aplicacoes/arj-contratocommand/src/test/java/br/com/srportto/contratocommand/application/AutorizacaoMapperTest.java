@@ -21,7 +21,7 @@ class AutorizacaoMapperTest {
     @Test
     @DisplayName("toDomain mapeia campos e o afterMapping aplica produto e inicializaCriacao (PIX)")
     void toDomainPix() {
-        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestPix());
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestPix(), TipoJornadaAutorizacao.SPI_J1);
 
         assertNotNull(aut);
         assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
@@ -36,7 +36,7 @@ class AutorizacaoMapperTest {
     @Test
     @DisplayName("toDomain mapeia produto DDA pelo nome do request")
     void toDomainDda() {
-        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestDda());
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestDda(), TipoJornadaAutorizacao.SPI_J1);
 
         assertNotNull(aut);
         assertEquals(TipoProduto.DDA_AUTO, aut.getTipoProduto());
@@ -46,8 +46,8 @@ class AutorizacaoMapperTest {
     @DisplayName("toDomain resolve tipoProduto com case diferente via obterTipoProdutoEnumPorNome (nao usa Enum.valueOf implicito)")
     void toDomainProdutoCaseInsensitivo() {
         Autorizacao aut = mapper.toDomain(TestFixtures.criarRequest(
-                "pix_auto", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
-                TipoJornadaAutorizacao.QRC_J2));
+                "pix_auto", new BigDecimal("10"), LocalDate.now().plusDays(1), null),
+                TipoJornadaAutorizacao.QRC_J2);
 
         assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
     }
@@ -56,8 +56,8 @@ class AutorizacaoMapperTest {
     @DisplayName("toDomain lança BusinessException (nao IllegalArgumentException) para produto desconhecido")
     void toDomainProdutoDesconhecidoLancaBusinessException() {
         assertThrows(BusinessException.class, () -> mapper.toDomain(TestFixtures.criarRequest(
-                "CARTAO_CREDITO", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
-                TipoJornadaAutorizacao.QRC_J2)));
+                "CARTAO_CREDITO", new BigDecimal("10"), LocalDate.now().plusDays(1), null),
+                TipoJornadaAutorizacao.QRC_J2));
     }
 
     @Test
@@ -65,8 +65,8 @@ class AutorizacaoMapperTest {
     void toDomainComMetadado() {
         var meta = new ObjectMapper().readTree("{\"k\":\"v\"}");
         Autorizacao aut = mapper.toDomain(TestFixtures.criarRequest(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta,
-                TipoJornadaAutorizacao.QRC_J2));
+                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta),
+                TipoJornadaAutorizacao.QRC_J2);
 
         assertNotNull(aut.getMetadados());
         assertTrue(aut.getMetadados().contains("k"));

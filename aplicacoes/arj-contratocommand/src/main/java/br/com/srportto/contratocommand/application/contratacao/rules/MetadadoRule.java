@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.application.contratacao.rules;
 
+import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.application.contratacao.ContratacaoRule;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -12,13 +12,13 @@ public class MetadadoRule implements ContratacaoRule {
     private static final int MAX_LENGTH = 255;
 
     @Override
-    public boolean aceita(CriarAutorizacaoRequest request) {
+    public boolean aceita(ContratacaoContext contexto) {
         return true;
     }
 
     @Override
-    public void validar(CriarAutorizacaoRequest request) {
-        var metadados = request.metadados();
+    public void validar(ContratacaoContext contexto) {
+        var metadados = contexto.dados().metadados();
 
         if (metadados == null) {
             return;
