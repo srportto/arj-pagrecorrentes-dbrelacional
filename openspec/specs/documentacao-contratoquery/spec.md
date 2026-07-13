@@ -22,7 +22,7 @@ Os arquivos `CLAUDE.md` e `AGENTS.md` SHALL ter conteúdo idêntico e cobrir: po
 
 #### Scenario: Conteúdo reflete apenas o que existe na query
 - **WHEN** o guia de arquitetura é lido
-- **THEN** o arquivo SHALL descrever apenas `ListarAutorizacoesService`, `ConsultarAutorizacaoService` e `AutorizacaoQueryRepository`, sem mencionar orquestradores, use cases de contratação/cancelamento ou mappers que não existem na query
+- **THEN** o arquivo SHALL descrever apenas `ListarAutorizacoesService`, `ConsultarAutorizacaoService` e `AutorizacaoRepository`, sem mencionar orquestradores, use cases de contratação/cancelamento ou mappers que não existem na query
 
 ### Requirement: README.md contém documentação completa para desenvolvedores
 O `README.md` SHALL conter documentação completa com as mesmas seções do command (stack, estrutura de pacotes, como executar, endpoints, testes, convenções, armadilhas), adaptadas para a query.

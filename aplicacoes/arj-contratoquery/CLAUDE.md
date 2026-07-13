@@ -64,7 +64,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 
 ```
 entrypoint/   → AutorizacaoController + DTOs (AutorizacaoResumidaResponseDto, AutorizacaoDetalheResponseDto, PaginacaoResponseDto)
-application/  → ListarAutorizacoesService, ConsultarAutorizacaoService, AutorizacaoQueryRepository
+application/  → ListarAutorizacoesService, ConsultarAutorizacaoService, AutorizacaoRepository
 domain/       → Entidades, Enums, Converters, Utilities (lógica pura, sem frameworks)
 shared/       → Exceções (BusinessException, ApplicationException, ResourceNotFoundException), ApiExceptionHandler
 ```
@@ -76,7 +76,7 @@ AutorizacaoController.listar()
   └─ ListarAutorizacoesService.listar()
        ├─ valida idUnicoContaContratante (BusinessException se nulo)
        ├─ constrói Pageable (campo + direção)
-       └─ AutorizacaoQueryRepository.findByIdUnicoContaContratante() ← JPQL explícito
+       └─ AutorizacaoRepository.findByIdUnicoContaContratante() ← JPQL explícito
             └─ AutorizacaoResumidaResponseDto.from(autorizacao)
 ```
 
@@ -87,7 +87,7 @@ AutorizacaoController.consultarPorId()
   └─ ConsultarAutorizacaoService.consultarPorId()
        ├─ ReversibleUUIDv7.extract(uuid) ← extrai partição sem query adicional
        ├─ valida faixa de partição (0–889), lança 404 se fora
-       └─ AutorizacaoQueryRepository.findById(IdAutorizacao(uuid, particao))
+       └─ AutorizacaoRepository.findById(IdAutorizacao(uuid, particao))
             └─ AutorizacaoDetalheResponseDto.from(autorizacao)
 ```
 
@@ -96,7 +96,7 @@ AutorizacaoController.consultarPorId()
 Tabela `autorizacoes` particionada por `id_particao_conta` (range **900–999** no command; a query extrai a partição do UUID reversível para localizar o registro sem query extra).
 
 - `ConsultarAutorizacaoService` extrai a partição via `ReversibleUUIDv7.extract(uuid)` — UUIDs fora da faixa (0–889 neste serviço) resultam em 404 imediato, sem hit no banco.
-- `AutorizacaoQueryRepository` usa JPQL explícito (não usa métodos derivados do Spring Data) para garantir compatibilidade com o particionamento.
+- `AutorizacaoRepository` usa JPQL explícito (não usa métodos derivados do Spring Data) para garantir compatibilidade com o particionamento.
 
 ### Exceções e códigos HTTP
 
@@ -116,7 +116,7 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 4. **Sem MapStruct** — conversão feita via `from()` estático nos DTOs (ex.: `AutorizacaoResumidaResponseDto.from(autorizacao)`).
 5. **Container é Jetty**, não Tomcat — o `pom.xml` exclui o Tomcat explicitamente.
 6. **Faixa de partição na leitura**: `ConsultarAutorizacaoService` valida partição 0–889 (diferente da faixa 900–999 usada na escrita) — UUIDs fora disso → 404 sem consultar o banco.
-7. **Queries JPQL explícitas** — `AutorizacaoQueryRepository` não usa métodos derivados; cuidado ao renomear campos da entidade.
+7. **Queries JPQL explícitas** — `AutorizacaoRepository` não usa métodos derivados; cuidado ao renomear campos da entidade.
 
 ## Checklist antes do commit
 

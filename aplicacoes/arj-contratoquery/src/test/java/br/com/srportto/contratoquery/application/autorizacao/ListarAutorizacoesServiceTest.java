@@ -37,7 +37,7 @@ import br.com.srportto.contratoquery.shared.exceptions.BusinessException;
 class ListarAutorizacoesServiceTest {
 
     @Mock
-    private AutorizacaoQueryRepository autorizacaoQueryRepository;
+    private AutorizacaoRepository repository;
 
     @InjectMocks
     private ListarAutorizacoesService listarAutorizacoesService;
@@ -87,7 +87,7 @@ class ListarAutorizacoesServiceTest {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1, autorizacao2);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 2);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+        when(repository.findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
@@ -101,7 +101,7 @@ class ListarAutorizacoesServiceTest {
         assertEquals(2L, resultado.getTotalElementos());
         assertEquals(20, resultado.getTamanho());
 
-        verify(autorizacaoQueryRepository, times(1)).findByIdUnicoContaContratante(
+        verify(repository, times(1)).findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class));
     }
 
@@ -111,7 +111,7 @@ class ListarAutorizacoesServiceTest {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 1);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratanteAndStatusIn(
+        when(repository.findByIdUnicoContaContratanteAndStatusIn(
                 eq(idUnicoContaContratante), eq(Arrays.asList(1)), any(Pageable.class)))
                 .thenReturn(pagina);
 
@@ -122,7 +122,7 @@ class ListarAutorizacoesServiceTest {
         assertEquals(1, resultado.getConteudo().size());
         assertEquals(0, resultado.getPaginaAtual());
 
-        verify(autorizacaoQueryRepository, times(1)).findByIdUnicoContaContratanteAndStatusIn(
+        verify(repository, times(1)).findByIdUnicoContaContratanteAndStatusIn(
                 eq(idUnicoContaContratante), eq(Arrays.asList(1)), any(Pageable.class));
     }
 
@@ -139,7 +139,7 @@ class ListarAutorizacoesServiceTest {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 1);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+        when(repository.findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
@@ -156,7 +156,7 @@ class ListarAutorizacoesServiceTest {
     void testListarSemResultados() {
         Page<Autorizacao> paginaVazia = new PageImpl<>(Arrays.asList(), PageRequest.of(0, 20), 0);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+        when(repository.findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(paginaVazia);
 
@@ -174,7 +174,7 @@ class ListarAutorizacoesServiceTest {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1, autorizacao2);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 2);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratanteAndStatusIn(
+        when(repository.findByIdUnicoContaContratanteAndStatusIn(
                 eq(idUnicoContaContratante), eq(Arrays.asList(1, 4)), any(Pageable.class)))
                 .thenReturn(pagina);
 
@@ -191,7 +191,7 @@ class ListarAutorizacoesServiceTest {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 1);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+        when(repository.findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
@@ -215,7 +215,7 @@ class ListarAutorizacoesServiceTest {
         List<Autorizacao> autorizacoes = Arrays.asList(autorizacao1, autorizacao2);
         Page<Autorizacao> pagina = new PageImpl<>(autorizacoes, PageRequest.of(0, 20), 2);
 
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+        when(repository.findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 
@@ -231,7 +231,7 @@ class ListarAutorizacoesServiceTest {
     @DisplayName("Deve mapear todos os campos de ordenação e tolerar direção inválida")
     void testOrdenacaoCobreMapeamentoDeCampos() {
         Page<Autorizacao> pagina = new PageImpl<>(Arrays.asList(autorizacao1), PageRequest.of(0, 20), 1);
-        when(autorizacaoQueryRepository.findByIdUnicoContaContratante(
+        when(repository.findByIdUnicoContaContratante(
                 eq(idUnicoContaContratante), any(Pageable.class)))
                 .thenReturn(pagina);
 

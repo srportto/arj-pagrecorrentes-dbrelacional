@@ -1,5 +1,0 @@
-node_modules
-dist
-packages/*/node_modules
-local
-data

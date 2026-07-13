@@ -36,7 +36,7 @@ class ConsultarAutorizacaoServiceTest {
     private static final int PARTICAO_INVALIDA = 950;
 
     @Mock
-    private AutorizacaoQueryRepository autorizacaoQueryRepository;
+    private AutorizacaoRepository repository;
 
     @InjectMocks
     private ConsultarAutorizacaoService consultarAutorizacaoService;
@@ -79,7 +79,7 @@ class ConsultarAutorizacaoServiceTest {
     @DisplayName("Deve retornar o DTO de detalhe quando a autorização existe")
     void deveRetornarDetalheQuandoExiste() {
         Autorizacao autorizacao = criarAutorizacao(idAutorizacaoValido, PARTICAO_VALIDA);
-        when(autorizacaoQueryRepository.findById(any(IdAutorizacao.class)))
+        when(repository.findById(any(IdAutorizacao.class)))
                 .thenReturn(Optional.of(autorizacao));
 
         AutorizacaoDetalheResponseDto resultado =
@@ -94,13 +94,13 @@ class ConsultarAutorizacaoServiceTest {
         assertNotNull(resultado.getMetadado());
         assertTrue(resultado.getMetadado().has("origem"));
 
-        verify(autorizacaoQueryRepository, times(1)).findById(any(IdAutorizacao.class));
+        verify(repository, times(1)).findById(any(IdAutorizacao.class));
     }
 
     @Test
     @DisplayName("Deve lançar ResourceNotFoundException quando a autorização não existe")
     void deveLancarQuandoNaoEncontrada() {
-        when(autorizacaoQueryRepository.findById(any(IdAutorizacao.class)))
+        when(repository.findById(any(IdAutorizacao.class)))
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
@@ -115,7 +115,7 @@ class ConsultarAutorizacaoServiceTest {
         assertThrows(ResourceNotFoundException.class, () ->
                 consultarAutorizacaoService.consultarPorId(idParticaoInvalida));
 
-        verify(autorizacaoQueryRepository, never()).findById(any(IdAutorizacao.class));
+        verify(repository, never()).findById(any(IdAutorizacao.class));
     }
 
     @Test
@@ -126,6 +126,6 @@ class ConsultarAutorizacaoServiceTest {
         assertThrows(ResourceNotFoundException.class, () ->
                 consultarAutorizacaoService.consultarPorId(uuidV4));
 
-        verify(autorizacaoQueryRepository, never()).findById(any(IdAutorizacao.class));
+        verify(repository, never()).findById(any(IdAutorizacao.class));
     }
 }

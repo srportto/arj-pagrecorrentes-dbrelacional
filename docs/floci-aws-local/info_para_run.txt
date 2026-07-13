@@ -1,0 +1,16 @@
+para buildar a imagem
+  docker build -t postgres16-kiq-extras-partman_cron:1.0 .
+
+
+
+Pra rodar/iniciar composicao
+   docker-compose -f floci-aws-local.yml up -d
+
+Para parar 
+  docker-compose -f floci-aws-local.yml down -v
+  docker-compose -f floci-aws-local.yml restart
+  
+  
+ teste
+	aws --profile local s3 mb s3://teste-kiq
+	aws --profile local s3 ls

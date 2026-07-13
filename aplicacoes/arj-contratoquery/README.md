@@ -34,7 +34,7 @@ src/main/java/br/com/srportto/contratoquery/
 ├── ContratoqueryApplication.java
 ├── application/
 │   └── autorizacao/
-│       ├── AutorizacaoQueryRepository.java    # JPQL explícito para particionamento
+│       ├── AutorizacaoRepository.java         # JPQL explícito para particionamento
 │       ├── ListarAutorizacoesService.java     # Listagem paginada com filtro de status
 │       └── ConsultarAutorizacaoService.java  # Busca por id com extração de partição
 ├── domain/
@@ -75,7 +75,7 @@ AutorizacaoController.listar()
        ├─ valida idUnicoContaContratante (BusinessException se nulo)
        ├─ converte nomes de status (String → Integer via StatusAutorizacao enum)
        ├─ constrói Pageable com mapeamento de campos DTO→entidade
-       └─ AutorizacaoQueryRepository.findByIdUnicoContaContratante()   ← JPQL
+       └─ AutorizacaoRepository.findByIdUnicoContaContratante()   ← JPQL
             └─ AutorizacaoResumidaResponseDto.from(autorizacao)         ← from() estático
 ```
 
@@ -86,7 +86,7 @@ AutorizacaoController.consultarPorId()
   └─ ConsultarAutorizacaoService.consultarPorId()
        ├─ ReversibleUUIDv7.extract(uuid)         ← extrai idParticaoConta sem query
        ├─ valida faixa 0–889 → 404 imediato se fora
-       └─ AutorizacaoQueryRepository.findById(IdAutorizacao(uuid, particao))
+       └─ AutorizacaoRepository.findById(IdAutorizacao(uuid, particao))
             └─ AutorizacaoDetalheResponseDto.from(autorizacao)
 ```
 
@@ -287,7 +287,7 @@ mvn clean verify
 |----------|--------|----------|
 | **Entidades** | Substantivo singular | `Autorizacao`, `Cancelamento` |
 | **Services** | `{Nome}Service` | `ListarAutorizacoesService`, `ConsultarAutorizacaoService` |
-| **Repository** | `{Entidade}QueryRepository` | `AutorizacaoQueryRepository` |
+| **Repository** | `{Entidade}Repository` | `AutorizacaoRepository` |
 | **Response DTOs** | `{Entidade}ResponseDto` | `AutorizacaoResumidaResponseDto`, `AutorizacaoDetalheResponseDto` |
 | **Controllers** | `{Recurso}Controller` | `AutorizacaoController` |
 
@@ -321,7 +321,7 @@ AutorizacaoResumidaResponseDto novoDto = new AutorizacaoResumidaResponseDto(...)
 4. **Sem MapStruct** — não instancie mappers; use `from()` nos DTOs.
 5. **Container é Jetty**, não Tomcat — configurações de servidor Tomcat não se aplicam.
 6. **Faixa de partição na leitura é 0–889** (não 900–999 como no command) — `ConsultarAutorizacaoService` lança 404 imediato para UUIDs fora dessa faixa.
-7. **JPQL explícito no repository** — `AutorizacaoQueryRepository` não usa métodos derivados do Spring Data; renomear campos da entidade exige atualizar as queries manualmente.
+7. **JPQL explícito no repository** — `AutorizacaoRepository` não usa métodos derivados do Spring Data; renomear campos da entidade exige atualizar as queries manualmente.
 8. **Base de URL é `/api/autorizacoes`** (plural) — não existe `/api/autorizacao` nem `/listar`.
 
 ## Documentação em `docs/` (raiz do repositório)

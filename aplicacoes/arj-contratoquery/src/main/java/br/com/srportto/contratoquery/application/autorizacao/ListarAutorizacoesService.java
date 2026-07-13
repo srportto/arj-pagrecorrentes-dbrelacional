@@ -21,7 +21,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ListarAutorizacoesService {
 
-    private final AutorizacaoQueryRepository autorizacaoQueryRepository;
+    private final AutorizacaoRepository repository;
 
     private static final Integer PAGINA_PADRAO = 0;
     private static final Integer TAMANHO_PADRAO = 20;
@@ -46,11 +46,11 @@ public class ListarAutorizacoesService {
 
         Page<Autorizacao> pageAutorizacoes;
         if (statuses == null || statuses.isEmpty()) {
-            pageAutorizacoes = autorizacaoQueryRepository.findByIdUnicoContaContratante(
+            pageAutorizacoes = repository.findByIdUnicoContaContratante(
                     idUnicoContaContratante, pageable);
         } else {
             List<Integer> statusInteiros = converterStatusParaInteiros(statuses);
-            pageAutorizacoes = autorizacaoQueryRepository.findByIdUnicoContaContratanteAndStatusIn(
+            pageAutorizacoes = repository.findByIdUnicoContaContratanteAndStatusIn(
                     idUnicoContaContratante, statusInteiros, pageable);
         }
 
