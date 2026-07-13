@@ -18,12 +18,12 @@ public class ConsultarAutorizacaoService {
     private static final int PARTICAO_MIN = 0;
     private static final int PARTICAO_MAX = 889;
 
-    private final AutorizacaoQueryRepository autorizacaoQueryRepository;
+    private final AutorizacaoRepository repository;
 
     public AutorizacaoDetalheResponseDto consultarPorId(UUID autorizacaoId) {
         int idParticaoConta = extrairParticao(autorizacaoId);
 
-        Autorizacao autorizacao = autorizacaoQueryRepository
+        Autorizacao autorizacao = repository
                 .findById(new IdAutorizacao(autorizacaoId, idParticaoConta))
                 .orElseThrow(() -> autorizacaoNaoEncontrada(autorizacaoId));
 
