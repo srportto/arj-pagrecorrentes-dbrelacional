@@ -19,7 +19,7 @@ O `README.md` SHALL deixar claro que o sistema é composto por dois microserviç
 - **THEN** SHALL ser possível entender que o command é responsável por escrita e o query por leitura, sem precisar abrir os READMEs individuais
 
 ### Requirement: README de raiz linka para documentação de cada app
-O `README.md` SHALL conter links para `aplicacoes/arj-contratocommand/README.md` e `aplicacoes/arj-contratoquery/README.md`, bem como para os arquivos relevantes em `docs/`.
+O `README.md` SHALL conter links para `code/arj-contratocommand/README.md` e `code/arj-contratoquery/README.md`, bem como para os arquivos relevantes em `docs/`.
 
 #### Scenario: Links funcionais para cada app
 - **WHEN** o README de raiz é lido
