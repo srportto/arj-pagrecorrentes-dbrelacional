@@ -20,8 +20,8 @@ arj-contratocommand        arj-contratoquery
 
 | Serviço | Porta | Responsabilidade | Read-Only |
 |---------|-------|-----------------|-----------|
-| [arj-contratocommand](aplicacoes/arj-contratocommand/README.md) | 8080 | Criar e cancelar autorizações (POST, PATCH) | Não |
-| [arj-contratoquery](aplicacoes/arj-contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
+| [arj-contratocommand](code/arj-contratocommand/README.md) | 8080 | Criar e cancelar autorizações (POST, PATCH) | Não |
+| [arj-contratoquery](code/arj-contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
 
 Ambos compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura.
 
@@ -29,15 +29,20 @@ Ambos compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, parti
 
 ```
 arj-pagrecorrentes-dbrelacional/
-├── aplicacoes/
-│   ├── arj-contratocommand/   # Microserviço de escrita (Java 25 + Spring Boot 4.0.4)
-│   └── arj-contratoquery/     # Microserviço de leitura (Java 25 + Spring Boot 4.0.4)
+├── code/                       # Código de aplicação
+│   ├── arj-contratocommand/    # Microserviço de escrita (Java 25 + Spring Boot 4.0.7)
+│   ├── arj-contratoquery/      # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
+│   └── docker-compose.yml      # Ambiente local: as 2 apps + Postgres (partman/cron)
+├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
+│   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, observability)
+│   ├── envs/{local,prod}/       # Composição dos módulos por ambiente
+│   ├── bootstrap/               # State remoto (pré-requisito dos envs)
+│   └── local/postgres/          # Dockerfile do Postgres 16 com pg_partman + pg_cron (dev local)
 ├── docs/
 │   ├── arquitetura/                        # Diagramas de arquitetura
 │   ├── info_build-my-image-and-execute.md  # Docker + PostgreSQL com partman/cron
 │   ├── comandos-sql.txt                    # Scripts SQL de particionamento
 │   ├── post-autorizacoes.txt               # Exemplos de payloads REST
-│   ├── run_postgres16_ja_com_cron_partman/ # Dockerfile do banco
 │   └── resultado-poc/                      # POC do particionamento com UUIDv7
 ├── openspec/                  # Planejamento de mudanças (proposta → spec → tasks)
 ├── LICENSE                    # MIT
@@ -57,51 +62,64 @@ arj-pagrecorrentes-dbrelacional/
 
 ## Começando
 
-### 1. Subir o banco de dados
+### Opção A — Docker Compose (recomendado)
+
+Sobe o Postgres (partman/cron) e as duas aplicações com um único comando:
 
 ```bash
-# Build da imagem PostgreSQL com pg_partman + pg_cron
-docker build -t contratocommand-db:16 \
-  -f docs/run_postgres16_ja_com_cron_partman/Dockerfile .
-
-# Subir o container
-docker run -d \
-  --name contratocommand-db \
-  -e POSTGRES_DB=contratocommand \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=sua_senha \
-  -p 5432:5432 \
-  contratocommand-db:16
+cd code
+DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
+  docker compose up -d --build
 ```
 
-### 2. Rodar o serviço de escrita (command)
+- `arj-contratocommand` → http://localhost:8080
+- `arj-contratoquery` → http://localhost:8081
+
+### Opção B — Rodando manualmente
+
+#### 1. Subir o banco de dados
 
 ```bash
-cd aplicacoes/arj-contratocommand
+cd infra/local/postgres
+docker compose -f postgres-db-v16.yml up -d
+```
 
-DB_NAME=contratocommand DB_USER_NAME=postgres DB_PASSWORD=sua_senha \
+#### 2. Rodar o serviço de escrita (command)
+
+```bash
+cd code/arj-contratocommand
+
+DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   mvn spring-boot:run
 # Disponível em http://localhost:8080
 ```
 
-### 3. Rodar o serviço de leitura (query)
+#### 3. Rodar o serviço de leitura (query)
 
 ```bash
-cd aplicacoes/arj-contratoquery
+cd code/arj-contratoquery
 
-DB_NAME=contratocommand DB_USER_NAME=postgres DB_PASSWORD=sua_senha \
+DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   mvn spring-boot:run
 # Disponível em http://localhost:8081
 ```
 
 > Consulte o README de cada app para a lista completa de variáveis de ambiente e comandos de build.
 
+## Profiles Spring
+
+Cada aplicação usa `application.yml` (configuração comum) mais `application-local.yml` e `application-prod.yml` (apenas o que difere entre ambientes). Não existe mais o profile `dev`.
+
+- **Local** (padrão de desenvolvimento): ativado automaticamente quando `SPRING_PROFILES_ACTIVE` não é definido.
+- **Produção**: **deve** definir `SPRING_PROFILES_ACTIVE=prod` explicitamente — o default `local` é só uma conveniência de desenvolvimento e não deve ser assumido em produção.
+
 ## Documentação
 
 | Arquivo | Descrição |
 |---------|-----------|
-| [aplicacoes/arj-contratocommand/README.md](aplicacoes/arj-contratocommand/README.md) | Documentação completa do serviço de escrita |
-| [aplicacoes/arj-contratoquery/README.md](aplicacoes/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
+| [code/arj-contratocommand/README.md](code/arj-contratocommand/README.md) | Documentação completa do serviço de escrita |
+| [code/arj-contratoquery/README.md](code/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
+| [infra/README.md](infra/README.md) | Topologia-alvo de infraestrutura (Terraform, ambientes, escopo) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
 | [docs/comandos-sql.txt](docs/comandos-sql.txt) | Scripts SQL de particionamento |
 | [docs/post-autorizacoes.txt](docs/post-autorizacoes.txt) | Exemplos de payloads REST |

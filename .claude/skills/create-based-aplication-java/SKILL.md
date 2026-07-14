@@ -1,16 +1,16 @@
 ---
 name: create-based-aplication-java
-description: Use ao criar uma nova aplicacao base REST em Java/Spring Boot dentro de "aplicacoes/" deste repositorio, seguindo o modelo arquitetural hexagonal de docs/arquitetura/based-java-aplication.md e usando arj-contratocommand como referencia. Aciona em pedidos como "crie uma aplicacao base", "novo microservico REST", "esqueleto de app java".
+description: Use ao criar uma nova aplicacao base REST em Java/Spring Boot dentro de "code/" deste repositorio, seguindo o modelo arquitetural hexagonal de docs/arquitetura/based-java-aplication.md e usando arj-contratocommand como referencia. Aciona em pedidos como "crie uma aplicacao base", "novo microservico REST", "esqueleto de app java".
 ---
 
 # Criar Aplicacao Base REST em Java (modelo arquitetural do projeto)
 
 ## Visao Geral
 
-Gera uma aplicacao Spring Boot **buildavel e executavel** dentro de `aplicacoes/`, seguindo a
+Gera uma aplicacao Spring Boot **buildavel e executavel** dentro de `code/`, seguindo a
 **arquitetura hexagonal** descrita em [docs/arquitetura/based-java-aplication.md](../../../docs/arquitetura/based-java-aplication.md)
 e o contexto de [docs/arquitetura/contexto_arquitetural.md](../../../docs/arquitetura/contexto_arquitetural.md).
-A referencia viva e a aplicacao [aplicacoes/arj-contratocommand](../../../aplicacoes/arj-contratocommand).
+A referencia viva e a aplicacao [code/arj-contratocommand](../../../code/arj-contratocommand).
 
 **Principio central:** o esqueleto base entrega as 4 camadas hexagonais (`entrypoint`, `application`,
 `domain`, `shared`) + tratamento de erros, com uma rota de disponibilidade `GET /olamundo`, e **roda sem
@@ -22,10 +22,10 @@ Colete os 4 parametros do usuario (use a ferramenta de perguntas). Sem eles, **n
 
 | Parametro | Uso | Exemplo |
 |-----------|-----|---------|
-| **Nome da pasta** | diretorio em `aplicacoes/<pasta>` | `arj-contratoquery` |
+| **Nome da pasta** | diretorio em `code/<pasta>` | `arj-contratoquery` |
 | **Nome da aplicacao** | `artifactId`, `spring.application.name`, pacote `br.com.srportto.<nome>`, classe `<Nome>Application` | `contratoquery` |
 | **Porta** | `server.port` | `8081` (evite 8080 se contratocommand estiver no ar) |
-| **Profile default** | `spring.profiles.active` | `dev` |
+| **Profile default** | `spring.profiles.default` (sem profile fixo `active`; segue convencao `local`/`prod` do monorepo) | `local` |
 | **Container web** | servidor embutido no `pom.xml` (ver secao abaixo) | `Jetty` (Tomcat e o default; Undertow NAO existe no Spring Boot 4.0) |
 
 > Derive os identificadores do "nome da aplicacao": pacote = `br.com.srportto.<nome>` (minusculo),
@@ -93,7 +93,7 @@ mecanica do Jetty trocando o starter final por `spring-boot-starter-undertow`.
 ## Estrutura gerada (hexagonal)
 
 ```
-aplicacoes/<pasta>/
+code/<pasta>/
 ├── pom.xml
 ├── .gitignore
 └── src
@@ -122,11 +122,11 @@ montada no `domain` (record imutavel) e exposta pela camada `application`.
 ## Passo a passo
 
 1. **Perguntar** os 5 parametros (incluindo o **container web** — mostre o resumo de beneficios).
-2. **Ler a referencia**: `aplicacoes/arj-contratocommand` (pom, classe principal, controller, `shared/`)
+2. **Ler a referencia**: `code/arj-contratocommand` (pom, classe principal, controller, `shared/`)
    para copiar fielmente convencoes (pacote `br.com.srportto`, starter `webmvc`, layout de erros).
 3. **Gerar os arquivos** substituindo `<nome>`/`<Nome>`/`<pasta>`/porta/profile e aplicando o
    container web escolhido no `pom.xml` (ver [Escolha do container web](#escolha-do-container-web)).
-4. **Buildar**: `cd aplicacoes/<pasta> && mvn clean package` (deve passar com o teste de contexto).
+4. **Buildar**: `cd code/<pasta> && mvn clean package` (deve passar com o teste de contexto).
 5. **Executar e validar**:
    ```bash
    java -jar target/<nome>-0.0.1-SNAPSHOT.jar      # ou: mvn spring-boot:run
@@ -175,10 +175,13 @@ spring:
     application:
         name: <nome>
     profiles:
-        active: <profile>
+        default: <profile>
 server:
     port: <porta>
 ```
+
+> Segue a convencao do monorepo: `spring.profiles.default` (nao `active`) — o profile ativo vem do
+> ambiente (`SPRING_PROFILES_ACTIVE`), com `local` como default de desenvolvimento. Nao existe profile `dev`.
 
 ### domain / application / entrypoint (fluxo da rota)
 ```java
