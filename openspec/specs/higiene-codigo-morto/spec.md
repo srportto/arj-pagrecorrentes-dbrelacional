@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Define o padrão de higiene de código morto para as duas aplicações em `code/` (`arj-contratocommand` e `arj-contratoquery`): classes e métodos do `src/main` devem ter uso real em código de produção, utilitários usados apenas por testes vivem em `src/test`, a app de leitura não pode conter lógica exclusiva do fluxo de escrita, e a documentação de módulo acompanha as remoções.
+Define o padrão de higiene de código morto para as duas aplicações em `apps/` (`arj-contratocommand` e `arj-contratoquery`): classes e métodos do `src/main` devem ter uso real em código de produção, utilitários usados apenas por testes vivem em `src/test`, a app de leitura não pode conter lógica exclusiva do fluxo de escrita, e a documentação de módulo acompanha as remoções.
 
 ## Requirements
 
 ### Requirement: Código de produção não contém classes sem referência de produção
-Toda classe em `src/main` das aplicações `code/arj-contratocommand` e `code/arj-contratoquery` SHALL ter ao menos uma referência a partir de outro código de `src/main` (de qualquer arquivo que não ela mesma) ou ser um ponto de entrada reconhecido (classe de aplicação Spring Boot, `@RestController`, `@Entity`/`@Embeddable`/`@Converter` registrados, configuração). Referências vindas exclusivamente de `src/test` MUST NOT contar como uso de produção.
+Toda classe em `src/main` das aplicações `apps/arj-contratocommand` e `apps/arj-contratoquery` SHALL ter ao menos uma referência a partir de outro código de `src/main` (de qualquer arquivo que não ela mesma) ou ser um ponto de entrada reconhecido (classe de aplicação Spring Boot, `@RestController`, `@Entity`/`@Embeddable`/`@Converter` registrados, configuração). Referências vindas exclusivamente de `src/test` MUST NOT contar como uso de produção.
 
 #### Scenario: Classes fantasma do fluxo de escrita removidas da query
 - **WHEN** o módulo `arj-contratoquery` é inspecionado após a limpeza

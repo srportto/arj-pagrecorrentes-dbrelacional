@@ -37,7 +37,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
   - `DB_READ_ONLY` — modo de acesso (default `false` no `contratocommand`, `true` no `contratoquery`).
   - Pool HikariCP: `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT`, `DB_POOL_IDLE_TIMEOUT`, `DB_POOL_MAX_LIFETIME`.
 - Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório). Exemplos de payloads em `docs/post-autorizacoes.txt`.
-- Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `code/docker-compose.yml` sobe as 2 aplicações + Postgres de uma vez.
+- Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `apps/docker-compose.yml` sobe as 2 aplicações + Postgres de uma vez.
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado explicitamente via `SPRING_PROFILES_ACTIVE=prod`) — não existe mais o profile `dev`.
 
 ## Stack

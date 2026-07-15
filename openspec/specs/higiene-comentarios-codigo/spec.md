@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Definir o padrão de higiene de comentários de código Java para `code/arj-contratocommand` e `code/arj-contratoquery`: comentários existem apenas para explicar um porquê não óbvio, não descrevem código ou conceito que não existe mais, não escondem código morto disfarçado de documentação, e a documentação de módulo (`CLAUDE.md`/`AGENTS.md`) não afirma comportamento do entrypoint divergente do código real.
+Definir o padrão de higiene de comentários de código Java para `apps/arj-contratocommand` e `apps/arj-contratoquery`: comentários existem apenas para explicar um porquê não óbvio, não descrevem código ou conceito que não existe mais, não escondem código morto disfarçado de documentação, e a documentação de módulo (`CLAUDE.md`/`AGENTS.md`) não afirma comportamento do entrypoint divergente do código real.
 
 ## Requirements
 
 ### Requirement: Comentários de código existem apenas para explicar um porquê não óbvio
 
-O código Java em `code/arj-contratocommand` e `code/arj-contratoquery` SHALL conter comentários apenas quando eles explicam uma decisão de design, uma restrição não óbvia ou decodificam um valor de negócio que o código sozinho não deixa claro (ex.: o significado de um indicador numérico, a aritmética de uma partição, um gotcha de biblioteca). Comentários que apenas reafirmam em português o que a linha de código seguinte já expressa (WHAT redundante) MUST NOT existir. Banners puramente decorativos MUST NOT existir.
+O código Java em `apps/arj-contratocommand` e `apps/arj-contratoquery` SHALL conter comentários apenas quando eles explicam uma decisão de design, uma restrição não óbvia ou decodificam um valor de negócio que o código sozinho não deixa claro (ex.: o significado de um indicador numérico, a aritmética de uma partição, um gotcha de biblioteca). Comentários que apenas reafirmam em português o que a linha de código seguinte já expressa (WHAT redundante) MUST NOT existir. Banners puramente decorativos MUST NOT existir.
 
 #### Scenario: Comentário decodificando valor de negócio é preservado
 

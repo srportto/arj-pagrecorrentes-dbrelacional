@@ -146,7 +146,7 @@ Acesse: `http://localhost:8081`
 
 ### Via Docker
 
-A aplicação tem seu próprio `Dockerfile` (multi-stage, Fargate-ready). Para subir tudo de uma vez (Postgres + as 2 aplicações), use o `docker-compose.yml` em `code/` (ver [README raiz](../../README.md#opção-a--docker-compose-recomendado)):
+A aplicação tem seu próprio `Dockerfile` (multi-stage, Fargate-ready). Para subir tudo de uma vez (Postgres + as 2 aplicações), use o `docker-compose.yml` em `apps/` (ver [README raiz](../../README.md#opção-a--docker-compose-recomendado)):
 
 ```bash
 cd ..

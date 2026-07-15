@@ -10,7 +10,7 @@ usado duas vezes (uma instância por aplicação: `arj-contratocommand` e
 requisitos de CPU/memória.
 
 Consome a imagem gerada pelo `Dockerfile` de cada aplicação em
-`code/<app>/Dockerfile` e roda dentro do cluster de
+`apps/<app>/Dockerfile` e roda dentro do cluster de
 [`../ecs-cluster/`](../ecs-cluster/). Deve mapear health check para
 `/actuator/health` e injetar `SPRING_PROFILES_ACTIVE=prod` e as credenciais de
 banco (via variável de ambiente, evoluindo para Secrets Manager em fase futura).

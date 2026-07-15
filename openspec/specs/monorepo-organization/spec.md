@@ -2,27 +2,27 @@
 
 ## Purpose
 
-TBD — capability recém-criada a partir da mudança `reorganizar-monorepo-code-infra`. Descreve como o monorepo separa código de aplicação (`code/`) de código de infraestrutura (`infra/`), incluindo o esqueleto de Terraform, contêineres compatíveis com ECS/Fargate, configuração Spring por profiles, infraestrutura local de banco e documentação da topologia.
+TBD — capability recém-criada a partir da mudança `reorganizar-monorepo-code-infra`. Descreve como o monorepo separa código de aplicação (`apps/`) de código de infraestrutura (`infra/`), incluindo o esqueleto de Terraform, contêineres compatíveis com ECS/Fargate, configuração Spring por profiles, infraestrutura local de banco e documentação da topologia.
 
 ## Requirements
 
 ### Requirement: Separação de topo entre código e infraestrutura
 
-O monorepo SHALL organizar-se em duas pastas de topo em inglês: `code/` para código de aplicação e `infra/` para código de infraestrutura. A pasta `aplicacoes/` SHALL ser renomeada para `code/`, preservando o conteúdo de cada aplicação sem alteração de comportamento.
+O monorepo SHALL organizar-se em duas pastas de topo em inglês: `apps/` para código de aplicação e `infra/` para código de infraestrutura.
 
-#### Scenario: Aplicações vivem sob code/
+#### Scenario: Aplicações vivem sob apps/
 - **WHEN** um desenvolvedor inspeciona a raiz do repositório
-- **THEN** existe uma pasta `code/` contendo `arj-contratocommand/` e `arj-contratoquery/`
-- **AND** não existe mais a pasta `aplicacoes/`
+- **THEN** existe uma pasta `apps/` contendo `arj-contratocommand/` e `arj-contratoquery/`
+- **AND** não existe mais a pasta `code/`
 
 #### Scenario: Infraestrutura tem pasta dedicada
 - **WHEN** um desenvolvedor inspeciona a raiz do repositório
 - **THEN** existe uma pasta `infra/` dedicada a código de infraestrutura
-- **AND** `code/` não contém código de infraestrutura de provisionamento (Terraform)
+- **AND** `apps/` não contém código de infraestrutura de provisionamento (Terraform)
 
 #### Scenario: Comportamento das aplicações preservado
 - **WHEN** a suíte de testes de cada aplicação é executada após a reorganização
-- **THEN** `mvn test` passa em `code/arj-contratocommand` e `code/arj-contratoquery`
+- **THEN** `mvn test` passa em `apps/arj-contratocommand` e `apps/arj-contratoquery`
 - **AND** os endpoints, portas (8080/8081) e contratos REST permanecem inalterados
 
 ### Requirement: Esqueleto de infraestrutura preparado para Terraform
@@ -41,7 +41,7 @@ A pasta `infra/` SHALL conter um esqueleto que antecipe a evolução para Terraf
 
 ### Requirement: Contêiner por aplicação compatível com ECS/Fargate
 
-Cada aplicação sob `code/` SHALL possuir um `Dockerfile` que produza uma imagem compatível com AWS ECS e Fargate. A imagem SHALL ser construída em múltiplos estágios (build + runtime enxuto), executar o JAR sobre um JRE, expor a porta HTTP da aplicação e permitir health-check via `/actuator/health`.
+Cada aplicação sob `apps/` SHALL possuir um `Dockerfile` que produza uma imagem compatível com AWS ECS e Fargate. A imagem SHALL ser construída em múltiplos estágios (build + runtime enxuto), executar o JAR sobre um JRE, expor a porta HTTP da aplicação e permitir health-check via `/actuator/health`.
 
 #### Scenario: Imagem builda e roda o serviço
 - **WHEN** a imagem de uma aplicação é construída a partir do seu `Dockerfile` e executada
@@ -85,9 +85,9 @@ O Dockerfile do PostgreSQL com `pg_partman` e `pg_cron` SHALL residir sob `infra
 
 ### Requirement: Documentação reflete a nova topologia
 
-A documentação do repositório (README raiz, READMEs das aplicações e guias de agentes) SHALL ser atualizada para refletir a estrutura `code/` + `infra/` e os novos caminhos de build, execução e infraestrutura local.
+A documentação do repositório (README raiz, READMEs das aplicações e guias de agentes) SHALL ser atualizada para refletir a estrutura `apps/` + `infra/` e os novos caminhos de build, execução e infraestrutura local.
 
 #### Scenario: README raiz atualizado
 - **WHEN** um novo colaborador lê o `README.md` raiz
-- **THEN** a árvore de diretórios documentada mostra `code/` e `infra/`
-- **AND** os comandos de build/execução referenciam `code/<app>` e o novo caminho do banco local
+- **THEN** a árvore de diretórios documentada mostra `apps/` e `infra/`
+- **AND** os comandos de build/execução referenciam `apps/<app>` e o caminho do banco local
