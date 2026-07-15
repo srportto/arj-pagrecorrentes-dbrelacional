@@ -20,8 +20,8 @@ arj-contratocommand        arj-contratoquery
 
 | Serviço | Porta | Responsabilidade | Read-Only |
 |---------|-------|-----------------|-----------|
-| [arj-contratocommand](code/arj-contratocommand/README.md) | 8080 | Criar e cancelar autorizações (POST, PATCH) | Não |
-| [arj-contratoquery](code/arj-contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
+| [arj-contratocommand](apps/arj-contratocommand/README.md) | 8080 | Criar e cancelar autorizações (POST, PATCH) | Não |
+| [arj-contratoquery](apps/arj-contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
 
 Ambos compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura.
 
@@ -29,7 +29,7 @@ Ambos compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, parti
 
 ```
 arj-pagrecorrentes-dbrelacional/
-├── code/                       # Código de aplicação
+├── apps/                       # Código de aplicação
 │   ├── arj-contratocommand/    # Microserviço de escrita (Java 25 + Spring Boot 4.0.7)
 │   ├── arj-contratoquery/      # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
 │   └── docker-compose.yml      # Ambiente local: as 2 apps + Postgres (partman/cron)
@@ -67,7 +67,7 @@ arj-pagrecorrentes-dbrelacional/
 Sobe o Postgres (partman/cron) e as duas aplicações com um único comando:
 
 ```bash
-cd code
+cd apps
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   docker compose up -d --build
 ```
@@ -87,7 +87,7 @@ docker compose -f postgres-db-v16.yml up -d
 #### 2. Rodar o serviço de escrita (command)
 
 ```bash
-cd code/arj-contratocommand
+cd apps/arj-contratocommand
 
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   mvn spring-boot:run
@@ -97,7 +97,7 @@ DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
 #### 3. Rodar o serviço de leitura (query)
 
 ```bash
-cd code/arj-contratoquery
+cd apps/arj-contratoquery
 
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   mvn spring-boot:run
@@ -117,8 +117,8 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 
 | Arquivo | Descrição |
 |---------|-----------|
-| [code/arj-contratocommand/README.md](code/arj-contratocommand/README.md) | Documentação completa do serviço de escrita |
-| [code/arj-contratoquery/README.md](code/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
+| [apps/arj-contratocommand/README.md](apps/arj-contratocommand/README.md) | Documentação completa do serviço de escrita |
+| [apps/arj-contratoquery/README.md](apps/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
 | [infra/README.md](infra/README.md) | Topologia-alvo de infraestrutura (Terraform, ambientes, escopo) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
 | [docs/comandos-sql.txt](docs/comandos-sql.txt) | Scripts SQL de particionamento |

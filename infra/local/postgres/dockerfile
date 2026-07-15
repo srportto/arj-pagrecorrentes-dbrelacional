@@ -2,7 +2,7 @@ FROM postgres:16
 
 LABEL maintainer="postgres:16" \
     version="16" \
-    description="PostgreSQL padrao sem pg_cron e pg_partman"
+    description="PostgreSQL padrao com pg_cron e pg_partman"
 
 # Install build dependencies, pg_cron, and pg_partman
 RUN apt-get update \

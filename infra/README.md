@@ -1,6 +1,6 @@
 # infra
 
-Código de infraestrutura do monorepo, separado do código de aplicação (`code/`).
+Código de infraestrutura do monorepo, separado do código de aplicação (`apps/`).
 
 ## Estado atual desta pasta
 
