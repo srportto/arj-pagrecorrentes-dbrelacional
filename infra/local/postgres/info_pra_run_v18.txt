@@ -1,0 +1,16 @@
+
+Obs.: Esse deu certo
+
+para buildar a imagem
+  docker build -t postgres18-kiq-extras-partman_cron_vector:1.0 .
+ 
+
+
+Pra rodar/iniciar composicao
+   docker-compose -f postgres-db-v18.yml up -d
+
+Para parar 
+  docker-compose -f postgres-db-v18.yml down -v
+  docker-compose -f postgres-db-v18.yml restart
+
+

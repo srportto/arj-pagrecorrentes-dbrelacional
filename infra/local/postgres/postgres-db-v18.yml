@@ -1,16 +1,13 @@
-version: '3.8'
-
 services:
-  postgres: 
+  postgres:
     build: . # Build the image from the Dockerfile in the current directory
-    image: postgres16-kiq-extras-partman_cron:1.0 # Specify PostgreSQL 16 image
+    image: postgres18-kiq-extras-partman_cron_vector:1.0 # Specify PostgreSQL 18 image com pg_cron, pg_partman e pgvector
     command: [
-      "postgres", 
-      "-c", "shared_preload_libraries=pg_partman_bgw",
+      "postgres",
       "-c", "shared_preload_libraries=pg_cron",
       "-c", "cron.database_name=db-csp-postgres", # Set the database name for pg_cron
       ]
-    container_name: postgres16-partman-cron-kiq # Optional: Name the container for easier identification
+    container_name: postgres18-kiq # Optional: Name the container for easier identification
     environment:
       POSTGRES_DB: db-csp-postgres # Set the default database name
       POSTGRES_USER: docker
@@ -19,8 +16,9 @@ services:
       PGDATA: /var/lib/postgresql/data
     volumes:
       - pg_data:/var/lib/postgresql/data # Mount the named volume to the correct data path
+      - ./migrations:/docker-entrypoint-initdb.d:ro # Scripts rodam em ordem alfabetica (v1.0.0, v1.0.1, ...) na primeira subida do banco
     ports:
-      - "5432:5432" # Map port 5432 from container to host
+      - "5432:5432" # Porta 5432 do host ja esta em uso por outro projeto local; container continua na 5432 internamente
     restart: unless-stopped
 
 volumes:

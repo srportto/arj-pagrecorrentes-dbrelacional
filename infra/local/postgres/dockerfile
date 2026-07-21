@@ -1,16 +1,25 @@
-FROM postgres:16
+FROM postgres:18
 
-LABEL maintainer="postgres:16" \
-    version="16" \
-    description="PostgreSQL padrao com pg_cron e pg_partman"
+LABEL maintainer="postgres:18" \
+    version="18" \
+    description="PostgreSQL 18 com pg_cron, pg_partman e pgvector"
 
-# Install build dependencies, pg_cron, and pg_partman
+# Instala dependencias de build, pg_cron e pg_partman via apt (repositorio PGDG ja configurado na imagem oficial),
+# e compila o pgvector a partir do codigo-fonte para nao depender da disponibilidade do pacote apt para o PG 18
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        postgresql-server-dev-16 \
-        postgresql-16-partman\
-        postgresql-16-cron \
+        postgresql-server-dev-18 \
+        postgresql-18-partman \
+        postgresql-18-cron \
         build-essential \
         ca-certificates \
+        git \
+    && git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector \
+    && cd /tmp/pgvector \
+    && make \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/pgvector \
+    # Remove as dependencias de build que nao sao mais necessarias em runtime
+    && apt-get purge -y --auto-remove postgresql-server-dev-18 build-essential git \
     && rm -rf /var/lib/apt/lists/*
-    
