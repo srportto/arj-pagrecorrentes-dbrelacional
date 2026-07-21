@@ -4,40 +4,55 @@ Código de infraestrutura do monorepo, separado do código de aplicação (`apps
 
 ## Estado atual desta pasta
 
-Este é um **esqueleto** que estabelece a topologia-alvo para a evolução do sistema
-rumo a AWS ECS + Fargate, provisionado via Terraform. Nesta fase:
+`modules/networking`, `modules/ecs-cluster`, `modules/ecs-service` e `envs/local`
+têm Terraform funcional, validado com `terraform apply` real contra o
+[Floci](../docs/floci-aws-local/floci-aws-local.md) (emulador AWS local — ver
+`openspec/changes/add-ecs-networking-foundation` para o histórico completo da
+mudança). Nesta fase:
 
-- **Não há nenhum arquivo `.tf` funcional.**
-- **Nenhum recurso AWS é provisionado.**
-- **Nenhuma credencial de cloud é usada ou armazenada aqui.**
+- **Nenhum recurso de AWS real é provisionado** — `envs/local` só fala com o
+  Floci (`localhost:4566`), com credenciais fake.
+- **`envs/prod`, `bootstrap`, `modules/rds-postgres` e `modules/observability`
+  continuam placeholders.**
 
-O único conteúdo executável hoje é a infraestrutura de **desenvolvimento local**
-em [`local/`](local/) (banco PostgreSQL com `pg_partman` + `pg_cron`).
+A infraestrutura de **desenvolvimento local sem Terraform** em
+[`local/`](local/) (Postgres com `pg_partman`/`pg_cron`/`pgvector`) continua
+existindo em paralelo — `envs/local` aponta para esse mesmo Postgres via
+`host.docker.internal`.
 
-## Topologia-alvo
+## Topologia
 
 ```
 infra/
-├── modules/        # blocos Terraform reutilizáveis (networking, banco, ECS, observabilidade)
+├── modules/
+│   ├── networking/    # VPC vpc-arj, 6 subnets, IGW, NAT, rotas, SSM         [funcional]
+│   ├── ecs-cluster/   # cluster ECS Fargate + ALB internet-facing            [funcional]
+│   ├── ecs-service/   # ECS Service parametrizavel (instanciado 2x)          [funcional]
+│   ├── rds-postgres/  # (futuro)
+│   └── observability/ # (futuro)
 ├── envs/
-│   ├── local/       # ambiente local: provider apontando para o emulador AWS (Floci)
-│   └── prod/        # ambiente de produção: provider AWS real, backend remoto
-├── bootstrap/       # state bucket (S3) + lock table (DynamoDB) — pré-requisito dos envs
-└── local/           # infraestrutura de desenvolvimento local (Postgres partman/cron)
+│   ├── local/         # composicao dos modulos contra o Floci                [funcional]
+│   └── prod/          # composicao dos modulos contra a AWS real             [placeholder]
+├── bootstrap/          # state bucket (S3) + lock table (DynamoDB)           [placeholder]
+└── local/               # infra de dev local sem Terraform (Postgres)       [funcional]
 ```
 
 - [`modules/`](modules/) — blocos Terraform reutilizáveis, um módulo por responsabilidade.
-- [`envs/local/`](envs/local/) — composição dos módulos para rodar contra um emulador AWS local.
-- [`envs/prod/`](envs/prod/) — composição dos módulos para a AWS real.
-- [`bootstrap/`](bootstrap/) — infraestrutura mínima para existir o backend de state remoto.
-- [`local/`](local/) — infraestrutura de desenvolvimento local que **não** é implantada na cloud.
+- [`envs/local/`](envs/local/) — composição dos módulos para rodar contra o Floci. Ver o
+  README de lá para pré-requisitos e o passo a passo de `apply`.
+- [`envs/prod/`](envs/prod/) — composição dos módulos para a AWS real (placeholder).
+- [`bootstrap/`](bootstrap/) — infraestrutura mínima para existir o backend de state remoto
+  (placeholder).
+- [`local/`](local/) — infraestrutura de desenvolvimento local que **não** é implantada na
+  cloud.
 
-## Fora de escopo nesta fase
+## Fora de escopo (ainda)
 
-- Terraform funcional (módulos, providers, state remoto).
-- Provisionamento de qualquer recurso AWS (VPC, RDS, ECS, Fargate).
-- Ambiente local via Floci (emulador AWS) — hoje o desenvolvimento local usa Docker puro.
+- `envs/prod` (AWS real) e `bootstrap` (state remoto S3+DynamoDB).
+- Módulos `rds-postgres` e `observability`.
 - Pipelines de CI/CD (GitHub Actions) para aplicar esta infraestrutura.
-- Migração de schema de banco (Flyway/Liquibase) para o RDS.
+- Proxy HTTP de dados do ALB via `alb_dns_name` no Floci — limitação da edição
+  gratuita testada (control-plane e health checks funcionam; ver
+  [`envs/local/README.md`](envs/local/README.md)).
 
-Essas frentes são propostas de mudança futuras, construídas sobre este esqueleto.
+Essas frentes são propostas de mudança futuras.

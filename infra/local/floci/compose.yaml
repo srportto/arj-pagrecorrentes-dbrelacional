@@ -1,0 +1,13 @@
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: floci-arj
+    ports:
+      - "4566:4566"
+    environment:
+      - FLOCI_DEFAULT_REGION=us-east-1
+      - FLOCI_STORAGE_MODE=hybrid
+    volumes:
+      # Necessario para os servicos "real Docker" do Floci (ECS, ElastiCache, RDS, etc.)
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped

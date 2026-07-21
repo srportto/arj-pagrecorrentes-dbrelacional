@@ -65,3 +65,16 @@ build/
 
 ### floci-ui (clone externo, gerenciado fora deste repo) ###
 ###docs/floci-aws-local/floci-ui/
+
+### Terraform ### -> o state guarda valores sensiveis (ex.: db_password) em texto puro mesmo para variaveis marcadas sensitive
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
