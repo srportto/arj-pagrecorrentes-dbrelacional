@@ -4,11 +4,12 @@ Código de infraestrutura do monorepo, separado do código de aplicação (`apps
 
 ## Estado atual desta pasta
 
-`modules/networking`, `modules/ecs-cluster`, `modules/ecs-service` e `envs/local`
-têm Terraform funcional, validado com `terraform apply` real contra o
-[Floci](../docs/floci-aws-local/floci-aws-local.md) (emulador AWS local — ver
-`openspec/changes/add-ecs-networking-foundation` para o histórico completo da
-mudança). Nesta fase:
+`modules/networking`, `modules/ecs-cluster`, `modules/ecs-service`, `envs/local` e
+`envs/local-messaging` têm Terraform funcional, validado com `terraform apply` real
+contra o [Floci](../docs/floci-aws-local/floci-aws-local.md) (emulador AWS local — ver
+`openspec/changes/add-ecs-networking-foundation` e
+`openspec/changes/add-eventos-autorizacao-sns-sqs` para o histórico completo das
+mudanças). Nesta fase:
 
 - **Nenhum recurso de AWS real é provisionado** — `envs/local` só fala com o
   Floci (`localhost:4566`), com credenciais fake.
@@ -31,15 +32,20 @@ infra/
 │   ├── rds-postgres/  # (futuro)
 │   └── observability/ # (futuro)
 ├── envs/
-│   ├── local/         # composicao dos modulos contra o Floci                [funcional]
-│   └── prod/          # composicao dos modulos contra a AWS real             [placeholder]
+│   ├── local/             # composicao dos modulos (VPC/ECS) contra o Floci      [funcional]
+│   ├── local-messaging/   # SNS + SQS de eventos de autorizacao no Floci        [funcional]
+│   └── prod/              # composicao dos modulos contra a AWS real            [placeholder]
 ├── bootstrap/          # state bucket (S3) + lock table (DynamoDB)           [placeholder]
 └── local/               # infra de dev local sem Terraform (Postgres)       [funcional]
 ```
 
 - [`modules/`](modules/) — blocos Terraform reutilizáveis, um módulo por responsabilidade.
-- [`envs/local/`](envs/local/) — composição dos módulos para rodar contra o Floci. Ver o
-  README de lá para pré-requisitos e o passo a passo de `apply`.
+- [`envs/local/`](envs/local/) — composição dos módulos (VPC/ECS) para rodar contra o
+  Floci. Ver o README de lá para pré-requisitos e o passo a passo de `apply`.
+- [`envs/local-messaging/`](envs/local-messaging/) — root independente que provisiona o
+  tópico SNS `sns-estados-autorizacao` e a fila SQS `SQS-eventos-autorizacao` no Floci,
+  usados pelo `arj-contratocommand` (publicação) e pelo `autorizacaostatus-producer`
+  (consumo). Aplica em segundos e não interfere no `envs/local` (VPC/ECS).
 - [`envs/prod/`](envs/prod/) — composição dos módulos para a AWS real (placeholder).
 - [`bootstrap/`](bootstrap/) — infraestrutura mínima para existir o backend de state remoto
   (placeholder).

@@ -2,6 +2,8 @@ package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -16,6 +18,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +26,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +42,8 @@ class CancelarAutorizacaoUseCaseTest {
     private CancelamentoValidator cancelamentoValidator;
     @Mock
     private EntityManager entityManager;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private CancelarAutorizacaoUseCase useCase;
@@ -69,20 +75,24 @@ class CancelarAutorizacaoUseCaseTest {
         inOrder.verify(repository).flush();
         inOrder.verify(entityManager).detach(aut);
         inOrder.verify(repository).save(any());
+
+        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut, TipoEventoAutorizacao.CANCELAMENTO));
     }
 
     @Test
-    @DisplayName("lança BusinessException quando a autorização não é encontrada")
+    @DisplayName("lança BusinessException quando a autorização não é encontrada e não publica evento")
     void naoEncontrada() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> useCase.execute(request));
+
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 
     @Test
-    @DisplayName("propaga a exceção quando a reinserção falha após o delete (limite transacional do execute garante rollback)")
+    @DisplayName("propaga a exceção quando a reinserção falha após o delete (limite transacional do execute garante rollback) e não publica evento")
     void rollbackQuandoReinsercaoFalha() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
@@ -97,5 +107,6 @@ class CancelarAutorizacaoUseCaseTest {
         // execute() (anotado com @Transactional), o container faz rollback do delete.
         assertThrows(RuntimeException.class, () -> useCase.execute(request));
         verify(repository).deleteById(any());
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 }

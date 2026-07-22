@@ -5,5 +5,5 @@ management:
 
 aws:
     region: ${AWS_REGION}
-    sns:
-        topic-arn: ${AWS_SNS_TOPIC_ARN}
+    sqs:
+        queue-url: ${AWS_SQS_QUEUE_URL}

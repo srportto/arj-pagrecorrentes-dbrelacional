@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>br.com.srportto</groupId>
-	<artifactId>contratocommand</artifactId>
+	<artifactId>autorizacaostatus-producer</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>contratocommand</name>
+	<name>autorizacaostatus-producer</name>
 	<description/>
 	<url/>
 	<licenses>
@@ -53,16 +53,11 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- pacote utilitarios web do spring -->
+		<!-- pacote utilitarios web do spring (actuator via HTTP) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
-   	 	</dependency>
 
 		<!-- health-check / observabilidade -->
 		<dependency>
@@ -77,35 +72,10 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- MapStruct para mapeamento de DTOs -->
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct</artifactId>
-			<version>1.5.5.Final</version>
-		</dependency>
-
-			<!-- persistencia de dados -->
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-starter-data-jpa</artifactId>
-			</dependency>
-
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.eclipse</groupId>
-			<artifactId>yasson</artifactId>
-			<version>3.0.3</version>
-		</dependency>
-
-		<!-- publicacao de eventos de autorizacao no SNS (AWS SDK v2 puro, sem Spring Cloud AWS) -->
+		<!-- consumo da fila de eventos de autorizacao (AWS SDK v2 puro, sem Spring Cloud AWS) -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>sns</artifactId>
+			<artifactId>sqs</artifactId>
 		</dependency>
 
 	</dependencies>
@@ -126,11 +96,6 @@
 											<artifactId>lombok</artifactId>
 											<version>${lombok.version}</version>
 									</path>
-									<path>
-											<groupId>org.mapstruct</groupId>
-											<artifactId>mapstruct-processor</artifactId>
-											<version>1.5.5.Final</version>
-									</path>
 							</annotationProcessorPaths>
 					</configuration>
 			</plugin>
@@ -141,7 +106,6 @@
 				<configuration>
 					<excludes>
 						<exclude>**/*Application.class</exclude>
-						<exclude>**/*Repository.class</exclude>
 					</excludes>
 				</configuration>
 				<executions>

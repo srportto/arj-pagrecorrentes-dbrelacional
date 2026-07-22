@@ -1,6 +1,8 @@
 package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -14,6 +16,7 @@ import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +37,7 @@ public class CancelarAutorizacaoUseCase {
     private final AutorizacaoRepository repository;
     private final CancelamentoValidator cancelamentoValidator;
     private final EntityManager entityManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public AutorizacaoCompletaResponseDto execute(CancelamentoContext context) {
@@ -70,6 +74,9 @@ public class CancelarAutorizacaoUseCase {
         var particaoExpurgoWrite = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataCancelamento);
 
         var autorizacaoCanceladaEmNovaParticao = transferirParaNovaParticao(autorizacao, particaoExpurgoWrite);
+
+        eventPublisher.publishEvent(
+                new AutorizacaoPersistidaEvent(autorizacaoCanceladaEmNovaParticao, TipoEventoAutorizacao.CANCELAMENTO));
 
         return AutorizacaoCompletaResponseDto.from(autorizacaoCanceladaEmNovaParticao);
     }

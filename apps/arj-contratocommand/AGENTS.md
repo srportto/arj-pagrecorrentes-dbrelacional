@@ -12,6 +12,7 @@ Leia nesta ordem:
 2. [CriarAutorizacaoUseCase.java](src/main/java/br/com/srportto/contratocommand/application/contratacao/CriarAutorizacaoUseCase.java) — caso de uso compartilhado (validação → mapper → save)
 3. [ContratacaoValidator.java](src/main/java/br/com/srportto/contratocommand/application/contratacao/ContratacaoValidator.java) — validação de regras de negócio via rules
 4. [Autorizacao.java](src/main/java/br/com/srportto/contratocommand/domain/entities/Autorizacao.java) — entidade de domínio com particionamento
+5. [AutorizacaoEventoPublisher.java](src/main/java/br/com/srportto/contratocommand/application/eventos/AutorizacaoEventoPublisher.java) — publica no SNS o estado final de cada autorização persistida, após o commit
 
 ## Build & Testes
 
@@ -39,6 +40,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 - Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório). Exemplos de payloads em `docs/post-autorizacoes.txt`.
 - Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `apps/docker-compose.yml` sobe as 2 aplicações + Postgres de uma vez.
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado explicitamente via `SPRING_PROFILES_ACTIVE=prod`) — não existe mais o profile `dev`.
+- **Publicação de eventos (opcional para rodar a API)**: a cada criação/cancelamento confirmado, a app publica no SNS `sns-estados-autorizacao` (ver `infra/envs/local-messaging/`). No profile `local` os defaults já apontam para o Floci (`http://localhost:4566`); se o Floci ou o tópico não existirem, o publish falha silenciosamente (só loga erro) — a API continua funcionando normalmente. Em `prod`, as variáveis `AWS_REGION` e `AWS_SNS_TOPIC_ARN` são obrigatórias (sem default).
 
 ## Stack
 
@@ -50,6 +52,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 | MapStruct | 1.5.5.Final | Mapeamento DTO↔Entity com `@AfterMapping` |
 | Yasson | 3.0.3 | Jakarta JSON Binding |
 | PostgreSQL | 16+ | Particionamento com `pg_partman` + `pg_cron` |
+| AWS SDK v2 | 2.49.0 | `software.amazon.awssdk:sns` — publicação de eventos, sem Spring Cloud AWS |
 
 > Serialização JSON usa **Jackson 3** (`tools.jackson.databind.JsonNode`).
 
@@ -67,15 +70,18 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 
 ```
 entrypoint/   → AutorizacaoController + DTOs (records imutáveis em contratosrest/)
-application/  → Use Cases por feature (contratacao/, cancelamento/), Mappers, Repositories
+application/  → Use Cases por feature (contratacao/, cancelamento/), Mappers, Repositories, eventos/
 domain/       → Entidades, Enums, Converters, Utilities — lógica pura, sem Spring
-shared/       → Exceções, Interceptadores (ApiExceptionHandler), framework de validação
+shared/       → Exceções, Interceptadores (ApiExceptionHandler), config/, framework de validação
 ```
 
 `application/` divide-se em:
 - raiz de `application/` — componentes **compartilhados** por todos os produtos e por ambas as features: `AutorizacaoRepository`, `AutorizacaoMapper`. Não têm subpacote próprio (não são uma feature).
 - `contratacao/` — `CriarAutorizacaoUseCase`, `ContratacaoContext`, `ContratacaoValidator`, `ContratacaoRule` e `rules/` (inclui `ProdutoSuportado`)
 - `cancelamento/` — `CancelarAutorizacaoUseCase`, `CancelamentoContext`, `CancelamentoValidator`, `CancelamentoRule` e `rules/`
+- `eventos/` — `AutorizacaoPersistidaEvent` (evento interno), `AutorizacaoEventoPayload` (representação da linha, chaves = colunas), `AutorizacaoEventoPublisher` (`@TransactionalEventListener(AFTER_COMMIT)`, publica no SNS)
+
+`shared/config/` contém `AwsProperties` e `SnsClientConfig` (bean do `SnsClient`, AWS SDK v2 puro).
 
 Dentro de cada feature, o estereótipo Spring reflete o papel: `@Service` nos orquestradores (`ContratacaoValidator`, `CancelamentoValidator`, `CriarAutorizacaoUseCase`, `CancelarAutorizacaoUseCase` — a lógica de negócio principal da operação), `@Component` nas rules individuais (estratégias plugáveis, injetadas coletivamente via `List<ContratacaoRule>`/`List<CancelamentoRule>`).
 
@@ -95,6 +101,21 @@ AutorizacaoController.insert()
 ```
 
 O cancelamento segue o mesmo padrão simétrico: o controller resolve o header, monta `CancelamentoContext.doRequest(...)` (path `idAutorizacao` + header `tipoProduto` + corpo) e chama `CancelarAutorizacaoUseCase.execute()` (application/cancelamento) diretamente.
+
+### Publicação de eventos (após commit)
+
+Ao final de `CriarAutorizacaoUseCase.execute()` e `CancelarAutorizacaoUseCase.execute()`, um `AutorizacaoPersistidaEvent` (entidade final + `TipoEventoAutorizacao.CRIACAO`/`CANCELAMENTO`) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher`, um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
+
+```
+CriarAutorizacaoUseCase / CancelarAutorizacaoUseCase (fim do execute(), ainda na transação)
+  └─ eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacao, tipo))
+       ⋮ (commit da transação)
+AutorizacaoEventoPublisher.aoPersistir()   ← só roda se o commit teve sucesso
+  ├─ AutorizacaoEventoPayload.from(autorizacao)  ← chaves = nomes das colunas, não campos Java
+  └─ SnsClient.publish()  ← tópico sns-estados-autorizacao, message attribute tipoEvento
+```
+
+Rollback (ex.: `BusinessException` de validação) nunca chega ao listener — nenhum evento é publicado. Falha no `publish()` (ex.: Floci fora do ar) é apenas logada; a resposta HTTP, já confirmada pelo commit, não é afetada. Não há outbox pattern nesta fase — é um trade-off aceito e documentado em `openspec/changes/add-eventos-autorizacao-sns-sqs/design.md`.
 
 ### Variação por produto vive em rules, não em strategies
 
@@ -157,6 +178,8 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 4. **`Autorizacao` está em `domain/entities/`**. (O antigo `domain/model/ContratoBase` — dead code — foi removido junto com o pacote `domain/model`.)
 5. **PostgreSQL obrigatório** — sem fallback H2; dialeto Hibernate específico.
 6. **Records imutáveis** — não tente reatribuir campos; recrie o record.
+7. **`AutorizacaoEventoPayload` não serializa a entidade JPA diretamente** — é um record dedicado com `@JsonProperty` mapeando cada campo para o nome da coluna. Se adicionar/renomear coluna em `Autorizacao`, atualize o payload manualmente (e replique em `apps/autorizacaostatus-producer`, que tem uma cópia própria do mesmo contrato).
+8. **Publish no SNS nunca lança para fora do listener** — `AutorizacaoEventoPublisher.aoPersistir()` captura qualquer exceção e só loga. Não confunda isso com falha silenciosa da API: a criação/cancelamento já foi commitada antes do listener rodar.
 
 ## Documentação em `docs/`
 
@@ -173,3 +196,4 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 - [ ] Exceções corretas: `BusinessException` (422) para regras, `ApplicationException` (500) para inesperados
 - [ ] Se mexeu em particionamento, rodar `ControleExpurgoAutorizacaoTest`
 - [ ] DTOs (records) recriados, não mutados
+- [ ] Se mexeu no schema de `autorizacoes`, atualizar `AutorizacaoEventoPayload` aqui **e** em `apps/autorizacaostatus-producer`

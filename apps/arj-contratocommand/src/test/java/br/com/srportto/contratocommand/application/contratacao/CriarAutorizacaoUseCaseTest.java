@@ -3,6 +3,8 @@ package br.com.srportto.contratocommand.application.contratacao;
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.UUID;
 
@@ -30,6 +33,8 @@ class CriarAutorizacaoUseCaseTest {
     private AutorizacaoMapper mapper;
     @Mock
     private ContratacaoValidator contratacaoValidator;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private CriarAutorizacaoUseCase useCase;
@@ -49,5 +54,19 @@ class CriarAutorizacaoUseCaseTest {
         assertEquals(aut.getIdAutorizacao().getIdAutorizacao(), resp.getIdAutorizacao());
         verify(contratacaoValidator).validar(context);
         verify(repository).save(aut);
+    }
+
+    @Test
+    @DisplayName("publica evento de criação com o estado final persistido")
+    void publicaEventoDeCriacao() {
+        ContratacaoContext context = TestFixtures.criarContextPix();
+        Autorizacao aut = new Autorizacao();
+        aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 10));
+        when(mapper.toDomain(context.dados(), context.tipoJornada())).thenReturn(aut);
+        when(repository.save(aut)).thenReturn(aut);
+
+        useCase.execute(context);
+
+        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut, TipoEventoAutorizacao.CRIACAO));
     }
 }

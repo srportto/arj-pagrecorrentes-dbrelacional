@@ -8,5 +8,5 @@ aws:
     region: us-east-1
     access-key: test
     secret-key: test
-    sns:
-        topic-arn: arn:aws:sns:us-east-1:000000000000:sns-estados-autorizacao
+    sqs:
+        queue-url: http://localhost:4566/000000000000/SQS-eventos-autorizacao
