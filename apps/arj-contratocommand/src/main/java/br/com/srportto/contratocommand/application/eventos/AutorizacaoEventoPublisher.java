@@ -1,0 +1,59 @@
+package br.com.srportto.contratocommand.application.eventos;
+
+import br.com.srportto.contratocommand.shared.config.AwsProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+
+/**
+ * Publica no SNS a representacao final da autorizacao persistida, somente apos o
+ * commit da transacao (evento de rollback nunca chega aqui). Sem outbox pattern nesta
+ * fase: uma falha de publish e apenas logada — a operacao REST ja foi confirmada e nao
+ * e revertida por causa disso (trade-off aceito, ver design.md da mudanca).
+ */
+@Component
+public class AutorizacaoEventoPublisher {
+
+    private static final Logger log = LoggerFactory.getLogger(AutorizacaoEventoPublisher.class);
+    private static final String MESSAGE_ATTRIBUTE_TIPO_EVENTO = "tipoEvento";
+
+    private final SnsClient snsClient;
+    private final AwsProperties awsProperties;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public AutorizacaoEventoPublisher(SnsClient snsClient, AwsProperties awsProperties) {
+        this.snsClient = snsClient;
+        this.awsProperties = awsProperties;
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoPersistir(AutorizacaoPersistidaEvent evento) {
+        var payload = AutorizacaoEventoPayload.from(evento.autorizacao());
+
+        try {
+            var mensagem = objectMapper.writeValueAsString(payload);
+
+            snsClient.publish(PublishRequest.builder()
+                    .topicArn(awsProperties.sns().topicArn())
+                    .message(mensagem)
+                    .messageAttributes(Map.of(
+                            MESSAGE_ATTRIBUTE_TIPO_EVENTO, MessageAttributeValue.builder()
+                                    .dataType("String")
+                                    .stringValue(evento.tipo().name())
+                                    .build()))
+                    .build());
+        } catch (Exception e) {
+            log.error("Falha ao publicar evento {} da autorização {} no tópico SNS",
+                    evento.tipo(), payload.idAutorizacao(), e);
+        }
+    }
+
+}

@@ -1,0 +1,18 @@
+spring:
+    application:
+        name: autorizacaostatus-producer
+    profiles:
+        default: local
+    threads:
+        virtual:
+            enabled: true
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health
+
+server:
+    port: 8082
+    shutdown: graceful

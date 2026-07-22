@@ -4,6 +4,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "AutorizacaostatusProducerApplication",
+            "request": "launch",
+            "mainClass": "br.com.srportto.autorizacaostatusproducer.AutorizacaostatusProducerApplication",
+            "projectName": ""
+        },
+        {
+            "type": "java",
             "name": "ContratoqueryApplication",
             "request": "launch",
             "cwd": "${workspaceFolder}",

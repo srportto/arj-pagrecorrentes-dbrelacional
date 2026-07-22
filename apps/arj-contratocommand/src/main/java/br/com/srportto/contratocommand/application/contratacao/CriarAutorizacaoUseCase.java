@@ -2,10 +2,13 @@ package br.com.srportto.contratocommand.application.contratacao;
 
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ public class CriarAutorizacaoUseCase {
     private final AutorizacaoRepository repository;
     private final AutorizacaoMapper mapper;
     private final ContratacaoValidator contratacaoValidator;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public AutorizacaoCompletaResponseDto execute(ContratacaoContext context) {
@@ -33,6 +37,8 @@ public class CriarAutorizacaoUseCase {
 
         var autorizacaoMontada = mapper.toDomain(dados, context.tipoJornada());
         var autorizadaPersistida = repository.save(autorizacaoMontada);
+
+        eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizadaPersistida, TipoEventoAutorizacao.CRIACAO));
 
         log.info("Autorização {} criada com sucesso. ID: {}, Empresa: {}",
                 dados.tipoProduto(),
