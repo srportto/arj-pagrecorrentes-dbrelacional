@@ -52,9 +52,9 @@ class EventoAutorizacaoKafkaListenerTest {
         inicializar();
         EventoAutorizacao evento = eventoMinimo();
 
-        listener.escutar(evento, "CRIACAO", acknowledgment);
+        listener.escutar(evento, acknowledgment);
 
-        verify(useCase).processar(evento, "CRIACAO");
+        verify(useCase).processar(evento);
         verify(acknowledgment).acknowledge();
     }
 
@@ -63,9 +63,9 @@ class EventoAutorizacaoKafkaListenerTest {
     void erroNoProcessamentoNaoComitaOffset() {
         inicializar();
         EventoAutorizacao evento = eventoMinimo();
-        doThrow(new RuntimeException("falha")).when(useCase).processar(evento, "CRIACAO");
+        doThrow(new RuntimeException("falha")).when(useCase).processar(evento);
 
-        assertThrows(RuntimeException.class, () -> listener.escutar(evento, "CRIACAO", acknowledgment));
+        assertThrows(RuntimeException.class, () -> listener.escutar(evento, acknowledgment));
 
         verify(acknowledgment, never()).acknowledge();
     }

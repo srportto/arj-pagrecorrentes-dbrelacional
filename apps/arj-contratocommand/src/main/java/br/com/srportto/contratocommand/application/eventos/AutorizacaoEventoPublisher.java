@@ -13,12 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 
-/**
- * Publica no SNS a representacao final da autorizacao persistida, somente apos o
- * commit da transacao (evento de rollback nunca chega aqui). Sem outbox pattern nesta
- * fase: uma falha de publish e apenas logada — a operacao REST ja foi confirmada e nao
- * e revertida por causa disso (trade-off aceito, ver design.md da mudanca).
- */
+/** Publica no SNS a autorização persistida após o commit; falha de publish só é logada (ver design.md). */
 @Component
 public class AutorizacaoEventoPublisher {
 
@@ -37,6 +32,7 @@ public class AutorizacaoEventoPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void aoPersistir(AutorizacaoPersistidaEvent evento) {
         var payload = AutorizacaoEventoPayload.from(evento.autorizacao());
+        var tipoEvento = TipoEventoAutorizacao.porStatus(evento.autorizacao().getStatus());
 
         try {
             var mensagem = objectMapper.writeValueAsString(payload);
@@ -47,12 +43,12 @@ public class AutorizacaoEventoPublisher {
                     .messageAttributes(Map.of(
                             MESSAGE_ATTRIBUTE_TIPO_EVENTO, MessageAttributeValue.builder()
                                     .dataType("String")
-                                    .stringValue(evento.tipo().name())
+                                    .stringValue(tipoEvento.name())
                                     .build()))
                     .build());
         } catch (Exception e) {
             log.error("Falha ao publicar evento {} da autorização {} no tópico SNS",
-                    evento.tipo(), payload.idAutorizacao(), e);
+                    tipoEvento, payload.idAutorizacao(), e);
         }
     }
 

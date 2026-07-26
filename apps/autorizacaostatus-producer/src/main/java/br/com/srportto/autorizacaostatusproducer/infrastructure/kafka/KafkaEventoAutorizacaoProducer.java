@@ -5,18 +5,13 @@ import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Produz eventos no topico Kafka de forma sincrona: so retorna apos a confirmacao do
- * broker, ou lanca EventoAutorizacaoKafkaIndisponivelException (retryable). O ack no
- * SQS, feito pelo chamador, depende desse retorno sem excecao.
- */
+/** Produz eventos no tópico Kafka de forma síncrona; falha vira {@link EventoAutorizacaoKafkaIndisponivelException} (retryable). */
 @Component
 public class KafkaEventoAutorizacaoProducer {
 
@@ -35,10 +30,7 @@ public class KafkaEventoAutorizacaoProducer {
     public void produzir(String key, EventoAutorizacao evento, String tipoEvento) {
         ProducerRecord<String, EventoAutorizacao> record =
                 new ProducerRecord<>(kafkaProperties.topic(), null, key, evento);
-
-        if (StringUtils.hasText(tipoEvento)) {
-            record.headers().add(HEADER_TIPO_EVENTO, tipoEvento.getBytes(StandardCharsets.UTF_8));
-        }
+        record.headers().add(HEADER_TIPO_EVENTO, tipoEvento.getBytes(StandardCharsets.UTF_8));
 
         try {
             producer.send(record).get(GET_TIMEOUT_SECONDS, TimeUnit.SECONDS);

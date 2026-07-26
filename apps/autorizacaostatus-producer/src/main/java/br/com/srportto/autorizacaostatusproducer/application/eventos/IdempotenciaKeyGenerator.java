@@ -10,12 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.UUID;
 
-/**
- * Gera a key de idempotencia da mensagem Kafka: SHA-256 de id_autorizacao + data/hora
- * da ultima atualizacao, calculado a partir dos campos tipados (nunca da string JSON
- * crua) com formatter fixo, para que reentregas da mesma transicao de estado produzam
- * sempre a mesma key.
- */
+/** Gera a key Kafka de idempotência: SHA-256(id_autorizacao + data_hora_ultima_atlz) a partir dos campos tipados, nunca da string JSON crua. */
 @Component
 public class IdempotenciaKeyGenerator {
 

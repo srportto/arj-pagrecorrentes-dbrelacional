@@ -7,13 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Converte o evento consumido da fila para Avro e produz no topico Kafka
- * eventos-autorizacao (ponte SQS -> Kafka). Falhas de dado (JSON invalido, conversao
- * Avro impossivel) viram EventoAutorizacaoInvalidoException (nao-retryable); falhas de
- * infraestrutura Kafka propagam como EventoAutorizacaoKafkaIndisponivelException
- * (retryable) — a classificacao final (dar ack ou nao) acontece no listener SQS.
- */
+/** Converte o evento consumido da fila para Avro e produz no tópico Kafka (ponte SQS -> Kafka). */
 @Service
 public class ProcessarEventoAutorizacaoUseCase {
 
@@ -31,15 +25,16 @@ public class ProcessarEventoAutorizacaoUseCase {
         this.kafkaProducer = kafkaProducer;
     }
 
-    public void processar(String mensagemJson, String tipoEvento) {
+    public void processar(String mensagemJson) {
         AutorizacaoEventoPayload payload = desserializar(mensagemJson);
+        TipoEventoAutorizacao tipoEvento = derivarTipoEvento(payload, mensagemJson);
         EventoAutorizacao evento = paraEventoAvro(payload, mensagemJson);
         String key = keyGenerator.gerar(payload.idAutorizacao(), payload.dataHoraUltimaAtualizacao());
 
-        kafkaProducer.produzir(key, evento, tipoEvento);
+        kafkaProducer.produzir(key, evento, tipoEvento.name());
 
-        log.info("Autorização {} produzida com sucesso no tópico eventos-autorizacao (key={}): {}",
-                payload.idAutorizacao(), key, mensagemJson);
+        log.info("Autorização {} produzida com sucesso no tópico eventos-autorizacao (key={}, tipoEvento={}): {}",
+                payload.idAutorizacao(), key, tipoEvento, mensagemJson);
     }
 
     private AutorizacaoEventoPayload desserializar(String mensagemJson) {
@@ -48,6 +43,15 @@ public class ProcessarEventoAutorizacaoUseCase {
         } catch (RuntimeException e) {
             throw new EventoAutorizacaoInvalidoException(
                     "Body da mensagem não é um JSON válido: " + mensagemJson, e);
+        }
+    }
+
+    private TipoEventoAutorizacao derivarTipoEvento(AutorizacaoEventoPayload payload, String mensagemJson) {
+        try {
+            return TipoEventoAutorizacao.porStatus(payload.status());
+        } catch (RuntimeException e) {
+            throw new EventoAutorizacaoInvalidoException(
+                    "Status ausente, inválido ou desconhecido no payload: " + mensagemJson, e);
         }
     }
 

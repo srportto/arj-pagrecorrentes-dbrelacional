@@ -104,16 +104,19 @@ O cancelamento segue o mesmo padrão simétrico: o controller resolve o header, 
 
 ### Publicação de eventos (após commit)
 
-Ao final de `CriarAutorizacaoUseCase.execute()` e `CancelarAutorizacaoUseCase.execute()`, um `AutorizacaoPersistidaEvent` (entidade final + `TipoEventoAutorizacao.CRIACAO`/`CANCELAMENTO`) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher`, um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
+Ao final de `CriarAutorizacaoUseCase.execute()` e `CancelarAutorizacaoUseCase.execute()`, um `AutorizacaoPersistidaEvent` (só a entidade final — sem campo de tipo) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher`, um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
 
 ```
 CriarAutorizacaoUseCase / CancelarAutorizacaoUseCase (fim do execute(), ainda na transação)
-  └─ eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacao, tipo))
+  └─ eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacao))
        ⋮ (commit da transação)
 AutorizacaoEventoPublisher.aoPersistir()   ← só roda se o commit teve sucesso
   ├─ AutorizacaoEventoPayload.from(autorizacao)  ← chaves = nomes das colunas, não campos Java
+  ├─ TipoEventoAutorizacao.porStatus(autorizacao.getStatus())  ← deriva o tipo do status persistido
   └─ SnsClient.publish()  ← tópico sns-estados-autorizacao, message attribute tipoEvento
 ```
+
+O `tipoEvento` **não é mais informado pelo use case** — é derivado do `status` da entidade (`TipoEventoAutorizacao`, 8 valores em bijeção com `StatusAutorizacao`: `RECEPCAO`, `PENDENCIA_ACEITE`, `INICIO_ATIVACAO`, `ATIVACAO`, `CANCELAMENTO`, `REJEICAO`, `EXPIRACAO`, `FINALIZACAO`). Criação (status `ATIVA`) publica `tipoEvento=ATIVACAO`; cancelamento (status `CANCELADA`) publica `tipoEvento=CANCELAMENTO`. O antigo par `CRIACAO`/`CANCELAMENTO` não existe mais.
 
 Rollback (ex.: `BusinessException` de validação) nunca chega ao listener — nenhum evento é publicado. Falha no `publish()` (ex.: Floci fora do ar) é apenas logada; a resposta HTTP, já confirmada pelo commit, não é afetada. Não há outbox pattern nesta fase — é um trade-off aceito e documentado em `openspec/changes/add-eventos-autorizacao-sns-sqs/design.md`.
 
@@ -151,7 +154,7 @@ Chave composta: `IdAutorizacao(UUID idAutorizacao, Integer idParticaoConta)` com
 
 ### Mapeamento de status
 
-`status` na entidade `Autorizacao` é `Integer`, **não** enum — mas o enum `StatusAutorizacao` é a **fonte da verdade** dos valores: criação grava `ATIVA` (= 4) e cancelamento grava `CANCELADA` (= 5), via `StatusAutorizacao.X.getStatusAutorizacao()` (sem números mágicos).
+`status` na entidade `Autorizacao` é `Integer`, **não** enum — mas o enum `StatusAutorizacao` é a **fonte da verdade** dos valores: criação grava `ATIVA` (= 4) e cancelamento grava `CANCELADA` (= 5), via `StatusAutorizacao.X.getStatusAutorizacao()` (sem números mágicos). O enum também carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado ainda pelas operações de criação/cancelamento, disponível para validações futuras.
 
 ### Exceções e códigos HTTP
 

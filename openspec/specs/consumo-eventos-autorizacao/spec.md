@@ -35,10 +35,11 @@ A aplicação SHALL consumir a fila `SQS-eventos-autorizacao` com o AWS SDK v2
 (`SqsClient`), sem Spring Cloud AWS, em um loop de long polling
 (`WaitTimeSeconds = 20`) executado em virtual thread iniciada por um componente de
 ciclo de vida do Spring (`SmartLifecycle`), com encerramento gracioso no stop da
-aplicação. O `ReceiveMessage` SHALL solicitar o message attribute `tipoEvento` via
-`messageAttributeNames`, para que a ponte possa propagá-lo como header Kafka. Erros
-consecutivos de recebimento (ex.: Floci fora do ar) SHALL aplicar backoff entre
-tentativas, com log claro da causa.
+aplicação. O `ReceiveMessage` NÃO SHALL solicitar message attributes: o tipo do evento
+é derivado pela ponte a partir do campo `status` do payload JSON
+(`TipoEventoAutorizacao.porStatus`), tornando o attribute SQS `tipoEvento`
+desnecessário para o processamento. Erros consecutivos de recebimento (ex.: Floci fora
+do ar) SHALL aplicar backoff entre tentativas, com log claro da causa.
 
 #### Scenario: Loop inicia e para com a aplicação
 - **WHEN** a aplicação inicia
@@ -49,10 +50,10 @@ tentativas, com log claro da causa.
 - **WHEN** o Floci está fora do ar durante o polling
 - **THEN** a aplicação não encerra: loga o erro e tenta novamente após backoff
 
-#### Scenario: Attribute tipoEvento disponível para a ponte
-- **WHEN** uma mensagem com o attribute `tipoEvento` é recebida
-- **THEN** o attribute está presente na mensagem retornada pelo `ReceiveMessage` e é
-  repassado ao fluxo de produção Kafka
+#### Scenario: Processamento independe do attribute tipoEvento
+- **WHEN** uma mensagem é recebida — com ou sem o attribute SQS `tipoEvento`
+- **THEN** o processamento segue normalmente, com o tipo do evento derivado do campo
+  `status` do body pela ponte
 
 ### Requirement: Log de consumo com sucesso e ack da mensagem
 

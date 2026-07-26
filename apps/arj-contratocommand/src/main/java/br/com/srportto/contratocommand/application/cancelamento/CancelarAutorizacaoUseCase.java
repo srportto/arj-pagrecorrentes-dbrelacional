@@ -2,7 +2,6 @@ package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -23,11 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Caso de uso único de cancelamento de autorização, compartilhado por todos os produtos.
- * Marca o status como cancelada, registra os dados de cancelamento e transfere a autorização
- * para a partição de expurgo via delete+insert, tudo dentro do mesmo limite transacional.
- */
+/** Caso de uso único de cancelamento, compartilhado por todos os produtos: marca status, registra dados e transfere a autorização para a partição de expurgo. */
 @Service
 @AllArgsConstructor
 public class CancelarAutorizacaoUseCase {
@@ -75,8 +70,7 @@ public class CancelarAutorizacaoUseCase {
 
         var autorizacaoCanceladaEmNovaParticao = transferirParaNovaParticao(autorizacao, particaoExpurgoWrite);
 
-        eventPublisher.publishEvent(
-                new AutorizacaoPersistidaEvent(autorizacaoCanceladaEmNovaParticao, TipoEventoAutorizacao.CANCELAMENTO));
+        eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacaoCanceladaEmNovaParticao));
 
         return AutorizacaoCompletaResponseDto.from(autorizacaoCanceladaEmNovaParticao);
     }

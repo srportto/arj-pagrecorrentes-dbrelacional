@@ -18,7 +18,7 @@ Leia nesta ordem:
 4. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
 5. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/kafka/KafkaEventoAutorizacaoProducer.java) — adapter de produção Kafka (síncrono)
 6. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `arj-contratocommand`
-7. [EventoAutorizacao.avsc](src/main/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
+7. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
 
 ## Build & Testes
 
@@ -55,7 +55,7 @@ mvn test                                     # Todos os testes
 | Spring Boot | 4.0.7 | Web MVC (só para o Actuator), Actuator |
 | AWS SDK v2 | 2.49.0 | `software.amazon.awssdk:sqs` — sem Spring Cloud AWS |
 | kafka-clients | 3.7.1 | Producer Kafka puro — sem spring-kafka |
-| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/avro/EventoAutorizacao.avsc` |
+| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
 | kafka-avro-serializer | 7.7.1 (Confluent) | Serialização Avro + integração com o Schema Registry |
 | Lombok | 1.18.40 | uso mínimo (sem entidades JPA) |
 
@@ -87,19 +87,19 @@ contrato do evento consumido, não uma regra de negócio pura.
 ```
 SqsEventoAutorizacaoListener (SmartLifecycle)
   └─ start(): inicia virtual thread → loopDeConsumo()
-       └─ pollOnce(): ReceiveMessage (long polling, WaitTimeSeconds=20, MaxNumberOfMessages=10,
-                       messageAttributeNames=tipoEvento)
+       └─ pollOnce(): ReceiveMessage (long polling, WaitTimeSeconds=20, MaxNumberOfMessages=10)
             └─ processarEDarAck() por mensagem:
-                 ├─ ProcessarEventoAutorizacaoUseCase.processar(body, tipoEvento)
+                 ├─ ProcessarEventoAutorizacaoUseCase.processar(body)
                  │    ├─ desserializa em AutorizacaoEventoPayload
+                 │    ├─ TipoEventoAutorizacao.porStatus(payload.status()) → deriva o tipo do evento
                  │    ├─ EventoAutorizacaoConverter → record Avro EventoAutorizacao (setScale defensivo)
                  │    ├─ IdempotenciaKeyGenerator → key SHA-256(id_autorizacao + data_hora_ultima_atlz)
                  │    ├─ KafkaEventoAutorizacaoProducer.produzir() → send() SÍNCRONO (get com timeout)
-                 │    │    header Kafka "tipoEvento" = attribute SQS repassado
+                 │    │    header Kafka "tipoEvento" = tipo derivado do status (sempre presente)
                  │    └─ loga sucesso com o body e a key produzida
                  └─ ack (DeleteMessage) OU descarte, conforme classificação da falha:
                       ├─ sucesso → ack
-                      ├─ EventoAutorizacaoInvalidoException (JSON/Avro inválido) → log ERROR + ack (descarte consciente)
+                      ├─ EventoAutorizacaoInvalidoException (JSON/Avro inválido ou status desconhecido) → log ERROR + ack (descarte consciente)
                       └─ qualquer outra exceção (Kafka/SR indisponível) → SEM ack (retry via visibility timeout)
   └─ stop(): sinaliza parada e interrompe a thread (shutdown gracioso)
 ```
@@ -117,9 +117,10 @@ Esta app não tem `ApiExceptionHandler` — não há API REST de negócio para t
 HTTP. Duas exceções orientam a classificação de falha no listener:
 
 - **`EventoAutorizacaoInvalidoException`** (`application/eventos/`) — não-retryable.
-  JSON malformado ou conversão para Avro impossível. O listener loga ERROR com o body
-  completo da mensagem e dá ack (descarta conscientemente — retry seria inútil e, sem
-  redrive policy na fila, causaria loop infinito).
+  JSON malformado, conversão para Avro impossível, ou `status` ausente/desconhecido no
+  payload (usado para derivar `tipoEvento` via `TipoEventoAutorizacao.porStatus`). O
+  listener loga ERROR com o body completo da mensagem e dá ack (descarta conscientemente
+  — retry seria inútil e, sem redrive policy na fila, causaria loop infinito).
 - **`EventoAutorizacaoKafkaIndisponivelException`** (`infrastructure/kafka/`) —
   retryable. Broker/Schema Registry indisponível ou timeout. O listener loga ERROR e
   **não** dá ack — a mensagem volta à fila após o visibility timeout.
@@ -134,8 +135,11 @@ HTTP. Duas exceções orientam a classificação de falha no listener:
    `arj-contratocommand` (`application/eventos/AutorizacaoEventoPayload.java`) — os dois
    não compartilham código; se o schema do evento mudar lá, replique aqui.
 4. **`EventoAutorizacao.avsc` também é um espelho manual**, replicado em
-   `apps/eventos-consumer/src/main/avro/`. Mudou o schema aqui? Replique lá também —
-   não há módulo Avro compartilhado no monorepo (mesma decisão do payload JSON).
+   `apps/eventos-consumer/src/main/resources/avro/`. Mudou o schema aqui? Replique lá
+   também — não há módulo Avro compartilhado no monorepo (mesma decisão do payload
+   JSON). Ambos ficam em `src/main/resources/avro` (não `src/main/avro`), empacotados
+   no JAR como insumo de documentação — o runtime não os lê, quem governa o schema é o
+   Schema Registry.
 5. **`pollOnce()` e `processarEDarAck()` são package-private de propósito** — permitem
    testar o adapter sem precisar rodar a thread real de polling.
 6. **Ack no SQS depende do Kafka, não só do parsing** — diferente da fase anterior
@@ -146,6 +150,12 @@ HTTP. Duas exceções orientam a classificação de falha no listener:
    de erro (a fila não tem redrive policy; reter para sempre só gera ruído).
 8. **`enableDecimalLogicalType=true`** no `avro-maven-plugin` — sem isso, os campos
    decimais são gerados como `ByteBuffer`, não `BigDecimal`, quebrando o conversor.
+9. **`tipoEvento` não é mais lido do attribute SQS** — o listener não solicita
+   `messageAttributeNames` no `ReceiveMessage`; `ProcessarEventoAutorizacaoUseCase`
+   deriva o header Kafka `tipoEvento` do campo `status` do payload
+   (`TipoEventoAutorizacao.porStatus`), sempre presente. `StatusAutorizacao` e
+   `TipoEventoAutorizacao` (`application/eventos/`) são espelhos manuais dos mesmos
+   enums do `arj-contratocommand`.
 
 ## Documentação relacionada
 

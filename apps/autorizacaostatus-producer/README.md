@@ -9,12 +9,12 @@ forma idempotente. O ack no SQS só ocorre após o broker Kafka confirmar a prod
 ## Funcionalidades
 
 - **Consumo via long polling**: `SqsClient` (AWS SDK v2 puro, sem Spring Cloud AWS) em
-  loop numa virtual thread dedicada, solicitando o attribute `tipoEvento`
+  loop numa virtual thread dedicada
 - **Conversão para Avro**: payload JSON → record `EventoAutorizacao` (Schema Registry),
   com `setScale(2)` defensivo nos campos decimais
 - **Produção idempotente**: key = SHA-256(`id_autorizacao` + `data_hora_ultima_atlz`);
   `enable.idempotence=true` + `acks=all` no producer Kafka
-- **Header `tipoEvento`**: propagado do message attribute SQS para o header Kafka
+- **Header `tipoEvento`**: derivado do campo `status` do payload (`TipoEventoAutorizacao.porStatus`), sempre presente
 - **Ack condicionado ao Kafka**: `DeleteMessage` só ocorre após a confirmação síncrona
   do broker; falha retryable mantém a mensagem na fila, falha não-retryable (dado
   inválido) descarta com log de erro
@@ -28,7 +28,7 @@ forma idempotente. O ack no SQS só ocorre após o broker Kafka confirmar a prod
 | **Spring Boot** | 4.0.7 | Web MVC (Actuator), IoC |
 | **AWS SDK v2** | 2.49.0 | `software.amazon.awssdk:sqs` |
 | **kafka-clients** | 3.7.1 | Producer Kafka puro — sem spring-kafka |
-| **Avro** | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/avro/EventoAutorizacao.avsc` |
+| **Avro** | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
 | **kafka-avro-serializer** | 7.7.1 (Confluent) | Serialização Avro + Schema Registry |
 | **Lombok** | 1.18.40 | uso mínimo — sem entidades JPA |
 | **Maven** | 3.9+ | Build e gerenciamento de dependências |
@@ -36,13 +36,15 @@ forma idempotente. O ack no SQS só ocorre após o broker Kafka confirmar a prod
 ## Estrutura do Projeto
 
 ```
-src/main/avro/
+src/main/resources/avro/
 └── EventoAutorizacao.avsc                      # schema Avro produzido no Kafka
 src/main/java/br/com/srportto/autorizacaostatusproducer/
 ├── AutorizacaostatusProducerApplication.java
 ├── application/
 │   └── eventos/
 │       ├── AutorizacaoEventoPayload.java        # espelho do payload publicado pelo command
+│       ├── StatusAutorizacao.java               # espelho do enum (8 estados + transições)
+│       ├── TipoEventoAutorizacao.java           # espelho do enum (8 valores, porStatus)
 │       ├── EventoAutorizacaoConverter.java      # payload -> record Avro
 │       ├── IdempotenciaKeyGenerator.java        # key SHA-256 de idempotência
 │       ├── EventoAutorizacaoInvalidoException.java
@@ -78,14 +80,14 @@ entidades persistidas — apenas consome uma fila, converte e produz no Kafka.
 ```
 SqsEventoAutorizacaoListener (SmartLifecycle)
   start() → virtual thread → loopDeConsumo()
-    pollOnce(): ReceiveMessage (long polling, WaitTimeSeconds=20, MaxNumberOfMessages=10,
-                messageAttributeNames=tipoEvento)
+    pollOnce(): ReceiveMessage (long polling, WaitTimeSeconds=20, MaxNumberOfMessages=10)
       processarEDarAck() por mensagem:
-        ProcessarEventoAutorizacaoUseCase.processar(body, tipoEvento)
+        ProcessarEventoAutorizacaoUseCase.processar(body)
           → desserializa em AutorizacaoEventoPayload
+          → TipoEventoAutorizacao.porStatus(payload.status()) → deriva o tipo do evento
           → EventoAutorizacaoConverter → record Avro EventoAutorizacao
           → IdempotenciaKeyGenerator → key SHA-256(id_autorizacao + data_hora_ultima_atlz)
-          → KafkaEventoAutorizacaoProducer.produzir() → send() síncrono (header tipoEvento)
+          → KafkaEventoAutorizacaoProducer.produzir() → send() síncrono (header tipoEvento derivado)
           → loga sucesso com o body e a key produzida
         ack (DeleteMessage) OU descarte, conforme a falha:
           sucesso                              → ack
@@ -175,7 +177,8 @@ mvn clean verify
    `arj-contratocommand` — os dois não compartilham código-fonte; mudanças no schema do
    evento precisam ser replicadas nos dois lados.
 4. **`EventoAutorizacao.avsc` também é um espelho manual**, replicado em
-   `apps/eventos-consumer` — sem módulo Avro compartilhado no monorepo.
+   `apps/eventos-consumer` (ambos em `src/main/resources/avro`) — sem módulo Avro
+   compartilhado no monorepo.
 5. **`pollOnce()`/`processarEDarAck()` são package-private de propósito**, para permitir
    testar o adapter sem rodar a thread real de polling.
 6. **`enableDecimalLogicalType=true`** no `avro-maven-plugin` — sem isso, os campos
@@ -183,6 +186,9 @@ mvn clean verify
 7. **Sem outbox/DLQ na fila SQS** — mensagem não-retryable é descartada (com log) em vez
    de retida para sempre; ver `design.md` da mudança `add-eventos-autorizacao-kafka`
    para os trade-offs aceitos.
+8. **`tipoEvento` não vem mais do attribute SQS** — é derivado do campo `status` do
+   payload (`TipoEventoAutorizacao.porStatus`); `status` desconhecido vira mensagem
+   inválida (descarte consciente).
 
 ## Informações do Projeto
 

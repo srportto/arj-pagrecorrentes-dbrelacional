@@ -44,13 +44,13 @@ class ProcessarEventoAutorizacaoUseCaseTest {
     }
 
     @Test
-    @DisplayName("processa com sucesso: converte o payload e produz no Kafka")
+    @DisplayName("processa com sucesso: converte o payload, deriva o tipoEvento do status e produz no Kafka")
     void processaComSucesso() {
         inicializar();
 
-        assertDoesNotThrow(() -> useCase.processar(MENSAGEM_VALIDA, "CRIACAO"));
+        assertDoesNotThrow(() -> useCase.processar(MENSAGEM_VALIDA));
 
-        verify(kafkaProducer).produzir(anyString(), any(EventoAutorizacao.class), eq("CRIACAO"));
+        verify(kafkaProducer).produzir(anyString(), any(EventoAutorizacao.class), eq("ATIVACAO"));
     }
 
     @Test
@@ -59,7 +59,7 @@ class ProcessarEventoAutorizacaoUseCaseTest {
         inicializar();
 
         assertThrows(EventoAutorizacaoInvalidoException.class,
-                () -> useCase.processar("{isso nao e json", "CRIACAO"));
+                () -> useCase.processar("{isso nao e json"));
     }
 
     @Test
@@ -68,7 +68,17 @@ class ProcessarEventoAutorizacaoUseCaseTest {
         inicializar();
 
         assertThrows(EventoAutorizacaoInvalidoException.class,
-                () -> useCase.processar("{\"id_autorizacao\":\"550e8400-e29b-41d4-a716-446655440000\"}", "CRIACAO"));
+                () -> useCase.processar("{\"id_autorizacao\":\"550e8400-e29b-41d4-a716-446655440000\"}"));
+    }
+
+    @Test
+    @DisplayName("status desconhecido no payload vira EventoAutorizacaoInvalidoException")
+    void statusDesconhecidoViraExcecaoNaoRetryable() {
+        inicializar();
+        String mensagemComStatusInvalido = MENSAGEM_VALIDA.replace("\"status\":4", "\"status\":99");
+
+        assertThrows(EventoAutorizacaoInvalidoException.class,
+                () -> useCase.processar(mensagemComStatusInvalido));
     }
 
     @Test
@@ -79,7 +89,7 @@ class ProcessarEventoAutorizacaoUseCaseTest {
                 .when(kafkaProducer).produzir(anyString(), any(EventoAutorizacao.class), anyString());
 
         assertThrows(EventoAutorizacaoKafkaIndisponivelException.class,
-                () -> useCase.processar(MENSAGEM_VALIDA, "CRIACAO"));
+                () -> useCase.processar(MENSAGEM_VALIDA));
     }
 
 }

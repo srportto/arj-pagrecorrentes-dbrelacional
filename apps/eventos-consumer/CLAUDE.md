@@ -14,7 +14,7 @@ Leia nesta ordem:
 1. [EventoAutorizacaoKafkaListener.java](src/main/java/br/com/srportto/eventosconsumer/infrastructure/kafka/EventoAutorizacaoKafkaListener.java) — `@KafkaListener` (ack manual)
 2. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/eventosconsumer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — loga o evento consumido
 3. [KafkaConsumerConfig.java](src/main/java/br/com/srportto/eventosconsumer/shared/config/KafkaConsumerConfig.java) — `ConsumerFactory` + `ConcurrentKafkaListenerContainerFactory` (AckMode.MANUAL)
-4. [EventoAutorizacao.avsc](src/main/avro/EventoAutorizacao.avsc) — schema Avro consumido (espelho manual do da `autorizacaostatus-producer`)
+4. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro consumido (espelho manual do da `autorizacaostatus-producer`)
 
 ## Build & Testes
 
@@ -47,7 +47,7 @@ mvn test                                     # Todos os testes
 | Java | 25 | `void main()` pendente do maven plugin |
 | Spring Boot | 4.0.7 | Web MVC (só para o Actuator), Actuator |
 | spring-kafka | gerenciado pelo Spring Boot BOM | `@KafkaListener` + `Acknowledgment` manual |
-| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/avro/EventoAutorizacao.avsc` |
+| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
 | kafka-avro-serializer | 7.7.1 (Confluent) | `KafkaAvroDeserializer` + integração com o Schema Registry |
 | Lombok | 1.18.40 | uso mínimo (sem entidades JPA) |
 
@@ -74,9 +74,10 @@ Sem camada `entrypoint/` nem `domain/`: não há API REST de negócio nem persis
 
 ```
 EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, containerFactory com AckMode.MANUAL)
-  ├─ recebe o EventoAutorizacao desserializado (specific.avro.reader=true) + header tipoEvento
-  ├─ ProcessarEventoAutorizacaoUseCase.processar(evento, tipoEvento)
-  │    └─ loga sucesso com a representação do evento
+  ├─ recebe o EventoAutorizacao desserializado (specific.avro.reader=true)
+  ├─ ProcessarEventoAutorizacaoUseCase.processar(evento)
+  │    ├─ TipoEventoAutorizacao.porStatus(evento.getStatus()) → deriva o tipo do evento
+  │    └─ loga sucesso com a representação do evento e o tipo derivado
   └─ Acknowledgment.acknowledge()  — só se processar() não lançar exceção
 ```
 
@@ -101,12 +102,20 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
    isso é uma mudança de escopo desta app.
 3. **`EventoAutorizacao.avsc` é um espelho manual** do schema equivalente em
    `apps/autorizacaostatus-producer` — os dois não compartilham código; se o schema
-   mudar lá, replique aqui.
+   mudar lá, replique aqui. Ambos ficam em `src/main/resources/avro` (não
+   `src/main/avro`), empacotados no JAR como insumo de documentação — o runtime não os
+   lê, quem governa o schema é o Schema Registry.
 4. **Conexão Kafka é lazy** — `@SpringBootTest` sobe normalmente sem broker real (o
    `KafkaConsumer` só toca a rede ao fazer poll, em thread de background do container);
    não confunda "contexto sobe" com "está consumindo".
 5. **Semântica de retry é do spring-kafka, não do SQS** — não há visibility timeout;
    quem decide reentrega é o `DefaultErrorHandler` do container.
+6. **`tipoEvento` não é mais lido do header Kafka** — `EventoAutorizacaoKafkaListener`
+   não declara mais o parâmetro `@Header`; `ProcessarEventoAutorizacaoUseCase` deriva o
+   tipo do campo `status` do próprio `EventoAutorizacao` recebido
+   (`TipoEventoAutorizacao.porStatus`). `StatusAutorizacao` e `TipoEventoAutorizacao`
+   (`application/eventos/`) são espelhos manuais dos mesmos enums do
+   `arj-contratocommand`.
 
 ## Documentação relacionada
 

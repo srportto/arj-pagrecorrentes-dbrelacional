@@ -10,19 +10,11 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import java.time.Duration;
 
-/**
- * Consome a fila SQS-eventos-autorizacao em loop de long polling numa virtual thread e
- * produz cada evento no Kafka (ponte). Semantica at-least-once: o ack (DeleteMessage)
- * so acontece apos a producao no Kafka confirmar (ou apos um descarte consciente de
- * mensagem invalida); em falha retryable, a mensagem nao e confirmada e volta a fila
- * apos o visibility timeout. Falhas de ReceiveMessage (ex.: Floci fora do ar) aplicam
- * backoff sem encerrar o loop.
- */
+/** Consome a fila em loop de long polling numa virtual thread e produz cada evento no Kafka (ponte); ack só após a confirmação do Kafka. */
 @Component
 public class SqsEventoAutorizacaoListener implements SmartLifecycle {
 
@@ -31,7 +23,6 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
     private static final int WAIT_TIME_SECONDS = 20;
     private static final int MAX_NUMBER_OF_MESSAGES = 10;
     private static final Duration BACKOFF_APOS_ERRO = Duration.ofSeconds(5);
-    private static final String MESSAGE_ATTRIBUTE_TIPO_EVENTO = "tipoEvento";
 
     private final SqsClient sqsClient;
     private final AwsProperties awsProperties;
@@ -85,7 +76,6 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
                     .queueUrl(queueUrl)
                     .waitTimeSeconds(WAIT_TIME_SECONDS)
                     .maxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
-                    .messageAttributeNames(MESSAGE_ATTRIBUTE_TIPO_EVENTO)
                     .build());
 
             for (Message message : response.messages()) {
@@ -99,7 +89,7 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
 
     void processarEDarAck(String queueUrl, Message message) {
         try {
-            useCase.processar(message.body(), tipoEvento(message));
+            useCase.processar(message.body());
             ack(queueUrl, message);
         } catch (EventoAutorizacaoInvalidoException e) {
             log.error("Mensagem não-retryable descartada (corpo: {})", message.body(), e);
@@ -108,11 +98,6 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
             log.error("Falha ao processar a mensagem {}. Não será confirmada — volta à fila após o visibility timeout",
                     message.messageId(), e);
         }
-    }
-
-    private String tipoEvento(Message message) {
-        MessageAttributeValue attribute = message.messageAttributes().get(MESSAGE_ATTRIBUTE_TIPO_EVENTO);
-        return attribute == null ? null : attribute.stringValue();
     }
 
     private void ack(String queueUrl, Message message) {
