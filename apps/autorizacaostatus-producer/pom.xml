@@ -31,8 +31,8 @@
     <java.version>25</java.version>
     <lombok.version>1.18.40</lombok.version> <!-- Supports Java 25 -->
     <aws-sdk.version>2.49.0</aws-sdk.version>
-    <avro.version>1.11.3</avro.version>
-    <kafka-clients.version>3.7.1</kafka-clients.version>
+    <avro.version>1.11.4</avro.version>
+    <kafka-clients.version>3.9.2</kafka-clients.version>
     <confluent.version>7.7.1</confluent.version>
 	</properties>
 
