@@ -304,7 +304,7 @@ Floci uses real Docker containers when in-process emulation would reduce fidelit
 |---|---|---|
 | Lambda | `public.ecr.aws/lambda/<runtime>` | AWS runtime environment, execution model, warm container pool |
 | ElastiCache | `valkey/valkey:8` | Redis / Valkey protocol, ACL-based IAM auth, SigV4 validation |
-| RDS PostgreSQL | `postgres:16-alpine` | PostgreSQL engine, IAM auth, JDBC-compatible access |
+| RDS PostgreSQL | `postgres:18-alpine` | PostgreSQL engine, IAM auth, JDBC-compatible access |
 | RDS MySQL / Aurora | `mysql:8.0` | MySQL engine, IAM auth, JDBC-compatible access |
 | RDS MariaDB | `mariadb:11` | MariaDB engine, IAM auth, JDBC-compatible access |
 | Neptune | `tinkerpop/gremlin-server:3.7.3` | TinkerPop Gremlin Server; Gremlin WebSocket on port 8182; SigV4 auth proxy |
@@ -331,7 +331,7 @@ docker run -d --name floci \
 | Variable | Default |
 |---|---|
 | `FLOCI_SERVICES_ELASTICACHE_DEFAULT_IMAGE` | `valkey/valkey:8` |
-| `FLOCI_SERVICES_RDS_DEFAULT_POSTGRES_IMAGE` | `postgres:16-alpine` |
+| `FLOCI_SERVICES_RDS_DEFAULT_POSTGRES_IMAGE` | `postgres:18-alpine` |
 | `FLOCI_SERVICES_RDS_DEFAULT_MYSQL_IMAGE` | `mysql:8.0` |
 | `FLOCI_SERVICES_RDS_DEFAULT_MARIADB_IMAGE` | `mariadb:11` |
 | `FLOCI_SERVICES_MSK_DEFAULT_IMAGE` | `redpandadata/redpanda:latest` |

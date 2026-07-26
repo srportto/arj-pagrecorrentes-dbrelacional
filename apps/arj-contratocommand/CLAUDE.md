@@ -31,7 +31,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
-- **PostgreSQL 16+** com `pg_partman` e `pg_cron` — **sem fallback para H2**
+- **PostgreSQL 18** com `pg_partman`, `pg_cron` e `pgvector` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
 - Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):
   - `DB_TRANSACTION_ISOLATION` — nível de isolamento (default `TRANSACTION_READ_COMMITTED`; aceita `TRANSACTION_READ_UNCOMMITTED`, `TRANSACTION_READ_COMMITTED`, `TRANSACTION_REPEATABLE_READ`, `TRANSACTION_SERIALIZABLE`).
@@ -51,7 +51,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 | Lombok | 1.18.40 | `@Data`, `@Getter`, `@Setter`, `@AllArgsConstructor` |
 | MapStruct | 1.5.5.Final | Mapeamento DTO↔Entity com `@AfterMapping` |
 | Yasson | 3.0.3 | Jakarta JSON Binding |
-| PostgreSQL | 16+ | Particionamento com `pg_partman` + `pg_cron` |
+| PostgreSQL | 18 | Particionamento com `pg_partman` + `pg_cron` + `pgvector` |
 | AWS SDK v2 | 2.49.0 | `software.amazon.awssdk:sns` — publicação de eventos, sem Spring Cloud AWS |
 
 > Serialização JSON usa **Jackson 3** (`tools.jackson.databind.JsonNode`).
@@ -179,7 +179,7 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 2. **Só existem `PIX_AUTO` e `DDA_AUTO`** — `CARTAO_CREDITO` não existe.
 3. **Partições vão de 900 a 999**, não de 1 a 100.
 4. **`Autorizacao` está em `domain/entities/`**. (O antigo `domain/model/ContratoBase` — dead code — foi removido junto com o pacote `domain/model`.)
-5. **PostgreSQL obrigatório** — sem fallback H2; dialeto Hibernate específico.
+5. **PostgreSQL 18 obrigatório** — sem fallback H2; dialeto Hibernate específico.
 6. **Records imutáveis** — não tente reatribuir campos; recrie o record.
 7. **`AutorizacaoEventoPayload` não serializa a entidade JPA diretamente** — é um record dedicado com `@JsonProperty` mapeando cada campo para o nome da coluna. Se adicionar/renomear coluna em `Autorizacao`, atualize o payload manualmente (e replique em `apps/autorizacaostatus-producer`, que tem uma cópia própria do mesmo contrato).
 8. **Publish no SNS nunca lança para fora do listener** — `AutorizacaoEventoPublisher.aoPersistir()` captura qualquer exceção e só loga. Não confunda isso com falha silenciosa da API: a criação/cancelamento já foi commitada antes do listener rodar.

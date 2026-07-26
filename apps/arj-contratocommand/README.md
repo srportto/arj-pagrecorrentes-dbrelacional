@@ -15,7 +15,7 @@ O **Contrato Command** é um microserviço backend construído com **Spring Boot
 - ✅ **Particionamento Temporal**: Dados particionados por conta com PostgreSQL + pg_partman + pg_cron
 - ✅ **Validações em Cascata**: Validadores customizados + regras de negócio
 - ✅ **Tratamento Centralizado de Exceções**: `BusinessException` (422), `ApplicationException` (500)
-- ✅ **Persistência Robusta**: PostgreSQL 16+ com UUIDs reversíveis e composite primary keys
+- ✅ **Persistência Robusta**: PostgreSQL 18 com UUIDs reversíveis e composite primary keys
 - ✅ **Logging Estruturado**: Interceptadores HTTP e tratamento de erros consistente
 
 ## 🛠️ Stack Técnico
@@ -29,7 +29,7 @@ O **Contrato Command** é um microserviço backend construído com **Spring Boot
 | **Lombok** | 1.18.40 | Reduz boilerplate: `@Data`, `@Getter`, `@Setter`, `@Builder` |
 | **MapStruct** | 1.5.5.Final | Mapeamento automático DTO ↔ Entity com `@AfterMapping` |
 | **Yasson** | 3.0.3 | Serialização JSON (Jakarta JSON Binding) para metadados JSONB |
-| **PostgreSQL** | 16+ | Persistência relacional com particionamento temporal |
+| **PostgreSQL** | 18 | Persistência relacional com particionamento temporal |
 | **Maven** | 3.9+ | Build, compilação e gerenciamento de dependências |
 
 ## 📁 Estrutura do Projeto
@@ -126,7 +126,7 @@ O projeto segue **arquitetura hexagonal** com camadas bem isoladas e responsabil
 │   ┌────────────────────────────────────────────────────────┐   │
 │   │ PixAutoRepository extends JpaRepository               │   │
 │   │ Partitionable: (id_autorizacao, id_particao_conta)     │   │
-│   │ Database: PostgreSQL 16+ com pg_partman + pg_cron      │   │
+│   │ Database: PostgreSQL 18 com pg_partman + pg_cron      │   │
 │   └────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -148,7 +148,7 @@ O projeto segue **arquitetura hexagonal** com camadas bem isoladas e responsabil
 
 - **Java** `25` (JDK 25+) com preview features habilitados
 - **Maven** `3.9+` (use `mvn` diretamente se `./mvnw.cmd` falhar)
-- **PostgreSQL** `16+` com extensões obrigatórias:
+- **PostgreSQL** `18` com extensões obrigatórias:
   - **pg_partman** - Particionamento automático e gerenciamento de partições
   - **pg_cron** - Agendamento de tarefas de limpeza (expurgo) em background
   
@@ -218,11 +218,11 @@ cd ..
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha docker compose up -d --build
 ```
 
-Para subir só o banco (Postgres 16 com pg_partman + pg_cron), o Dockerfile fica em `infra/local/postgres/` (raiz do repositório):
+Para subir só o banco (Postgres 18 com pg_partman + pg_cron + pgvector), o Dockerfile fica em `infra/local/postgres/` (raiz do repositório):
 
 ```bash
 cd ../../infra/local/postgres
-docker compose -f postgres-db-v16.yml up -d
+docker compose -f postgres-db-v18.yml up -d
 ```
 
 ### Testes

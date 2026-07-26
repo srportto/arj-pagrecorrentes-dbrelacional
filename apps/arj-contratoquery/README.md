@@ -22,7 +22,7 @@ O **Contrato Query** é o microserviço de leitura responsável por expor consul
 | **Spring Data JPA** | Latest | ORM via Hibernate; JPQL explícito no repositório |
 | **Jakarta Validation** | 3.0 | Validação de entrada |
 | **Lombok** | 1.18.40 | `@Data`, `@Getter`, `@Builder`, `@AllArgsConstructor` |
-| **PostgreSQL** | 16+ | Particionamento com `pg_partman` + `pg_cron` |
+| **PostgreSQL** | 18 | Particionamento com `pg_partman` + `pg_cron` |
 | **Maven** | 3.9+ | Build e gerenciamento de dependências |
 
 > Sem MapStruct — DTOs construídos via método estático `from()`.
@@ -106,7 +106,7 @@ Tratadas centralmente em `ApiExceptionHandler`.
 
 - **Java 25** (JDK 25+)
 - **Maven 3.9+** (use `mvn` se `./mvnw.cmd` falhar no Windows)
-- **PostgreSQL 16+** com `pg_partman` e `pg_cron` — obrigatório, sem fallback H2
+- **PostgreSQL 18** com `pg_partman` e `pg_cron` — obrigatório, sem fallback H2
 
 ### Variáveis de Ambiente
 
@@ -153,11 +153,11 @@ cd ..
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha docker compose up -d --build
 ```
 
-Para subir só o banco (Postgres 16 com pg_partman + pg_cron), o Dockerfile fica em `infra/local/postgres/` (raiz do repositório):
+Para subir só o banco (Postgres 18 com pg_partman + pg_cron + pgvector), o Dockerfile fica em `infra/local/postgres/` (raiz do repositório):
 
 ```bash
 cd ../../infra/local/postgres
-docker compose -f postgres-db-v16.yml up -d
+docker compose -f postgres-db-v18.yml up -d
 ```
 
 ## API REST Endpoints

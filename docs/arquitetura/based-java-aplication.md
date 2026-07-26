@@ -10,7 +10,7 @@
 | **Lombok** | 1.18.40 | Reduz boilerplate: `@Data`, `@Getter`, `@Setter`, `@Builder` |
 | **MapStruct** | 1.5.5.Final | Mapeamento automático DTO ↔ Entity com `@AfterMapping` |
 | **Yasson** | 3.0.3 | Serialização JSON (Jakarta JSON Binding) para metadados JSONB |
-| **PostgreSQL** | 16+ | Persistência relacional com particionamento temporal |
+| **PostgreSQL** | 18 | Persistência relacional com particionamento temporal |
 | **Maven** | 3.9+ | Build, compilação e gerenciamento de dependências |
 
 ## 📁 Estrutura do Projeto
@@ -191,12 +191,12 @@ java --add-modules=jdk.incubator.vector \
 
 ### PostgreSQL via Docker Compose
 
-Folder: `run_postgres16_ja_com_cron_partman/`
+Folder: `infra/local/postgres/` (raiz do repositório)
 
 ```bash
-# Build imagem PostgreSQL com pg_partman + pg_cron
-docker build -t contratocommand-db:16 \
-  -f run_postgres16_ja_com_cron_partman/Dockerfile .
+# Build imagem PostgreSQL com pg_partman + pg_cron + pgvector
+docker build -t postgres18-kiq-extras-partman_cron_vector:1.0 \
+  -f infra/local/postgres/Dockerfile .
 
 # Executar container
 docker run -d \

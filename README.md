@@ -12,8 +12,8 @@ arj-contratocommand        arj-contratoquery
       │                           │
       └──────────┬────────────────┘
                  ▼
-         PostgreSQL 16+
-     (pg_partman + pg_cron)
+         PostgreSQL 18
+     (pg_partman + pg_cron + pgvector)
 
 arj-contratocommand
       │ publica evento após cada commit (criação/cancelamento)
@@ -53,12 +53,12 @@ arj-pagrecorrentes-dbrelacional/
 │   ├── arj-contratoquery/           # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
 │   ├── autorizacaostatus-producer/  # Ponte SQS -> Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── eventos-consumer/            # Consumidora do tópico Kafka (Java 25 + Spring Boot 4.0.7)
-│   └── docker-compose.yml      # Ambiente local: as 2 apps de leitura/escrita + Postgres (partman/cron)
+│   └── docker-compose.yml      # Ambiente local: as 2 apps de leitura/escrita + Postgres (partman/cron/pgvector)
 ├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
 │   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, observability)
 │   ├── envs/{local,local-messaging,prod}/  # Composição dos módulos por ambiente
 │   ├── bootstrap/               # State remoto (pré-requisito dos envs)
-│   ├── local/postgres/          # Dockerfile do Postgres 16 com pg_partman + pg_cron (dev local)
+│   ├── local/postgres/          # Dockerfile do Postgres 18 com pg_partman + pg_cron + pgvector (dev local)
 │   └── local/kafka/             # Kafka local standalone (broker KRaft, Schema Registry, Kafbat UI)
 ├── docs/
 │   ├── arquitetura/                        # Diagramas de arquitetura
@@ -77,10 +77,10 @@ arj-pagrecorrentes-dbrelacional/
 |------------|--------------|
 | Java (JDK) | 25+ |
 | Maven | 3.9+ |
-| PostgreSQL | 16+ (com `pg_partman` e `pg_cron`) |
+| PostgreSQL | 18 (com `pg_partman`, `pg_cron` e `pgvector`) |
 | Docker | Qualquer versão recente |
 
-> PostgreSQL é obrigatório — nenhum dos serviços possui fallback para H2 ou banco em memória.
+> PostgreSQL 18 é obrigatório — nenhum dos serviços possui fallback para H2 ou banco em memória.
 
 ## Começando
 
@@ -103,7 +103,7 @@ DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
 
 ```bash
 cd infra/local/postgres
-docker compose -f postgres-db-v16.yml up -d
+docker compose -f postgres-db-v18.yml up -d
 ```
 
 #### 2. Rodar o serviço de escrita (command)
