@@ -31,4 +31,54 @@ class StatusAutorizacaoTest {
         assertEquals(4L, StatusAutorizacao.ATIVA.getStatusAutorizacao());
         assertEquals(1L, StatusAutorizacao.RECEBIDA.getStatusAutorizacao());
     }
+
+    @Test
+    @DisplayName("RECEBIDA pode transicionar para PENDENTE_ACEITE, EM_PROCESSO_ATIVACAO e REJEITADA")
+    void transicoesDeRecebida() {
+        assertTrue(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.PENDENTE_ACEITE));
+        assertTrue(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.EM_PROCESSO_ATIVACAO));
+        assertTrue(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.REJEITADA));
+        assertFalse(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.ATIVA));
+        assertFalse(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.EXPIRADA));
+    }
+
+    @Test
+    @DisplayName("PENDENTE_ACEITE pode transicionar para EM_PROCESSO_ATIVACAO, REJEITADA e EXPIRADA")
+    void transicoesDePendenteAceite() {
+        assertTrue(StatusAutorizacao.PENDENTE_ACEITE.podeTransicionarPara(StatusAutorizacao.EM_PROCESSO_ATIVACAO));
+        assertTrue(StatusAutorizacao.PENDENTE_ACEITE.podeTransicionarPara(StatusAutorizacao.REJEITADA));
+        assertTrue(StatusAutorizacao.PENDENTE_ACEITE.podeTransicionarPara(StatusAutorizacao.EXPIRADA));
+        assertFalse(StatusAutorizacao.PENDENTE_ACEITE.podeTransicionarPara(StatusAutorizacao.ATIVA));
+    }
+
+    @Test
+    @DisplayName("EM_PROCESSO_ATIVACAO pode transicionar para ATIVA, REJEITADA e EXPIRADA")
+    void transicoesDeEmProcessoAtivacao() {
+        assertTrue(StatusAutorizacao.EM_PROCESSO_ATIVACAO.podeTransicionarPara(StatusAutorizacao.ATIVA));
+        assertTrue(StatusAutorizacao.EM_PROCESSO_ATIVACAO.podeTransicionarPara(StatusAutorizacao.REJEITADA));
+        assertTrue(StatusAutorizacao.EM_PROCESSO_ATIVACAO.podeTransicionarPara(StatusAutorizacao.EXPIRADA));
+        assertFalse(StatusAutorizacao.EM_PROCESSO_ATIVACAO.podeTransicionarPara(StatusAutorizacao.CANCELADA));
+    }
+
+    @Test
+    @DisplayName("ATIVA pode transicionar para CANCELADA, FINALIZADA e REJEITADA, mas não EXPIRADA")
+    void transicoesDeAtiva() {
+        assertTrue(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.CANCELADA));
+        assertTrue(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.FINALIZADA));
+        assertTrue(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.REJEITADA));
+        assertFalse(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.EXPIRADA));
+    }
+
+    @Test
+    @DisplayName("estados terminais não transicionam para nenhum outro estado")
+    void estadosTerminaisNaoTransicionam() {
+        for (StatusAutorizacao terminal : new StatusAutorizacao[] {
+                StatusAutorizacao.CANCELADA, StatusAutorizacao.REJEITADA,
+                StatusAutorizacao.EXPIRADA, StatusAutorizacao.FINALIZADA}) {
+            for (StatusAutorizacao destino : StatusAutorizacao.values()) {
+                assertFalse(terminal.podeTransicionarPara(destino),
+                        terminal + " não deveria transicionar para " + destino);
+            }
+        }
+    }
 }

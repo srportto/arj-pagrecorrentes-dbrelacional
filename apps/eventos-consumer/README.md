@@ -11,7 +11,7 @@ evento e comita o offset (ack) somente após o log.
   avança após o processamento confirmar sucesso
 - **Desserialização Avro**: `KafkaAvroDeserializer` (`specific.avro.reader=true`) contra
   o Schema Registry
-- **Header `tipoEvento`**: lido junto com o payload (CRIACAO/CANCELAMENTO)
+- **Tipo do evento derivado**: `TipoEventoAutorizacao.porStatus(evento.getStatus())` — não lê mais o header Kafka
 - **Log de sucesso**: cada evento consumido é logado com sua representação completa
 - **Health-check**: `GET /actuator/health` via Spring Actuator
 
@@ -22,7 +22,7 @@ evento e comita o offset (ack) somente após o log.
 | **Java** | 25 | `void main()` pendente de suporte do maven plugin |
 | **Spring Boot** | 4.0.7 | Web MVC (Actuator), IoC |
 | **spring-kafka** | gerenciado pelo Spring Boot BOM | `@KafkaListener`, ack manual |
-| **Avro** | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/avro/EventoAutorizacao.avsc` |
+| **Avro** | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
 | **kafka-avro-serializer** | 7.7.1 (Confluent) | `KafkaAvroDeserializer` + Schema Registry |
 | **Lombok** | 1.18.40 | uso mínimo — sem entidades JPA |
 | **Maven** | 3.9+ | Build e gerenciamento de dependências |
@@ -30,13 +30,15 @@ evento e comita o offset (ack) somente após o log.
 ## Estrutura do Projeto
 
 ```
-src/main/avro/
+src/main/resources/avro/
 └── EventoAutorizacao.avsc                       # schema Avro consumido (espelho do producer)
 src/main/java/br/com/srportto/eventosconsumer/
 ├── EventosConsumerApplication.java
 ├── application/
 │   └── eventos/
-│       └── ProcessarEventoAutorizacaoUseCase.java  # loga o evento consumido
+│       ├── StatusAutorizacao.java                  # espelho do enum (8 estados + transições)
+│       ├── TipoEventoAutorizacao.java              # espelho do enum (8 valores, porStatus)
+│       └── ProcessarEventoAutorizacaoUseCase.java  # deriva o tipo e loga o evento consumido
 ├── infrastructure/
 │   └── kafka/
 │       └── EventoAutorizacaoKafkaListener.java     # @KafkaListener (ack manual)
@@ -61,9 +63,10 @@ entidades persistidas — apenas consome o tópico e loga.
 
 ```
 EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, AckMode.MANUAL)
-  → recebe EventoAutorizacao desserializado + header tipoEvento
-  → ProcessarEventoAutorizacaoUseCase.processar(evento, tipoEvento)
-      → loga sucesso com a representação do evento
+  → recebe EventoAutorizacao desserializado
+  → ProcessarEventoAutorizacaoUseCase.processar(evento)
+      → TipoEventoAutorizacao.porStatus(evento.getStatus()) → deriva o tipo do evento
+      → loga sucesso com a representação do evento e o tipo derivado
   → Acknowledgment.acknowledge() — só se processar() não lançar exceção
 ```
 
@@ -138,11 +141,14 @@ mvn clean verify
    8082 (`autorizacaostatus-producer`).
 2. **Sem banco de dados** — não há JPA/Postgres nesta app.
 3. **`EventoAutorizacao.avsc` é um espelho manual** do schema equivalente em
-   `apps/autorizacaostatus-producer` — sem módulo Avro compartilhado no monorepo.
+   `apps/autorizacaostatus-producer` (ambos em `src/main/resources/avro`) — sem módulo
+   Avro compartilhado no monorepo.
 4. **spring-kafka, não cliente puro** — diferente do padrão "AWS SDK puro" do listener
    SQS; decisão deliberada (ver `design.md` da mudança `add-eventos-autorizacao-kafka`).
 5. **Retry via `DefaultErrorHandler`**, não visibility timeout — a semântica de
    reentrega é diferente da fila SQS.
+6. **`tipoEvento` não vem mais do header Kafka** — é derivado do campo `status` do
+   próprio `EventoAutorizacao` (`TipoEventoAutorizacao.porStatus`).
 
 ## Informações do Projeto
 

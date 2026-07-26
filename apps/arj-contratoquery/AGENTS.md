@@ -100,6 +100,10 @@ Tabela `autorizacoes` particionada por `id_particao_conta` (range **900–999** 
 - `ConsultarAutorizacaoService` extrai a partição via `ReversibleUUIDv7.extract(uuid)` — UUIDs fora da faixa (0–889 neste serviço) resultam em 404 imediato, sem hit no banco.
 - `AutorizacaoRepository` usa JPQL explícito (não usa métodos derivados do Spring Data) para garantir compatibilidade com o particionamento.
 
+### Enums de domínio
+
+`domain/enums/StatusAutorizacao` (espelho do `arj-contratocommand`) carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado por esta app (somente leitura), disponível para eventual validação futura. `domain/enums/TipoEventoAutorizacao` (8 valores, `porStatus(status)`) também é um espelho, sem uso atual nesta app.
+
 ### Exceções e códigos HTTP
 
 Tratadas em `shared/interceptors/api/ApiExceptionHandler`.

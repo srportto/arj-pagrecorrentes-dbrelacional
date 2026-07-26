@@ -17,6 +17,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<lombok.version>1.18.40</lombok.version> <!-- Supports Java 25 -->
+		<postgresql.version>42.7.12</postgresql.version>
 	</properties>
 
 	<dependencies>
@@ -71,6 +72,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 

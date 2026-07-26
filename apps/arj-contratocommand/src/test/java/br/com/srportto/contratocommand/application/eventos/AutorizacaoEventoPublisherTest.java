@@ -40,12 +40,12 @@ class AutorizacaoEventoPublisherTest {
     }
 
     @Test
-    @DisplayName("publica no tópico configurado com o tipo do evento como message attribute")
+    @DisplayName("publica no tópico com o tipo do evento derivado do status como message attribute")
     void publicaComMessageAttribute() {
         AwsProperties properties = new AwsProperties(null, "us-east-1", null, null, new AwsProperties.Sns(TOPIC_ARN));
         AutorizacaoEventoPublisher publisher = new AutorizacaoEventoPublisher(snsClient, properties);
 
-        publisher.aoPersistir(new AutorizacaoPersistidaEvent(autorizacao(), TipoEventoAutorizacao.CRIACAO));
+        publisher.aoPersistir(new AutorizacaoPersistidaEvent(autorizacao()));
 
         ArgumentCaptor<PublishRequest> captor = ArgumentCaptor.forClass(PublishRequest.class);
         verify(snsClient).publish(captor.capture());
@@ -53,7 +53,7 @@ class AutorizacaoEventoPublisherTest {
         PublishRequest request = captor.getValue();
         assertEquals(TOPIC_ARN, request.topicArn());
         assertTrue(request.message().contains("id_autorizacao"));
-        assertEquals("CRIACAO", request.messageAttributes().get("tipoEvento").stringValue());
+        assertEquals("ATIVACAO", request.messageAttributes().get("tipoEvento").stringValue());
     }
 
     @Test
@@ -63,7 +63,6 @@ class AutorizacaoEventoPublisherTest {
         AutorizacaoEventoPublisher publisher = new AutorizacaoEventoPublisher(snsClient, properties);
         when(snsClient.publish(any(PublishRequest.class))).thenThrow(new RuntimeException("Floci fora do ar"));
 
-        assertDoesNotThrow(() -> publisher.aoPersistir(
-                new AutorizacaoPersistidaEvent(autorizacao(), TipoEventoAutorizacao.CANCELAMENTO)));
+        assertDoesNotThrow(() -> publisher.aoPersistir(new AutorizacaoPersistidaEvent(autorizacao())));
     }
 }

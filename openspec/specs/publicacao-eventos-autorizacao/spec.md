@@ -51,8 +51,11 @@ O corpo do evento SHALL ser um JSON cujas chaves são os nomes das colunas da ta
 `id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, colunas embutidas
 de cancelamento e `metadados`), com os valores como persistidos. O mapeamento SHALL ser
 feito por um record dedicado de payload (não pela serialização direta da entidade JPA).
-O tipo da operação (`CRIACAO` ou `CANCELAMENTO`) SHALL ser informado como message
-attribute SNS (`tipoEvento`), mantendo o body como representação pura da linha.
+O tipo do evento SHALL ser **derivado do `status` persistido da autorização** via
+`TipoEventoAutorizacao.porStatus(status)` — não informado pelo use case — e publicado
+como message attribute SNS (`tipoEvento`), mantendo o body como representação pura da
+linha. O evento interno de persistência (`AutorizacaoPersistidaEvent`) NÃO SHALL
+carregar campo de tipo de evento.
 
 #### Scenario: Chaves espelham as colunas
 - **WHEN** um evento de criação é publicado
@@ -60,10 +63,20 @@ attribute SNS (`tipoEvento`), mantendo o body como representação pura da linha
   linha persistida
 - **AND** `metadados` aparece como objeto JSON (não como string escapada)
 
-#### Scenario: Operação identificada por message attribute
-- **WHEN** um evento é publicado
-- **THEN** a mensagem SNS carrega o attribute `tipoEvento` com valor `CRIACAO` ou
-  `CANCELAMENTO`
+#### Scenario: Criação publica tipo derivado do status ATIVA
+- **WHEN** um POST `/api/autorizacoes` é concluído com sucesso (linha persistida com
+  status `ATIVA`)
+- **THEN** a mensagem SNS carrega o attribute `tipoEvento` com valor `ATIVACAO`
+
+#### Scenario: Cancelamento publica tipo derivado do status CANCELADA
+- **WHEN** um PATCH `/api/autorizacoes/{id}/cancelar` é concluído com sucesso (linha
+  persistida com status `CANCELADA`)
+- **THEN** a mensagem SNS carrega o attribute `tipoEvento` com valor `CANCELAMENTO`
+
+#### Scenario: Attribute sempre coerente com o body
+- **WHEN** qualquer evento é publicado
+- **THEN** o valor do attribute `tipoEvento` é igual a
+  `TipoEventoAutorizacao.porStatus(status)` para o campo `status` presente no body
 
 ### Requirement: Falha de publicação não afeta a operação de negócio
 

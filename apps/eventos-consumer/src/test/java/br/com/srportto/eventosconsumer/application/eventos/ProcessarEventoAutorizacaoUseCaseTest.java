@@ -29,7 +29,7 @@ class ProcessarEventoAutorizacaoUseCaseTest {
                 .setCodigoCanalContratacao("canal")
                 .build();
 
-        assertDoesNotThrow(() -> useCase.processar(evento, "CRIACAO"));
+        assertDoesNotThrow(() -> useCase.processar(evento));
     }
 
 }

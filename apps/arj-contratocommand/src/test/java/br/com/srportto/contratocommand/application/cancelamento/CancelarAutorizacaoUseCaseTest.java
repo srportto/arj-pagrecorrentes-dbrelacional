@@ -3,7 +3,6 @@ package br.com.srportto.contratocommand.application.cancelamento;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -76,7 +75,7 @@ class CancelarAutorizacaoUseCaseTest {
         inOrder.verify(entityManager).detach(aut);
         inOrder.verify(repository).save(any());
 
-        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut, TipoEventoAutorizacao.CANCELAMENTO));
+        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
 
     @Test

@@ -3,7 +3,6 @@ package br.com.srportto.contratocommand.application.contratacao;
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -38,7 +37,7 @@ public class CriarAutorizacaoUseCase {
         var autorizacaoMontada = mapper.toDomain(dados, context.tipoJornada());
         var autorizadaPersistida = repository.save(autorizacaoMontada);
 
-        eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizadaPersistida, TipoEventoAutorizacao.CRIACAO));
+        eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizadaPersistida));
 
         log.info("Autorização {} criada com sucesso. ID: {}, Empresa: {}",
                 dados.tipoProduto(),

@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -79,19 +78,6 @@ class KafkaEventoAutorizacaoProducerTest {
     }
 
     @Test
-    @DisplayName("tipoEvento ausente não adiciona o header")
-    void semTipoEventoNaoAdicionaHeader() {
-        inicializar();
-        when(producer.send(any())).thenReturn(CompletableFuture.completedFuture(null));
-
-        kafkaEventoAutorizacaoProducer.produzir("key-1", eventoMinimo(), null);
-
-        ArgumentCaptor<ProducerRecord<String, EventoAutorizacao>> captor = captor();
-        verify(producer).send(captor.capture());
-        assertNull(captor.getValue().headers().lastHeader("tipoEvento"));
-    }
-
-    @Test
     @DisplayName("falha do broker (ExecutionException) vira EventoAutorizacaoKafkaIndisponivelException")
     void falhaDoBrokerViraExcecaoRetryable() {
         inicializar();
@@ -100,7 +86,7 @@ class KafkaEventoAutorizacaoProducerTest {
         when(producer.send(any())).thenReturn(futureFalho);
 
         assertThrows(EventoAutorizacaoKafkaIndisponivelException.class,
-                () -> kafkaEventoAutorizacaoProducer.produzir("key-1", eventoMinimo(), null));
+                () -> kafkaEventoAutorizacaoProducer.produzir("key-1", eventoMinimo(), "CANCELAMENTO"));
     }
 
 }

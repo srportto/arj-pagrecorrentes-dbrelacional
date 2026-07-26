@@ -4,6 +4,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "EventosConsumerApplication",
+            "request": "launch",
+            "mainClass": "br.com.srportto.eventosconsumer.EventosConsumerApplication",
+            "projectName": "eventos-consumer"
+        },
+        {
+            "type": "java",
             "name": "AutorizacaostatusProducerApplication",
             "request": "launch",
             "mainClass": "br.com.srportto.autorizacaostatusproducer.AutorizacaostatusProducerApplication",

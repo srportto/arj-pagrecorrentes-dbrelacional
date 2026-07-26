@@ -4,7 +4,6 @@ import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.application.eventos.TipoEventoAutorizacao;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
@@ -67,6 +66,6 @@ class CriarAutorizacaoUseCaseTest {
 
         useCase.execute(context);
 
-        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut, TipoEventoAutorizacao.CRIACAO));
+        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
 }

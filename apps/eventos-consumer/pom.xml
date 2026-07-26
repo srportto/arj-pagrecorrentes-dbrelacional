@@ -30,7 +30,7 @@
 	<properties>
     <java.version>25</java.version>
     <lombok.version>1.18.40</lombok.version> <!-- Supports Java 25 -->
-    <avro.version>1.11.3</avro.version>
+    <avro.version>1.11.4</avro.version>
     <confluent.version>7.7.1</confluent.version>
 	</properties>
 
@@ -113,7 +113,7 @@
 							<goal>schema</goal>
 						</goals>
 						<configuration>
-							<sourceDirectory>${project.basedir}/src/main/avro</sourceDirectory>
+							<sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
 							<outputDirectory>${project.build.directory}/generated-sources/avro</outputDirectory>
 							<stringType>String</stringType>
 							<enableDecimalLogicalType>true</enableDecimalLogicalType>

@@ -11,11 +11,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
-
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,13 +46,6 @@ class SqsEventoAutorizacaoListenerTest {
         return Message.builder().messageId(id).receiptHandle("receipt-" + id).body(body).build();
     }
 
-    private Message mensagemComTipoEvento(String id, String body, String tipoEvento) {
-        return Message.builder().messageId(id).receiptHandle("receipt-" + id).body(body)
-                .messageAttributes(Map.of("tipoEvento", MessageAttributeValue.builder()
-                        .dataType("String").stringValue(tipoEvento).build()))
-                .build();
-    }
-
     @Test
     @DisplayName("processa com sucesso e dá ack (DeleteMessage) somente após a produção no Kafka")
     void processaComSucessoEDaAck() {
@@ -64,7 +54,7 @@ class SqsEventoAutorizacaoListenerTest {
 
         listener.processarEDarAck(QUEUE_URL, msg);
 
-        verify(useCase).processar(msg.body(), null);
+        verify(useCase).processar(msg.body());
         verify(sqsClient).deleteMessage(DeleteMessageRequest.builder()
                 .queueUrl(QUEUE_URL)
                 .receiptHandle("receipt-m1")
@@ -72,22 +62,11 @@ class SqsEventoAutorizacaoListenerTest {
     }
 
     @Test
-    @DisplayName("repassa o attribute tipoEvento da mensagem ao use case")
-    void repassaTipoEventoAoUseCase() {
-        inicializar();
-        Message msg = mensagemComTipoEvento("m1", "{\"id_autorizacao\":\"x\"}", "CRIACAO");
-
-        listener.processarEDarAck(QUEUE_URL, msg);
-
-        verify(useCase).processar(msg.body(), "CRIACAO");
-    }
-
-    @Test
     @DisplayName("falha retryable (ex.: Kafka indisponível) não dá ack — mensagem permanece na fila")
     void falhaRetryableNaoDaAck() {
         inicializar();
         Message msg = mensagem("m2", "{\"id_autorizacao\":\"x\"}");
-        doThrow(new RuntimeException("kafka fora do ar")).when(useCase).processar(msg.body(), null);
+        doThrow(new RuntimeException("kafka fora do ar")).when(useCase).processar(msg.body());
 
         listener.processarEDarAck(QUEUE_URL, msg);
 
@@ -100,7 +79,7 @@ class SqsEventoAutorizacaoListenerTest {
         inicializar();
         Message msg = mensagem("m3", "{isso nao e json");
         doThrow(new EventoAutorizacaoInvalidoException("inválido", new RuntimeException()))
-                .when(useCase).processar(msg.body(), null);
+                .when(useCase).processar(msg.body());
 
         listener.processarEDarAck(QUEUE_URL, msg);
 
@@ -111,7 +90,7 @@ class SqsEventoAutorizacaoListenerTest {
     }
 
     @Test
-    @DisplayName("pollOnce solicita o attribute tipoEvento e processa todas as mensagens recebidas")
+    @DisplayName("pollOnce processa todas as mensagens recebidas, sem solicitar message attributes")
     void pollOnceProcessaMensagensRecebidas() {
         inicializar();
         Message m1 = mensagem("m1", "{\"a\":1}");
@@ -121,8 +100,8 @@ class SqsEventoAutorizacaoListenerTest {
 
         listener.pollOnce();
 
-        verify(useCase, times(1)).processar(m1.body(), null);
-        verify(useCase, times(1)).processar(m2.body(), null);
+        verify(useCase, times(1)).processar(m1.body());
+        verify(useCase, times(1)).processar(m2.body());
         verify(sqsClient, times(2)).deleteMessage(any(DeleteMessageRequest.class));
     }
 
@@ -138,7 +117,7 @@ class SqsEventoAutorizacaoListenerTest {
         Thread.currentThread().interrupt();
 
         assertDoesNotThrow(() -> listener.pollOnce());
-        verify(useCase, never()).processar(any(), any());
+        verify(useCase, never()).processar(any());
 
         // limpa o status de interrupcao para nao vazar para os proximos testes
         Thread.interrupted();

@@ -62,6 +62,7 @@ build/
 
 ### draw.io ###
 *.drawio.bkp
+*.drawio.dtmp
 
 ### floci-ui (clone externo, gerenciado fora deste repo) ###
 ###docs/floci-aws-local/floci-ui/

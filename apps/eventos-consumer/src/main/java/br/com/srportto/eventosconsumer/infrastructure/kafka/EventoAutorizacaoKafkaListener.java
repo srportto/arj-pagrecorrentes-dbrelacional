@@ -4,16 +4,10 @@ import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
 import br.com.srportto.eventosconsumer.application.eventos.ProcessarEventoAutorizacaoUseCase;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-/**
- * Consome o topico eventos-autorizacao com AckMode.MANUAL: o offset so avanca apos o
- * use case processar (log de sucesso) sem lancar excecao. Erro no processamento nao
- * comita o offset — a reentrega segue a semantica do DefaultErrorHandler do
- * spring-kafka (seek + retry), nao a de visibility timeout do SQS.
- */
+/** Consome o tópico com AckMode.MANUAL: offset só avança após o use case processar sem lançar exceção. */
 @Component
 public class EventoAutorizacaoKafkaListener {
 
@@ -25,10 +19,8 @@ public class EventoAutorizacaoKafkaListener {
 
     @KafkaListener(topics = "${kafka.topic}", groupId = "${kafka.group-id}",
             containerFactory = "eventoAutorizacaoKafkaListenerContainerFactory")
-    public void escutar(@Payload EventoAutorizacao evento,
-            @Header(name = "tipoEvento", required = false) String tipoEvento,
-            Acknowledgment acknowledgment) {
-        useCase.processar(evento, tipoEvento);
+    public void escutar(@Payload EventoAutorizacao evento, Acknowledgment acknowledgment) {
+        useCase.processar(evento);
         acknowledgment.acknowledge();
     }
 

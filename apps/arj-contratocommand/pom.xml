@@ -31,6 +31,7 @@
     <java.version>25</java.version>
     <lombok.version>1.18.40</lombok.version> <!-- Supports Java 25 -->
     <aws-sdk.version>2.49.0</aws-sdk.version>
+    <postgresql.version>42.7.12</postgresql.version>
 	</properties>
 
 	<dependencyManagement>
@@ -93,6 +94,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 
