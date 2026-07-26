@@ -1,3 +1,11 @@
+# virtual-threads-config
+
+## Purpose
+
+Habilitar Virtual Threads do Java em `arj-contratocommand` e `arj-contratoquery` via propriedade do Spring Boot, ajustando o pool do Hikari para evitar thundering herd e garantindo que build e testes continuem passando.
+
+## Requirements
+
 ### Requirement: Virtual Threads habilitadas via propriedade Spring Boot
 Ambas as aplicações (`arj-contratocommand` e `arj-contratoquery`) SHALL ter `spring.threads.virtual.enabled: true` configurado em seus respectivos `application.yaml`, ativando Virtual Threads do Java 25 para o container web e para execução de tarefas I/O-bound.
 

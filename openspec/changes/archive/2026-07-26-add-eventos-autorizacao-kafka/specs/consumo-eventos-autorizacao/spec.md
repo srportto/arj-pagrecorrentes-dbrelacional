@@ -1,0 +1,61 @@
+# consumo-eventos-autorizacao
+
+## MODIFIED Requirements
+
+### Requirement: Consumo da fila via long polling com SDK v2
+
+A aplicação SHALL consumir a fila `SQS-eventos-autorizacao` com o AWS SDK v2
+(`SqsClient`), sem Spring Cloud AWS, em um loop de long polling
+(`WaitTimeSeconds = 20`) executado em virtual thread iniciada por um componente de
+ciclo de vida do Spring (`SmartLifecycle`), com encerramento gracioso no stop da
+aplicação. O `ReceiveMessage` SHALL solicitar o message attribute `tipoEvento` via
+`messageAttributeNames`, para que a ponte possa propagá-lo como header Kafka. Erros
+consecutivos de recebimento (ex.: Floci fora do ar) SHALL aplicar backoff entre
+tentativas, com log claro da causa.
+
+#### Scenario: Loop inicia e para com a aplicação
+- **WHEN** a aplicação inicia
+- **THEN** o loop de polling começa a receber mensagens da fila
+- **AND** no shutdown da aplicação o loop encerra sem deixar thread pendurada
+
+#### Scenario: Emulador indisponível
+- **WHEN** o Floci está fora do ar durante o polling
+- **THEN** a aplicação não encerra: loga o erro e tenta novamente após backoff
+
+#### Scenario: Attribute tipoEvento disponível para a ponte
+- **WHEN** uma mensagem com o attribute `tipoEvento` é recebida
+- **THEN** o attribute está presente na mensagem retornada pelo `ReceiveMessage` e é
+  repassado ao fluxo de produção Kafka
+
+### Requirement: Log de consumo com sucesso e ack da mensagem
+
+O processamento de cada mensagem consumida SHALL consistir em produzir o evento
+correspondente no tópico Kafka `eventos-autorizacao` (conforme
+`publicacao-eventos-kafka`). O ack (`DeleteMessage`) SHALL ocorrer somente após a
+confirmação do broker Kafka, precedido de um log de sucesso contendo o body do evento e
+a key produzida.
+
+Falhas SHALL ser classificadas em duas categorias com tratamentos distintos:
+- **Retryable** (Kafka ou Schema Registry indisponível, timeout de produção): o ack NÃO
+  SHALL ser enviado — a mensagem retorna à fila após o visibility timeout (semântica
+  at-least-once, retry por conta da fila).
+- **Não-retryable** (body JSON malformado, conversão para Avro impossível): a aplicação
+  SHALL registrar log ERROR contendo o body completo da mensagem e em seguida SHALL dar
+  ack, descartando a mensagem conscientemente — o retry seria inútil e, sem redrive
+  policy na fila, causaria loop infinito de reentrega.
+
+#### Scenario: Consumo com sucesso vira produção Kafka
+- **WHEN** uma mensagem com o JSON da autorização chega à fila e o broker Kafka
+  confirma a produção do evento
+- **THEN** a aplicação loga o sucesso incluindo o body e a key produzida
+- **AND** remove a mensagem da fila (`DeleteMessage`)
+
+#### Scenario: Falha retryable não dá ack
+- **WHEN** a produção no Kafka falha por indisponibilidade ou timeout
+- **THEN** a mensagem não é removida da fila
+- **AND** volta a ficar disponível após o visibility timeout
+
+#### Scenario: Falha não-retryable descarta com log
+- **WHEN** o body da mensagem não pode ser desserializado ou convertido para Avro
+- **THEN** um log ERROR registra o body completo da mensagem
+- **AND** a mensagem recebe ack e é removida da fila

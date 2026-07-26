@@ -1,5 +1,6 @@
 package br.com.srportto.autorizacaostatusproducer.infrastructure.sqs;
 
+import br.com.srportto.autorizacaostatusproducer.application.eventos.EventoAutorizacaoInvalidoException;
 import br.com.srportto.autorizacaostatusproducer.application.eventos.ProcessarEventoAutorizacaoUseCase;
 import br.com.srportto.autorizacaostatusproducer.shared.config.AwsProperties;
 import org.slf4j.Logger;
@@ -9,14 +10,16 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import java.time.Duration;
 
 /**
- * Consome a fila SQS-eventos-autorizacao em loop de long polling numa virtual thread.
- * Semantica at-least-once: o ack (DeleteMessage) so acontece apos o processamento da
- * mensagem terminar sem excecao; em erro, a mensagem nao e confirmada e volta a fila
+ * Consome a fila SQS-eventos-autorizacao em loop de long polling numa virtual thread e
+ * produz cada evento no Kafka (ponte). Semantica at-least-once: o ack (DeleteMessage)
+ * so acontece apos a producao no Kafka confirmar (ou apos um descarte consciente de
+ * mensagem invalida); em falha retryable, a mensagem nao e confirmada e volta a fila
  * apos o visibility timeout. Falhas de ReceiveMessage (ex.: Floci fora do ar) aplicam
  * backoff sem encerrar o loop.
  */
@@ -28,6 +31,7 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
     private static final int WAIT_TIME_SECONDS = 20;
     private static final int MAX_NUMBER_OF_MESSAGES = 10;
     private static final Duration BACKOFF_APOS_ERRO = Duration.ofSeconds(5);
+    private static final String MESSAGE_ATTRIBUTE_TIPO_EVENTO = "tipoEvento";
 
     private final SqsClient sqsClient;
     private final AwsProperties awsProperties;
@@ -81,6 +85,7 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
                     .queueUrl(queueUrl)
                     .waitTimeSeconds(WAIT_TIME_SECONDS)
                     .maxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
+                    .messageAttributeNames(MESSAGE_ATTRIBUTE_TIPO_EVENTO)
                     .build());
 
             for (Message message : response.messages()) {
@@ -94,16 +99,27 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
 
     void processarEDarAck(String queueUrl, Message message) {
         try {
-            useCase.processar(message.body());
-
-            sqsClient.deleteMessage(DeleteMessageRequest.builder()
-                    .queueUrl(queueUrl)
-                    .receiptHandle(message.receiptHandle())
-                    .build());
+            useCase.processar(message.body(), tipoEvento(message));
+            ack(queueUrl, message);
+        } catch (EventoAutorizacaoInvalidoException e) {
+            log.error("Mensagem não-retryable descartada (corpo: {})", message.body(), e);
+            ack(queueUrl, message);
         } catch (Exception e) {
             log.error("Falha ao processar a mensagem {}. Não será confirmada — volta à fila após o visibility timeout",
                     message.messageId(), e);
         }
+    }
+
+    private String tipoEvento(Message message) {
+        MessageAttributeValue attribute = message.messageAttributes().get(MESSAGE_ATTRIBUTE_TIPO_EVENTO);
+        return attribute == null ? null : attribute.stringValue();
+    }
+
+    private void ack(String queueUrl, Message message) {
+        sqsClient.deleteMessage(DeleteMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .receiptHandle(message.receiptHandle())
+                .build());
     }
 
     private void aguardarBackoff() {
