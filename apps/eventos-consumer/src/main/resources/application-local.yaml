@@ -1,0 +1,10 @@
+management:
+    endpoint:
+        health:
+            show-details: always
+
+kafka:
+    bootstrap-servers: localhost:19092
+    schema-registry-url: http://localhost:8085
+    topic: eventos-autorizacao
+    group-id: eventos-consumer

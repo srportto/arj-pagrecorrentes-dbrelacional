@@ -3,24 +3,27 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
-Listener da fila SQS `SQS-eventos-autorizacao`, em **arquitetura hexagonal**. Consome os
-eventos de estado de autorização publicados pelo `arj-contratocommand` (via
-`sns-estados-autorizacao` → SQS), loga o consumo com sucesso incluindo a representação
-da entidade e confirma (ack) a mensagem. Nesta fase não há processamento de negócio —
-apenas log + ack.
+Ponte SQS → Kafka, em **arquitetura hexagonal**. Consome os eventos de estado de
+autorização publicados pelo `arj-contratocommand` (via `sns-estados-autorizacao` →
+SQS `SQS-eventos-autorizacao`), converte cada evento para Avro e produz no tópico Kafka
+`eventos-autorizacao` (Schema Registry), de forma idempotente. O ack no SQS só ocorre
+após a confirmação do broker Kafka.
 
 ## Comece por aqui
 
 Leia nesta ordem:
-1. [SqsEventoAutorizacaoListener.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/sqs/SqsEventoAutorizacaoListener.java) — adapter de consumo (long polling + ack)
-2. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — valida e loga o evento consumido
-3. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `arj-contratocommand`
-4. [SqsClientConfig.java](src/main/java/br/com/srportto/autorizacaostatusproducer/shared/config/SqsClientConfig.java) — configuração do `SqsClient` (AWS SDK v2 puro)
+1. [SqsEventoAutorizacaoListener.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/sqs/SqsEventoAutorizacaoListener.java) — adapter de consumo (long polling + classificação de falha + ack)
+2. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — orquestra: desserializa, converte para Avro, produz no Kafka
+3. [EventoAutorizacaoConverter.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/EventoAutorizacaoConverter.java) — payload JSON → record Avro `EventoAutorizacao`
+4. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
+5. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/kafka/KafkaEventoAutorizacaoProducer.java) — adapter de produção Kafka (síncrono)
+6. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `arj-contratocommand`
+7. [EventoAutorizacao.avsc](src/main/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
 
 ## Build & Testes
 
 ```bash
-mvn clean package                            # Compilar + testes + JAR
+mvn clean package                            # Compilar + testes + JAR (gera classes Avro em generate-sources)
 mvn spring-boot:run                          # Rodar localmente (porta 8082)
 mvn test                                     # Todos os testes
 ```
@@ -35,8 +38,12 @@ mvn test                                     # Todos os testes
 - **Floci no ar** com o tópico `sns-estados-autorizacao`, a fila `SQS-eventos-autorizacao`
   e a subscription entre eles já aplicados (`infra/envs/local-messaging/`, ver
   [README](../../infra/envs/local-messaging/README.md))
-- Variáveis de ambiente obrigatórias em `prod`: `AWS_REGION`, `AWS_SQS_QUEUE_URL` (no
-  profile `local` há defaults apontando para o Floci)
+- **Kafka local no ar** (broker + Schema Registry) via
+  [`infra/local/kafka/`](../../infra/local/kafka/README.md) — sem ele, o produce falha
+  (retryable) e a mensagem SQS fica retida até o Kafka voltar
+- Variáveis de ambiente obrigatórias em `prod`: `AWS_REGION`, `AWS_SQS_QUEUE_URL`,
+  `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_SCHEMA_REGISTRY_URL` (no profile `local` há defaults
+  apontando para o Floci e para `infra/local/kafka/`)
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado
   explicitamente via `SPRING_PROFILES_ACTIVE=prod`)
 
@@ -47,6 +54,9 @@ mvn test                                     # Todos os testes
 | Java | 25 | `void main()` pendente do maven plugin |
 | Spring Boot | 4.0.7 | Web MVC (só para o Actuator), Actuator |
 | AWS SDK v2 | 2.49.0 | `software.amazon.awssdk:sqs` — sem Spring Cloud AWS |
+| kafka-clients | 3.7.1 | Producer Kafka puro — sem spring-kafka |
+| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/avro/EventoAutorizacao.avsc` |
+| kafka-avro-serializer | 7.7.1 (Confluent) | Serialização Avro + integração com o Schema Registry |
 | Lombok | 1.18.40 | uso mínimo (sem entidades JPA) |
 
 ## Endpoints reais
@@ -56,65 +66,98 @@ mvn test                                     # Todos os testes
 | GET | `/actuator/health` | Health-check (Actuator). → 200 (UP) |
 
 > **Não há endpoints REST de negócio** — esta app não expõe API própria, apenas consome
-> a fila em background.
+> a fila SQS e produz no Kafka em background.
 
 ## Arquitetura (hexagonal)
 
 ```
-application/eventos/    → ProcessarEventoAutorizacaoUseCase, AutorizacaoEventoPayload
+application/eventos/    → ProcessarEventoAutorizacaoUseCase (orquestra), EventoAutorizacaoConverter,
+                           IdempotenciaKeyGenerator, AutorizacaoEventoPayload, EventoAutorizacaoInvalidoException
 infrastructure/sqs/     → SqsEventoAutorizacaoListener (adapter de consumo, SmartLifecycle)
-shared/config/          → AwsProperties, SqsClientConfig (bean do SqsClient)
+infrastructure/kafka/   → KafkaEventoAutorizacaoProducer (adapter de produção), EventoAutorizacaoKafkaIndisponivelException
+shared/config/          → AwsProperties, SqsClientConfig, KafkaProperties, KafkaProducerClientConfig
 ```
 
-Sem camada `entrypoint/` nem `domain/` de entidades: não há API REST de negócio nem
-persistência. `AutorizacaoEventoPayload` fica em `application/eventos/` (não em
-`domain/`) porque é o contrato do evento consumido, não uma regra de negócio pura.
+Sem camada `entrypoint/` nem `domain/`: não há API REST de negócio nem persistência.
+`AutorizacaoEventoPayload` fica em `application/eventos/` (não em `domain/`) porque é o
+contrato do evento consumido, não uma regra de negócio pura.
 
-### Fluxo de consumo
+### Fluxo de consumo → produção (ponte)
 
 ```
 SqsEventoAutorizacaoListener (SmartLifecycle)
   └─ start(): inicia virtual thread → loopDeConsumo()
-       └─ pollOnce(): ReceiveMessage (long polling, WaitTimeSeconds=20, MaxNumberOfMessages=10)
+       └─ pollOnce(): ReceiveMessage (long polling, WaitTimeSeconds=20, MaxNumberOfMessages=10,
+                       messageAttributeNames=tipoEvento)
             └─ processarEDarAck() por mensagem:
-                 ├─ ProcessarEventoAutorizacaoUseCase.processar(body)
-                 │    ├─ desserializa em AutorizacaoEventoPayload (valida a forma do evento)
-                 │    └─ loga sucesso com o JSON recebido
-                 └─ DeleteMessage (ack) — só se processar() não lançar exceção
+                 ├─ ProcessarEventoAutorizacaoUseCase.processar(body, tipoEvento)
+                 │    ├─ desserializa em AutorizacaoEventoPayload
+                 │    ├─ EventoAutorizacaoConverter → record Avro EventoAutorizacao (setScale defensivo)
+                 │    ├─ IdempotenciaKeyGenerator → key SHA-256(id_autorizacao + data_hora_ultima_atlz)
+                 │    ├─ KafkaEventoAutorizacaoProducer.produzir() → send() SÍNCRONO (get com timeout)
+                 │    │    header Kafka "tipoEvento" = attribute SQS repassado
+                 │    └─ loga sucesso com o body e a key produzida
+                 └─ ack (DeleteMessage) OU descarte, conforme classificação da falha:
+                      ├─ sucesso → ack
+                      ├─ EventoAutorizacaoInvalidoException (JSON/Avro inválido) → log ERROR + ack (descarte consciente)
+                      └─ qualquer outra exceção (Kafka/SR indisponível) → SEM ack (retry via visibility timeout)
   └─ stop(): sinaliza parada e interrompe a thread (shutdown gracioso)
 ```
 
-Erro em `processar()` (ex.: JSON malformado) é logado e a mensagem **não** recebe ack —
-volta à fila após o visibility timeout (semântica at-least-once). Erro em
-`ReceiveMessage` (ex.: Floci fora do ar) aplica backoff de 5s sem encerrar o loop.
+O produce é **síncrono**: `KafkaEventoAutorizacaoProducer` aguarda a confirmação do
+broker (`Future.get()`) antes de retornar. Os timeouts do producer
+(`max.block.ms=5s`, `request.timeout.ms=5s`, `delivery.timeout.ms=15s`) ficam abaixo do
+visibility timeout da fila SQS (30s, default) — uma falha de produção se resolve
+(sucesso ou exceção) antes de o SQS reentregar a mensagem, evitando duplicidade
+sistemática de mensagens "em voo".
 
 ### Exceções e tratamento de erros
 
 Esta app não tem `ApiExceptionHandler` — não há API REST de negócio para tratar erros
-HTTP. Erros de consumo são tratados dentro do próprio
-`SqsEventoAutorizacaoListener` (log + retenção da mensagem na fila).
+HTTP. Duas exceções orientam a classificação de falha no listener:
+
+- **`EventoAutorizacaoInvalidoException`** (`application/eventos/`) — não-retryable.
+  JSON malformado ou conversão para Avro impossível. O listener loga ERROR com o body
+  completo da mensagem e dá ack (descarta conscientemente — retry seria inútil e, sem
+  redrive policy na fila, causaria loop infinito).
+- **`EventoAutorizacaoKafkaIndisponivelException`** (`infrastructure/kafka/`) —
+  retryable. Broker/Schema Registry indisponível ou timeout. O listener loga ERROR e
+  **não** dá ack — a mensagem volta à fila após o visibility timeout.
 
 ## Armadilhas críticas
 
-1. **Porta 8082** — diferente de `arj-contratocommand` (8080) e `arj-contratoquery` (8081).
+1. **Porta 8082** — diferente de `arj-contratocommand` (8080), `arj-contratoquery`
+   (8081) e `eventos-consumer` (8083).
 2. **Sem banco de dados** — não adicione JPA/Postgres aqui; se precisar persistir algo,
    isso é uma mudança de escopo desta app.
 3. **`AutorizacaoEventoPayload` é um espelho manual** do payload equivalente em
    `arj-contratocommand` (`application/eventos/AutorizacaoEventoPayload.java`) — os dois
    não compartilham código; se o schema do evento mudar lá, replique aqui.
-4. **`pollOnce()` e `processarEDarAck()` são package-private de propósito** — permitem
+4. **`EventoAutorizacao.avsc` também é um espelho manual**, replicado em
+   `apps/eventos-consumer/src/main/avro/`. Mudou o schema aqui? Replique lá também —
+   não há módulo Avro compartilhado no monorepo (mesma decisão do payload JSON).
+5. **`pollOnce()` e `processarEDarAck()` são package-private de propósito** — permitem
    testar o adapter sem precisar rodar a thread real de polling.
-5. **Sem outbox/DLQ/retry customizado nesta fase** — ver `design.md` da mudança
-   `add-eventos-autorizacao-sns-sqs` para os trade-offs aceitos.
+6. **Ack no SQS depende do Kafka, não só do parsing** — diferente da fase anterior
+   (log + ack), agora uma mensagem só é confirmada na fila após o Kafka aceitar o
+   evento. Sem Kafka no ar, a fila acumula mensagens não confirmadas (retry automático).
+7. **Mensagem inválida é descartada, não retida para sempre** — comportamento mudou em
+   relação à fase anterior: JSON malformado/dado incompleto agora recebe ack após o log
+   de erro (a fila não tem redrive policy; reter para sempre só gera ruído).
+8. **`enableDecimalLogicalType=true`** no `avro-maven-plugin` — sem isso, os campos
+   decimais são gerados como `ByteBuffer`, não `BigDecimal`, quebrando o conversor.
 
 ## Documentação relacionada
 
-- [design.md da mudança](../../openspec/changes/add-eventos-autorizacao-sns-sqs/design.md) — decisões técnicas do fluxo de eventos (SNS/SQS, payload, sem outbox)
-- [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — como provisionar o tópico/fila no Floci
+- [design.md da mudança](../../openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md) — decisões do fluxo original SNS/SQS (log + ack)
+- [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — como provisionar o tópico/fila SNS/SQS no Floci
+- [infra/local/kafka/README.md](../../infra/local/kafka/README.md) — como subir o Kafka local (broker, Schema Registry, dashboard)
 
 ## Checklist antes do commit
 
 - [ ] `mvn test` passa
-- [ ] `mvn clean compile` sem erros
-- [ ] Se mudou o payload, conferir consistência com `arj-contratocommand`
-- [ ] Erros de processamento continuam sem dar ack (semântica at-least-once preservada)
+- [ ] `mvn clean compile` sem erros (gera as classes Avro em `generate-sources`)
+- [ ] Se mudou o payload JSON, conferir consistência com `arj-contratocommand`
+- [ ] Se mudou `EventoAutorizacao.avsc`, replicar em `apps/eventos-consumer`
+- [ ] Falha retryable continua sem dar ack; falha não-retryable continua dando ack após
+      o log de erro (não confundir as duas classificações)

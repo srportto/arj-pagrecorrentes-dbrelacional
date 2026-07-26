@@ -1,0 +1,18 @@
+spring:
+    application:
+        name: eventos-consumer
+    profiles:
+        default: local
+    threads:
+        virtual:
+            enabled: true
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health
+
+server:
+    port: 8083
+    shutdown: graceful
