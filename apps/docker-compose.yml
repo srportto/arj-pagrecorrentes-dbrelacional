@@ -2,7 +2,7 @@ services:
   postgres:
     build:
       context: ../infra/local/postgres
-    image: postgres16-kiq-extras-partman_cron:1.0
+    image: postgres18-kiq-extras-partman_cron_vector:1.0
     command: [
       "postgres",
       "-c", "shared_preload_libraries=pg_partman_bgw",

@@ -111,7 +111,7 @@ A base assíncrona foi estruturada para suportar um fluxo contínuo e escalável
 
 ## 🗄️ Base de Dados
 
-* **Tecnologia**: **PostgreSQL** (AWS RDS v16).
+* **Tecnologia**: **PostgreSQL** (AWS RDS v18).
 * **Estratégia de Organização (Particionamento LIST)**:
 Com base na arquitetura homologada, a tabela física de autorizações no PostgreSQL deixa de estar estrangulada numa única grande tabela. O modelo adota uma topologia de listas (`LIST`) assente num identificador de partição, distribuída em dois grandes blocos:
 1. **889 Partições Ativas** (Range `0` a `888`): Recebem as novas autorizações e toda a carga de vigência e consultas ativas. A distribuição é uniforme, quebrando totalmente a dependência de um único disco físico ou limite de CPU.

@@ -30,7 +30,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
-- **PostgreSQL 16+** com `pg_partman` e `pg_cron` — **sem fallback para H2**
+- **PostgreSQL 18** com `pg_partman` e `pg_cron` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
 - Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):
   - `DB_TRANSACTION_ISOLATION` — nível de isolamento (default `TRANSACTION_READ_COMMITTED`).
@@ -48,7 +48,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 | Spring Boot | 4.0.7 | Web MVC, Data JPA, Validation, Actuator |
 | Jetty | embutido | Container web (Tomcat excluído no `pom.xml`) |
 | Lombok | 1.18.40 | `@Data`, `@Getter`, `@Builder`, `@AllArgsConstructor` |
-| PostgreSQL | 16+ | Particionamento com `pg_partman` + `pg_cron` |
+| PostgreSQL | 18 | Particionamento com `pg_partman` + `pg_cron` |
 
 > Sem MapStruct — não há mapeamento DTO↔Entity nesta app; os DTOs são construídos via `from()` estático.
 
