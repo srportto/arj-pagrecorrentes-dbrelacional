@@ -1,33 +1,4 @@
-# consumo-eventos-autorizacao
-
-## Purpose
-
-TBD — capacidade criada a partir da mudança `add-eventos-autorizacao-sns-sqs`. Descreve
-a aplicação `apps/autorizacaostatus-producer`, que consome eventos de estados de
-autorização publicados pelo `arj-contratocommand` via SQS.
-
-## Requirements
-
-### Requirement: Aplicação listener enxuta baseada no modelo do monorepo
-
-O monorepo SHALL conter a aplicação `apps/autorizacaostatus-producer`, criada a partir
-da `arj-contratocommand` e do modelo arquitetural hexagonal de
-`docs/arquitetura/based-java-aplication.md`, com Spring Boot 4.0.7, Java 25, pacote
-raiz `br.com.srportto.autorizacaostatusproducer` e porta `8082`. A aplicação NÃO SHALL
-depender de JPA/PostgreSQL nem expor endpoints REST de negócio — apenas o Actuator
-(`/actuator/health`). Os profiles `local` (defaults do Floci) e `prod` (configuração
-via variáveis de ambiente) SHALL ser suportados.
-
-#### Scenario: Aplicação sobe sem banco
-- **WHEN** `mvn spring-boot:run` é executado em `apps/autorizacaostatus-producer` sem
-  nenhum PostgreSQL disponível
-- **THEN** a aplicação inicia com sucesso na porta 8082
-- **AND** `/actuator/health` responde `200 (UP)`
-
-#### Scenario: Defaults locais do Floci
-- **WHEN** a aplicação roda com o profile `local` (default de desenvolvimento)
-- **THEN** ela consome a fila `http://localhost:4566/000000000000/SQS-eventos-autorizacao`
-  na região `us-east-1` com credenciais estáticas de emulador, sem configuração manual
+## MODIFIED Requirements
 
 ### Requirement: Consumo da fila via long polling com SDK v2
 
@@ -137,6 +108,8 @@ Falhas SHALL ser classificadas em duas categorias com tratamentos distintos:
 - **THEN** a exceção resultante identifica o **caminho do campo** e a classe da exceção
   original
 - **AND** nem a mensagem nem qualquer causa encadeada contêm o conteúdo do campo
+
+## ADDED Requirements
 
 ### Requirement: Saúde do consumidor refletida no health-check
 

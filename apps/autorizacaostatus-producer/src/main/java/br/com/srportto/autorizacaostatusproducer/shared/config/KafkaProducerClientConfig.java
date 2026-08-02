@@ -32,6 +32,7 @@ public class KafkaProducerClientConfig {
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaProperties.schemaRegistryUrl());
         props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, true);
 
+        //produtor com idempotencia ativa
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 5_000);

@@ -1,13 +1,4 @@
-# maquina-estados-autorizacao
-
-## Purpose
-
-TBD — capacidade criada a partir da mudança `add-maquina-estados-autorizacao`. Descreve
-o enum `StatusAutorizacao` com o grafo de transições de estado da autorização e o enum
-`TipoEventoAutorizacao` derivado 1:1 do status, espelhados manualmente nas 4 aplicações
-do monorepo.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Enum StatusAutorizacao com grafo de transições nas 4 aplicações
 
@@ -19,7 +10,7 @@ As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, 
 - `ATIVA` → `CANCELADA`, `FINALIZADA`, `REJEITADA`
 - `CANCELADA`, `REJEITADA`, `EXPIRADA`, `FINALIZADA` → nenhuma (estados terminais)
 
-O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em **todas as quatro aplicações** o enum SHALL residir em `domain/enums/` — é regra de negócio pura, sem dependência de framework.
+O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em **todas as quatro aplicações** o enum SHALL residir em `domain/enums/` — é regra de negócio pura, sem dependência de framework. A exceção anterior, que permitia à `autorizacaostatus-producer` mantê-lo em `application/eventos/` por ela não possuir camada `domain/`, deixa de valer: a aplicação passa a ter `domain/enums/` como as demais.
 
 #### Scenario: Transição válida é aceita
 - **WHEN** `StatusAutorizacao.ATIVA.podeTransicionarPara(CANCELADA)` é consultado
@@ -45,19 +36,3 @@ O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes pró
 #### Scenario: Enum permanece livre de framework
 - **WHEN** os imports de `StatusAutorizacao` e `TipoEventoAutorizacao` são inspecionados
 - **THEN** não há import de `org.springframework.*`, `jakarta.*` nem `lombok.*`
-
-### Requirement: Enum TipoEventoAutorizacao mapeado 1:1 ao status
-
-As quatro aplicações SHALL conter um enum `TipoEventoAutorizacao` com 8 valores em bijeção com `StatusAutorizacao` — `RECEPCAO`(RECEBIDA), `PENDENCIA_ACEITE`(PENDENTE_ACEITE), `INICIO_ATIVACAO`(EM_PROCESSO_ATIVACAO), `ATIVACAO`(ATIVA), `CANCELAMENTO`(CANCELADA), `REJEICAO`(REJEITADA), `EXPIRACAO`(EXPIRADA), `FINALIZACAO`(FINALIZADA) — e uma fábrica `porStatus` que deriva o tipo a partir do código de status. Código de status desconhecido SHALL resultar em exceção. O valor `CRIACAO` NÃO SHALL existir.
-
-#### Scenario: Derivação a partir do status
-- **WHEN** `TipoEventoAutorizacao.porStatus(4)` é invocado (status `ATIVA`)
-- **THEN** o resultado é `ATIVACAO`
-
-#### Scenario: Status desconhecido lança exceção
-- **WHEN** `TipoEventoAutorizacao.porStatus(99)` é invocado
-- **THEN** uma exceção é lançada identificando o código não reconhecido
-
-#### Scenario: Bijeção completa
-- **WHEN** cada um dos 8 códigos de status válidos é passado a `porStatus`
-- **THEN** cada código resulta em um valor distinto do enum, cobrindo os 8 valores
