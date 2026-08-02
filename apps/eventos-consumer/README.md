@@ -3,15 +3,20 @@
 Java 25 / Spring Boot 4.0.7, em **arquitetura hexagonal**. Consome o tópico Kafka
 `eventos-autorizacao` (Avro, governado por Schema Registry), publicado pela ponte
 `autorizacaostatus-producer`, loga o consumo com sucesso incluindo a representação do
-evento e comita o offset (ack) somente após o log.
+evento e comita o offset (ack) somente após o log. Mensagens que esgotam as tentativas de
+processamento vão para a DLT (`eventos-autorizacao.DLT`).
 
 ## Funcionalidades
 
-- **Consumo via spring-kafka**: `@KafkaListener` com `AckMode.MANUAL` — o offset só
-  avança após o processamento confirmar sucesso
-- **Desserialização Avro**: `KafkaAvroDeserializer` (`specific.avro.reader=true`) contra
-  o Schema Registry
-- **Tipo do evento derivado**: `TipoEventoAutorizacao.porStatus(evento.getStatus())` — não lê mais o header Kafka
+- **Consumo via spring-kafka**: `@KafkaListener` com `AckMode.RECORD` — o offset avança
+  automaticamente após o processamento retornar sem exceção, sem `Acknowledgment` manual
+- **Desserialização Avro resiliente**: `KafkaAvroDeserializer` (`specific.avro.reader=true`)
+  envolvido por `ErrorHandlingDeserializer` contra o Schema Registry
+- **Tipo do evento derivado**: `TipoEventoAutorizacao.porStatus(evento.getStatus())` — não
+  lê o header Kafka; o body Avro é a fonte única da verdade
+- **DLT para mensagens não-processáveis**: 3 tentativas com 1s de intervalo
+  (`DefaultErrorHandler` + `FixedBackOff`); esgotadas, a mensagem original é publicada em
+  `eventos-autorizacao.DLT` via `DeadLetterPublishingRecoverer`
 - **Log de sucesso**: cada evento consumido é logado com sua representação completa
 - **Health-check**: `GET /actuator/health` via Spring Actuator
 
@@ -21,9 +26,9 @@ evento e comita o offset (ack) somente após o log.
 |---|---|---|
 | **Java** | 25 | `void main()` pendente de suporte do maven plugin |
 | **Spring Boot** | 4.0.7 | Web MVC (Actuator), IoC |
-| **spring-kafka** | gerenciado pelo Spring Boot BOM | `@KafkaListener`, ack manual |
-| **Avro** | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
-| **kafka-avro-serializer** | 7.7.1 (Confluent) | `KafkaAvroDeserializer` + Schema Registry |
+| **spring-boot-starter-kafka** | gerenciado pelo Spring Boot BOM | `@KafkaListener`, `AckMode.RECORD` |
+| **Avro** | 1.11.4 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
+| **kafka-avro-serializer** | 7.7.1 (Confluent) | `KafkaAvroDeserializer` (via `ErrorHandlingDeserializer`) + Schema Registry |
 | **Lombok** | 1.18.40 | uso mínimo — sem entidades JPA |
 | **Maven** | 3.9+ | Build e gerenciamento de dependências |
 
@@ -34,44 +39,53 @@ src/main/resources/avro/
 └── EventoAutorizacao.avsc                       # schema Avro consumido (espelho do producer)
 src/main/java/br/com/srportto/eventosconsumer/
 ├── EventosConsumerApplication.java
+├── entrypoint/
+│   └── kafka/
+│       └── EventoAutorizacaoKafkaListener.java     # @KafkaListener (AckMode.RECORD)
 ├── application/
 │   └── eventos/
-│       ├── StatusAutorizacao.java                  # espelho do enum (8 estados + transições)
-│       ├── TipoEventoAutorizacao.java              # espelho do enum (8 valores, porStatus)
 │       └── ProcessarEventoAutorizacaoUseCase.java  # deriva o tipo e loga o evento consumido
-├── infrastructure/
-│   └── kafka/
-│       └── EventoAutorizacaoKafkaListener.java     # @KafkaListener (ack manual)
+├── domain/
+│   └── enums/
+│       ├── StatusAutorizacao.java                  # espelho do enum (8 estados + transições)
+│       └── TipoEventoAutorizacao.java              # espelho do enum (8 valores, porStatus)
 └── shared/
     └── config/
         ├── KafkaProperties.java
-        └── KafkaConsumerConfig.java                # ConsumerFactory + container factory
+        └── KafkaConsumerConfig.java                # ConsumerFactory, container factory, DLT
 ```
 
-Sem `entrypoint/` nem `domain/`: esta app não expõe API REST de negócio e não tem
-entidades persistidas — apenas consome o tópico e loga.
+Sem persistência (sem `JPA`/`PostgreSQL`) e sem API REST de negócio, mas o app **tem**
+`domain/` (o grafo de transições de `StatusAutorizacao` é regra de negócio pura) e
+`entrypoint/` (o listener, adaptador de entrada) — alinhado com a convenção hexagonal do
+monorepo.
 
 ## Arquitetura Hexagonal
 
 | Camada | Pacote | Responsabilidade |
 |--------|--------|-----------------|
-| **Application** | `application/eventos/` | Loga o evento consumido com sucesso |
-| **Infrastructure** | `infrastructure/kafka/` | Adapter de consumo Kafka (porta de entrada) |
-| **Shared** | `shared/config/` | Configuração do `ConsumerFactory` e propriedades Kafka |
+| **Entrypoint** | `entrypoint/kafka/` | Adapter de consumo Kafka (porta de entrada) |
+| **Application** | `application/eventos/` | Orquestra: deriva o tipo e loga o evento consumido |
+| **Domain** | `domain/enums/` | Regra de negócio pura: grafo de transições de estado |
+| **Shared** | `shared/config/` | `ConsumerFactory`, container factory, DLT |
 
 ### Fluxo de consumo
 
 ```
-EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, AckMode.MANUAL)
-  → recebe EventoAutorizacao desserializado
+EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, AckMode.RECORD)
+  → recebe EventoAutorizacao desserializado (via ErrorHandlingDeserializer)
   → ProcessarEventoAutorizacaoUseCase.processar(evento)
       → TipoEventoAutorizacao.porStatus(evento.getStatus()) → deriva o tipo do evento
       → loga sucesso com a representação do evento e o tipo derivado
-  → Acknowledgment.acknowledge() — só se processar() não lançar exceção
+  → offset avança automaticamente — só se o método retornar sem lançar exceção
 ```
 
-Erro no processamento não comita o offset. A reentrega segue o `DefaultErrorHandler`
-padrão do spring-kafka (não a semântica de visibility timeout do SQS).
+Erro no processamento (ex.: `status` desconhecido) ou falha de desserialização Avro não
+avançam o offset. A reentrega segue o `DefaultErrorHandler` (3 tentativas, 1s de
+intervalo) — não a semântica de visibility timeout do SQS. Esgotadas as tentativas, a
+mensagem original é publicada em `eventos-autorizacao.DLT` via
+`DeadLetterPublishingRecoverer` (o offset avança nesse ponto; a mensagem não é
+reentregue indefinidamente).
 
 ## Como Executar
 
@@ -131,9 +145,12 @@ mvn clean verify
 # Abrir: target/site/jacoco/index.html
 ```
 
-> Testes unitários rodam sem infraestrutura externa — `ProcessarEventoAutorizacaoUseCase`
-> e `Acknowledgment` são exercitados diretamente/mockados. O `@SpringBootTest` também
-> não exige um broker real (a conexão do consumer é lazy).
+> Testes unitários rodam sem infraestrutura externa. `KafkaConsumerConfigTest` cobre os
+> dois caminhos da DLT: falha de negócio (record já desserializado, roteado pelo template
+> Avro) e falha de desserialização (via `ErrorHandlingDeserializer` real +
+> `MockSchemaRegistryClient`, roteado pelo template de bytes) — sem broker nem Schema
+> Registry reais. O `@SpringBootTest` também não exige um broker real (a conexão do
+> consumer é lazy).
 
 ## Armadilhas Críticas
 
@@ -146,9 +163,16 @@ mvn clean verify
 4. **spring-kafka, não cliente puro** — diferente do padrão "AWS SDK puro" do listener
    SQS; decisão deliberada (ver `design.md` da mudança `add-eventos-autorizacao-kafka`).
 5. **Retry via `DefaultErrorHandler`**, não visibility timeout — a semântica de
-   reentrega é diferente da fila SQS.
-6. **`tipoEvento` não vem mais do header Kafka** — é derivado do campo `status` do
+   reentrega é diferente da fila SQS; esgotadas as tentativas, vai para a DLT.
+6. **`tipoEvento` não vem do header Kafka** — é derivado do campo `status` do
    próprio `EventoAutorizacao` (`TipoEventoAutorizacao.porStatus`).
+7. **`AckMode.RECORD` é definido em código** (`KafkaConsumerConfig`), não em
+   `application.yaml` — o factory é fortemente tipado e incompatível com o
+   `ConcurrentKafkaListenerContainerFactoryConfigurer` do Boot (ver `design.md` da
+   mudança `refactor-eventos-consumer`, decisão D1).
+8. **DLT usa dois `KafkaTemplate`** — um `<String, byte[]>` para falha de
+   desserialização, outro `<String, EventoAutorizacao>` para falha de negócio; o
+   `DeadLetterPublishingRecoverer` roteia entre os dois pelo tipo do valor do record.
 
 ## Informações do Projeto
 

@@ -1,4 +1,4 @@
-package br.com.srportto.eventosconsumer.application.eventos;
+package br.com.srportto.eventosconsumer.domain.enums;
 
 /** Tipo do evento, em bijeção com {@link StatusAutorizacao} — derivado do status, nunca informado à parte. */
 public enum TipoEventoAutorizacao {

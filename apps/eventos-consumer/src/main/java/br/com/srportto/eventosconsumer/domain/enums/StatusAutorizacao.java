@@ -1,4 +1,4 @@
-package br.com.srportto.eventosconsumer.application.eventos;
+package br.com.srportto.eventosconsumer.domain.enums;
 
 import lombok.NoArgsConstructor;
 

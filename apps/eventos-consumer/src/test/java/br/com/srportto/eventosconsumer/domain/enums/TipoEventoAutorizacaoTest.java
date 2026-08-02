@@ -1,4 +1,4 @@
-package br.com.srportto.eventosconsumer.application.eventos;
+package br.com.srportto.eventosconsumer.domain.enums;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

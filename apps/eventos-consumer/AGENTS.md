@@ -6,15 +6,18 @@
 Consumidora do tópico Kafka `eventos-autorizacao`, em **arquitetura hexagonal**. Recebe
 os eventos Avro produzidos pela `autorizacaostatus-producer` (ponte SQS → Kafka), loga o
 consumo com sucesso incluindo a representação do evento e comita o offset (ack) somente
-após o log. Nesta fase não há processamento de negócio — apenas log + ack.
+após o log. Nesta fase não há processamento de negócio — apenas log + ack. Mensagens que
+esgotam as tentativas de processamento (falha de negócio ou de desserialização) vão para
+a DLT (`eventos-autorizacao.DLT`).
 
 ## Comece por aqui
 
 Leia nesta ordem:
-1. [EventoAutorizacaoKafkaListener.java](src/main/java/br/com/srportto/eventosconsumer/infrastructure/kafka/EventoAutorizacaoKafkaListener.java) — `@KafkaListener` (ack manual)
+1. [EventoAutorizacaoKafkaListener.java](src/main/java/br/com/srportto/eventosconsumer/entrypoint/kafka/EventoAutorizacaoKafkaListener.java) — `@KafkaListener` (AckMode.RECORD)
 2. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/eventosconsumer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — loga o evento consumido
-3. [KafkaConsumerConfig.java](src/main/java/br/com/srportto/eventosconsumer/shared/config/KafkaConsumerConfig.java) — `ConsumerFactory` + `ConcurrentKafkaListenerContainerFactory` (AckMode.MANUAL)
-4. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro consumido (espelho manual do da `autorizacaostatus-producer`)
+3. [StatusAutorizacao.java](src/main/java/br/com/srportto/eventosconsumer/domain/enums/StatusAutorizacao.java) / [TipoEventoAutorizacao.java](src/main/java/br/com/srportto/eventosconsumer/domain/enums/TipoEventoAutorizacao.java) — enum de negócio (grafo de transições) e sua derivação
+4. [KafkaConsumerConfig.java](src/main/java/br/com/srportto/eventosconsumer/shared/config/KafkaConsumerConfig.java) — `ConsumerFactory`, container factory (AckMode.RECORD), `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` (DLT)
+5. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro consumido (espelho manual do da `autorizacaostatus-producer`)
 
 ## Build & Testes
 
@@ -46,9 +49,9 @@ mvn test                                     # Todos os testes
 |---|---|---|
 | Java | 25 | `void main()` pendente do maven plugin |
 | Spring Boot | 4.0.7 | Web MVC (só para o Actuator), Actuator |
-| spring-kafka | gerenciado pelo Spring Boot BOM | `@KafkaListener` + `Acknowledgment` manual |
-| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
-| kafka-avro-serializer | 7.7.1 (Confluent) | `KafkaAvroDeserializer` + integração com o Schema Registry |
+| spring-boot-starter-kafka | gerenciado pelo Spring Boot BOM | `@KafkaListener` com `AckMode.RECORD` (sem `Acknowledgment` manual) |
+| Avro | 1.11.4 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
+| kafka-avro-serializer | 7.7.1 (Confluent) | `KafkaAvroDeserializer` (envolvido por `ErrorHandlingDeserializer`) + integração com o Schema Registry |
 | Lombok | 1.18.40 | uso mínimo (sem entidades JPA) |
 
 ## Endpoints reais
@@ -63,28 +66,34 @@ mvn test                                     # Todos os testes
 ## Arquitetura (hexagonal)
 
 ```
+entrypoint/kafka/       → EventoAutorizacaoKafkaListener (adapter de consumo, @KafkaListener)
 application/eventos/    → ProcessarEventoAutorizacaoUseCase (loga o evento)
-infrastructure/kafka/   → EventoAutorizacaoKafkaListener (adapter de consumo, @KafkaListener)
-shared/config/          → KafkaProperties, KafkaConsumerConfig (ConsumerFactory + container factory)
+domain/enums/           → StatusAutorizacao (grafo de transições), TipoEventoAutorizacao (derivado do status)
+shared/config/          → KafkaProperties, KafkaConsumerConfig (ConsumerFactory, container factory, DLT)
 ```
 
-Sem camada `entrypoint/` nem `domain/`: não há API REST de negócio nem persistência.
+Sem persistência (sem `JPA`/`PostgreSQL`) e sem API REST de negócio, mas o app **tem**
+`domain/` (regra de negócio pura: o grafo de transições de `StatusAutorizacao`) e
+`entrypoint/` (o listener, adaptador de entrada) — alinhado com a tabela "Que classe vai
+em qual camada" da skill `arquitetura-limpa-java` do monorepo.
 
 ### Fluxo de consumo
 
 ```
-EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, containerFactory com AckMode.MANUAL)
-  ├─ recebe o EventoAutorizacao desserializado (specific.avro.reader=true)
+EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, containerFactory com AckMode.RECORD)
+  ├─ recebe o EventoAutorizacao desserializado (specific.avro.reader=true, via ErrorHandlingDeserializer)
   ├─ ProcessarEventoAutorizacaoUseCase.processar(evento)
   │    ├─ TipoEventoAutorizacao.porStatus(evento.getStatus()) → deriva o tipo do evento
   │    └─ loga sucesso com a representação do evento e o tipo derivado
-  └─ Acknowledgment.acknowledge()  — só se processar() não lançar exceção
+  └─ offset avança automaticamente — só se o método retornar sem lançar exceção
 ```
 
-Erro em `processar()` não comita o offset. A reentrega **não** segue a semântica de
-visibility timeout do SQS: quem trata a repetição é o `DefaultErrorHandler` do
-spring-kafka (seek de volta ao offset não comitado, novas tentativas, e ao final log do
-descarte) — comportamento padrão do container factory, sem customização nesta fase.
+Erro em `processar()` (ex.: `status` desconhecido) ou falha de desserialização Avro não
+avançam o offset. A reentrega **não** segue a semântica de visibility timeout do SQS:
+quem trata a repetição é o `DefaultErrorHandler` do spring-kafka — 3 tentativas com 1s de
+intervalo (`FixedBackOff`) e, esgotadas, a mensagem original é publicada em
+`eventos-autorizacao.DLT` via `DeadLetterPublishingRecoverer` (o offset da mensagem
+original avança nesse ponto — ela não é reentregue indefinidamente).
 
 ### Diferença deliberada de padrão em relação ao SQS
 
@@ -92,7 +101,8 @@ Ao contrário do listener SQS da `autorizacaostatus-producer` (cliente AWS SDK v
 sem framework), esta app usa **spring-kafka** (`@KafkaListener`) — quebra consciente da
 jurisprudência "cliente puro" do monorepo: menos código, error handling e retry prontos,
 e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
-`add-eventos-autorizacao-kafka` para a decisão completa.
+`add-eventos-autorizacao-kafka` para a decisão original, e da mudança
+`refactor-eventos-consumer` para a limpeza de `AckMode`, DLT e camadas.
 
 ## Armadilhas críticas
 
@@ -110,16 +120,32 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
    não confunda "contexto sobe" com "está consumindo".
 5. **Semântica de retry é do spring-kafka, não do SQS** — não há visibility timeout;
    quem decide reentrega é o `DefaultErrorHandler` do container.
-6. **`tipoEvento` não é mais lido do header Kafka** — `EventoAutorizacaoKafkaListener`
-   não declara mais o parâmetro `@Header`; `ProcessarEventoAutorizacaoUseCase` deriva o
-   tipo do campo `status` do próprio `EventoAutorizacao` recebido
-   (`TipoEventoAutorizacao.porStatus`). `StatusAutorizacao` e `TipoEventoAutorizacao`
-   (`application/eventos/`) são espelhos manuais dos mesmos enums do
-   `arj-contratocommand`.
+6. **`tipoEvento` não é lido do header Kafka** — `EventoAutorizacaoKafkaListener` não
+   declara o parâmetro `@Header`; `ProcessarEventoAutorizacaoUseCase` deriva o tipo do
+   campo `status` do próprio `EventoAutorizacao` recebido (`TipoEventoAutorizacao.porStatus`)
+   — decisão deliberada: o body Avro é a fonte única da verdade, não um header que
+   poderia divergir dele. `StatusAutorizacao` e `TipoEventoAutorizacao` (`domain/enums/`)
+   são espelhos manuais dos mesmos enums do `arj-contratocommand`.
+7. **`AckMode.RECORD` é definido em código, não em `application.yaml`** —
+   `factory.getContainerProperties().setAckMode(...)` em `KafkaConsumerConfig`. Não dá
+   para usar `spring.kafka.listener.ack-mode` + `ConcurrentKafkaListenerContainerFactoryConfigurer`
+   aqui porque o factory é fortemente tipado (`<String, EventoAutorizacao>`) e o
+   configurer do Boot só aceita `<Object, Object>` (invariância de generics).
+8. **DLT usa dois `KafkaTemplate` diferentes** — falha de desserialização (bytes crus,
+   capturados pelo `ErrorHandlingDeserializer`) vai por um `KafkaTemplate<String, byte[]>`;
+   falha de negócio após desserialização com sucesso (ex.: `status` desconhecido) vai por
+   um `KafkaTemplate<String, EventoAutorizacao>` com `KafkaAvroSerializer`. O
+   `DeadLetterPublishingRecoverer` roteia entre os dois pelo tipo do valor do record — se
+   um novo tipo de falha aparecer, pode ser necessário um terceiro template.
+9. **Tópico `eventos-autorizacao.DLT`** não é provisionado explicitamente no compose
+   Kafka local (diferente do tópico principal, que tem auto-create desabilitado de
+   propósito) — é criado sob demanda pelo auto-create padrão do broker local na primeira
+   publicação.
 
 ## Documentação relacionada
 
-- [design.md da mudança](../../openspec/changes/add-eventos-autorizacao-kafka/design.md) — decisões técnicas do fluxo Kafka (schema, idempotência, spring-kafka vs. cliente puro)
+- [design.md de add-eventos-autorizacao-kafka](../../openspec/changes/archive/2026-07-26-add-eventos-autorizacao-kafka/design.md) — decisões técnicas originais do fluxo Kafka (schema, idempotência, spring-kafka vs. cliente puro)
+- [design.md de refactor-eventos-consumer](../../openspec/changes/refactor-eventos-consumer/design.md) — AckMode.RECORD, DLT e realinhamento de camadas (entrypoint/domain)
 - [infra/local/kafka/README.md](../../infra/local/kafka/README.md) — como subir o Kafka local (broker, Schema Registry, dashboard)
 
 ## Checklist antes do commit
@@ -127,4 +153,5 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
 - [ ] `mvn test` passa
 - [ ] `mvn clean compile` sem erros (gera as classes Avro em `generate-sources`)
 - [ ] Se mudou `EventoAutorizacao.avsc`, replicar em `apps/autorizacaostatus-producer`
-- [ ] Erros de processamento continuam sem comitar o offset
+- [ ] Erros de processamento continuam sem avançar o offset antes de esgotar as tentativas
+- [ ] Mensagem que esgota as tentativas continua indo para `eventos-autorizacao.DLT`

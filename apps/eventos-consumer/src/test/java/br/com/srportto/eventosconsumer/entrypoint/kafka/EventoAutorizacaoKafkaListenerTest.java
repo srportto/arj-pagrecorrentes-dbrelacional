@@ -1,4 +1,4 @@
-package br.com.srportto.eventosconsumer.infrastructure.kafka;
+package br.com.srportto.eventosconsumer.entrypoint.kafka;
 
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
 import br.com.srportto.eventosconsumer.application.eventos.ProcessarEventoAutorizacaoUseCase;
@@ -7,15 +7,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.support.Acknowledgment;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,8 +23,6 @@ class EventoAutorizacaoKafkaListenerTest {
 
     @Mock
     private ProcessarEventoAutorizacaoUseCase useCase;
-    @Mock
-    private Acknowledgment acknowledgment;
 
     private EventoAutorizacaoKafkaListener listener;
 
@@ -47,27 +44,24 @@ class EventoAutorizacaoKafkaListenerTest {
     }
 
     @Test
-    @DisplayName("processa com sucesso e comita o offset (Acknowledgment.acknowledge) após o log")
-    void processaComSucessoEComitaOffset() {
+    @DisplayName("processa com sucesso (AckMode.RECORD comita o offset ao retornar sem exceção)")
+    void processaComSucesso() {
         inicializar();
         EventoAutorizacao evento = eventoMinimo();
 
-        listener.escutar(evento, acknowledgment);
+        assertDoesNotThrow(() -> listener.escutar(evento));
 
         verify(useCase).processar(evento);
-        verify(acknowledgment).acknowledge();
     }
 
     @Test
-    @DisplayName("erro no processamento não comita o offset")
-    void erroNoProcessamentoNaoComitaOffset() {
+    @DisplayName("erro no processamento propaga a exceção (AckMode.RECORD não comita o offset)")
+    void erroNoProcessamentoPropagaExcecao() {
         inicializar();
         EventoAutorizacao evento = eventoMinimo();
         doThrow(new RuntimeException("falha")).when(useCase).processar(evento);
 
-        assertThrows(RuntimeException.class, () -> listener.escutar(evento, acknowledgment));
-
-        verify(acknowledgment, never()).acknowledge();
+        assertThrows(RuntimeException.class, () -> listener.escutar(evento));
     }
 
 }

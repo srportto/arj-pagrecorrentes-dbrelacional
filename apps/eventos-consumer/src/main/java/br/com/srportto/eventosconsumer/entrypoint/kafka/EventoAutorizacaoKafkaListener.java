@@ -1,13 +1,12 @@
-package br.com.srportto.eventosconsumer.infrastructure.kafka;
+package br.com.srportto.eventosconsumer.entrypoint.kafka;
 
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
 import br.com.srportto.eventosconsumer.application.eventos.ProcessarEventoAutorizacaoUseCase;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-/** Consome o tópico com AckMode.MANUAL: offset só avança após o use case processar sem lançar exceção. */
+/** Consome o tópico com AckMode.RECORD: offset só avança após o use case processar sem lançar exceção. */
 @Component
 public class EventoAutorizacaoKafkaListener {
 
@@ -19,9 +18,8 @@ public class EventoAutorizacaoKafkaListener {
 
     @KafkaListener(topics = "${kafka.topic}", groupId = "${kafka.group-id}",
             containerFactory = "eventoAutorizacaoKafkaListenerContainerFactory")
-    public void escutar(@Payload EventoAutorizacao evento, Acknowledgment acknowledgment) {
+    public void escutar(@Payload EventoAutorizacao evento) {
         useCase.processar(evento);
-        acknowledgment.acknowledge();
     }
 
 }
