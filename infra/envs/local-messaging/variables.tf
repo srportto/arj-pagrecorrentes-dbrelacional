@@ -21,3 +21,9 @@ variable "sqs_queue_name" {
   type        = string
   default     = "SQS-eventos-autorizacao"
 }
+
+variable "sqs_dlq_max_receive_count" {
+  description = "Quantidade de tentativas de entrega antes de mover a mensagem para a DLQ."
+  type        = number
+  default     = 3
+}

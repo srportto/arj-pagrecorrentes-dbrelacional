@@ -1,16 +1,16 @@
 ---
 name: persistencia-jpa
-description: Use quando houver problemas ou dúvidas de JPA/Hibernate - N+1 queries, LazyInitializationException, transações, locking otimista, paginação, projeções ou modelagem de entidades e relacionamentos. Gatilhos - "muitas queries", "N+1", "LazyInitializationException", "transação", "lock", "paginação lenta".
+description: Use quando houver problemas ou dúvidas de JPA/Hibernate - N+1 queries, LazyInitializationException, transações, locking otimista, paginação, projeções ou modelagem de entidades e relacionamentos. Gatilhos - "muitas queries", "N+1", "LazyInitializationException", "transação", "lock", "paginação lenta". Uso: agents `especialista-banco-dados`/`java-construtor`/`java-especialista`/`java-revisor` ou invocação manual via `/persistencia-jpa`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Persistência JPA
 
 ## Visão geral
 
-Referência de bolso para os problemas de JPA/Hibernate mais comuns em uma aplicação Java/Spring Boot:
-excesso de queries (N+1), `LazyInitializationException`, transações mal posicionadas, atualização
-concorrente perdida e listagens lentas sem paginação. Use esta skill sempre que houver dúvida de
-performance ou de comportamento de persistência, ou ao revisar código que acessa `Repository`/`@Entity`.
+Referência de bolso para os problemas de JPA/Hibernate mais comuns: N+1, `LazyInitializationException`,
+transações mal posicionadas, atualização concorrente perdida e listagens lentas sem paginação. Use
+sempre que houver dúvida de performance ou comportamento de persistência, ou ao revisar código que
+acessa `Repository`/`@Entity`.
 
 **Quando NÃO usar:** para dúvida sobre em qual camada uma classe deve viver (ex.: onde fica o
 repository), use `arquitetura-limpa-java`. Para gerar o esqueleto de uma aplicação nova com banco de
@@ -32,8 +32,6 @@ configuração do SGBD), use `banco-de-dados-performance`.
 ## N+1 em detalhe
 
 > O problema de performance mais comum em JPA/Hibernate.
-
-### O problema
 
 ```java
 // domain/entities/Pedido.java
@@ -62,21 +60,11 @@ for (Pedido pedido : pedidos) {
 // 50 pedidos = 51 queries
 ```
 
-Para confirmar a suspeita, habilite o log de SQL e conte as queries:
+Para confirmar a suspeita, habilite `hibernate.SQL: DEBUG` (ou `show-sql: true`) e conte as queries no
+log.
 
-```yaml
-spring:
-  jpa:
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-```
-
-### Solução 1: JOIN FETCH (JPQL)
+**Solução 1 — `JOIN FETCH` (JPQL)**: uma única query traz pedidos e itens juntos. Use quando a
+associação sempre é necessária para o caso de uso da consulta.
 
 ```java
 // application/pedido/PedidoRepository.java
@@ -87,10 +75,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 }
 ```
 
-Uma única query traz pedidos e itens juntos (equivalente a um `JOIN` SQL). Use quando a associação
-sempre é necessária para o caso de uso da consulta.
-
-### Solução 2: @EntityGraph
+**Solução 2 — `@EntityGraph`**: reaproveita o método padrão do `JpaRepository` (`findAll`) sem escrever
+JPQL. Prefira quando a mesma query base precisa às vezes carregar a associação e às vezes não (múltiplos
+métodos `@EntityGraph` sobre o mesmo `findById`, por exemplo).
 
 ```java
 // application/pedido/PedidoRepository.java
@@ -101,10 +88,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 }
 ```
 
-`@EntityGraph` tem a vantagem de reaproveitar o método padrão do `JpaRepository` (`findAll`) sem
-escrever JPQL — prefira quando a mesma query base precisa às vezes carregar a associação e às vezes
-não (múltiplos métodos `@EntityGraph` sobre o mesmo `findById`, por exemplo).
-
 ## Transações
 
 `@Transactional` vive em `application/` (nos services) — **nunca** no `entrypoint/` (controller,
@@ -112,7 +95,9 @@ listener SQS) nem no `domain/`. O controller apenas orquestra a chamada ao servi
 delimita a fronteira transacional.
 
 Padrão adotado neste projeto (`ProdutoService`, overlay `rest-crud-banco`): `readOnly = true` na
-classe inteira, e `@Transactional` (leitura/escrita) sobrescrito nos métodos que gravam:
+classe inteira, e `@Transactional` (leitura/escrita) sobrescrito nos métodos que gravam. Isso desliga o
+dirty checking do Hibernate nos métodos de leitura (menos overhead) e deixa explícito, por método,
+quais alteram dado:
 
 ```java
 // application/produto/ProdutoService.java
@@ -147,10 +132,6 @@ public class ProdutoService {
     }
 }
 ```
-
-`readOnly = true` desliga o dirty checking do Hibernate para os métodos de leitura (menos overhead) e
-deixa explícito, por método, a intenção de gravação — quem lê o código já sabe quais métodos alteram
-dado sem precisar abrir a query.
 
 ### Pitfall: auto-invocação não passa pelo proxy
 
@@ -246,7 +227,8 @@ public class Produto {
 
 O Hibernate incrementa `versao` a cada `UPDATE` e compara o valor lido com o valor atual no banco; se
 divergirem, lança `OptimisticLockingFailureException`. Trate essa exceção na application e traduza para
-`BusinessException` (422) — o mesmo padrão de erro de negócio já usado no projeto:
+`BusinessException` (422, já mapeada pelo `ApiExceptionHandler` do projeto) — nenhum tratamento
+adicional é necessário no controller:
 
 ```java
 // application/produto/ProdutoService.java
@@ -260,67 +242,31 @@ public Produto atualizar(Produto produto) {
 }
 ```
 
-`BusinessException` já é mapeada pelo `ApiExceptionHandler` do projeto para
-`HttpStatus.UNPROCESSABLE_ENTITY` (422), então nenhum tratamento adicional é necessário no controller.
-
 ## Erros comuns
 
-**`FetchType.EAGER` em coleção**
+| Anti-padrão | Por que é errado | Correção |
+|---|---|---|
+| `FetchType.EAGER` em coleção | Carrega TODOS os itens em TODA consulta da entidade dona, mesmo quando não precisa | `FetchType.LAZY` por padrão; carregar explicitamente via `JOIN FETCH`/`@EntityGraph` quando o caso de uso exigir |
+| `findAll()` sem paginação | Carrega a tabela inteira em memória; piora a cada registro novo | `Pageable` — `JpaRepository` já oferece `findAll(Pageable)` de graça |
+| Entidade `@Entity` retornada pelo controller | Serializar a entidade acopla o contrato de API ao schema do banco | Mapper converte para DTO record antes de sair pela borda |
 
 ```java
 // ERRADO - EAGER em colecao carrega TODOS os itens em TODA consulta de Pedido, mesmo quando nao precisa
 @OneToMany(mappedBy = "pedido", fetch = FetchType.EAGER)
 private List<ItemPedido> itens;
-```
 
-```java
-// CORRETO - LAZY por padrao; carrega a colecao explicitamente so quando o caso de uso precisa (JOIN FETCH/@EntityGraph)
+// CORRETO - LAZY por padrao; carrega a colecao explicitamente so quando o caso de uso precisa
 @OneToMany(mappedBy = "pedido", fetch = FetchType.LAZY)
 private List<ItemPedido> itens;
 ```
 
-**`findAll()` sem paginação**
-
-```java
-// ERRADO - carrega a tabela inteira em memoria; listagem fica mais lenta a cada registro novo
-public List<Produto> listar() {
-    return repository.findAll();
-}
-```
-
-```java
-// CORRETO - Pageable limita o resultado; repository JpaRepository ja oferece findAll(Pageable) de graca
-public Page<Produto> listar(Pageable pageable) {
-    return repository.findAll(pageable);
-}
-```
-
-**Entidade retornada pelo controller**
-
-```java
-// ERRADO - Produto e uma @Entity; serializa-la direto na resposta HTTP acopla o contrato de API ao schema do banco
-@GetMapping("/{id}")
-public ResponseEntity<Produto> buscar(@PathVariable Long id) {
-    return ResponseEntity.ok(service.buscarPorId(id));
-}
-```
-
-```java
-// CORRETO - mapper converte a entidade para o DTO de resposta antes de sair pela borda
-@GetMapping("/{id}")
-public ResponseEntity<ProdutoResponse> buscar(@PathVariable Long id) {
-    return ResponseEntity.ok(mapper.paraResposta(service.buscarPorId(id)));
-}
-```
-
-**`open-in-view` ligado**
+### `open-in-view` ligado
 
 Por padrão, o Spring Boot mantém a sessão do Hibernate aberta durante toda a requisição HTTP
 (`spring.jpa.open-in-view: true` é o default). Isso evita `LazyInitializationException` de forma
-implícita, mas esconde o problema em vez de resolvê-lo: a query real acaba disparando durante a
-serialização da resposta, fora de qualquer `@Transactional` visível, dificultando saber onde a query
-foi disparada e prendendo a conexão de banco pelo tempo inteiro da requisição (inclusive chamadas HTTP
-externas feitas depois). Recomendação:
+implícita, mas esconde o problema: a query real dispara durante a serialização da resposta, fora de
+qualquer `@Transactional` visível, e prende a conexão de banco pelo tempo inteiro da requisição
+(inclusive chamadas HTTP externas feitas depois). Recomendação:
 
 ```yaml
 spring:

@@ -12,16 +12,17 @@ após a confirmação do broker Kafka.
 ## Comece por aqui
 
 Leia nesta ordem:
-1. [SqsEventoAutorizacaoListener.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsEventoAutorizacaoListener.java) — adapter de ENTRADA (long polling + classificação de falha + ack + shutdown gracioso)
-2. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — orquestra: desserializa, valida, converte para Avro, produz no Kafka
-3. [AutorizacaoEventoPayloadValidator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayloadValidator.java) — valida os campos obrigatórios do `.avsc` antes de converter/produzir
-4. [EventoAutorizacaoConverter.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/EventoAutorizacaoConverter.java) — payload JSON → record Avro `EventoAutorizacao`
-5. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
-6. [PublicadorEventoAutorizacao.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/PublicadorEventoAutorizacao.java) — porta de SAÍDA da ponte
-7. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/KafkaEventoAutorizacaoProducer.java) — adapter de SAÍDA que implementa a porta (produce síncrono)
-8. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `arj-contratocommand`
-9. [SqsListenerHealthIndicator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsListenerHealthIndicator.java) — liveness da thread de polling no `/actuator/health`
-10. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
+1. [SqsEventoAutorizacaoListener.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsEventoAutorizacaoListener.java) — adapter de ENTRADA (long polling + ack + shutdown gracioso)
+2. [SqsEventoAutorizacaoErrorInterceptor.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsEventoAutorizacaoErrorInterceptor.java) — ponto único de classificação de falha do consumo (retryable/não-retryable), equivalente ao `ApiExceptionHandler` do lado REST
+3. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — orquestra: desserializa, valida, converte para Avro, produz no Kafka
+4. [AutorizacaoEventoPayloadValidator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayloadValidator.java) — valida os campos obrigatórios do `.avsc` antes de converter/produzir
+5. [EventoAutorizacaoConverter.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/EventoAutorizacaoConverter.java) — payload JSON → record Avro `EventoAutorizacao`
+6. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
+7. [PublicadorEventoAutorizacao.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/PublicadorEventoAutorizacao.java) — porta de SAÍDA da ponte
+8. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/KafkaEventoAutorizacaoProducer.java) — adapter de SAÍDA que implementa a porta (produce síncrono)
+9. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `arj-contratocommand`
+10. [SqsListenerHealthIndicator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsListenerHealthIndicator.java) — liveness da thread de polling no `/actuator/health`
+11. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
 
 ## Build & Testes
 
@@ -75,6 +76,7 @@ mvn test                                     # Todos os testes
 
 ```
 entrypoint/sqs/         → SqsEventoAutorizacaoListener (adapter de ENTRADA, SmartLifecycle),
+                           SqsEventoAutorizacaoErrorInterceptor (classificação central de falha),
                            SqsListenerHealthIndicator
 application/eventos/    → ProcessarEventoAutorizacaoUseCase (orquestra), AutorizacaoEventoPayloadValidator,
                            EventoAutorizacaoConverter, IdempotenciaKeyGenerator, AutorizacaoEventoPayload,
@@ -113,8 +115,7 @@ SqsEventoAutorizacaoListener (SmartLifecycle, entrypoint/sqs/)
                       │    ├─ PublicadorEventoAutorizacao.produzir() → send() SÍNCRONO (get com timeout)
                       │    │    header Kafka "tipoEvento" = tipo derivado do status (sempre presente)
                       │    └─ loga sucesso com idAutorizacao, key e tipoEvento — NUNCA com o body
-                      └─ ack (DeleteMessage) OU descarte, conforme classificação da falha:
-                           ├─ sucesso → ack
+                      └─ sucesso → ack; falha → SqsEventoAutorizacaoErrorInterceptor.tratar() decide:
                            ├─ EventoAutorizacaoInvalidoException (JSON inválido, campo obrigatório
                            │    ausente/nulo, status desconhecido) → log ERROR (messageId) + ack
                            └─ qualquer outra exceção (Kafka/SR indisponível) → SEM ack (retry via visibility timeout)
@@ -135,18 +136,26 @@ sistemática de mensagens "em voo".
 
 ### Exceções e tratamento de erros
 
-Esta app não tem `ApiExceptionHandler` — não há API REST de negócio para tratar erros
-HTTP. Duas exceções orientam a classificação de falha no listener:
+Esta app não tem API REST de negócio, mas tem o equivalente ao `ApiExceptionHandler`
+para o escopo de mensageria: **`SqsEventoAutorizacaoErrorInterceptor`**
+(`entrypoint/sqs/`) é o ponto único que classifica toda exceção lançada pelo
+processamento de uma mensagem e decide se o listener dá ack ou deixa a mensagem
+retornar à fila — o listener não tem mais `catch` por tipo de exceção, só delega ao
+interceptor. Duas exceções orientam essa classificação:
 
 - **`EventoAutorizacaoInvalidoException`** (`shared/exceptions/`) — não-retryable.
   JSON malformado, **campo obrigatório do schema Avro ausente ou nulo**, conversão para
   Avro impossível, ou `status` desconhecido no payload (usado para derivar `tipoEvento`
-  via `TipoEventoAutorizacao.porStatus`). O listener loga ERROR com o `messageId` — nunca
-  com o body — e dá ack (descarta conscientemente: retry seria inútil e, sem redrive
-  policy na fila, causaria loop infinito).
+  via `TipoEventoAutorizacao.porStatus`). O interceptor loga ERROR com o `messageId` —
+  nunca com o body — e manda dar ack (descarta conscientemente: retry nunca corrigiria um
+  payload malformado).
 - **`EventoAutorizacaoKafkaIndisponivelException`** (`shared/exceptions/`) —
-  retryable. Broker/Schema Registry indisponível ou timeout. O listener loga ERROR e
-  **não** dá ack — a mensagem volta à fila após o visibility timeout.
+  retryable, junto com qualquer outra exceção não mapeada. Broker/Schema Registry
+  indisponível ou timeout. O interceptor loga ERROR e manda **não** dar ack — a mensagem
+  volta à fila após o visibility timeout. Se a falha persistir além de
+  `maxReceiveCount` tentativas, a fila move a mensagem para a DLQ
+  `SQS-eventos-autorizacao-dlq` (`redrive_policy` em `infra/envs/local-messaging/`) em
+  vez de reentregar para sempre.
 
 **Nenhum log nem mensagem de exceção carrega o body da mensagem.** O payload contém dado
 pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `valor`,
@@ -175,7 +184,8 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
    evento. Sem Kafka no ar, a fila acumula mensagens não confirmadas (retry automático).
 7. **Mensagem inválida é descartada, não retida para sempre** — comportamento mudou em
    relação à fase anterior: JSON malformado/dado incompleto agora recebe ack após o log
-   de erro (a fila não tem redrive policy; reter para sempre só gera ruído).
+   de erro, via `SqsEventoAutorizacaoErrorInterceptor` (retry nunca corrigiria um payload
+   malformado).
 8. **`enableDecimalLogicalType=true`** no `avro-maven-plugin` — sem isso, os campos
    decimais são gerados como `ByteBuffer`, não `BigDecimal`, quebrando o conversor.
 9. **`tipoEvento` não é mais lido do attribute SQS** — o listener não solicita
@@ -194,6 +204,16 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 11. **`/actuator/health` reflete o consumidor** — `SqsListenerHealthIndicator` reporta
     DOWN quando o listener está ativo mas a thread de polling morreu. Sem ele, um outage
     total do consumo passaria despercebido (a flag `running` continua `true`).
+12. **Não adicione `catch` por tipo de exceção de volta no listener** — toda
+    classificação retryable/não-retryable é responsabilidade exclusiva de
+    `SqsEventoAutorizacaoErrorInterceptor` (`entrypoint/sqs/`); `processarEDarAck()` só
+    chama `useCase.processar()` e delega o resultado da falha ao interceptor. Duplicar a
+    classificação no listener reintroduz o espalhamento que o interceptor existe para
+    evitar.
+13. **A fila SQS tem DLQ** (`SQS-eventos-autorizacao-dlq`, `redrive_policy` em
+    `infra/envs/local-messaging/`) — uma falha retryable persistente (Kafka fora do ar
+    por muito tempo) esgota `maxReceiveCount` tentativas e a mensagem cai na DLQ para
+    investigação manual, em vez de reentregar para sempre.
 
 ## Documentação relacionada
 

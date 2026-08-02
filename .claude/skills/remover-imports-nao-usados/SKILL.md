@@ -1,14 +1,13 @@
 ---
 name: remover-imports-nao-usados
-description: Remove imports/usings não utilizados em Java, TypeScript, JavaScript, C#, Python, Go, Kotlin e outras linguagens. Use ao limpar imports, organizar imports, remover imports não usados, ou antes de um commit.
+description: Remove imports/usings não utilizados em Java, TypeScript, JavaScript, C#, Python, Go, Kotlin e outras linguagens. Use ao limpar imports, organizar imports, remover imports não usados, ou antes de um commit. Uso: agent `refatorador-java` (etapa de limpeza pós-refactoring) ou invocação manual via `/remover-imports-nao-usados`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Remover Imports Não Utilizados
 
-Remove com segurança imports (`import` / `using`) que não são referenciados no
-código. **Abordagem híbrida:** sempre tente a ferramenta nativa da linguagem
-primeiro; só caia para análise manual se nenhuma estiver disponível. Sempre
-verifique (build/teste) ao final.
+Remove com segurança imports (`import` / `using`) não referenciados no código. **Abordagem
+híbrida:** tente a ferramenta nativa da linguagem primeiro; só caia para análise manual se nenhuma
+estiver disponível. Sempre verifique (build/teste) ao final.
 
 ## Regra de ouro
 
@@ -20,9 +19,9 @@ e tipos usados apenas em assinaturas. Na dúvida, **não remova**.
 ## Fluxo (4 passos)
 
 ### 1. Detectar linguagem e escopo
-Identifique a(s) linguagem(ns) pelos arquivos alvo (`.java`, `.ts`/`.tsx`,
-`.js`/`.jsx`, `.cs`, `.py`, `.go`, `.kt`). Trabalhe apenas nos arquivos ou
-diretório que o usuário indicou. Se ele não especificar, pergunte o escopo.
+Identifique a(s) linguagem(ns) pelos arquivos alvo (`.java`, `.ts`/`.tsx`, `.js`/`.jsx`, `.cs`,
+`.py`, `.go`, `.kt`). Trabalhe apenas nos arquivos/diretório indicados; se não especificado,
+pergunte o escopo.
 
 ### 2. Tentar a ferramenta nativa primeiro
 
@@ -41,22 +40,20 @@ diretório que o usuário indicou. Se ele não especificar, pergunte o escopo.
 | **Go** | goimports | `goimports -w <arquivos>` (imports não usados são erro de compilação em Go) |
 | **Kotlin** | ktlint | `ktlint --format <arquivos>` |
 
-Verifique se a ferramenta existe **antes** de usar (`which`/`npx --no-install`,
-ou presença em `package.json`/`pom.xml`/`build.gradle`/`.csproj`). Se a
-ferramenta já estiver configurada no projeto, prefira-a — ela respeita o estilo
-do repositório.
+Verifique se a ferramenta existe **antes** de usar (`which`/`npx --no-install`, ou presença em
+`package.json`/`pom.xml`/`build.gradle`/`.csproj`). Se já estiver configurada no projeto,
+prefira-a — ela respeita o estilo do repositório.
 
 ### 3. Fallback: análise manual (se nenhuma ferramenta existir)
 
 Para cada arquivo:
 1. Liste os imports do topo.
-2. Para cada símbolo importado, busque seu uso no restante do arquivo (use Grep
-   pelo nome do símbolo, não pela linha de import).
+2. Para cada símbolo importado, busque seu uso no restante do arquivo (Grep pelo nome do símbolo,
+   não pela linha de import).
 3. Remova apenas os que não têm nenhuma referência.
 
-Cuidados por linguagem (veja **Armadilhas** abaixo). Nunca toque em imports com
-efeito colateral, wildcards, ou usados só em tipos/anotações sem que você
-confirme o não uso.
+Cuidados por linguagem em **Armadilhas** abaixo. Nunca toque em imports com efeito colateral,
+wildcards, ou usados só em tipos/anotações sem confirmar o não uso.
 
 ### 4. Verificar (obrigatório)
 
@@ -72,27 +69,25 @@ Após remover, rode a build/teste apropriada e confirme que nada quebrou:
 | Go | `go build ./...` |
 | Kotlin | `./gradlew compileKotlin` |
 
-Se a verificação falhar por causa de um import removido, **reverta esse import**
-e relate. Ao final, liste objetivamente quais imports foram removidos de quais
-arquivos.
+Se a verificação falhar por causa de um import removido, **reverta esse import** e relate. Ao
+final, liste objetivamente quais imports foram removidos de quais arquivos.
 
 ## Armadilhas (não remova nestes casos sem confirmar)
 
-- **Imports com efeito colateral** — JS/TS `import './styles.css'`,
-  `import 'reflect-metadata'`; Python `import logging.config`. Não têm símbolo
-  referenciado mas são necessários.
-- **Wildcards** — Java `import x.*`, Kotlin `import x.*`, Python `from x import *`.
-  Não dá pra saber o uso por nome; só remova se tiver certeza absoluta.
-- **C# extension methods** — um `using` pode existir só para um método de
-  extensão (`.Where(...)`, `.ToList()`); o namespace não aparece explicitamente.
-- **C# `global using`** — afeta o projeto inteiro; verifique uso em todos os
-  arquivos, não só no atual.
-- **TS types-only** — símbolo usado apenas em anotação de tipo ou generic
-  (`const x: Foo`); ainda é uso. Cuidado também com decorators (`@Component`).
-- **Java anotações e Javadoc** — símbolo usado só em `@Anotacao` ou em
-  `{@link Classe}`/`@see` no Javadoc conta como uso.
-- **Reflexão / strings** — símbolos referenciados por nome em string
-  (reflection, DI) não aparecem como uso direto; não remova.
+- **Imports com efeito colateral** — JS/TS `import './styles.css'`, `import 'reflect-metadata'`;
+  Python `import logging.config`. Sem símbolo referenciado, mas necessários.
+- **Wildcards** — Java/Kotlin `import x.*`, Python `from x import *`. Não dá pra saber o uso por
+  nome; só remova com certeza absoluta.
+- **C# extension methods** — um `using` pode existir só para um método de extensão
+  (`.Where(...)`, `.ToList()`); o namespace não aparece explicitamente.
+- **C# `global using`** — afeta o projeto inteiro; verifique uso em todos os arquivos, não só no
+  atual.
+- **TS types-only** — símbolo usado só em anotação de tipo ou generic (`const x: Foo`); ainda é
+  uso. Cuidado também com decorators (`@Component`).
+- **Java anotações e Javadoc** — símbolo usado só em `@Anotacao` ou em `{@link Classe}`/`@see` no
+  Javadoc conta como uso.
+- **Reflexão / strings** — símbolos referenciados por nome em string (reflection, DI) não aparecem
+  como uso direto; não remova.
 
 ## Checklist antes de concluir
 

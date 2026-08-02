@@ -5,7 +5,9 @@ recursos de mensageria de eventos de autorização no
 [Floci](../../../docs/floci-aws-local/floci-aws-local.md) (emulador AWS local):
 
 - Tópico SNS `sns-estados-autorizacao`
-- Fila SQS `SQS-eventos-autorizacao`
+- Fila SQS `SQS-eventos-autorizacao`, com `redrive_policy` apontando para a DLQ
+  `SQS-eventos-autorizacao-dlq` (`maxReceiveCount = 3`, ver `var.sqs_dlq_max_receive_count`)
+  — sem DLQ, uma mensagem "venenosa" reentregaria para sempre
 - Subscription SNS → SQS com `raw_message_delivery = true` (o body entregue na
   fila é o JSON puro publicado no tópico, sem o envelope SNS)
 

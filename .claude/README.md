@@ -1,37 +1,32 @@
-# skills-agents-v3
+# Catálogo de skills e agents (`.claude/`)
 
-Catálogo de **skills** e **agents** para desenvolvimento Java/Spring Boot (Java 25 + Spring Boot
-4.0.4). Use para consultar convenções, padrões e práticas ao gerar, revisar ou auditar código e
-infraestrutura.
+Catálogo local de **skills** e **agents** para desenvolvimento Java/Spring Boot (Java 25 + Spring
+Boot 4) neste monorepo. Já está instalado em `.claude/skills/` e `.claude/agents/` — não é preciso
+copiar nada de outro lugar. Use para consultar convenções, padrões e práticas ao gerar, revisar ou
+auditar código e infraestrutura.
 
 ## Como usar este catálogo
 
-Existem **duas formas** de consumir o catálogo. Escolha conforme o seu fluxo.
+### 1. Leitura direta (referência)
 
-### 1. Catálogo central (referência)
+Abra o `SKILL.md` (ou o `.md` do agent) direto em `.claude/skills/<nome>/SKILL.md` ou
+`.claude/agents/<nome>.md`. O frontmatter traz `name` e `description` (gatilhos em pt-BR que dizem
+**quando** a skill se aplica); o corpo traz a referência detalhada.
 
-Leia a skill diretamente no caminho do catálogo. Use quando você está navegando, decidindo
-qual skill aplicar, ou estudando o padrão.
-
-```
-skills-agents-v3/
-├── skills/<nome-da-skill>/SKILL.md
-└── agents/<nome-do-agent>.md
-```
-
-Abra o `SKILL.md` (ou o `.md` do agent) no seu editor. O frontmatter traz `name` e
-`description` (gatilhos em pt-BR que dizem **quando** a skill se aplica); o corpo traz a
-referência detalhada.
+**Skills deste projeto (exceto as de openspec) não devem ser carregadas proativamente pela sessão
+principal** — cada `description` termina com uma frase "Uso: agent `X` ou invocação manual via
+`/<nome-da-skill>`", indicando que a skill só deve ser puxada por um agent especializado que a
+referencia como fonte de verdade, ou manualmente via `/<nome-da-skill>`. Isso mantém as skills
+ociosas por padrão e evita que a sessão principal carregue conteúdo de referência sem necessidade.
 
 ### 2. Por agente (uso programático)
 
-Os agents deste catálogo são projetados para serem invocados como subagents (Copilot, Claude
-Code, ou framework similar). Cada agent declara:
+Os agents deste catálogo são invocados como subagents. Cada agent declara:
 
 - `description` — quando invocá-lo.
 - `tools` — ferramentas que ele pode usar.
 - `model` e `effort` — o "tamanho" do trabalho que ele faz.
-- Referências às skills que ele consome como fonte de verdade.
+- Referências às skills que ele consome como fonte de verdade (lidas via `.claude/skills/<nome>/SKILL.md`).
 
 Fluxo típico:
 
@@ -41,47 +36,15 @@ Fluxo típico:
 4. O resultado é validado por outro agente (ex.: trabalho do `java-construtor` → validado pelo
    `java-especialista`).
 
-## Convenção de paths nas skills: `.claude/skills`
-
-**As skills referenciam-se entre si (e os agents referenciam skills) usando o caminho local
-`.claude/skills/<nome>/SKILL.md`.** Esse caminho é uma convenção de **organização do projeto
-consumidor**, não um path absoluto deste repositório.
-
-Isso permite usar o mesmo catálogo em projetos com hierarquia de pastas diferente, sem editar
-as skills.
-
-### Como instalar em um projeto
-
-1. Copie (ou symlink) `skills-agents-v3/skills/` para `<raiz-do-projeto>/.claude/skills/`.
-2. Copie os agents de `skills-agents-v3/agents/` para `<raiz-do-projeto>/.claude/agents/`.
-3. Os agents passam a encontrar as skills em `.claude/skills/<nome>/SKILL.md` automaticamente.
-
-Exemplos de instalação:
-
-```bash
-# via copia simples
-cp -r skills-agents-v3/skills/.   .claude/skills/
-cp -r skills-agents-v3/agents/.   .claude/agents/
-
-# via symlink (atualizacoes ficam automaticas)
-ln -s ../skills-agents-v3/skills  .claude/skills
-ln -s ../skills-agents-v3/agents  .claude/agents
-
-# via git submodule (versionado de forma independente)
-git submodule add <repo>/skills-agents-v3.git .claude/skills-repo
-ln -s .claude/skills-repo/skills  .claude/skills
-ln -s .claude/skills-repo/agents  .claude/agents
-```
-
 ## Estrutura
 
 ```
-skills-agents-v3/
-├── skills/                                # 18 skills
+.claude/
+├── skills/                                # 17 skills (+ 5 skills openspec, fora deste catálogo)
 │   ├── api-rest-design/                   # REST + OpenAPI + RFC 9457
 │   ├── arquitetura-limpa-java/            # Hexagonal + DDD + microservices
 │   ├── banco-de-dados-performance/        # SQL + EXPLAIN + tuning (PostgreSQL/MySQL)
-│   ├── criar-aplicacao-java/              # Esqueleto + overlays (SQS/Kafka/banco)
+│   ├── criar-aplicacao-java/              # Esqueleto hexagonal + variantes (SQS/Kafka/banco)
 │   ├── devops-cicd/                       # CI/CD GitHub Actions + Dockerfile + K8s manifest
 │   ├── java-architecture/                 # Spring stack + camadas clássicas
 │   ├── java-moderno/                      # Records, sealed, pattern matching, virtual threads
@@ -153,7 +116,7 @@ Três atalhos:
 | Auditar trabalho de outro agent | `revisao-de-codigo-java` | (todas conforme o tema do trabalho) |
 | Aplicar refactoring | `qualidade-codigo-java` | `refactoring-remove-parameter` (foco) |
 | Migrar para features modernas Java | `java-moderno` | `revisao-de-codigo-java` |
-| Adicionar mensageria (SQS/Kafka) | `mensageria-sqs-kafka` | `criar-aplicacao-java` (overlays) |
+| Adicionar mensageria (SQS/Kafka) | `mensageria-sqs-kafka` | `criar-aplicacao-java` (variantes SQS/Kafka) |
 | Pipeline CI/CD | `devops-cicd` | `monitoramento-java` (após deploy) |
 | Dockerfile | `devops-cicd` | `monitoramento-java` (HEALTHCHECK) |
 | Manifests Kubernetes | `devops-cicd` | `monitoramento-java` (probes) |
@@ -216,3 +179,9 @@ bloquear o fluxo.
   invoca, em qual cenário". Evita confusão sobre quem faz o quê.
 - **`Quando NÃO usar` explícito** — toda skill abre dizendo **para que ela não serve** e qual
   skill irmã usar no lugar. Reduz o erro de "abri a skill errada".
+- **Ociosa por padrão** — nenhuma skill deste catálogo (exceto as de openspec) deve ser carregada
+  proativamente pela sessão principal. Toda `description` termina indicando o(s) agent(s) que a
+  usam como fonte de verdade, ou a invocação manual via `/<nome-da-skill>`.
+- **Toda fila SQS nasce com DLQ, todo consumo de mensageria tem interceptor central de erro** —
+  regras obrigatórias detalhadas em `mensageria-sqs-kafka` (seções 2 e 3), validadas pelo agent
+  `java-especialista`.

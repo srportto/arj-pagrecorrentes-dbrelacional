@@ -37,8 +37,8 @@ Para correlação ponta a ponta entre microsserviços, leia
     estruturados via correlation ID).
   - Propagação W3C Trace Context automática via `RestClient`/`WebClient`.
 - **Logs estruturados** (resumo; ver skill dedicada para detalhes):
-  - `logging.structured.format.console: logstash` no `application.yaml` (Boot 3.4+,
-    já ativo no app-base deste catálogo).
+  - `logging.structured.format.console: logstash` no `application.yaml` (Boot 3.4+;
+    toda aplicação gerada por `criar-aplicacao-java` deve nascer com isso configurado).
   - MDC para `traceId` correlacionar com traces.
 - **Alerting (Prometheus):** threshold + `for` duration para evitar flapping; alertar
   em caminhos críticos, não em todo erro.

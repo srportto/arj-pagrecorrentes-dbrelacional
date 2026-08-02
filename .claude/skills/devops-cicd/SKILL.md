@@ -1,6 +1,6 @@
 ---
 name: devops-cicd
-description: Use ao montar ou ajustar pipeline de CI/CD para aplicação Java/Maven (GitHub Actions, GitLab CI, Jenkins), containerizar aplicação (Dockerfile multi-stage, .dockerignore, usuário não-root), ou escrever manifest Kubernetes de aplicação (Deployment, Service, ConfigMap, probes de saúde, graceful shutdown). Gatilhos - "GitHub Actions", "pipeline CI", "Dockerfile", "Kubernetes deployment", "k8s manifest", "rolling update", "graceful shutdown".
+description: Use ao montar ou ajustar pipeline de CI/CD para aplicação Java/Maven (GitHub Actions, GitLab CI, Jenkins), containerizar aplicação (Dockerfile multi-stage, .dockerignore, usuário não-root), ou escrever manifest Kubernetes de aplicação (Deployment, Service, ConfigMap, probes de saúde, graceful shutdown). Gatilhos - "GitHub Actions", "pipeline CI", "Dockerfile", "Kubernetes deployment", "k8s manifest", "rolling update", "graceful shutdown". Uso: agents `engenheiro-devops`/`especialista-docker`/`especialista-kubernetes` ou invocação manual via `/devops-cicd`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # DevOps & CI/CD (Java/Maven, Docker, Kubernetes)
@@ -8,22 +8,21 @@ description: Use ao montar ou ajustar pipeline de CI/CD para aplicação Java/Ma
 ## Visão geral
 
 Guia de DevOps focado no **caminho do código até a aplicação rodando em produção** em stack
-Java/Maven, com escopo limitado a **CI/CD + containerização + deployment da aplicação** — não
-cobre Terraform de cluster inteiro, rede, IAM de provedor cloud, ou administração de cluster.
+Java/Maven, limitado a **CI/CD + containerização + deployment da aplicação** — não cobre Terraform
+de cluster inteiro, rede, IAM de provedor cloud, ou administração de cluster.
 
-**Quando NÃO usar:** para escrever código de aplicação, use `java-construtor`. Para auditoria
-completa de segurança de aplicação, use `seguranca-aplicacao-java` e o agent
-`engenheiro-seguranca`. Para tuning de banco, use `banco-de-dados-performance`. Para observabilidade
-depois do deploy, use `monitoramento-java`.
+**Quando NÃO usar:** código de aplicação → `java-construtor`. Auditoria completa de segurança →
+`seguranca-aplicacao-java` + agent `engenheiro-seguranca`. Tuning de banco →
+`banco-de-dados-performance`. Observabilidade pós-deploy → `monitoramento-java`.
 
 ## Workflow
 
-1. **Confirme o que já existe** — antes de criar do zero, verifique `.github/workflows/`,
-   `Dockerfile`, `k8s/`, `docker-compose.yml`. Ajuste em vez de recriar.
+1. **Confirme o que já existe** — verifique `.github/workflows/`, `Dockerfile`, `k8s/`,
+   `docker-compose.yml`. Ajuste em vez de recriar.
 2. **Defina os estágios necessários** — build → test → package → (push) → (deploy).
 3. **Escreva o YAML** com quality gates apropriados ao projeto.
-4. **Valide** — `docker build` se possível, `kubectl apply --dry-run=client` se o cluster estiver
-   acessível, `mvn clean verify` localmente para o job de build.
+4. **Valide** — `docker build`, `kubectl apply --dry-run=client` (se o cluster estiver acessível),
+   `mvn clean verify` localmente.
 5. **Reporte** o que foi criado/alterado e quais gates foram configurados.
 
 ---
@@ -64,44 +63,28 @@ jobs:
 
 ## Quality gates
 
-- **Testes**: o build **deve falhar** se qualquer teste falhar — `mvn clean verify` já falha o
-  processo com testes vermelhos. **Nunca** usar `-DskipTests` em pipeline de CI.
-- **Cobertura**: se o projeto tiver JaCoCo configurado, o gate deve barrar merge abaixo do limiar
-  (ex.: 80%).
+- **Testes**: o build **deve falhar** se qualquer teste falhar — `mvn clean verify` já falha com
+  testes vermelhos. **Nunca** usar `-DskipTests` em pipeline de CI.
+- **Cobertura**: se o projeto tiver JaCoCo configurado, o gate barra merge abaixo do limiar (ex.: 80%)
+  com `mvn jacoco:check -Djacoco.minimum.coverage=0.80`.
+- **Dependências vulneráveis**: varredura de CVE no PR com
+  `mvn org.owasp:dependency-check-maven:check` — ver `seguranca-aplicacao-java`.
 
-```yaml
-- name: Verificar cobertura minima
-  run: |
-    mvn verify
-    mvn jacoco:check -Djacoco.minimum.coverage=0.80
-```
+## Versionamento e cache
 
-- **Dependências vulneráveis**: varredura de CVE no PR — ver
-  `seguranca-aplicacao-java` (seção "Dependências vulneráveis").
-
-```yaml
-- name: OWASP Dependency-Check
-  run: mvn org.owasp:dependency-check-maven:check
-```
-
-## Versionamento de artefato
-
-- Use `${project.version}` do Maven, tag Git ou `${{ github.sha }}` para builds de desenvolvimento.
-- **Evite** publicar sempre `app.jar` sem versão em ambientes que não sejam efêmeros.
-
-```yaml
-- name: Build com versao
-  run: mvn clean package -Drevision=${{ github.sha }}
-```
-
-## Cache de dependências
-
-- `actions/setup-java` com `cache: 'maven'` já resolve a maioria dos casos.
-- Para cache custom: `actions/cache@v4` com chave baseada em `pom.xml` hash.
+- Versione o artefato com `${project.version}` do Maven, tag Git ou `${{ github.sha }}`
+  (`mvn clean package -Drevision=${{ github.sha }}`); **evite** publicar sempre `app.jar` sem versão
+  em ambientes não-efêmeros.
+- Cache: `actions/setup-java` com `cache: 'maven'` resolve a maioria dos casos; para cache custom,
+  `actions/cache@v4` com chave baseada em hash do `pom.xml`.
 
 ## Estratégias de deployment (acoplado à pipeline)
 
-### Rolling update (default Kubernetes)
+| Estratégia | Mecanismo | Quando usar |
+|---|---|---|
+| Rolling update (default K8s) | `RollingUpdate` com `maxUnavailable`/`maxSurge` | Padrão — substitui réplicas gradualmente |
+| Blue-Green | Deploy em slot paralelo (`myapp-blue`), depois `kubectl patch service` troca o seletor | Rollback instantâneo, mas exige 2x recursos durante o switch |
+| Canary (Flagger) | CRD `Canary` desloca tráfego em passos (`stepWeight`) monitorando métricas | Validação gradual com rollback automático por métrica |
 
 ```yaml
 spec:
@@ -110,34 +93,6 @@ spec:
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
-```
-
-### Blue-Green
-
-```yaml
-- name: Deploy to blue
-  run: |
-    kubectl set image deployment/myapp-blue myapp=myapp:${{ github.sha }}
-    kubectl rollout status deployment/myapp-blue
-- name: Switch traffic
-  run: |
-    kubectl patch service/myapp -p '{"spec":{"selector":{"slot":"blue"}}}'
-```
-
-### Canary (com Flagger)
-
-```yaml
-apiVersion: flagger.app/v1beta1
-kind: Canary
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: myapp
-  analysis:
-    interval: 1m
-    threshold: 5
-    stepWeight: 20
 ```
 
 ---
@@ -155,14 +110,10 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Stage 2: runtime
-# Usamos a variante -jre-alpine: além de gerar imagem mais enxuta, o Alpine já traz
-# "wget" via busybox por padrão — a variante -jre (Ubuntu/Debian) NÃO inclui wget nem
-# curl pré-instalados, o que faria o HEALTHCHECK abaixo falhar em runtime com
-# "command not found" (o docker build não detecta isso, pois HEALTHCHECK só roda depois).
+# Stage 2: runtime — -jre-alpine é mais enxuta e já traz wget via busybox (variante -jre
+# Ubuntu/Debian NÃO tem wget/curl, o que quebra o HEALTHCHECK só em runtime, não no build).
 FROM eclipse-temurin:25-jre-alpine
-# No Alpine/busybox o usuário é criado com addgroup/adduser (não groupadd/useradd,
-# que exigem o pacote shadow ausente por padrão nessa imagem).
+# Alpine/busybox cria usuário com addgroup/adduser, não groupadd/useradd (exigem pacote shadow).
 RUN addgroup -S app && adduser -S -G app app
 WORKDIR /app
 COPY --from=build /app/target/*.jar /app/app.jar
@@ -186,9 +137,7 @@ target/
 - **Multi-stage sempre** — nunca incluir Maven/JDK na imagem de runtime.
 - **Usuário não-root** na imagem final.
 - **HEALTHCHECK** apontando para o endpoint de disponibilidade (`/disponibilidade` na base deste
-  catálogo, ajuste conforme a aplicação).
-- **wget/curl** presente na imagem final se o HEALTHCHECK usar; `-jre-alpine` traz via busybox;
-  variantes `-jre` (Ubuntu/Debian) precisam instalar explicitamente.
+  catálogo, ajuste conforme a aplicação) — confirme que `wget`/`curl` existe na imagem final.
 
 ## Validação
 
@@ -274,21 +223,9 @@ data:
   SPRING_PROFILES_ACTIVE: "producao"
 ```
 
-## Service & Ingress (exposição externa)
+## Ingress (exposição externa, referencia o Service já criado acima)
 
 ```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: minha-app-service
-spec:
-  selector:
-    app: minha-app
-  ports:
-    - port: 80
-      targetPort: 8080
-  type: ClusterIP
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -303,7 +240,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: minha-app-service
+                name: minha-app
                 port:
                   number: 80
 ```
@@ -334,11 +271,10 @@ spring:
 
 ## Probes — por que sempre configurar
 
-- `readinessProbe` — diz ao Service se a réplica pode receber tráfego. Sem ele, Service envia
-  tráfego para réplicas que ainda estão subindo ou em DB indisponível.
-- `livenessProbe` — diz ao kubelet se o container está travado; reinicia se falhar. Sem ele, um
-  deadlock no app fica lá para sempre.
-- Separar os dois (ver `monitoramento-java`).
+- `readinessProbe` — diz ao Service se a réplica pode receber tráfego; sem ele, tráfego vai para
+  réplicas ainda subindo ou com dependência indisponível.
+- `livenessProbe` — diz ao kubelet se o container travou; reinicia se falhar. Sem ele, um deadlock
+  fica lá para sempre. Sempre configure os dois separadamente (ver `monitoramento-java`).
 
 ## Validação
 
