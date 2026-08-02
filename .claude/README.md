@@ -1,0 +1,218 @@
+# skills-agents-v3
+
+Catálogo de **skills** e **agents** para desenvolvimento Java/Spring Boot (Java 25 + Spring Boot
+4.0.4). Use para consultar convenções, padrões e práticas ao gerar, revisar ou auditar código e
+infraestrutura.
+
+## Como usar este catálogo
+
+Existem **duas formas** de consumir o catálogo. Escolha conforme o seu fluxo.
+
+### 1. Catálogo central (referência)
+
+Leia a skill diretamente no caminho do catálogo. Use quando você está navegando, decidindo
+qual skill aplicar, ou estudando o padrão.
+
+```
+skills-agents-v3/
+├── skills/<nome-da-skill>/SKILL.md
+└── agents/<nome-do-agent>.md
+```
+
+Abra o `SKILL.md` (ou o `.md` do agent) no seu editor. O frontmatter traz `name` e
+`description` (gatilhos em pt-BR que dizem **quando** a skill se aplica); o corpo traz a
+referência detalhada.
+
+### 2. Por agente (uso programático)
+
+Os agents deste catálogo são projetados para serem invocados como subagents (Copilot, Claude
+Code, ou framework similar). Cada agent declara:
+
+- `description` — quando invocá-lo.
+- `tools` — ferramentas que ele pode usar.
+- `model` e `effort` — o "tamanho" do trabalho que ele faz.
+- Referências às skills que ele consome como fonte de verdade.
+
+Fluxo típico:
+
+1. Você faz um pedido (ex.: "revise esse diff", "crie uma app nova", "aplique Remove Parameter").
+2. O agente correspondente é invocado.
+3. O agente lê as skills referenciadas, aplica os critérios, e devolve o resultado.
+4. O resultado é validado por outro agente (ex.: trabalho do `java-construtor` → validado pelo
+   `java-especialista`).
+
+## Convenção de paths nas skills: `.claude/skills`
+
+**As skills referenciam-se entre si (e os agents referenciam skills) usando o caminho local
+`.claude/skills/<nome>/SKILL.md`.** Esse caminho é uma convenção de **organização do projeto
+consumidor**, não um path absoluto deste repositório.
+
+Isso permite usar o mesmo catálogo em projetos com hierarquia de pastas diferente, sem editar
+as skills.
+
+### Como instalar em um projeto
+
+1. Copie (ou symlink) `skills-agents-v3/skills/` para `<raiz-do-projeto>/.claude/skills/`.
+2. Copie os agents de `skills-agents-v3/agents/` para `<raiz-do-projeto>/.claude/agents/`.
+3. Os agents passam a encontrar as skills em `.claude/skills/<nome>/SKILL.md` automaticamente.
+
+Exemplos de instalação:
+
+```bash
+# via copia simples
+cp -r skills-agents-v3/skills/.   .claude/skills/
+cp -r skills-agents-v3/agents/.   .claude/agents/
+
+# via symlink (atualizacoes ficam automaticas)
+ln -s ../skills-agents-v3/skills  .claude/skills
+ln -s ../skills-agents-v3/agents  .claude/agents
+
+# via git submodule (versionado de forma independente)
+git submodule add <repo>/skills-agents-v3.git .claude/skills-repo
+ln -s .claude/skills-repo/skills  .claude/skills
+ln -s .claude/skills-repo/agents  .claude/agents
+```
+
+## Estrutura
+
+```
+skills-agents-v3/
+├── skills/                                # 18 skills
+│   ├── api-rest-design/                   # REST + OpenAPI + RFC 9457
+│   ├── arquitetura-limpa-java/            # Hexagonal + DDD + microservices
+│   ├── banco-de-dados-performance/        # SQL + EXPLAIN + tuning (PostgreSQL/MySQL)
+│   ├── criar-aplicacao-java/              # Esqueleto + overlays (SQS/Kafka/banco)
+│   ├── devops-cicd/                       # CI/CD GitHub Actions + Dockerfile + K8s manifest
+│   ├── java-architecture/                 # Spring stack + camadas clássicas
+│   ├── java-moderno/                      # Records, sealed, pattern matching, virtual threads
+│   ├── mensageria-sqs-kafka/              # SQS + Kafka (DLQ, idempotência, retry)
+│   ├── monitoramento-java/                # Prometheus, OTel, Grafana, alertas
+│   ├── padrao-de-logs-java/               # JSON estruturado + MDC + traceId
+│   ├── padroes-de-projeto-java/           # 21 patterns GoF + Strategy por lista injetada
+│   ├── persistencia-jpa/                  # JPA/Hibernate (N+1, transações, locking)
+│   ├── qualidade-codigo-java/             # Clean code + refactorings do Fowler
+│   ├── refactoring-remove-parameter/      # Foco Remove Parameter (passo a passo)
+│   ├── remover-imports-nao-usados/        # Limpeza de imports multi-linguagem
+│   ├── revisao-de-codigo-java/            # Checklist de revisão por severidade
+│   └── seguranca-aplicacao-java/          # OWASP Top 10 + JWT + CORS + secrets
+└── agents/                                # 11 agents
+    ├── engenheiro-devops.md               # Pipeline CI/CD
+    ├── engenheiro-seguranca.md            # Segurança de aplicação
+    ├── especialista-banco-dados.md        # Performance de banco
+    ├── especialista-docker.md             # Dockerfile
+    ├── especialista-kubernetes.md         # Manifests K8s
+    ├── especialista-monitoramento.md      # Observabilidade
+    ├── java-construtor.md                 # Gerar/expandir app
+    ├── java-especialista.md               # Validador final
+    ├── java-revisor.md                    # Revisão tempestiva
+    ├── projetista-api.md                  # Design de API REST
+    └── refatorador-java.md                # Aplicar refactorings
+```
+
+## Padrão de cada skill
+
+- **Bloco YAML frontmatter** com `name`, `description` (gatilhos em pt-BR), `metadata` opcional.
+- **Título `# <Nome em Português>`** — descrição em português.
+- **Seções em português** — explicações, contexto, exemplos textuais.
+- **Trechos técnicos, padrões, exemplos de código em inglês** — nomes de classe, anotações
+  Spring, APIs, mensagens de log, termos consagrados (`Builder`, `Factory`, `Strategy`, `JOIN
+  FETCH`, `acks=all`, `ProblemDetail`, etc.).
+- **Comentários de código em português** quando o exemplo for didático (sinaliza o ponto da
+  explicação).
+- **Quando NÃO usar** — sempre presente, lista skills alternativas para tarefas próximas mas
+  diferentes.
+- **Quem aplica o quê** — fecha a skill com a tabela que diz qual agent usa aquela skill em qual
+  cenário.
+
+## Como escolher a skill certa
+
+Três atalhos:
+
+1. **Pela tarefa** — use a [tabela de mapa rápido](#mapa-rapido-de-skills-por-tarefa) abaixo.
+2. **Pela decisão arquitetural** — abra `arquitetura-limpa-java` (camadas, DDD, microservices) ou
+   `java-architecture` (camadas clássicas + Spring stack).
+3. **Pela dúvida específica** — toda skill tem seção "Quando NÃO usar" que aponta para skills
+   irmãs. Se a que você abriu não for a certa, ela mesma diz qual é.
+
+### Mapa rápido de skills por tarefa
+
+| Tarefa | Skill principal | Skills complementares |
+|---|---|---|
+| Criar aplicação nova do zero | `criar-aplicacao-java` | `arquitetura-limpa-java`, `mensageria-sqs-kafka`, `persistencia-jpa` |
+| Dúvida sobre em qual camada colocar código | `arquitetura-limpa-java` | `java-architecture` |
+| Decompor monolito em microsserviços | `arquitetura-limpa-java` (seção DDD) | `mensageria-sqs-kafka`, `monitoramento-java` |
+| Desenhar contrato de API | `api-rest-design` | `arquitetura-limpa-java` (camada entrypoint) |
+| Implementar controller REST | `arquitetura-limpa-java` | `api-rest-design`, `revisao-de-codigo-java` |
+| Resolver N+1, LazyInit, dirty checking | `persistencia-jpa` | `banco-de-dados-performance` |
+| Otimizar query SQL, criar índice, tuning | `banco-de-dados-performance` | `persistencia-jpa` |
+| Padronizar logs (JSON, MDC, traceId) | `padrao-de-logs-java` | `monitoramento-java` |
+| Configurar observabilidade (Prometheus, OTel) | `monitoramento-java` | `padrao-de-logs-java` |
+| Implementar autenticação/autorização | `seguranca-aplicacao-java` | `arquitetura-limpa-java`, `java-architecture` |
+| Auditar segurança pré-produção | `seguranca-aplicacao-java` | `padrao-de-logs-java` |
+| Revisar diff/PR | `revisao-de-codigo-java` | `padrao-de-logs-java`, `arquitetura-limpa-java`, `persistencia-jpa` |
+| Auditar trabalho de outro agent | `revisao-de-codigo-java` | (todas conforme o tema do trabalho) |
+| Aplicar refactoring | `qualidade-codigo-java` | `refactoring-remove-parameter` (foco) |
+| Migrar para features modernas Java | `java-moderno` | `revisao-de-codigo-java` |
+| Adicionar mensageria (SQS/Kafka) | `mensageria-sqs-kafka` | `criar-aplicacao-java` (overlays) |
+| Pipeline CI/CD | `devops-cicd` | `monitoramento-java` (após deploy) |
+| Dockerfile | `devops-cicd` | `monitoramento-java` (HEALTHCHECK) |
+| Manifests Kubernetes | `devops-cicd` | `monitoramento-java` (probes) |
+| Remover imports não usados | `remover-imports-nao-usados` | — |
+| Escolher entre patterns (quando aplicar) | `padroes-de-projeto-java` | `qualidade-codigo-java` |
+
+## Como escolher o agent certo
+
+### Por papel
+
+| Papel | Agent | Esforço | Quando invocar |
+|---|---|---|---|
+| Construtor | `java-construtor` | medium | Gerar/expandir aplicação Java |
+| Revisor tempestivo | `java-revisor` | medium | Revisão de diff pequeno (uma classe, um método) |
+| Validador final | `java-especialista` | high | Veredicto final de merge / auditoria completa |
+| Designer de API | `projetista-api` | medium | Desenhar/auditar contrato de API REST |
+| DBA / SRE de banco | `especialista-banco-dados` | medium | Investigar query lenta, criar índice, tuning |
+| SRE de observabilidade | `especialista-monitoramento` | medium | Configurar observabilidade, métricas, alertas |
+| Refatorador | `refatorador-java` | medium | Aplicar refactorings do Fowler |
+| DevOps | `engenheiro-devops` | medium | Pipeline CI/CD GitHub Actions |
+| Segurança | `engenheiro-seguranca` | medium | Auditar/aplicar segurança de aplicação |
+| Docker | `especialista-docker` | low | Dockerfile multi-stage |
+| Kubernetes | `especialista-kubernetes` | medium | Manifests Deployment/Service/ConfigMap |
+
+### Por fluxo de trabalho
+
+| Você quer... | Primeiro | Depois (validação) |
+|---|---|---|
+| Criar uma aplicação nova | `java-construtor` | `java-especialista` |
+| Adicionar uma feature/endpoint em app existente | sessão principal com skills (`arquitetura-limpa-java`, etc.) | `java-revisor` (tempestiva) → `java-especialista` (pré-merge) |
+| Revisar um PR/diff | `java-revisor` | `java-especialista` (se o PR for grande) |
+| Auditar trabalho de outro agent | `java-especialista` | — |
+| Aplicar um refactoring específico | `refatorador-java` | `java-revisor` |
+| Desenhar contrato de API | `projetista-api` | `java-construtor` (implementa) → `java-especialista` (valida) |
+| Investigar query lenta | `especialista-banco-dados` | — |
+| Configurar observabilidade | `especialista-monitoramento` | — |
+| Auditar segurança | `engenheiro-seguranca` | `java-especialista` (para fechar achados críticos) |
+| Montar pipeline | `engenheiro-devops` | `especialista-docker` (Dockerfile) / `especialista-kubernetes` (manifests) |
+
+### Regra de esforço
+
+`java-especialista` é deliberadamente o único agent com `effort: high`. Ele é a **última linha
+de defesa** antes de algo ser declarado pronto. Use-o para:
+
+- Veredicto final de merge de mudança grande.
+- Auditoria do trabalho de outro agent (ex.: saída do `java-construtor`).
+- Pré-produção de feature crítica.
+
+Para o dia a dia, prefira `java-revisor` (tempestivo, esforço médio) — feedback rápido sem
+bloquear o fluxo.
+
+## Princípios do catálogo
+
+- **Uma fonte de verdade por tema** — não há duas skills dizendo coisas diferentes sobre o
+  mesmo assunto. Quando há sobreposição (ex.: JPA vs SQL tuning), as skills apontam uma para a
+  outra.
+- **Comentários em pt-BR, termos técnicos em inglês** — convenção da casa: explicações em
+  português, padrões consagrados (`Builder`, `Factory`, `JOIN FETCH`, `ProblemDetail`) em inglês.
+- **Quem aplica o quê explícito** — toda skill fecha com a tabela que diz "qual agent me
+  invoca, em qual cenário". Evita confusão sobre quem faz o quê.
+- **`Quando NÃO usar` explícito** — toda skill abre dizendo **para que ela não serve** e qual
+  skill irmã usar no lugar. Reduz o erro de "abri a skill errada".

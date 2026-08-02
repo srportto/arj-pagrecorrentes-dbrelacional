@@ -19,7 +19,7 @@ As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, 
 - `ATIVA` → `CANCELADA`, `FINALIZADA`, `REJEITADA`
 - `CANCELADA`, `REJEITADA`, `EXPIRADA`, `FINALIZADA` → nenhuma (estados terminais)
 
-O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em `arj-contratocommand` e `arj-contratoquery` o enum existente SHALL ser evoluído em `domain/enums/`; nas aplicações de eventos (sem camada `domain/`) ele SHALL residir em `application/eventos/`.
+O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em **todas as quatro aplicações** o enum SHALL residir em `domain/enums/` — é regra de negócio pura, sem dependência de framework.
 
 #### Scenario: Transição válida é aceita
 - **WHEN** `StatusAutorizacao.ATIVA.podeTransicionarPara(CANCELADA)` é consultado
@@ -36,6 +36,15 @@ O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes pró
 #### Scenario: Enum presente e idêntico nas 4 apps
 - **WHEN** os fontes das 4 aplicações são inspecionados
 - **THEN** cada uma contém seu `StatusAutorizacao` com os mesmos 8 valores, códigos e grafo de transições
+
+#### Scenario: Localização uniforme em domain/enums
+- **WHEN** o pacote de `StatusAutorizacao` e `TipoEventoAutorizacao` é inspecionado em cada uma das 4 aplicações
+- **THEN** em todas elas o enum reside em `domain/enums/`
+- **AND** nenhuma delas mantém o enum em `application/eventos/`
+
+#### Scenario: Enum permanece livre de framework
+- **WHEN** os imports de `StatusAutorizacao` e `TipoEventoAutorizacao` são inspecionados
+- **THEN** não há import de `org.springframework.*`, `jakarta.*` nem `lombok.*`
 
 ### Requirement: Enum TipoEventoAutorizacao mapeado 1:1 ao status
 

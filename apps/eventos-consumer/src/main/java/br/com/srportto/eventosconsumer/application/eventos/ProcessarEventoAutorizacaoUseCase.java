@@ -1,6 +1,7 @@
 package br.com.srportto.eventosconsumer.application.eventos;
 
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
+import br.com.srportto.eventosconsumer.domain.enums.TipoEventoAutorizacao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

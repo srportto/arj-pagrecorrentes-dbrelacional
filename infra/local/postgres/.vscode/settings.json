@@ -6,7 +6,11 @@
     "activityBar.inactiveForeground": "#e7e7e799",
     "activityBarBadge.background": "#303010",
     "activityBarBadge.foreground": "#e7e7e7",
-    "sash.hoverBorder": "#6e5c6e"
+    "sash.hoverBorder": "#6e5c6e",
+    "activityBarTop.activeBackground": "#6e5c6e",
+    "activityBarTop.background": "#6e5c6e",
+    "activityBarTop.foreground": "#e7e7e7",
+    "activityBarTop.inactiveForeground": "#e7e7e799"
   },
   "peacock.color": "#524552"
 }
