@@ -1,6 +1,6 @@
 ---
 name: banco-de-dados-performance
-description: Use ao otimizar queries SQL, desenhar schema, analisar planos de execução, tunar PostgreSQL/MySQL, criar índices, configurar replicação, ou diagnosticar problemas de performance de banco. Gatilhos - "query lenta", "EXPLAIN", "índice", "tuning de banco", "N+1", "plano de execução", "pg_stat_statements", "slow query".
+description: Use ao otimizar queries SQL, desenhar schema, analisar planos de execução, tunar PostgreSQL/MySQL, criar índices, configurar replicação, ou diagnosticar problemas de performance de banco. Gatilhos - "query lenta", "EXPLAIN", "índice", "tuning de banco", "N+1", "plano de execução", "pg_stat_statements", "slow query". Uso: agent `especialista-banco-dados` ou invocação manual via `/banco-de-dados-performance`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Banco de Dados — Performance e Tuning
@@ -8,26 +8,21 @@ description: Use ao otimizar queries SQL, desenhar schema, analisar planos de ex
 ## Visão geral
 
 Guia de otimização de banco de dados relacional (PostgreSQL e MySQL) focado em performance de query,
-design de índice e tuning de configuração. Use esta skill ao investigar uma query lenta, criar
-índices, interpretar `EXPLAIN ANALYZE`, ou planejar a configuração do SGBD.
+design de índice e tuning de configuração.
 
 **Quando NÃO usar:** para problemas de JPA/Hibernate (N+1, `LazyInitializationException`, dirty
-checking) em código Java, use a skill `persistencia-jpa`. Para a query JPA específica (JPQL,
-`@EntityGraph`), use `persistencia-jpa` — esta skill é para o lado SQL/SGBD. Para o design
-arquitetural da camada de persistência (em qual camada mora o Repository), use
-`arquitetura-limpa-java`.
+checking) ou a query JPA específica (JPQL, `@EntityGraph`), use `persistencia-jpa` — esta skill é
+o lado SQL/SGBD. Para em qual camada mora o Repository, use `arquitetura-limpa-java`.
 
 ## Workflow
 
-1. **Capture a baseline** — rode `EXPLAIN ANALYZE` **antes** de qualquer mudança; meça o tempo real
-   e o custo estimado, salve para comparar depois.
+1. **Capture a baseline** — rode `EXPLAIN ANALYZE` **antes** de qualquer mudança; salve tempo real
+   e custo estimado para comparar depois.
 2. **Identifique gargalos** — query ineficiente, índice faltando, configuração errada, conexão
    saturada.
 3. **Projete a solução** — estratégia de índice, rewrite de query, ajuste de schema.
-4. **Aplique incrementalmente** — uma mudança por vez, com monitoramento; valide cada uma antes de
-   seguir.
-5. **Valide o resultado** — re-rodar `EXPLAIN ANALYZE`, comparar custo, medir wall-clock
-   improvement, documentar a mudança.
+4. **Aplique incrementalmente** — uma mudança por vez, com monitoramento.
+5. **Valide o resultado** — re-rodar `EXPLAIN ANALYZE`, comparar custo, documentar a mudança.
 
 > ⚠️ **Sempre teste em não-produção primeiro.** Reverta imediatamente se a performance de escrita
 > regredir ou se a replicação aumentar lag.
@@ -58,23 +53,17 @@ WHERE rn = 1;                           -- último pedido completed por customer
 
 ```sql
 -- Running total e rank dentro de uma partição — sem self-join
-SELECT
-    department_id,
-    employee_id,
-    salary,
-    SUM(salary)  OVER (PARTITION BY department_id ORDER BY hire_date) AS running_payroll,
-    RANK()       OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_rank
+SELECT department_id, employee_id, salary,
+    SUM(salary) OVER (PARTITION BY department_id ORDER BY hire_date) AS running_payroll,
+    RANK()      OVER (PARTITION BY department_id ORDER BY salary DESC) AS salary_rank
 FROM employees;
 ```
 
 ## EXISTS vs COUNT
 
 ```sql
--- RUIM: conta todas as linhas (lento)
-SELECT COUNT(*) FROM orders WHERE customer_id = 42;
-
--- BOM: para no primeiro match (rápido)
-SELECT EXISTS(SELECT 1 FROM orders WHERE customer_id = 42);
+SELECT COUNT(*) FROM orders WHERE customer_id = 42;              -- RUIM: conta todas as linhas
+SELECT EXISTS(SELECT 1 FROM orders WHERE customer_id = 42);      -- BOM: para no primeiro match
 ```
 
 ## Correlated Subquery → JOIN Rewrite
@@ -93,12 +82,9 @@ LEFT JOIN (
     FROM order_items
     GROUP BY order_id
 ) agg ON agg.order_id = o.id;
-
--- Covering index de apoio (inclui todas as colunas tocadas pela query)
-CREATE INDEX idx_order_items_order_qty
-    ON order_items (order_id)
-    INCLUDE (quantity);
 ```
+
+> Crie um covering index de apoio para o `GROUP BY` — ver seção "Estratégias de Índice" abaixo.
 
 ---
 
@@ -125,32 +111,19 @@ WHERE o.created_at > NOW() - INTERVAL '30 days';
 | `Buffers: hit=10 read=90000` | Baixo hit rate do buffer cache | Aumentar `shared_buffers`; adicionar covering index |
 | `Sort Method: external merge` | Sort derramando para disco | Aumentar `work_mem` para a sessão |
 
-## PostgreSQL — top slow queries
+## Top slow queries
 
 ```sql
--- Requer extensão pg_stat_statements
-SELECT query,
-       calls,
-       round(total_exec_time::numeric, 2)  AS total_ms,
-       round(mean_exec_time::numeric, 2)   AS mean_ms,
-       round(stddev_exec_time::numeric, 2) AS stddev_ms,
-       rows
+-- PostgreSQL: requer extensão pg_stat_statements
+SELECT query, calls, round(mean_exec_time::numeric, 2) AS mean_ms, rows
 FROM   pg_stat_statements
 ORDER  BY mean_exec_time DESC
 LIMIT  20;
-```
 
-## MySQL — slow queries
-
-```sql
--- Candidatos do slow query log
+-- MySQL: candidatos do slow query log
 SELECT * FROM performance_schema.events_statements_summary_by_digest
 ORDER  BY SUM_TIMER_WAIT DESC
 LIMIT  20;
-
--- Plano de execução
-EXPLAIN FORMAT=JSON
-SELECT * FROM orders WHERE status = 'pending' AND created_at > NOW() - INTERVAL 7 DAY;
 ```
 
 ---
@@ -195,38 +168,24 @@ WHERE  relname = 'orders';
 ## JSONB — GIN index e query
 
 ```sql
--- Cria GIN index para queries de contenção
 CREATE INDEX idx_events_payload ON events USING GIN (payload);
 
--- Query eficiente de contenção JSONB (usa o GIN)
-SELECT * FROM events WHERE payload @> '{"type": "login", "success": true}';
-
--- Extrair valor aninhado
+-- Query de contenção eficiente (usa o GIN) e extração de valor aninhado
 SELECT payload->>'user_id', payload->'meta'->>'ip'
-FROM events WHERE payload @> '{"type": "login"}';
+FROM events WHERE payload @> '{"type": "login", "success": true}';
 ```
 
-## VACUUM e bloat monitoring
+## VACUUM, bloat e replication lag
 
 ```sql
 -- Tabelas com alta contagem de dead tuples
-SELECT relname, n_dead_tup, n_live_tup,
-       round(n_dead_tup::numeric / NULLIF(n_live_tup + n_dead_tup, 0) * 100, 2) AS dead_pct,
-       last_autovacuum
-FROM pg_stat_user_tables
-ORDER BY n_dead_tup DESC
-LIMIT 20;
+SELECT relname, n_dead_tup, n_live_tup, last_autovacuum
+FROM pg_stat_user_tables ORDER BY n_dead_tup DESC LIMIT 20;
 
--- VACUUM manual em tabela com churn alto
-VACUUM (ANALYZE, VERBOSE) orders;
-```
+VACUUM (ANALYZE, VERBOSE) orders;   -- manual em tabela com churn alto
 
-## Monitoring de replication lag
-
-```sql
--- Na primary: verifica lag dos standbys
-SELECT client_addr, state, sent_lsn, write_lsn, flush_lsn, replay_lsn,
-       (sent_lsn - replay_lsn) AS replication_lag_bytes
+-- Na primary: lag dos standbys
+SELECT client_addr, state, (sent_lsn - replay_lsn) AS replication_lag_bytes
 FROM pg_stat_replication;
 ```
 
@@ -261,28 +220,20 @@ FROM pg_stat_replication;
 
 - **PostgreSQL:** pgBouncer em modo transaction (mais leve) ou session; **MySQL:** ProxySQL ou
   HikariCP do lado da aplicação.
-- Tamanho do pool: `nucleos * 2` para connection por core é o ponto de partida; meça e ajuste.
-- **Nunca** abra conexão por operação em loop sem pool — esgota o banco.
+- Tamanho do pool: `nucleos * 2` é o ponto de partida; meça e ajuste. **Nunca** abra conexão por
+  operação em loop sem pool — esgota o banco.
 
-## Prepared statements (proteção e performance)
+## Prepared statements e `SELECT *`
 
 ```java
 // SEMPRE parametrizado — protege de SQL injection E permite o planner cachear o plano
-PreparedStatement ps = connection.prepareStatement(
-    "SELECT id, email FROM users WHERE email = ?"
-);
+PreparedStatement ps = connection.prepareStatement("SELECT id, email FROM users WHERE email = ?");
 ps.setString(1, email);
-ResultSet rs = ps.executeQuery();
 ```
 
-## `SELECT *` em produção
-
 ```sql
--- RUIM: traz colunas desnecessárias, quebra se a tabela ganhar uma coluna nova com JOIN
-SELECT * FROM orders WHERE customer_id = 42;
-
--- BOM: explicito, estável, e o índice pode ser covering
-SELECT id, status, total_amount FROM orders WHERE customer_id = 42;
+SELECT * FROM orders WHERE customer_id = 42;                    -- RUIM: colunas desnecessárias
+SELECT id, status, total_amount FROM orders WHERE customer_id = 42;  -- BOM: explícito, covering
 ```
 
 ---

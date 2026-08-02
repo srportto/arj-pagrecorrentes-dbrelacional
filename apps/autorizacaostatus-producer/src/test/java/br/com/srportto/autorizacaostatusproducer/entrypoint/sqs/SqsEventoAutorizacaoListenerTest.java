@@ -43,7 +43,8 @@ class SqsEventoAutorizacaoListenerTest {
 
     private void inicializar() {
         AwsProperties properties = new AwsProperties(null, "us-east-1", null, null, new AwsProperties.Sqs(QUEUE_URL));
-        listener = new SqsEventoAutorizacaoListener(sqsClient, properties, useCase);
+        listener = new SqsEventoAutorizacaoListener(sqsClient, properties, useCase,
+                new SqsEventoAutorizacaoErrorInterceptor());
     }
 
     private Message mensagem(String id, String body) {

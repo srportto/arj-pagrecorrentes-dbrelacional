@@ -1,6 +1,6 @@
 ---
 name: java-architecture
-description: Use ao desenhar a arquitetura interna de uma aplicação Java/Spring Boot empresarial (camadas, módulos, estrutura de pacotes, padrões de injeção de dependência), ou ao revisar decisões arquiteturais (qual framework, qual versão, qual estilo de API). Consolida Spring Boot 4 + Java 25 com DDD e padrões de projeto. Gatilhos - "arquitetura Spring Boot", "design interno", "estrutura de pacotes", "Spring Security", "Spring Data JPA", "WebFlux", "testcontainers".
+description: Use ao desenhar a arquitetura interna de uma aplicação Java/Spring Boot empresarial (camadas, módulos, estrutura de pacotes, padrões de injeção de dependência), ou ao revisar decisões arquiteturais (qual framework, qual versão, qual estilo de API). Consolida Spring Boot 4 + Java 25 com DDD e padrões de projeto. Gatilhos - "arquitetura Spring Boot", "design interno", "estrutura de pacotes", "Spring Security", "Spring Data JPA", "WebFlux", "testcontainers". Uso: sessão principal ou invocação manual via `/java-architecture`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Arquitetura de Aplicações Java (Spring Boot 4 + Java 25)
@@ -10,31 +10,26 @@ description: Use ao desenhar a arquitetura interna de uma aplicação Java/Sprin
 Guia consolidado de arquitetura interna de aplicações **Java/Spring Boot 4** + **Java 25**:
 estrutura de pacotes em camadas (`controller` / `service` / `repository` / `domain` / `dto`),
 padrões de injeção de dependência, escolha de módulos Spring (Web vs WebFlux, JPA, Security,
-Cache, Data Redis), e estrutura de testes (slice, integration, Testcontainers). Use esta skill ao
-desenhar a arquitetura de uma aplicação nova, ao escolher entre alternativas (MVC vs reativo, JPA
-vs JDBC), ou ao revisar a estrutura de pacotes existente.
+Cache, Data Redis), e estrutura de testes (slice, integration, Testcontainers).
 
 **Quando NÃO usar:** para a regra de dependência entre camadas hexagonais (`entrypoint`/
-`application`/`domain`/`shared`) — que é o padrão **deste** catálogo — use `arquitetura-limpa-java`.
-Para aplicar um design pattern GoF, use `padroes-de-projeto-java`. Para a regra de revisão de
-código, use `revisao-de-codigo-java`. Para tuning de JPA/Hibernate, use `persistencia-jpa`.
+`application`/`domain`/`shared`) — padrão **deste** catálogo — use `arquitetura-limpa-java`. Para
+um design pattern GoF, use `padroes-de-projeto-java`. Para revisão de código, use
+`revisao-de-codigo-java`. Para tuning de JPA/Hibernate, use `persistencia-jpa`.
 
 ## Workflow de arquitetura
 
 1. **Análise** — revise estrutura do projeto, dependências, configuração Spring.
-2. **Design de domínio** — crie modelos seguindo DDD e Clean Architecture; **verifique as
-   fronteiras antes de prosseguir** — se houver ambiguidade, resolva antes de implementar.
-3. **Implementação** — construa services com boas práticas de Spring Boot seguindo arquitetura em
-   camadas.
+2. **Design de domínio** — modele seguindo DDD e Clean Architecture; resolva ambiguidades de
+   fronteira **antes** de implementar.
+3. **Implementação** — construa services com boas práticas de Spring Boot em camadas.
 4. **Camada de dados** — otimize queries JPA, implemente repositories; rode `./mvnw verify -pl
-   <modulo>` para confirmar correção. Se testes de integração falharem: reveja log SQL do
-   Hibernate, ajuste queries ou mappings, re-rodar.
-5. **Segurança & config** — aplique Spring Security, externalize configuração, adicione
-   observabilidade; rode `./mvnw verify` para confirmar filter chain e JWT. Se falhar: cheque
-   ordem do `SecurityFilterChain` bean e validação de token, re-rodar.
-6. **Quality assurance** — rode `./mvnw verify` (Maven) ou `./gradlew check` (Gradle) para
-   confirmar testes + cobertura ≥ 85%. Se cobertura abaixo: identifique branches não testados
-   pelo relatório JaCoCo (`target/site/jacoco/index.html`), adicione casos, re-rodar.
+   <modulo>`. Se falhar: reveja log SQL do Hibernate, ajuste queries/mappings, re-rodar.
+5. **Segurança & config** — aplique Spring Security, externalize configuração; rode `./mvnw verify`
+   para confirmar filter chain e JWT. Se falhar: cheque ordem do bean `SecurityFilterChain`.
+6. **Quality assurance** — rode `./mvnw verify` (Maven) ou `./gradlew check` (Gradle), cobertura
+   ≥ 85%. Se abaixo: identifique branches não testados no relatório JaCoCo
+   (`target/site/jacoco/index.html`), adicione casos, re-rodar.
 
 ---
 
@@ -50,9 +45,9 @@ código, use `revisao-de-codigo-java`. Para tuning de JPA/Hibernate, use `persis
 Database
 ```
 
-> **Diferente do hexagonal:** este é o estilo "clássico" (controller→service→repository) usado
-> como referência para times que ainda não migraram para hexagonal. Para o padrão hexagonal deste
-> catálogo (`entrypoint`/`application`/`domain`/`shared`), use `arquitetura-limpa-java`.
+> **Diferente do hexagonal:** este é o estilo "clássico" (controller→service→repository), referência
+> para times que não migraram para hexagonal. Para o padrão hexagonal deste catálogo
+> (`entrypoint`/`application`/`domain`/`shared`), use `arquitetura-limpa-java`.
 
 ## Camada Controller
 
@@ -70,29 +65,24 @@ public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrder
     return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(order));
 }
 
-// RUIM - logica de negocio no controller
+// RUIM - logica de negocio, acesso direto ao repo e entity na resposta
 @PostMapping("/orders")
 public ResponseEntity<Order> createOrder(@RequestBody CreateOrderRequest request) {
     if (request.getItems().isEmpty()) throw new RuntimeException("No items");
-    Order order = orderRepository.save(new Order(request));   // acesso direto ao repo
-    return ResponseEntity.ok(order);                            // entity na resposta
+    Order order = orderRepository.save(new Order(request));
+    return ResponseEntity.ok(order);
 }
 ```
 
-## Camada Service
+## Camada Service e Repository
 
-- Contém toda lógica de negócio, validação de regras e orquestração.
-- `@Transactional` vive **aqui** — não em controllers nem em repositories.
-- **Injeção por construtor** apenas — nunca `@Autowired` em field.
-- Um service por aggregate root (`OrderService`, não `OrderAndPaymentService`).
-- Retorna domain objects ou DTOs — nunca `HttpServletRequest` / `HttpServletResponse`.
-
-## Camada Repository
-
-- Estende `JpaRepository<Entity, ID>` ou `CrudRepository`.
-- Queries custom via `@Query` ou query derivation — sem SQL raw a menos que inevitável.
-- Retorna entities ou projections — nunca `Object[]` raw.
-- **Sem lógica de negócio** — acesso a dados puro.
+- **Service**: contém toda lógica de negócio, validação de regras e orquestração; `@Transactional`
+  vive **aqui**. Injeção por construtor apenas — nunca `@Autowired` em field. Um service por
+  aggregate root (`OrderService`, não `OrderAndPaymentService`). Retorna domain objects/DTOs —
+  nunca `HttpServletRequest`/`HttpServletResponse`.
+- **Repository**: estende `JpaRepository<Entity, ID>` ou `CrudRepository`; queries custom via
+  `@Query` ou query derivation — sem SQL raw a menos que inevitável. Retorna entities ou
+  projections — nunca `Object[]` raw. Sem lógica de negócio.
 
 ## DTOs
 
@@ -136,17 +126,16 @@ src/test/java/... (espelha main)
 
 # Injeção de dependência — convenções
 
-- **Construtor com `final`** (preferido pelo time):
-  ```java
-  @Service
-  @RequiredArgsConstructor
-  public class OrderService {
-      private final OrderRepository orderRepository;
-      // Lombok gera o construtor com todos os campos final
-  }
-  ```
-- **Evite `@Autowired` em field** — dificulta teste (precisa de reflection para mockar) e esconde
-  dependências.
+Construtor com `final` (Lombok gera o construtor com todos os campos final), nunca `@Autowired`
+em field — este último dificulta teste (exige reflection para mockar) e esconde dependências.
+
+```java
+@Service
+@RequiredArgsConstructor
+public class OrderService {
+    private final OrderRepository orderRepository;
+}
+```
 
 ---
 
@@ -170,7 +159,6 @@ src/test/java/... (espelha main)
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
     @Bean
     SecurityFilterChain api(HttpSecurity http) throws Exception {
         return http
@@ -207,12 +195,9 @@ Veja `seguranca-aplicacao-java` para JWT details, CORS, headers, mass assignment
 @SpringBootTest
 @Testcontainers
 class OrderServiceIT {
-
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("pedidos")
-            .withUsername("test")
-            .withPassword("test");
+            .withDatabaseName("pedidos").withUsername("test").withPassword("test");
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
@@ -222,9 +207,7 @@ class OrderServiceIT {
     }
 
     @Test
-    void deveProcessarPedidoQuandoDadosValidos() {
-        // ...
-    }
+    void deveProcessarPedidoQuandoDadosValidos() { /* ... */ }
 }
 ```
 
@@ -235,7 +218,7 @@ class OrderServiceIT {
 # Features modernas do Java
 
 Veja a skill dedicada `java-moderno` para records, sealed classes, pattern matching, switch
-expressions, text blocks, virtual threads, `var`. Em arquitetura, os pontos mais relevantes:
+expressions, text blocks, virtual threads, `var`. Pontos mais relevantes em arquitetura:
 
 - **Records** para DTOs e value objects — imutabilidade nativa.
 - **Sealed types** para hierarquia de domínio finita (ex.: `Pagamento` com `Pix`/`Cartao`/`Boleto`).

@@ -1,6 +1,6 @@
 ---
 name: qualidade-codigo-java
-description: Use ao aplicar princípios de clean code (DRY/KISS/YAGNI), convenções de nomenclatura, imutabilidade, uso correto de Optional, melhores práticas de streams, exception handling, ou ao aplicar refactorings do Fowler em código Java. Complementa a skill revisao-de-codigo-java com foco em "como aplicar" (não em "como revisar"). Gatilhos - "clean code", "boas práticas", "refatorar", "DRY", "KISS", "YAGNI", "imutabilidade", "Optional", "streams".
+description: Use ao aplicar princípios de clean code (DRY/KISS/YAGNI), convenções de nomenclatura, imutabilidade, uso correto de Optional, melhores práticas de streams, exception handling, ou ao aplicar refactorings do Fowler em código Java. Complementa a skill revisao-de-codigo-java com foco em "como aplicar" (não em "como revisar"). Gatilhos - "clean code", "boas práticas", "refatorar", "DRY", "KISS", "YAGNI", "imutabilidade", "Optional", "streams". Uso: agents `java-revisor`/`refatorador-java` ou invocação manual via `/qualidade-codigo-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Qualidade de Código Java (clean code + refactoring)
@@ -35,9 +35,7 @@ public void atualizarUsuario(UsuarioRequest req) {
         throw new ValidationException("Email invalido");
     }
 }
-```
 
-```java
 // BOM - fonte unica
 public class EmailValidator {
     public void validate(String email) {
@@ -48,15 +46,15 @@ public class EmailValidator {
 }
 ```
 
-> **DRY com bom senso:** a regra das 3 ocorrências (na 1ª e 2ª, duplicar pode ser mais barato
-> que a abstração errada; extraia na 3ª). Não crie `EmailValidator` com interface e implementação
-> única "para o futuro" — abstração especulativa é over-engineering (ver `padroes-de-projeto-java`,
-> seção "Quando NÃO aplicar pattern").
+> **DRY com bom senso:** regra das 3 ocorrências — na 1ª e 2ª, duplicar pode ser mais barato que a
+> abstração errada; extraia na 3ª. Não crie `EmailValidator` com interface e implementação única "para
+> o futuro" — abstração especulativa é over-engineering (ver `padroes-de-projeto-java`, seção "Quando
+> NÃO aplicar pattern").
 
-### KISS — Keep It Simple
+### KISS — Keep It Simple / YAGNI — You Aren't Gonna Need It
 
 ```java
-// RUIM - sobre-engenharia para 1 implementacao
+// RUIM - sobre-engenharia para 1 implementacao, sem segunda variacao a vista
 public interface UserFactory {
     User createUser();
 }
@@ -64,18 +62,8 @@ public class ConcreteUserFactory implements UserFactory {
     public User createUser() { return new User(); }
 }
 
-// BOM - chamada direta, sem indirecao
+// BOM - chamada direta; implemente a abstracao quando a segunda variacao aparecer de fato
 public User createUser() { return new User(); }
-```
-
-### YAGNI — You Aren't Gonna Need It
-
-```java
-// RUIM - abstracao prematura para um caso que nao existe
-public class ConfigurableUserServiceFactoryProvider { }
-
-// BOM - implemente quando a segunda variacao aparecer
-public class UserService { }
 ```
 
 ## Convenções de nomenclatura
@@ -129,10 +117,8 @@ compostas (`IdAutorizacao`). Não use records quando precisar de mutabilidade ou
 ## Optional — uso correto
 
 ```java
-// BOM - retorne Optional de metodos find*
+// BOM - retorne Optional de metodos find*, use map/flatMap em vez de get() direto
 Optional<Market> market = marketRepository.findBySlug(slug);
-
-// BOM - use map/flatMap em vez de get() — mais funcional e seguro
 return market
     .map(MarketResponse::from)
     .orElseThrow(() -> new EntityNotFoundException("Market not found"));
@@ -159,8 +145,8 @@ markets.stream().forEach(m -> {
 });
 ```
 
-Quando o pipeline exigiria múltiplos `flatMap`/estado acumulado só para simular um `for`, prefira
-o loop explícito — clareza vale mais que "tudo em stream".
+Quando o pipeline exigiria múltiplos `flatMap`/estado acumulado só para simular um `for`, prefira o
+loop explícito — clareza vale mais que "tudo em stream".
 
 ## Exception handling
 
@@ -171,6 +157,7 @@ o loop explícito — clareza vale mais que "tudo em stream".
 - **Evite** `catch (Exception ex)` amplo, a menos que seja para relançar/logar centralmente.
 - **Sempre preserve a causa** (`throw new ApplicationException(msg, e)`) — perder a stack trace
   original torna investigação quase impossível.
+- **Recursos** — sempre try-with-resources; `close()` manual não executa se o código anterior lançar.
 
 ```java
 // BOM - especifica, com causa preservada
@@ -186,20 +173,6 @@ try {
 } catch (IOException e) {
     throw new RuntimeException(e.getMessage());
 }
-```
-
-**Recursos** — sempre try-with-resources:
-
-```java
-// BOM - fecha mesmo em caso de excecao
-try (InputStream in = new FileInputStream(arquivo)) {
-    return ler(in);
-}
-
-// RUIM - close() nao executa se ler() lancar
-InputStream in = new FileInputStream(arquivo);
-String conteudo = ler(in);
-in.close();
 ```
 
 ## Genéricos e type safety
@@ -221,51 +194,31 @@ resolve um **cheiro** (code smell) específico — não aplique por aplicar.
 
 ## Remove Parameter
 
-**Quando:** um parâmetro nunca é usado, ou seu valor pode ser obtido de outro lugar (campo da
-classe, constante, chamada de método).
-
-**Antes:**
+**Quando:** um parâmetro nunca é usado, ou seu valor pode ser obtido de outro lugar (campo da classe,
+constante, chamada de método).
 
 ```java
-public Backend selectBackendForGroupCommit(long tableId, ConnectContext context, boolean isCloud) {
-    if (!Env.getCurrentEnv().isMaster()) {
-        long backendId = new MasterOpExecutor(context)
-                .getGroupCommitLoadBeId(tableId, context.getCloudCluster(), isCloud);
-        return Env.getCurrentSystemInfo().getBackend(backendId);
-    } else {
-        return Env.getCurrentSystemInfo()
-                .getBackend(selectBackendForGroupCommitInternal(tableId, context.getCloudCluster(), isCloud));
-    }
+// ANTES - "isCloud" e recebido mas nunca influencia o resultado
+public Backend selecionarBackend(long tableId, ConnectContext context, boolean isCloud) {
+    return sistemaInfo.getBackend(selecionarBackendInterno(tableId, context.getCluster()));
+}
+
+// DEPOIS - parametro nao usado removido
+public Backend selecionarBackend(long tableId, ConnectContext context) {
+    return sistemaInfo.getBackend(selecionarBackendInterno(tableId, context.getCluster()));
 }
 ```
 
-**Depois** (`isCloud` removido — não é mais usado nas chamadas internas):
-
-```java
-public Backend selectBackendForGroupCommit(long tableId, ConnectContext context) {
-    if (!Env.getCurrentEnv().isMaster()) {
-        long backendId = new MasterOpExecutor(context)
-                .getGroupCommitLoadBeId(tableId, context.getCloudCluster());
-        return Env.getCurrentSystemInfo().getBackend(backendId);
-    } else {
-        return Env.getCurrentSystemInfo()
-                .getBackend(selectBackendForGroupCommitInternal(tableId, context.getCloudCluster()));
-    }
-}
-```
-
-> Veja a skill dedicada `refactoring-remove-parameter` para a versão focada e passo-a-passo
-> desse refactoring.
+> Veja a skill dedicada `refactoring-remove-parameter` para a versão focada e passo-a-passo desse
+> refactoring.
 
 ## Extract Method
 
 **Quando:** um trecho de código tem um propósito claro e pode ser nomeado, ou você quer reusá-lo.
 
-**Antes:**
-
 ```java
+// ANTES - validacao misturada com a logica principal
 public void processar(Pedido pedido) {
-    // validacao
     if (pedido.getValor() == null || pedido.getValor().signum() <= 0) {
         throw new BusinessException("Valor invalido");
     }
@@ -274,11 +227,8 @@ public void processar(Pedido pedido) {
     }
     // ... logica principal
 }
-```
 
-**Depois:**
-
-```java
+// DEPOIS - validacao extraida, nomeada, e testavel isoladamente
 public void processar(Pedido pedido) {
     validar(pedido);
     // ... logica principal
@@ -298,16 +248,12 @@ private void validar(Pedido pedido) {
 
 **Quando:** um número ou string literal tem significado de negócio e aparece em mais de um lugar.
 
-**Antes:**
-
 ```java
+// ANTES
 if (tentativas > 3) { ... }
 Thread.sleep(1000L);
-```
 
-**Depois:**
-
-```java
+// DEPOIS
 private static final int MAX_TENTATIVAS = 3;
 private static final long INTERVALO_RETRY_MS = 1_000L;
 
@@ -319,19 +265,15 @@ Thread.sleep(INTERVALO_RETRY_MS);
 
 **Quando:** um `switch`/`if` chain decide por **tipo** e cada ramo tem lógica distinta.
 
-**Antes:**
-
 ```java
+// ANTES
 public BigDecimal calcularTaxa(Pagamento pagamento) {
     if (pagamento instanceof Pix) return BigDecimal.ZERO;
     if (pagamento instanceof Cartao) return BigDecimal.valueOf(0.03);
     throw new IllegalStateException("Tipo desconhecido");
 }
-```
 
-**Depois** (sealed type + switch exaustivo, ver `java-moderno`):
-
-```java
+// DEPOIS - sealed type + switch exaustivo (ver java-moderno)
 public BigDecimal calcularTaxa(Pagamento pagamento) {
     return switch (pagamento) {
         case Pix p     -> BigDecimal.ZERO;
@@ -345,16 +287,12 @@ public BigDecimal calcularTaxa(Pagamento pagamento) {
 
 **Quando:** um grupo de parâmetros viaja junto em vários métodos.
 
-**Antes:**
-
 ```java
+// ANTES
 public void buscar(LocalDate inicio, LocalDate fim, String status, int pagina) { ... }
 public void exportar(LocalDate inicio, LocalDate fim, String status) { ... }
-```
 
-**Depois:**
-
-```java
+// DEPOIS
 public record FiltroPedido(LocalDate inicio, LocalDate fim, String status) {}
 
 public void buscar(FiltroPedido filtro, int pagina) { ... }
@@ -365,20 +303,16 @@ public void exportar(FiltroPedido filtro) { ... }
 
 **Quando:** um loop acumula resultado em uma coleção com transformações triviais.
 
-**Antes:**
-
 ```java
+// ANTES
 List<String> nomes = new ArrayList<>();
 for (Produto p : produtos) {
     if (p.isAtivo()) {
         nomes.add(p.getNome().toUpperCase());
     }
 }
-```
 
-**Depois:**
-
-```java
+// DEPOIS
 List<String> nomes = produtos.stream()
     .filter(Produto::isAtivo)
     .map(p -> p.getNome().toUpperCase())
@@ -392,7 +326,7 @@ List<String> nomes = produtos.stream()
 
 | Situação | Quem | Skill |
 |---|---|---|
-| Aplicar refactoring em uma classe/método | session principal | esta skill |
+| Aplicar refactoring em uma classe/método | sessão principal | esta skill |
 | Revisar diff/PR com checklist de severidade | agent `java-revisor` | `revisao-de-codigo-java` |
-| Remoção de parâmetro focada (passo-a-passo) | session principal | `refactoring-remove-parameter` |
-| Limpar imports não usados | session principal | `remover-imports-nao-usados` |
+| Remoção de parâmetro focada (passo-a-passo) | sessão principal | `refactoring-remove-parameter` |
+| Limpar imports não usados | sessão principal | `remover-imports-nao-usados` |

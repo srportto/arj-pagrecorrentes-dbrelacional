@@ -2,8 +2,17 @@ resource "aws_sns_topic" "estados_autorizacao" {
   name = var.sns_topic_name
 }
 
+resource "aws_sqs_queue" "eventos_autorizacao_dlq" {
+  name = "${var.sqs_queue_name}-dlq"
+}
+
 resource "aws_sqs_queue" "eventos_autorizacao" {
   name = var.sqs_queue_name
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.eventos_autorizacao_dlq.arn
+    maxReceiveCount     = var.sqs_dlq_max_receive_count
+  })
 }
 
 # Permite o SNS publicar na fila. Mantido mesmo no emulador para ter

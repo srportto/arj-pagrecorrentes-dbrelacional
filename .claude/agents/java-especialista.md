@@ -27,6 +27,19 @@ Aplique os critérios definidos nas skills:
   banco/broker
 - `.claude/skills/seguranca-aplicacao-java` — quando tocar autenticação/autorização/validação
 
+## Critérios adicionais quando o código tocar mensageria (SQS/Kafka)
+
+Além do checklist geral, valide explicitamente (ver `mensageria-sqs-kafka` seções 2, 3 e 8):
+
+1. **DLQ obrigatória** — toda fila SQS criada ou alterada em IaC (Terraform, CLI, script) tem uma DLQ
+   e um `RedrivePolicy` associados. Fila sem DLQ é achado **crítico**, mesmo em ambiente local.
+2. **Interceptor central de erro de consumo** — existe um ponto único que classifica toda exceção do
+   escopo de consumo (retryable/não-retryable), equivalente ao `ApiExceptionHandler` do lado REST:
+   uma classe dedicada (listener manual) ou `DefaultErrorHandler`/`SqsMessageListenerErrorHandler`
+   central (framework). `try/catch` espalhado dentro do método do listener/consumer, decidindo
+   ack/retry inline por tipo de exceção, é achado **crítico** — a classificação deve estar num só
+   lugar.
+
 ## Fluxo de auditoria
 
 1. Receba do invocador: lista de arquivos produzidos/alterados e saída de build/testes.

@@ -1,6 +1,6 @@
 ---
 name: revisao-de-codigo-java
-description: Use quando o usuário pedir revisão de código Java ("revise", "code review", "está bom?", "melhore este código"), antes de um merge, ou após qualquer geração significativa de código. Consolida clean code, tratamento de erros, imutabilidade e testes em um checklist único por severidade.
+description: Use quando o usuário pedir revisão de código Java ("revise", "code review", "está bom?", "melhore este código"), antes de um merge, ou após qualquer geração significativa de código. Consolida clean code, tratamento de erros, imutabilidade e testes em um checklist único por severidade. Uso: agents `java-revisor`/`java-especialista`/`projetista-api` ou invocação manual via `/revisao-de-codigo-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Revisão de Código Java
@@ -10,8 +10,8 @@ description: Use quando o usuário pedir revisão de código Java ("revise", "co
 Checklist único de revisão de código Java/Spring Boot, organizado por severidade. Consolida três
 fontes: princípios de clean code (DRY/KISS/YAGNI) e contrato de API, padrões de código Java
 (nomenclatura, imutabilidade, `Optional`, streams) e categorias de revisão de um revisor genérico
-(correção, testes, complexidade). Use esta skill sempre que for revisar um diff, uma classe, um PR,
-ou logo depois de gerar código Java significativo.
+(correção, testes, complexidade). Use sempre que for revisar um diff, uma classe, um PR, ou logo
+depois de gerar código Java significativo.
 
 **Quando NÃO usar:** para dúvida pontual sobre em qual camada um código deve viver, use
 `arquitetura-limpa-java` diretamente (esta skill só referencia o checklist dela no grupo
@@ -22,13 +22,13 @@ fonte de verdade usada tanto para autorrevisão quanto pelos agents `java-reviso
 ## Fluxo de revisão
 
 1. **Entender a intenção da mudança** — antes de aplicar qualquer item do checklist, entenda o que o
-   diff faz e por quê. Isso evita reportar como "problema" uma decisão consciente do autor (ex.: um
+   diff faz e por quê, para não reportar como "problema" uma decisão consciente do autor (ex.: um
    loop no lugar de stream porque é mais claro naquele caso específico).
 2. **Passar o checklist** — aplique os 10 grupos da seção "Checklist" abaixo sobre o código/diff.
 3. **Reportar achados agrupados por severidade** — cada achado leva `arquivo:linha` e uma explicação
    objetiva do porquê é um problema (siga o modelo em "Formato do relatório").
-4. **Reconhecer o que está bom** — toda revisão termina com pontos positivos, não só críticas. Isso
-   reforça práticas corretas e mantém a revisão construtiva.
+4. **Reconhecer o que está bom** — toda revisão termina com pontos positivos, não só críticas, para
+   reforçar práticas corretas e manter a revisão construtiva.
 
 ## Severidades
 
@@ -42,8 +42,6 @@ fonte de verdade usada tanto para autorrevisão quanto pelos agents `java-reviso
 
 ### 1. Correção
 
-Cobre três riscos concretos: null-safety, exceções sem contexto e vazamento de recursos.
-
 **Null-safety** — métodos `find*` retornam `Optional`; nunca chame `Optional.get()` sem verificar
 presença:
 
@@ -53,9 +51,7 @@ public Produto buscarPorId(Long id) {
     Optional<Produto> produto = produtoRepository.findById(id);
     return produto.get();
 }
-```
 
-```java
 // CORRETO - metodos find* retornam Optional; a borda decide o que fazer na ausencia
 public Produto buscarPorId(Long id) {
     return produtoRepository.findById(id)
@@ -72,9 +68,7 @@ try {
 } catch (IOException e) {
     throw new RuntimeException(e.getMessage());
 }
-```
 
-```java
 // CORRETO - preserva a causa (e) e adiciona contexto do que falhou
 try {
     integracaoClient.enviar(pedido);
@@ -90,10 +84,7 @@ try {
 InputStream in = new FileInputStream(arquivo);
 String conteudo = ler(in);
 in.close();
-}
-```
 
-```java
 // CORRETO - try-with-resources garante o fechamento mesmo em caso de excecao
 try (InputStream in = new FileInputStream(arquivo)) {
     return ler(in);
@@ -102,9 +93,8 @@ try (InputStream in = new FileInputStream(arquivo)) {
 
 ### 2. Contrato HTTP
 
-Status correto por origem do erro, e DTOs de borda imutáveis.
-
-**Status corretos (400 validação / 422 negócio / 500 técnico):**
+Status correto por origem do erro (400 validação / 422 negócio / 500 técnico), e DTOs de borda
+imutáveis:
 
 ```java
 // ERRADO - regra de negocio violada devolvendo excecao generica, que o handler mapeia como 500
@@ -116,9 +106,7 @@ public ResponseEntity<ProdutoResponse> criar(@RequestBody CriarProdutoRequest re
     Produto criado = service.criar(request);
     return ResponseEntity.ok(mapper.paraResposta(criado));
 }
-```
 
-```java
 // CORRETO - 400 (formato) via @Valid no record de request, 422 (negocio) via BusinessException
 @PostMapping
 public ResponseEntity<ProdutoResponse> criar(@RequestBody @Valid CriarProdutoRequest request) {
@@ -130,8 +118,6 @@ public ResponseEntity<ProdutoResponse> criar(@RequestBody @Valid CriarProdutoReq
 }
 ```
 
-**DTOs records imutáveis nas bordas:**
-
 ```java
 // ERRADO - DTO mutavel com setters: o contrato de borda pode ser alterado apos a criacao
 public class ProdutoResponse {
@@ -140,9 +126,7 @@ public class ProdutoResponse {
     public void setId(Long id) { this.id = id; }
     public void setNome(String nome) { this.nome = nome; }
 }
-```
 
-```java
 // CORRETO - record imutavel: contrato de borda fixado na construcao, sem setters
 public record ProdutoResponse(Long id, String nome, BigDecimal preco) {}
 ```
@@ -158,9 +142,7 @@ public class Pedido {
     public void setValor(BigDecimal valor) { this.valor = valor; }
     public BigDecimal getValor() { return valor; }
 }
-```
 
-```java
 // CORRETO - record: imutavel por natureza, sem setter, igualdade/hashCode/toString gerados
 public record Pedido(String id, BigDecimal valor) {
     public void validar() {
@@ -183,9 +165,7 @@ produtos.stream().forEach(p -> {
         nomesAtivos.add(p.nome().toUpperCase());
     }
 });
-```
 
-```java
 // CORRETO - pipeline curto, sem efeito colateral, transformacao pura
 List<String> nomesAtivos = produtos.stream()
         .filter(Produto::ativo)
@@ -199,24 +179,20 @@ loop explícito — clareza vale mais que "tudo em stream".
 ### 5. Nomenclatura
 
 `PascalCase` para tipos, `camelCase` para métodos/campos, `UPPER_SNAKE_CASE` para constantes; nomes
-que revelam intenção.
+que revelam intenção. Use português ou inglês, mas seja consistente com o restante do projeto — não
+misture os dois no mesmo pacote/classe.
 
 ```java
 // ERRADO - nomes nao revelam intencao, abreviacoes obscuras
 public List<Produto> get(String s) { ... }
 public boolean chk(String str) { ... }
 private static final int N = 100;
-```
 
-```java
 // CORRETO - nomes revelam intencao; convencao de caixa respeitada
 public List<Produto> buscarAtivosPorCategoria(String categoria) { ... }
 public boolean precoEhValido(BigDecimal preco) { ... }
 private static final int TAMANHO_MAXIMO_PAGINA = 100;
 ```
-
-Use português ou inglês, mas seja consistente com o restante do projeto — não misture os dois no
-mesmo pacote/classe.
 
 ### 6. Complexidade
 
@@ -235,9 +211,7 @@ public void processar(Pedido pedido) {
         }
     }
 }
-```
 
-```java
 // CORRETO - early return elimina o aninhamento, cada guarda e uma linha
 public void processar(Pedido pedido) {
     if (pedido == null || pedido.itens() == null || pedido.itens().isEmpty()) {
@@ -254,7 +228,9 @@ public void processar(Pedido pedido) {
 
 Extraia duplicação real; não abstraia prematuramente — regra das 3 ocorrências (na 1ª e 2ª vez,
 duplicar pode ser mais barato que a abstração errada; extraia quando a 3ª ocorrência confirmar o
-padrão).
+padrão). Não crie uma `EmailValidator` com interface e implementação única "para o futuro" — isso é
+abstração especulativa (veja `padroes-de-projeto-java`, seção "Quando NÃO aplicar pattern"); um
+método privado já resolve a duplicação real.
 
 ```java
 // ERRADO - mesma validacao de email duplicada em tres pontos (criar, atualizar, importar em lote)
@@ -277,9 +253,7 @@ public void importarEmLote(List<UsuarioRequest> reqs) {
         }
     }
 }
-```
 
-```java
 // CORRETO - 3a ocorrencia confirma o padrao: extrai um metodo unico, sem criar interface/factory
 private void validarEmail(String email) {
     if (email == null || !email.contains("@")) {
@@ -287,10 +261,6 @@ private void validarEmail(String email) {
     }
 }
 ```
-
-Não crie uma `EmailValidator` com interface e implementação única "para o futuro" — isso é
-abstração especulativa (veja `padroes-de-projeto-java`, seção "Quando NÃO aplicar pattern"); um
-método privado já resolve a duplicação real.
 
 ### 8. Testes
 
@@ -303,12 +273,9 @@ void test1() {
     Produto produto = service.criar(request);
     assertEquals(produto.nome(), "Mouse");
 }
-```
 
-```java
 // CORRETO - nomes descritivos (deveXQuandoY), casos feliz + erro independentes
-// (exemplo com AssertJ fluente; JUnit 5 puro - assertEquals/assertThrows - e igualmente valido,
-// ver observacao abaixo)
+// (exemplo com AssertJ fluente; JUnit 5 puro tambem e valido, ver observacao abaixo)
 @Test
 void deveCriarProdutoQuandoDadosValidos() {
     Produto produto = service.criar(requestValido());
@@ -323,11 +290,11 @@ void deveLancarBusinessExceptionQuandoPrecoForZero() {
 }
 ```
 
-Use JUnit 5. AssertJ (`assertThat(...)`) é bem-vindo quando já está disponível no projeto — confira se
-a dependência está no `pom.xml` antes de sugeri-lo em uma revisão — mas JUnit 5 puro (`assertEquals`,
-`assertThrows`, `assertDoesNotThrow`) também é válido e é o padrão usado nos assets deste catálogo
-(`ProdutoTest`, `PedidoTest`, `PublicarEventoServiceTest`, nenhum dos quais depende de AssertJ). Não
-marque `assertEquals`/`assertThrows` como achado de revisão só por não ser AssertJ. Independente da
+Use JUnit 5. AssertJ (`assertThat(...)`) é bem-vindo quando já está disponível no projeto — confira o
+`pom.xml` antes de sugeri-lo em uma revisão — mas JUnit 5 puro (`assertEquals`, `assertThrows`,
+`assertDoesNotThrow`) também é válido e é o padrão usado nos assets deste catálogo (`ProdutoTest`,
+`PedidoTest`, `PublicarEventoServiceTest`, nenhum dos quais depende de AssertJ). Não marque
+`assertEquals`/`assertThrows` como achado de revisão só por não ser AssertJ. Independente da
 biblioteca de asserção, cada teste deve poder rodar sozinho (sem depender de estado deixado por um
 teste anterior) e cobrir pelo menos um caso de borda (lista vazia, valor limite) além do feliz e do
 erro.

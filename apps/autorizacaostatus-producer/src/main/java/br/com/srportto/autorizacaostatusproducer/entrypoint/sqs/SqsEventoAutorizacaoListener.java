@@ -1,6 +1,5 @@
 package br.com.srportto.autorizacaostatusproducer.entrypoint.sqs;
 
-import br.com.srportto.autorizacaostatusproducer.shared.exceptions.EventoAutorizacaoInvalidoException;
 import br.com.srportto.autorizacaostatusproducer.application.eventos.ProcessarEventoAutorizacaoUseCase;
 import br.com.srportto.autorizacaostatusproducer.shared.config.AwsProperties;
 import org.slf4j.Logger;
@@ -41,6 +40,7 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
     private final SqsClient sqsClient;
     private final AwsProperties awsProperties;
     private final ProcessarEventoAutorizacaoUseCase useCase;
+    private final SqsEventoAutorizacaoErrorInterceptor errorInterceptor;
 
     private volatile boolean running = false;
     // volatile: o health indicator le esta referencia de outra thread (a requisicao HTTP do
@@ -48,10 +48,11 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
     private volatile Thread pollingThread;
 
     public SqsEventoAutorizacaoListener(SqsClient sqsClient, AwsProperties awsProperties,
-            ProcessarEventoAutorizacaoUseCase useCase) {
+            ProcessarEventoAutorizacaoUseCase useCase, SqsEventoAutorizacaoErrorInterceptor errorInterceptor) {
         this.sqsClient = sqsClient;
         this.awsProperties = awsProperties;
         this.useCase = useCase;
+        this.errorInterceptor = errorInterceptor;
     }
 
     @Override
@@ -146,12 +147,10 @@ public class SqsEventoAutorizacaoListener implements SmartLifecycle {
         try {
             useCase.processar(message.body());
             ack(queueUrl, message);
-        } catch (EventoAutorizacaoInvalidoException e) {
-            log.error("Mensagem não-retryable descartada: messageId={}", message.messageId(), e);
-            ack(queueUrl, message);
         } catch (Exception e) {
-            log.error("Falha ao processar a mensagem messageId={}. Não será confirmada — volta à fila "
-                    + "após o visibility timeout", message.messageId(), e);
+            if (errorInterceptor.tratar(message, e)) {
+                ack(queueUrl, message);
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 ---
 name: padrao-de-logs-java
-description: Use quando o usuário pedir para adicionar ou melhorar logs, padronizar logging, configurar logs JSON estruturados, correlacionar requisições com MDC/traceId, ou depurar o fluxo da aplicação pelos logs. Gatilhos - "adicione logs", "melhore os logs", "log estruturado", "traceId", "correlação".
+description: Use quando o usuário pedir para adicionar ou melhorar logs, padronizar logging, configurar logs JSON estruturados, correlacionar requisições com MDC/traceId, ou depurar o fluxo da aplicação pelos logs. Gatilhos - "adicione logs", "melhore os logs", "log estruturado", "traceId", "correlação". Uso: agents `engenheiro-seguranca`/`especialista-monitoramento`/`java-especialista`/`java-revisor` ou invocação manual via `/padrao-de-logs-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Padrão de Logs Java
@@ -9,9 +9,7 @@ description: Use quando o usuário pedir para adicionar ou melhorar logs, padron
 
 Padrão único de logging para aplicações Java/Spring Boot hexagonais neste projeto: SLF4J como única
 API de log, JSON estruturado por padrão (já ativo no app-base), correlação via MDC/`traceId`, e um
-critério objetivo de nível e de "o que logar" por camada. Use esta skill sempre que for adicionar
-logs a um código novo, revisar logs existentes, configurar formato/nível, ou montar a correlação de
-uma requisição/mensagem ponta a ponta.
+critério objetivo de nível e de "o que logar" por camada.
 
 **Quando NÃO usar:** para o checklist completo de revisão de código (do qual logs é só um item), use
 `revisao-de-codigo-java` — ela referencia esta skill na seção "Logs". Para dúvida sobre em qual
@@ -41,9 +39,7 @@ Para uma auditoria de logging de uma aplicação inteira (não só um trecho), i
 ```java
 // ERRADO - System.out, concatenacao, sem placeholder, senha no log
 System.out.println("Login do usuario " + usuario.email() + " com senha " + usuario.senha());
-```
 
-```java
 // CORRETO - SLF4J, placeholder, logger private static final, sem dado sensivel
 private static final Logger log = LoggerFactory.getLogger(LoginService.class);
 // ...
@@ -54,10 +50,9 @@ log.info("login realizado usuarioId={}", usuario.id());
 
 Este projeto já sai com log estruturado em JSON habilitado, para todo ambiente (inclusive `local`) —
 não é preciso adicionar nenhuma dependência, é suporte nativo do Spring Boot (3.4+; este projeto usa
-Boot 4):
+Boot 4). Toda aplicação nova gerada por `criar-aplicacao-java` deve nascer com este `application.yaml`:
 
 ```yaml
-# .claude/skills/criar-aplicacao-java/assets/app-base/src/main/resources/application.yaml
 logging:
     structured:
         format:
@@ -82,28 +77,23 @@ logging:
 | Filtragem / correlação | `grep` por substring, frágil a mudança de formato | `jq 'select(.traceId == "...")'`, robusto |
 | Agregação (contagem de erros, latência) | Precisa de parser customizado | Direto por ferramenta de log (campo `level`, `duration_ms`) |
 
-**Importante — o que realmente vira campo JSON:** os placeholders `{}` de `log.info("pedido
-processado id={} valor={}", id, valor)` viram parte do texto do campo `message`, não campos JSON
-separados (isso exigiria a biblioteca `logstash-logback-encoder` com `StructuredArguments.kv()`, que
-este projeto não usa). Quem vira campo JSON de verdade, automaticamente, é **tudo que está no MDC**
-(seção 4) — por isso um id que você precisa filtrar/agrupar entre várias linhas de log (`traceId`)
-deve ir para o MDC, e não só para dentro do texto da mensagem.
+**Importante — o que realmente vira campo JSON:** os placeholders `{}` viram parte do texto do campo
+`message`, não campos JSON separados (isso exigiria `logstash-logback-encoder` com
+`StructuredArguments.kv()`, que este projeto não usa). Quem vira campo JSON de verdade,
+automaticamente, é **tudo que está no MDC** (seção 4) — por isso um id que você precisa
+filtrar/agrupar entre linhas de log (`traceId`) deve ir para o MDC, não só para o texto da mensagem.
 
-Se precisar de um campo estruturado pontual sem passar pelo MDC, o SLF4J 2.x (já usado pelo Spring
-Boot 4) tem uma API fluente sem dependência extra:
+Para um campo estruturado pontual sem passar pelo MDC, o SLF4J 2.x (já usado pelo Spring Boot 4) tem
+uma API fluente sem dependência extra — use só quando o campo separado importa de verdade
+(dashboard/query); no caso comum, `log.info("... id={} valor={}", id, valor)` já é suficiente:
 
 ```java
 // campo extra como chave/valor real no JSON, sem precisar de biblioteca adicional
-log.atInfo()
-        .setMessage("pedido processado")
+log.atInfo().setMessage("pedido processado")
         .addKeyValue("pedidoId", pedido.id())
         .addKeyValue("valor", pedido.valor())
         .log();
 ```
-
-Use isso só quando o campo separado importa de verdade (dashboard, query); para o caso comum, o
-padrão já usado no projeto — `log.info("pedido processado id={} valor={}", pedido.id(),
-pedido.valor())`, como em `ProcessarPedidoService` — é suficiente e mais simples.
 
 ### Como ler os logs como humano em dev
 
@@ -115,41 +105,13 @@ mvn spring-boot:run | jq .
 tail -f app.log | jq 'select(.traceId == "9f1c3e2a-6b7d-4e11-9a2f-1234567890ab")'
 ```
 
-Se quiser mesmo trocar o formato do console para texto legível por profile: a propriedade
-`logging.structured.format.console` hoje **não tem** uma forma documentada de ser desligada por
-profile (é uma limitação conhecida e em aberto do Spring Boot — issue
-[#45407](https://github.com/spring-projects/spring-boot/issues/45407)). A forma suportada é um
-`logback-spring.xml` próprio, trocando o appender por `<springProfile>`:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-
-    <!-- perfil log-humano: texto legivel no console -->
-    <springProfile name="log-humano">
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder>
-                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-            </encoder>
-        </appender>
-    </springProfile>
-
-    <!-- demais perfis: mantem o JSON estruturado do Spring Boot -->
-    <springProfile name="!log-humano">
-        <include resource="org/springframework/boot/logging/logback/structured-console-appender.xml"/>
-    </springProfile>
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
-</configuration>
-```
-
-```bash
-# ativa junto com o profile local, so quando precisar ler no terminal sem jq
-mvn spring-boot:run -Dspring-boot.run.profiles=local,log-humano
-```
+A propriedade `logging.structured.format.console` hoje **não tem** forma documentada de ser
+desligada por profile (limitação conhecida e em aberto do Spring Boot — issue
+[#45407](https://github.com/spring-projects/spring-boot/issues/45407)). Se precisar mesmo de texto
+legível por profile, a forma suportada é um `logback-spring.xml` próprio com `<springProfile
+name="log-humano">` trocando o appender `CONSOLE` para um `ConsoleAppender` com `${CONSOLE_LOG_PATTERN}`,
+e `<springProfile name="!log-humano">` incluindo `structured-console-appender.xml` (o JSON padrão) —
+ativado com `mvn spring-boot:run -Dspring-boot.run.profiles=local,log-humano`.
 
 ## 3. Níveis
 
@@ -181,30 +143,21 @@ logging:
 
 MDC (`Mapped Diagnostic Context`, do SLF4J) é um contexto por thread: tudo que você coloca nele com
 `MDC.put(chave, valor)` aparece automaticamente como campo de nível superior no JSON de todas as
-linhas de log emitidas naquela thread, sem precisar repetir o valor em cada chamada de `log.info`.
-Combinado com `logging.structured.format.console: logstash` (já ativo, seção 2), isso não exige
-nenhuma configuração extra — é o próprio Spring Boot que inclui o MDC no JSON de saída.
+linhas de log emitidas naquela thread, sem repetir o valor em cada chamada de `log.info`. Combinado
+com `logging.structured.format.console: logstash` (seção 2), não exige configuração extra.
 
-O filtro abaixo popula um `traceId` no MDC assim que a requisição HTTP chega (na borda, camada
-`entrypoint`), reaproveita um `traceId` recebido de outro serviço via header quando existe (para
-correlacionar chamadas entre serviços), e sempre limpa o MDC no `finally` — sem isso, como o servlet
-container reaproveita threads de um pool, um `traceId` pode vazar para a próxima requisição
-processada pela mesma thread:
+O filtro abaixo popula um `traceId` no MDC na borda (`entrypoint`), reaproveita um `traceId` recebido
+de outro serviço via header quando existe, e sempre limpa o MDC no `finally` — sem isso, como o
+servlet container reaproveita threads de um pool, o `traceId` vazaria para a próxima requisição:
 
 ```java
 package br.com.srportto.appbase.shared.filters;
 
 import java.io.IOException;
 import java.util.UUID;
-
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
-
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 
 // popula traceId no MDC para toda a requisicao; o campo aparece sozinho no log JSON (logstash)
@@ -260,9 +213,7 @@ try {
     log.error("Erro ao salvar pedido {}", pedido.id(), e);
     throw new ApplicationException("Falha ao salvar pedido", e);
 }
-```
 
-```java
 // CORRETO - so relanca com contexto; quem loga (uma vez, com stack trace) e o handler central (shared)
 try {
     pedidoRepository.save(pedido);
@@ -271,47 +222,12 @@ try {
 }
 ```
 
-### Log dentro de loop quente
+### Outros erros comuns
 
-```java
-// ERRADO - um log.info por item: para 10 mil itens, 10 mil linhas de log na mesma operacao
-for (Produto produto : produtos) {
-    log.info("Processando produto {}", produto.id());
-    processar(produto);
-}
-```
-
-```java
-// CORRETO - um log antes e um depois do loop, com o total; detalhe por item so em debug, sob guarda
-log.info("Iniciando processamento de {} produtos", produtos.size());
-for (Produto produto : produtos) {
-    if (log.isDebugEnabled()) {
-        log.debug("Processando produto {}", produto.id());
-    }
-    processar(produto);
-}
-log.info("Processamento concluido: {} produtos", produtos.size());
-```
-
-### `e.printStackTrace()`
-
-```java
-// ERRADO - vai para stdout sem nivel, sem timestamp, fora do JSON; invisivel para qualquer ferramenta
-try {
-    carregarConfiguracao();
-} catch (IOException e) {
-    e.printStackTrace();
-}
-```
-
-```java
-// CORRETO - vira um evento ERROR estruturado, com a stack trace dentro do campo de excecao do JSON
-try {
-    carregarConfiguracao();
-} catch (IOException e) {
-    log.error("Falha ao ler arquivo de configuracao", e);
-}
-```
+| Anti-padrão | Por que é errado | Correção |
+|---|---|---|
+| Log dentro de loop quente (`log.info` por item, 10 mil itens = 10 mil linhas) | Explode volume de log para a mesma operação, sem valor extra | Um `log.info` antes/depois do loop com o total; detalhe por item só em `debug`, sob `if (log.isDebugEnabled())` |
+| `e.printStackTrace()` | Vai para stdout sem nível, sem timestamp, fora do JSON — invisível para qualquer ferramenta | `log.error("mensagem", e)` — vira evento ERROR estruturado, stack trace no campo de exceção do JSON |
 
 ### Concatenação ansiosa (eager)
 
@@ -322,9 +238,7 @@ método pesado) roda de qualquer forma, mesmo com `DEBUG` desligado, se estiver 
 ```java
 // ERRADO - a concatenacao E a serializacao rodam sempre, mesmo com DEBUG desligado
 log.debug("Payload recebido: " + objectMapper.writeValueAsString(pedido));
-```
 
-```java
 // CORRETO - argumento simples (toString barato): placeholder sozinho ja resolve
 log.debug("Processando pedido {} valor {}", pedido.id(), pedido.valor());
 
