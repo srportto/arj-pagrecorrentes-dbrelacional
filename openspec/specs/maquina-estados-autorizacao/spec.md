@@ -19,7 +19,7 @@ As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, 
 - `ATIVA` → `CANCELADA`, `FINALIZADA`, `REJEITADA`
 - `CANCELADA`, `REJEITADA`, `EXPIRADA`, `FINALIZADA` → nenhuma (estados terminais)
 
-O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em `arj-contratocommand` e `arj-contratoquery` o enum existente SHALL ser evoluído em `domain/enums/`; nas aplicações de eventos (sem camada `domain/`) ele SHALL residir em `application/eventos/`.
+O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em `arj-contratocommand`, `arj-contratoquery` e `eventos-consumer` o enum existente/refatorado SHALL residir em `domain/enums/`; em `autorizacaostatus-producer` ele SHALL residir em `application/eventos/`.
 
 #### Scenario: Transição válida é aceita
 - **WHEN** `StatusAutorizacao.ATIVA.podeTransicionarPara(CANCELADA)` é consultado
