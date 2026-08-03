@@ -29,66 +29,94 @@ via variáveis de ambiente) SHALL ser suportados.
 - **THEN** ela consome a fila `http://localhost:4566/000000000000/SQS-eventos-autorizacao`
   na região `us-east-1` com credenciais estáticas de emulador, sem configuração manual
 
-### Requirement: Consumo da fila via long polling com SDK v2
+### Requirement: Consumo da fila via @SqsListener do Spring Cloud AWS
 
-A aplicação SHALL consumir a fila `SQS-eventos-autorizacao` com o AWS SDK v2
-(`SqsClient`), sem Spring Cloud AWS, em um loop de long polling
-(`WaitTimeSeconds = 20`) executado em virtual thread iniciada por um componente de
-ciclo de vida do Spring (`SmartLifecycle`), com encerramento gracioso no stop da
-aplicação. O componente listener SHALL residir em `entrypoint/sqs/` — adaptador de
-ENTRADA, no mesmo nível arquitetural de um `@RestController` — e NÃO SHALL residir em
-um pacote `infrastructure/`, que não faz parte do modelo hexagonal do monorepo. O
-`ReceiveMessage` NÃO SHALL solicitar message attributes: o tipo do evento é derivado
-pela ponte a partir do campo `status` do payload JSON
-(`TipoEventoAutorizacao.porStatus`), tornando o attribute SQS `tipoEvento`
-desnecessário para o processamento.
+A aplicação SHALL consumir a fila `SQS-eventos-autorizacao` por meio da anotação
+`@SqsListener` do Spring Cloud AWS 4.0.0 (`io.awspring.cloud:spring-cloud-aws-starter-sqs`),
+compatível com Spring Boot 4.x. O método anotado SHALL residir em `entrypoint/sqs/` —
+adaptador de ENTRADA, no mesmo nível arquitetural de um `@RestController` — e NÃO SHALL
+residir em um pacote `infrastructure/`, que não faz parte do modelo hexagonal do monorepo.
 
-O encerramento SHALL ser efetivamente gracioso: `stop()` SHALL sinalizar a parada,
-interromper a thread de polling e **aguardar seu término** (`join`) por um tempo
-limitado antes de retornar, de modo que o contexto Spring não destrua o `SqsClient` nem
-o `Producer` Kafka com uma mensagem ainda em processamento. Esgotado o tempo de espera,
-o encerramento SHALL prosseguir registrando log de aviso.
+O método anotado SHALL apenas delegar o body da mensagem ao
+`ProcessarEventoAutorizacaoUseCase`, sem regra de negócio própria, sem gerenciamento de
+ciclo de vida e sem `try/catch` por tipo de exceção.
 
-O loop SHALL ser resiliente a `Throwable` — não apenas a `Exception` — para que um
-`Error` não mate silenciosamente a thread de polling. Erros consecutivos de recebimento
-(ex.: Floci fora do ar) SHALL aplicar backoff entre tentativas, com log claro da causa.
+A aplicação NÃO SHALL mais instanciar `SqsClient` manualmente nem manter loop de polling,
+thread de polling própria, backoff manual ou rede de segurança contra `Throwable` — todos
+esses passam a ser responsabilidade do container do framework. A conexão com o emulador
+Floci no profile `local` SHALL ser configurada por propriedades `spring.cloud.aws.*`
+(endpoint override e credenciais estáticas), não por bean de configuração próprio.
 
-#### Scenario: Loop inicia e para com a aplicação
-- **WHEN** a aplicação inicia
-- **THEN** o loop de polling começa a receber mensagens da fila
-- **AND** no shutdown da aplicação o loop encerra sem deixar thread pendurada
+O `ReceiveMessage` NÃO SHALL solicitar message attributes: o tipo do evento é derivado
+pela ponte a partir do campo `status` do payload JSON (`TipoEventoAutorizacao.porStatus`),
+tornando o attribute SQS `tipoEvento` desnecessário para o processamento.
 
-#### Scenario: Shutdown aguarda a mensagem em voo
-- **WHEN** a aplicação recebe o sinal de shutdown enquanto uma mensagem está sendo
-  produzida no Kafka
-- **THEN** `stop()` aguarda a thread de polling terminar antes de retornar
-- **AND** o `SqsClient` e o `Producer` Kafka só são fechados depois disso
+#### Scenario: Consumo inicia com a aplicação
 
-#### Scenario: Shutdown não trava indefinidamente
-- **WHEN** a thread de polling não termina dentro do tempo limite de espera do `stop()`
-- **THEN** o encerramento prossegue mesmo assim
-- **AND** um log de aviso registra que o tempo de espera foi esgotado
+- **WHEN** a aplicação inicia com o Floci no ar
+- **THEN** o container do Spring Cloud AWS começa a receber mensagens da fila
+  `SQS-eventos-autorizacao`
+- **AND** nenhuma thread de polling é criada pelo código da aplicação
 
-#### Scenario: Emulador indisponível
-- **WHEN** o Floci está fora do ar durante o polling
-- **THEN** a aplicação não encerra: loga o erro e tenta novamente após backoff
+#### Scenario: Emulador indisponível não derruba a aplicação
 
-#### Scenario: Error não mata o loop em silêncio
-- **WHEN** um `Error` (não uma `Exception`) ocorre durante um ciclo de polling
-- **THEN** o loop registra a falha e continua operando após backoff, sem encerrar a
-  thread de polling silenciosamente
+- **WHEN** o Floci está fora do ar durante o consumo
+- **THEN** a aplicação não encerra: o container registra o erro e continua tentando
+- **AND** nenhuma lógica de backoff própria da aplicação é necessária
 
 #### Scenario: Processamento independe do attribute tipoEvento
+
 - **WHEN** uma mensagem é recebida — com ou sem o attribute SQS `tipoEvento`
 - **THEN** o processamento segue normalmente, com o tipo do evento derivado do campo
   `status` do body pela ponte
+
+#### Scenario: Método do listener não classifica exceção
+
+- **WHEN** o corpo do método anotado com `@SqsListener` é inspecionado
+- **THEN** ele apenas delega ao use case
+- **AND** não contém `catch` por tipo de exceção nem decisão de ack inline
+
+### Requirement: Processamento concorrente de mensagens por instância
+
+O container SHALL processar mensagens de forma concorrente dentro de uma mesma instância,
+com o número máximo de mensagens em processamento simultâneo configurável
+(`maxConcurrentMessages`). A aplicação NÃO SHALL processar um lote recebido de forma
+estritamente serial.
+
+A execução concorrente SHALL usar virtual threads (Java 25), apropriadas porque cada
+mensagem passa a maior parte de seu tempo bloqueada em I/O aguardando a confirmação
+síncrona do broker Kafka.
+
+O `Producer` Kafka SHALL ser compartilhado entre as execuções concorrentes — é thread-safe
+por design e o compartilhamento permite o agrupamento de registros em batch, ausente no
+processamento serial.
+
+#### Scenario: Lote é processado concorrentemente
+
+- **WHEN** um lote de mensagens é recebido da fila
+- **THEN** múltiplas mensagens do lote são processadas simultaneamente, até o limite
+  configurado
+- **AND** uma mensagem lenta não impede o processamento das demais
+
+#### Scenario: Concorrência é configurável
+
+- **WHEN** o valor de `maxConcurrentMessages` é alterado na configuração
+- **THEN** o número de mensagens em processamento simultâneo por instância reflete o novo
+  valor, sem alteração de código
 
 ### Requirement: Log de consumo com sucesso e ack da mensagem
 
 O processamento de cada mensagem consumida SHALL consistir em produzir o evento
 correspondente no tópico Kafka `eventos-autorizacao` (conforme
-`publicacao-eventos-kafka`). O ack (`DeleteMessage`) SHALL ocorrer somente após a
-confirmação do broker Kafka, precedido de um log de sucesso.
+`publicacao-eventos-kafka`). O ack SHALL ocorrer somente após a confirmação do broker
+Kafka, precedido de um log de sucesso. A garantia oferecida SHALL permanecer
+**at-least-once**: a aplicação NÃO SHALL adotar ack independente da confirmação do Kafka
+(produce assíncrono seguido de ack no retorno), que trocaria falha visível e recuperável
+por perda silenciosa de evento.
+
+O ack SHALL ser expresso pelo **retorno normal** do método `@SqsListener`, e a retenção da
+mensagem pela **propagação de exceção** a partir dele — a aplicação NÃO SHALL emitir
+`DeleteMessage` explicitamente.
 
 Nenhum log, em nenhum nível, SHALL conter o body bruto da mensagem: o payload carrega
 dado pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`,
@@ -103,35 +131,52 @@ justamente os que carregam PII. A aplicação NÃO SHALL propagar essas exceçõ
 `cause` — SHALL registrar apenas o caminho do campo (sem o valor) e o nome da classe da
 exceção original.
 
-Falhas SHALL ser classificadas em duas categorias com tratamentos distintos:
-- **Retryable** (Kafka ou Schema Registry indisponível, timeout de produção): o ack NÃO
-  SHALL ser enviado — a mensagem retorna à fila após o visibility timeout (semântica
-  at-least-once, retry por conta da fila).
+A classificação de falha SHALL permanecer concentrada em um **ponto único**
+(`SqsEventoAutorizacaoErrorInterceptor`, registrado como error handler central do
+container), nunca distribuída em `catch` dentro do método do listener. O contrato do
+interceptor SHALL ser expresso por engolir ou relançar a exceção, e não por valor de
+retorno booleano interpretado pelo listener:
+
+- **Retryable** (Kafka ou Schema Registry indisponível, timeout de produção): o
+  interceptor SHALL relançar a exceção — a mensagem não é confirmada e retorna à fila
+  após o visibility timeout.
 - **Não-retryable** (body JSON malformado, campo obrigatório do schema Avro ausente ou
-  nulo, `status` desconhecido, conversão para Avro impossível): a aplicação SHALL
+  nulo, `status` desconhecido, conversão para Avro impossível): o interceptor SHALL
   registrar log ERROR identificando a mensagem e a causa — sem o body — e em seguida
-  SHALL dar ack, descartando a mensagem conscientemente. O retry seria inútil e, sem
-  redrive policy na fila, causaria loop infinito de reentrega.
+  engolir a exceção, resultando em ack e descarte consciente. O retry seria inútil e
+  consumiria o orçamento de tentativas até a DLQ sem chance de sucesso.
 
 #### Scenario: Consumo com sucesso vira produção Kafka
+
 - **WHEN** uma mensagem com o JSON da autorização chega à fila e o broker Kafka
   confirma a produção do evento
 - **THEN** a aplicação loga o sucesso com `idAutorizacao`, `key` e `tipoEvento`
 - **AND** o log NÃO contém o body da mensagem
-- **AND** remove a mensagem da fila (`DeleteMessage`)
+- **AND** o método do listener retorna normalmente, resultando na remoção da mensagem da fila
 
 #### Scenario: Falha retryable não dá ack
+
 - **WHEN** a produção no Kafka falha por indisponibilidade ou timeout
-- **THEN** a mensagem não é removida da fila
+- **THEN** o interceptor relança a exceção
+- **AND** a mensagem não é removida da fila
 - **AND** volta a ficar disponível após o visibility timeout
 
 #### Scenario: Falha não-retryable descarta com log sem body
+
 - **WHEN** o body da mensagem não pode ser desserializado ou convertido para Avro
 - **THEN** um log ERROR registra o `messageId` e a causa da rejeição
 - **AND** o log NÃO contém o body da mensagem
-- **AND** a mensagem recebe ack e é removida da fila
+- **AND** o interceptor engole a exceção e a mensagem é removida da fila
+
+#### Scenario: Payload inválido não consome o orçamento de retry
+
+- **WHEN** uma mensagem com payload inválido é recebida
+- **THEN** ela é confirmada na primeira tentativa de entrega
+- **AND** seu `ApproximateReceiveCount` nunca alcança o `maxReceiveCount` da fila
+- **AND** ela nunca é movida para a DLQ
 
 #### Scenario: Valor malformado em campo PII não vaza pela cadeia de causas
+
 - **WHEN** uma mensagem traz valor inválido num campo tipado como `UUID` ou `BigDecimal`
   (ex.: `id_pessoa_pagadora`) e a biblioteca de desserialização rejeita a coerção
 - **THEN** a exceção resultante identifica o **caminho do campo** e a classe da exceção
@@ -140,25 +185,31 @@ Falhas SHALL ser classificadas em duas categorias com tratamentos distintos:
 
 ### Requirement: Saúde do consumidor refletida no health-check
 
-A aplicação SHALL expor um `HealthIndicator` que reflita a liveness da thread de
-polling do listener SQS. Enquanto o listener estiver ativo e sua thread viva,
-`/actuator/health` SHALL responder `200 (UP)`. Se a thread de polling tiver morrido
-enquanto o listener ainda se considera ativo, o indicador SHALL reportar `DOWN`,
-derrubando o health geral da aplicação — um consumidor morto NÃO SHALL ser reportado
-como saudável.
+A aplicação SHALL expor um `HealthIndicator` que reflita o estado real do consumo da
+fila, consultando o registro de containers do Spring Cloud AWS
+(`MessageListenerContainerRegistry`). Enquanto o container do listener estiver em
+execução, `/actuator/health` SHALL responder `200 (UP)`. Se o container tiver deixado de
+executar fora de um shutdown intencional da aplicação, o indicador SHALL reportar `DOWN`,
+derrubando o health geral — um consumidor morto NÃO SHALL ser reportado como saudável.
+
+O indicador NÃO SHALL depender de liveness de thread própria da aplicação, que deixa de
+existir com a adoção do `@SqsListener`.
 
 #### Scenario: Consumidor ativo reporta UP
-- **WHEN** a aplicação está no ar com o loop de polling em execução
+
+- **WHEN** a aplicação está no ar com o container do listener em execução
 - **THEN** `/actuator/health` responde `200 (UP)`
 - **AND** o indicador do listener reporta `UP`
 
-#### Scenario: Thread de polling morta derruba o health
-- **WHEN** o listener está marcado como ativo mas sua thread de polling não está mais
-  viva
+#### Scenario: Container parado fora de shutdown derruba o health
+
+- **WHEN** o container do listener não está mais em execução e a aplicação não está em
+  processo de shutdown
 - **THEN** o indicador do listener reporta `DOWN`
 - **AND** `/actuator/health` responde `503 (DOWN)`
 
-#### Scenario: Listener parado não é falha
-- **WHEN** a aplicação está em processo de shutdown e o listener já foi parado
+#### Scenario: Listener parado por shutdown não é falha
+
+- **WHEN** a aplicação está em processo de shutdown e o container já foi parado
 - **THEN** o indicador não reporta `DOWN` por esse motivo — parada intencional não é
   outage
