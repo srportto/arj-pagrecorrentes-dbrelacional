@@ -1,11 +1,15 @@
 package br.com.srportto.autorizacaostatusproducer.entrypoint.sqs;
 
+import io.awspring.cloud.sqs.listener.MessageListenerContainer;
+import io.awspring.cloud.sqs.listener.MessageListenerContainerRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.health.contributor.Status;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -15,38 +19,43 @@ import static org.mockito.Mockito.when;
 class SqsListenerHealthIndicatorTest {
 
     @Mock
-    private SqsEventoAutorizacaoListener listener;
+    private MessageListenerContainerRegistry registry;
+
+    @Mock
+    private MessageListenerContainer<?> container;
 
     @Test
-    @DisplayName("listener ativo com thread viva reporta UP")
-    void ativoComThreadVivaReportaUp() {
-        when(listener.isRunning()).thenReturn(true);
-        when(listener.isThreadDePollingViva()).thenReturn(true);
+    @DisplayName("registry ativo com container em execução reporta UP")
+    void ativoComContainerEmExecucaoReportaUp() {
+        when(registry.isRunning()).thenReturn(true);
+        when(container.isRunning()).thenReturn(true);
+        when(registry.getListenerContainers()).thenReturn(List.of(container));
 
-        var health = new SqsListenerHealthIndicator(listener).health();
+        var health = new SqsListenerHealthIndicator(registry).health();
 
         assertEquals(Status.UP, health.getStatus());
-        assertEquals("viva", health.getDetails().get("threadDePolling"));
+        assertEquals("em execucao", health.getDetails().get("container"));
     }
 
     @Test
-    @DisplayName("listener ativo com thread morta reporta DOWN — outage não passa despercebido")
-    void ativoComThreadMortaReportaDown() {
-        when(listener.isRunning()).thenReturn(true);
-        when(listener.isThreadDePollingViva()).thenReturn(false);
+    @DisplayName("registry ativo com container parado reporta DOWN — outage não passa despercebido")
+    void ativoComContainerParadoReportaDown() {
+        when(registry.isRunning()).thenReturn(true);
+        when(container.isRunning()).thenReturn(false);
+        when(registry.getListenerContainers()).thenReturn(List.of(container));
 
-        var health = new SqsListenerHealthIndicator(listener).health();
+        var health = new SqsListenerHealthIndicator(registry).health();
 
         assertEquals(Status.DOWN, health.getStatus());
-        assertEquals("morta", health.getDetails().get("threadDePolling"));
+        assertEquals("parado", health.getDetails().get("container"));
     }
 
     @Test
-    @DisplayName("listener parado reporta UP — parada intencional (shutdown) não é falha")
-    void paradoReportaUp() {
-        when(listener.isRunning()).thenReturn(false);
+    @DisplayName("registry parado reporta UP — parada intencional (shutdown) não é falha")
+    void registryParadoReportaUp() {
+        when(registry.isRunning()).thenReturn(false);
 
-        var health = new SqsListenerHealthIndicator(listener).health();
+        var health = new SqsListenerHealthIndicator(registry).health();
 
         assertEquals(Status.UP, health.getStatus());
         assertEquals("parado", health.getDetails().get("estado"));

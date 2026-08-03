@@ -6,11 +6,6 @@ spring:
     threads:
         virtual:
             enabled: true
-    lifecycle:
-        # maior que o TIMEOUT_ENCERRAMENTO do SqsEventoAutorizacaoListener (25s): garante
-        # que o join da thread de polling termine antes de o contexto destruir os beans
-        # (SqsClient e Producer Kafka), evitando fechar o cliente com mensagem em voo
-        timeout-per-shutdown-phase: 40s
 
 management:
     endpoints:

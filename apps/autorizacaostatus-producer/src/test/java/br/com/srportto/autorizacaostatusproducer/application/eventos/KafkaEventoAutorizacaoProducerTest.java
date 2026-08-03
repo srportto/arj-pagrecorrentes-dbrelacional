@@ -160,6 +160,21 @@ class KafkaEventoAutorizacaoProducerTest {
     }
 
     @Test
+    @DisplayName("SocketTimeoutException do cliente HTTP do Registry (http.connect/read.timeout.ms) é RETRYABLE")
+    void socketTimeoutDoClienteHttpDoRegistryEhRetryable() {
+        inicializar();
+        // SocketTimeoutException e IOException: e o que http.connect.timeout.ms e
+        // http.read.timeout.ms (SchemaRegistryClientConfig) produzem quando o Registry
+        // nao responde dentro do teto configurado em KafkaProducerClientConfig
+        when(producer.send(any())).thenThrow(new SerializationException(
+                "Error retrieving Avro schema",
+                new java.net.SocketTimeoutException("Read timed out")));
+
+        assertThrows(EventoAutorizacaoKafkaIndisponivelException.class,
+                () -> kafkaEventoAutorizacaoProducer.produzir("key-1", eventoMinimo(), "ATIVACAO"));
+    }
+
+    @Test
     @DisplayName("KafkaException genérica sem causa de dado é RETRYABLE — default seguro, não descarta")
     void kafkaExceptionDesconhecidaEhRetryable() {
         inicializar();

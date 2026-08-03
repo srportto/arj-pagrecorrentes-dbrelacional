@@ -30,7 +30,7 @@
 	<properties>
     <java.version>25</java.version>
     <lombok.version>1.18.40</lombok.version> <!-- Supports Java 25 -->
-    <aws-sdk.version>2.49.0</aws-sdk.version>
+    <spring-cloud-aws.version>4.0.0</spring-cloud-aws.version>
     <avro.version>1.11.4</avro.version>
     <kafka-clients.version>3.9.2</kafka-clients.version>
     <confluent.version>7.7.1</confluent.version>
@@ -53,9 +53,9 @@
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>software.amazon.awssdk</groupId>
-				<artifactId>bom</artifactId>
-				<version>${aws-sdk.version}</version>
+				<groupId>io.awspring.cloud</groupId>
+				<artifactId>spring-cloud-aws-dependencies</artifactId>
+				<version>${spring-cloud-aws.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -89,10 +89,10 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- consumo da fila de eventos de autorizacao (AWS SDK v2 puro, sem Spring Cloud AWS) -->
+		<!-- consumo da fila de eventos de autorizacao via @SqsListener -->
 		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>sqs</artifactId>
+			<groupId>io.awspring.cloud</groupId>
+			<artifactId>spring-cloud-aws-starter-sqs</artifactId>
 		</dependency>
 
 		<!-- producao no topico eventos-autorizacao (cliente Kafka puro, sem spring-kafka) -->

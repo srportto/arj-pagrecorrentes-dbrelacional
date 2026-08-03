@@ -1,33 +1,4 @@
-# consumo-eventos-autorizacao
-
-## Purpose
-
-TBD — capacidade criada a partir da mudança `add-eventos-autorizacao-sns-sqs`. Descreve
-a aplicação `apps/autorizacaostatus-producer`, que consome eventos de estados de
-autorização publicados pelo `arj-contratocommand` via SQS.
-
-## Requirements
-
-### Requirement: Aplicação listener enxuta baseada no modelo do monorepo
-
-O monorepo SHALL conter a aplicação `apps/autorizacaostatus-producer`, criada a partir
-da `arj-contratocommand` e do modelo arquitetural hexagonal de
-`docs/arquitetura/based-java-aplication.md`, com Spring Boot 4.0.7, Java 25, pacote
-raiz `br.com.srportto.autorizacaostatusproducer` e porta `8082`. A aplicação NÃO SHALL
-depender de JPA/PostgreSQL nem expor endpoints REST de negócio — apenas o Actuator
-(`/actuator/health`). Os profiles `local` (defaults do Floci) e `prod` (configuração
-via variáveis de ambiente) SHALL ser suportados.
-
-#### Scenario: Aplicação sobe sem banco
-- **WHEN** `mvn spring-boot:run` é executado em `apps/autorizacaostatus-producer` sem
-  nenhum PostgreSQL disponível
-- **THEN** a aplicação inicia com sucesso na porta 8082
-- **AND** `/actuator/health` responde `200 (UP)`
-
-#### Scenario: Defaults locais do Floci
-- **WHEN** a aplicação roda com o profile `local` (default de desenvolvimento)
-- **THEN** ela consome a fila `http://localhost:4566/000000000000/SQS-eventos-autorizacao`
-  na região `us-east-1` com credenciais estáticas de emulador, sem configuração manual
+## ADDED Requirements
 
 ### Requirement: Consumo da fila via @SqsListener do Spring Cloud AWS
 
@@ -103,6 +74,8 @@ processamento serial.
 - **WHEN** o valor de `maxConcurrentMessages` é alterado na configuração
 - **THEN** o número de mensagens em processamento simultâneo por instância reflete o novo
   valor, sem alteração de código
+
+## MODIFIED Requirements
 
 ### Requirement: Log de consumo com sucesso e ack da mensagem
 
@@ -213,3 +186,23 @@ existir com a adoção do `@SqsListener`.
 - **WHEN** a aplicação está em processo de shutdown e o container já foi parado
 - **THEN** o indicador não reporta `DOWN` por esse motivo — parada intencional não é
   outage
+
+## REMOVED Requirements
+
+### Requirement: Consumo da fila via long polling com SDK v2
+
+**Reason**: O requisito prescrevia explicitamente AWS SDK v2 puro ("sem Spring Cloud
+AWS"), loop de long polling manual, virtual thread própria iniciada por `SmartLifecycle`,
+`join` com timeout calibrado, backoff manual e resiliência a `Throwable`. Essa prescrição
+existia porque não havia versão do Spring Cloud AWS compatível com Spring Boot 4; o
+Spring Cloud AWS 4.0.0 removeu essa restrição. Toda a mecânica descrita passa a ser
+responsabilidade do container do framework, e mantê-la especificada obrigaria a
+reimplementar à mão o que o framework entrega por configuração.
+
+**Migration**: Substituído por "Consumo da fila via @SqsListener do Spring Cloud AWS" e
+"Processamento concorrente de mensagens por instância". O encerramento gracioso — antes
+garantido pelo `join()` explícito antes da destruição dos beans — passa a ser garantido
+pelos timeouts de shutdown do container (`listenerShutdownTimeout` e
+`acknowledgementShutdownTimeout`), configurados na `SqsMessageListenerContainerFactory`. A
+propriedade `spring.lifecycle.timeout-per-shutdown-phase`, calibrada manualmente contra o
+timeout do listener, deixa de ser necessária.

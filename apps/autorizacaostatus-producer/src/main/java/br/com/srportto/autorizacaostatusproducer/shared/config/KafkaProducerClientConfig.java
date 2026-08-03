@@ -1,6 +1,7 @@
 package br.com.srportto.autorizacaostatusproducer.shared.config;
 
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -31,6 +32,12 @@ public class KafkaProducerClientConfig {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaProperties.schemaRegistryUrl());
         props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, true);
+
+        // serializacao Avro + round-trip ao Schema Registry ocorrem dentro de
+        // Producer.send(), antes do Future: nem max.block.ms nem o Future.get() cobrem
+        // esse caminho, que sem teto explicito fica sem limite de tempo
+        props.put(SchemaRegistryClientConfig.HTTP_CONNECT_TIMEOUT_MS, 3_000);
+        props.put(SchemaRegistryClientConfig.HTTP_READ_TIMEOUT_MS, 3_000);
 
         //produtor com idempotencia ativa
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
