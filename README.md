@@ -2,35 +2,19 @@
 
 Sistema de **autorizações de pagamentos recorrentes** (PIX Automático e DDA Automático), composto por dois microserviços Java que operam sobre um banco PostgreSQL particionado temporalmente.
 
-```
-Cliente (escrita)           Cliente (leitura)
-      │                           │
-      ▼                           ▼
-arj-contratocommand        arj-contratoquery
-  (porta 8080)               (porta 8081)
-  DB_READ_ONLY=false         DB_READ_ONLY=true
-      │                           │
-      └──────────┬────────────────┘
-                 ▼
-         PostgreSQL 18
-     (pg_partman + pg_cron + pgvector)
+```mermaid
+flowchart TD
+    ClienteEscrita["Cliente (escrita)"] --> Command["arj-contratocommand<br/>porta 8080 · DB_READ_ONLY=false"]
+    ClienteLeitura["Cliente (leitura)"] --> Query["arj-contratoquery<br/>porta 8081 · DB_READ_ONLY=true"]
 
-arj-contratocommand
-      │ publica evento após cada commit (criação/cancelamento)
-      ▼
-sns-estados-autorizacao (SNS)
-      │ subscription (raw delivery)
-      ▼
-SQS-eventos-autorizacao (SQS)
-      │
-      ▼
-autorizacaostatus-producer (porta 8082)  ── ponte SQS → Kafka
-      │ produz evento Avro (idempotente)
-      ▼
-eventos-autorizacao (tópico Kafka, Schema Registry)
-      │
-      ▼
-eventos-consumer (porta 8083)
+    Command --> Postgres[("PostgreSQL 18<br/>pg_partman + pg_cron + pgvector")]
+    Query --> Postgres
+
+    Command -->|"publica evento após cada<br/>commit (criação/cancelamento)"| SNS["sns-estados-autorizacao (SNS)"]
+    SNS -->|"subscription<br/>(raw delivery)"| SQS["SQS-eventos-autorizacao (SQS)"]
+    SQS --> Producer["autorizacaostatus-producer<br/>porta 8082 · ponte SQS → Kafka"]
+    Producer -->|"produz evento Avro<br/>(idempotente)"| Kafka["eventos-autorizacao<br/>(tópico Kafka, Schema Registry)"]
+    Kafka --> Consumer["eventos-consumer<br/>porta 8083"]
 ```
 
 ## Microserviços
