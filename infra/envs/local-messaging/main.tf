@@ -7,7 +7,8 @@ resource "aws_sqs_queue" "eventos_autorizacao_dlq" {
 }
 
 resource "aws_sqs_queue" "eventos_autorizacao" {
-  name = var.sqs_queue_name
+  name                       = var.sqs_queue_name
+  visibility_timeout_seconds = var.sqs_visibility_timeout_seconds
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.eventos_autorizacao_dlq.arn

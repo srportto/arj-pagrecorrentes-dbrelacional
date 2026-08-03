@@ -3,13 +3,18 @@ management:
         health:
             show-details: always
 
-aws:
-    endpoint: http://localhost:4566
-    region: us-east-1
-    access-key: test
-    secret-key: test
-    sqs:
-        queue-url: http://localhost:4566/000000000000/SQS-eventos-autorizacao
+spring:
+    cloud:
+        aws:
+            endpoint: http://localhost:4566
+            region:
+                static: us-east-1
+            credentials:
+                access-key: test
+                secret-key: test
+
+sqs:
+    queue-url: http://localhost:4566/000000000000/SQS-eventos-autorizacao
 
 kafka:
     bootstrap-servers: localhost:19092

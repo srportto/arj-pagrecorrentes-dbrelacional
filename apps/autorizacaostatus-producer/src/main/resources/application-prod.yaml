@@ -3,10 +3,14 @@ management:
         health:
             show-details: never
 
-aws:
-    region: ${AWS_REGION}
-    sqs:
-        queue-url: ${AWS_SQS_QUEUE_URL}
+spring:
+    cloud:
+        aws:
+            region:
+                static: ${AWS_REGION}
+
+sqs:
+    queue-url: ${AWS_SQS_QUEUE_URL}
 
 kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}

@@ -6,8 +6,13 @@ recursos de mensageria de eventos de autorização no
 
 - Tópico SNS `sns-estados-autorizacao`
 - Fila SQS `SQS-eventos-autorizacao`, com `redrive_policy` apontando para a DLQ
-  `SQS-eventos-autorizacao-dlq` (`maxReceiveCount = 3`, ver `var.sqs_dlq_max_receive_count`)
+  `SQS-eventos-autorizacao-dlq` (`maxReceiveCount = 10`, ver `var.sqs_dlq_max_receive_count`)
   — sem DLQ, uma mensagem "venenosa" reentregaria para sempre
+- `visibility_timeout_seconds = 60` (ver `var.sqs_visibility_timeout_seconds`) —
+  dimensionado acima do pior caso de processamento de uma mensagem pela
+  `autorizacaostatus-producer` (produce síncrono no Kafka), com margem. Combinado ao
+  `maxReceiveCount = 10`, o orçamento de retry antes da DLQ passa de ~90s para ~10min,
+  tolerando uma indisponibilidade transitória do Kafka sem esvaziar a fila
 - Subscription SNS → SQS com `raw_message_delivery = true` (o body entregue na
   fila é o JSON puro publicado no tópico, sem o envelope SNS)
 
