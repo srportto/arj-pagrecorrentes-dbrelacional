@@ -1,6 +1,19 @@
 ---
+
 name: arquitetura-limpa-java
-description: Use quando houver dúvida sobre em qual camada colocar um código, ao revisar fronteiras entre camadas, ao estruturar pacotes de uma aplicação Java hexagonal, ao decidir onde vive um novo componente, ou ao decompor um monólito em serviços com bounded contexts. Consolida o modelo hexagonal (entrypoint / application / domain / shared) com o mapa de DDD/microservices. Gatilhos - "onde coloco", "qual camada", "estrutura de pacotes", "arquitetura limpa", "arquitetura hexagonal", "bounded context", "decompor monólito". Uso: agent `java-revisor` (modo `auditoria`) ou invocação manual via `/arquitetura-limpa-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Reference for deciding which layer a code belongs to in a Java/Spring Boot hexagonal application (`entrypoint` / `application` / `domain` / `shared`), structuring packages, and applying DDD to decompose monoliths into bounded contexts. Use when there is doubt about layering, when reviewing layer boundaries, or when structuring a new hexagonal project. Uso: agent `java-revisor` (modo `auditoria`) ou invocação manual via `/arquitetura-limpa-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: architecture
+  triggers: onde coloco, qual camada, estrutura de pacotes, arquitetura limpa, arquitetura hexagonal, bounded context, decompor monólito, hexagonal
+  role: architect
+  scope: code-organization
+  output-format: document
+  related-skills: java-architecture, design-system-architecture, criar-aplicacao-java, revisao-de-codigo-java
+---
 ---
 
 # Arquitetura Limpa Java (Hexagonal + DDD)

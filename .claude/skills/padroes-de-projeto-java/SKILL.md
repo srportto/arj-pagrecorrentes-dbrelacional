@@ -1,6 +1,19 @@
 ---
+
 name: padroes-de-projeto-java
-description: Use quando o usuário pedir para aplicar ou implementar um design pattern (factory, builder, strategy, observer, decorator...), ao refatorar código rígido ou acoplado, ou ao decidir se um pattern é necessário. Inclui exemplos antes/depois de 21 patterns GoF. Gatilhos - "aplique o pattern", "usa strategy", "refatorar com factory", "esse código está rígido". Uso: agents `java-revisor`/`refatorador-java` ou invocação manual via `/padroes-de-projeto-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Quick-reference catalog of the 21 GoF design patterns (creational, structural, behavioral) with before/after examples — and the criteria for when **not** to apply a pattern. Use when deciding which pattern solves a concrete problem, when refactoring rigid or coupled code, or when the user asks to apply a specific pattern. Uso: agents `java-revisor` / `refatorador-java` or manual invocation via `/padroes-de-projeto-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: design-patterns
+  triggers: aplique o pattern, usa strategy, refatorar com factory, esse código está rígido, GoF, factory, builder, strategy, observer, decorator
+  role: reference
+  scope: code-design
+  output-format: code
+  related-skills: qualidade-codigo-java, java-moderno, arquitetura-limpa-java, refatorador-java
+---
 ---
 
 # Padrões de Projeto Java (GoF)

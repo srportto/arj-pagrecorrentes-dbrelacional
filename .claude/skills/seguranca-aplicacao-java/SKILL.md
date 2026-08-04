@@ -1,6 +1,19 @@
 ---
+
 name: seguranca-aplicacao-java
-description: Use ao implementar autenticação/autorização, validar entrada, prevenir OWASP Top 10, hashing de senha, queries parametrizadas, configurar CORS/CSP, emitir/validar JWT, ou auditar dependências vulneráveis. Gatilhos - "segurança", "OWASP", "JWT", "bcrypt", "SQL injection", "XSS", "headers de segurança", "segredo hardcoded", "CVE". Uso: agents `engenheiro-seguranca`/`java-revisor`/`engenheiro-devops` ou invocação manual via `/seguranca-aplicacao-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Application-security guide focused on Java/Spring Boot code (not cloud infrastructure or corporate compliance) — OWASP Top 10 applied to Java, password hashing, input validation, parameterized queries, JWT, security headers, CORS, vulnerable-dependency scanning. Use when implementing auth/authz, preventing OWASP, configuring CORS/CSP, issuing/validating JWT, or auditing dependencies. Uso: agents `engenheiro-seguranca` / `java-revisor` / `engenheiro-devops` or manual invocation via `/seguranca-aplicacao-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: security
+  triggers: segurança, OWASP, JWT, bcrypt, SQL injection, XSS, headers de segurança, segredo hardcoded, CVE, CORS
+  role: specialist
+  scope: application-security
+  output-format: code
+  related-skills: padrao-de-logs-java, arquitetura-limpa-java, revisao-de-codigo-java, java-architecture
+---
 ---
 
 # Segurança de Aplicação Java

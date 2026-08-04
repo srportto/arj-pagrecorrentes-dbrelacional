@@ -1,6 +1,19 @@
 ---
+
 name: mensageria-sqs-kafka
-description: Use quando surgir dúvida sobre visibility timeout, DLQ, idempotência de mensagem, ordenação por chave Kafka, consumer group, retry ou interceptação central de erro de consumo — em uma aplicação já existente. Gatilhos - "configurar DLQ", "fila fica reentregando", "consumer não avança offset", "erro não tratado no listener". Uso: agents `java-revisor`/`java-construtor` ou invocação manual via `/mensageria-sqs-kafka`; não deve ser carregada proativamente pela sessão principal.
+description: "Reference for messaging in Java/Spring Boot hexagonal applications — SQS (visibility timeout, DLQ with `RedrivePolicy`, idempotency), Kafka (ordering by key, consumer group, retry/DLT, central error interceptor). Use when there is doubt about DLQ, idempotency, listener retry, or central error classification. Uso: agents `java-revisor` / `java-construtor` or manual invocation via `/mensageria-sqs-kafka`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: messaging
+  triggers: DLQ, SQS, Kafka, idempotência, visibility timeout, consumer group, retry, listener, DLT, redrive
+  role: specialist
+  scope: messaging
+  output-format: code
+  related-skills: arquitetura-limpa-java, criar-aplicacao-java, persistencia-jpa, monitoramento-java
+---
 ---
 
 # Mensageria SQS e Kafka

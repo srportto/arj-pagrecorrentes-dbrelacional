@@ -1,6 +1,19 @@
 ---
+
 name: criar-aplicacao-java
-description: Use quando o usuário pedir para criar uma aplicação, microserviço ou esqueleto Java/Spring Boot em qualquer variante - REST puro, CRUD com banco, listener de fila SQS, fila para Kafka, fila para banco, consumidor Kafka ou REST que publica em Kafka. Gatilhos - "crie uma aplicação", "novo microserviço", "esqueleto de app java", "app que consome fila", "consumidor kafka". Uso: agent `java-construtor` (e `java-revisor` no modo `auditoria` para validação final) ou invocação manual via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Generates a buildable Spring Boot 4 + Java 25 application skeleton following the hexagonal layout (`entrypoint` / `application` / `domain` / `shared`), with a `/disponibilidade` health route and a chosen variant (REST, CRUD with DB, SQS listener, Kafka consumer, SQS-to-Kafka bridge, REST publishing to Kafka, etc.). Use when the user asks to create a new application, microservice, or skeleton. Uso: agent `java-construtor` (and `java-revisor` modo `auditoria` for final validation) or manual invocation via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: application-scaffolding
+  triggers: crie uma aplicação, novo microserviço, esqueleto de app java, app que consome fila, consumidor kafka, hexagonal Spring Boot
+  role: builder
+  scope: application-generation
+  output-format: code
+  related-skills: arquitetura-limpa-java, mensageria-sqs-kafka, persistencia-jpa, java-moderno, java-architecture
+---
 ---
 
 # Criar Aplicação Java (Spring Boot, hexagonal)

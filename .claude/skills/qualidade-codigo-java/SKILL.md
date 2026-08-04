@@ -1,6 +1,19 @@
 ---
+
 name: qualidade-codigo-java
-description: Use ao aplicar princípios de clean code (DRY/KISS/YAGNI), convenções de nomenclatura, imutabilidade, uso correto de Optional, melhores práticas de streams, exception handling, ou ao aplicar refactorings do Fowler em código Java. Complementa a skill revisao-de-codigo-java com foco em "como aplicar" (não em "como revisar"). Gatilhos - "clean code", "boas práticas", "refatorar", "DRY", "KISS", "YAGNI", "imutabilidade", "Optional", "streams". Uso: agents `java-revisor`/`refatorador-java` ou invocação manual via `/qualidade-codigo-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Application-side guide for clean code in Java — DRY, KISS, YAGNI, naming, immutability, `Optional`, streams, exception handling — and for Fowler's refactorings (Remove Parameter, Extract Method, Replace Magic Number, etc.). This is the \"active\" side of review: `revisao-de-codigo-java` says **what to review**; this one says **how to apply** what the review points out. Uso: agents `java-revisor` / `refatorador-java` or manual invocation via `/qualidade-codigo-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: code-quality
+  triggers: clean code, boas práticas, refatorar, DRY, KISS, YAGNI, imutabilidade, Optional, streams, Fowler
+  role: reference
+  scope: code-quality
+  output-format: code
+  related-skills: revisao-de-codigo-java, padroes-de-projeto-java, refatorador-java, java-moderno
+---
 ---
 
 # Qualidade de Código Java (clean code + refactoring)

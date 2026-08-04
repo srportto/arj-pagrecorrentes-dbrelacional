@@ -1,6 +1,19 @@
 ---
+
 name: revisao-de-codigo-java
-description: Use quando o usuário pedir revisão de código Java ("revise", "code review", "está bom?", "melhore este código"), antes de um merge, ou após qualquer geração significativa de código. Consolida clean code, tratamento de erros, imutabilidade e testes em um checklist único por severidade. Uso: agents `java-revisor`/`projetista-api` ou invocação manual via `/revisao-de-codigo-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Single code-review checklist for Java/Spring Boot, organized by severity (Crítico / Importante / Menor) — consolidates clean code, error handling, immutability, tests, API contract, security and observability. Use whenever reviewing a diff, class, PR, or right after generating significant Java code. Uso: agents `java-revisor` / `projetista-api` or manual invocation via `/revisao-de-codigo-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: code-review
+  triggers: revise, code review, está bom?, melhore este código, PR, checklist, severidade
+  role: reviewer
+  scope: code-review
+  output-format: document
+  related-skills: qualidade-codigo-java, padroes-de-projeto-java, java-moderno, padrao-de-logs-java, persistencia-jpa, mensageria-sqs-kafka, seguranca-aplicacao-java
+---
 ---
 
 # Revisão de Código Java
