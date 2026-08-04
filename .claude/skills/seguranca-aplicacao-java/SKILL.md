@@ -1,6 +1,6 @@
 ---
 name: seguranca-aplicacao-java
-description: Use ao implementar autenticação/autorização, validar entrada, prevenir OWASP Top 10, hashing de senha, queries parametrizadas, configurar CORS/CSP, emitir/validar JWT, ou auditar dependências vulneráveis. Gatilhos - "segurança", "OWASP", "JWT", "bcrypt", "SQL injection", "XSS", "headers de segurança", "segredo hardcoded", "CVE". Uso: agents `engenheiro-seguranca`/`java-especialista`/`java-revisor`/`engenheiro-devops` ou invocação manual via `/seguranca-aplicacao-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use ao implementar autenticação/autorização, validar entrada, prevenir OWASP Top 10, hashing de senha, queries parametrizadas, configurar CORS/CSP, emitir/validar JWT, ou auditar dependências vulneráveis. Gatilhos - "segurança", "OWASP", "JWT", "bcrypt", "SQL injection", "XSS", "headers de segurança", "segredo hardcoded", "CVE". Uso: agents `engenheiro-seguranca`/`java-revisor`/`engenheiro-devops` ou invocação manual via `/seguranca-aplicacao-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Segurança de Aplicação Java
@@ -12,7 +12,7 @@ redes ou compliance corporativo): OWASP Top 10 aplicado a Java, hashing de senha
 entrada, queries parametrizadas, JWT, headers de segurança, CORS e varredura de dependências.
 
 **Quando NÃO usar:** infraestrutura de nuvem profunda (redes, IAM, KMS) ou compliance corporativo
-(SOC2, ISO27001) — use os agents `engenheiro-seguranca` e `especialista-kubernetes`. Para segredo
+(SOC2, ISO27001) — use o agent `engenheiro-seguranca`. Para segredo
 em log, `padrao-de-logs-java` (seção "Regras de ouro") é a fonte.
 
 ## Workflow de implementação segura
@@ -336,4 +336,4 @@ qualquer revisão de segurança.
 | Auditar segurança completa de um serviço (pré-produção) | agent `engenheiro-seguranca` | esta skill + `padrao-de-logs-java` |
 | Configurar Spring Security (filter chain, JWT, CORS) | sessão principal | esta skill |
 | Escanear dependências em CI | sessão principal | esta skill |
-| Revisão arquitetural completa | agent `java-especialista` | `revisao-de-codigo-java` + esta skill |
+| Revisão arquitetural completa | agent `java-revisor` (modo `auditoria`) | `revisao-de-codigo-java` + esta skill |

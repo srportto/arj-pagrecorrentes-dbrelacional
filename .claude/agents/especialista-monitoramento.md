@@ -1,6 +1,6 @@
 ---
 name: especialista-monitoramento
-description: "Use quando precisar CONFIGURAR observabilidade (Prometheus, Grafana, OpenTelemetry), INSTRUMENTAR métricas Micrometer, DEFINIR alerting rules, ou DIAGNOSTICAR problemas de produção usando logs/métricas/traces. NÃO use para o padrão de logging (padrao-de-logs-java) nem para definir a arquitetura do serviço (java-architecture)."
+description: "Use quando precisar OBSERVAR aplicação Java/Spring Boot em produção — métricas Micrometer + Prometheus, tracing OpenTelemetry, logs estruturados, alerting rules, dashboards RED/USE. NÃO use para o padrão de formatação de logs (padrao-de-logs-java) nem para definir a arquitetura do serviço (arquitetura-limpa-java / java-architecture)."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
@@ -75,5 +75,5 @@ Para correlação ponta a ponta entre microsserviços, leia
 - **Nunca** alerte em todo erro — definir threshold + `for` para evitar alert
   fatigue.
 - **Nunca** sampling 100% em produção — estourar storage e custo.
-- Trabalho concluído deve ser validado pelo `java-especialista` quando fizer parte
-  de uma entrega Java maior.
+- Trabalho concluído deve ser validado pelo `java-revisor` (modo `auditoria`) quando fizer
+  parte de uma entrega Java maior.

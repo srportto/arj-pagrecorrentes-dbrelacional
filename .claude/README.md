@@ -34,7 +34,7 @@ Fluxo típico:
 2. O agente correspondente é invocado.
 3. O agente lê as skills referenciadas, aplica os critérios, e devolve o resultado.
 4. O resultado é validado por outro agente (ex.: trabalho do `java-construtor` → validado pelo
-   `java-especialista`).
+   `java-revisor` no modo `auditoria`).
 
 ## Estrutura
 
@@ -58,18 +58,15 @@ Fluxo típico:
 │   ├── remover-imports-nao-usados/        # Limpeza de imports multi-linguagem
 │   ├── revisao-de-codigo-java/            # Checklist de revisão por severidade
 │   └── seguranca-aplicacao-java/          # OWASP Top 10 + JWT + CORS + secrets
-└── agents/                                # 11 agents
-    ├── engenheiro-devops.md               # Pipeline CI/CD
-    ├── engenheiro-seguranca.md            # Segurança de aplicação
-    ├── especialista-banco-dados.md        # Performance de banco
-    ├── especialista-docker.md             # Dockerfile
-    ├── especialista-kubernetes.md         # Manifests K8s
-    ├── especialista-monitoramento.md      # Observabilidade
+└── agents/                                # 8 agents (após fusão de 2026-08-03)
+    ├── engenheiro-devops.md               # Pipeline CI + Dockerfile + manifest K8s (variantes)
+    ├── engenheiro-seguranca.md            # Auditoria dedicada de segurança
+    ├── especialista-banco-dados.md        # Performance de banco (SQL/SGBD)
+    ├── especialista-monitoramento.md      # Observabilidade (Prometheus/OTel/Grafana)
     ├── java-construtor.md                 # Gerar/expandir app
-    ├── java-especialista.md               # Validador final
-    ├── java-revisor.md                    # Revisão tempestiva
+    ├── java-revisor.md                    # Revisão (modos: tempestivo | auditoria)
     ├── projetista-api.md                  # Design de API REST
-    └── refatorador-java.md                # Aplicar refactorings
+    └── refatorador-java.md                # Aplicar refactorings do Fowler
 ```
 
 ## Padrão de cada skill
@@ -130,43 +127,41 @@ Três atalhos:
 | Papel | Agent | Esforço | Quando invocar |
 |---|---|---|---|
 | Construtor | `java-construtor` | medium | Gerar/expandir aplicação Java |
-| Revisor tempestivo | `java-revisor` | medium | Revisão de diff pequeno (uma classe, um método) |
-| Validador final | `java-especialista` | high | Veredicto final de merge / auditoria completa |
+| Revisor (tempestivo) | `java-revisor` (modo `tempestivo`) | medium | Revisão de diff pequeno (uma classe, um método) |
+| Revisor (auditoria) | `java-revisor` (modo `auditoria`) | high | Veredicto final de merge / auditoria completa |
 | Designer de API | `projetista-api` | medium | Desenhar/auditar contrato de API REST |
 | DBA / SRE de banco | `especialista-banco-dados` | medium | Investigar query lenta, criar índice, tuning |
 | SRE de observabilidade | `especialista-monitoramento` | medium | Configurar observabilidade, métricas, alertas |
 | Refatorador | `refatorador-java` | medium | Aplicar refactorings do Fowler |
-| DevOps | `engenheiro-devops` | medium | Pipeline CI/CD GitHub Actions |
-| Segurança | `engenheiro-seguranca` | medium | Auditar/aplicar segurança de aplicação |
-| Docker | `especialista-docker` | low | Dockerfile multi-stage |
-| Kubernetes | `especialista-kubernetes` | medium | Manifests Deployment/Service/ConfigMap |
+| DevOps | `engenheiro-devops` | medium | Pipeline CI/CD + Dockerfile + manifest K8s (variantes) |
+| Segurança (auditoria dedicada) | `engenheiro-seguranca` | medium | Varredura de CVEs, pentest interno, pré-produção |
 
 ### Por fluxo de trabalho
 
 | Você quer... | Primeiro | Depois (validação) |
 |---|---|---|
-| Criar uma aplicação nova | `java-construtor` | `java-especialista` |
-| Adicionar uma feature/endpoint em app existente | sessão principal com skills (`arquitetura-limpa-java`, etc.) | `java-revisor` (tempestiva) → `java-especialista` (pré-merge) |
-| Revisar um PR/diff | `java-revisor` | `java-especialista` (se o PR for grande) |
-| Auditar trabalho de outro agent | `java-especialista` | — |
-| Aplicar um refactoring específico | `refatorador-java` | `java-revisor` |
-| Desenhar contrato de API | `projetista-api` | `java-construtor` (implementa) → `java-especialista` (valida) |
+| Criar uma aplicação nova | `java-construtor` | `java-revisor` (modo `auditoria`) |
+| Adicionar uma feature/endpoint em app existente | sessão principal com skills (`arquitetura-limpa-java`, etc.) | `java-revisor` (modo `tempestivo`) → `java-revisor` (modo `auditoria`, pré-merge) |
+| Revisar um PR/diff | `java-revisor` (modo `tempestivo`) | `java-revisor` (modo `auditoria`, se o PR for grande) |
+| Auditar trabalho de outro agent | `java-revisor` (modo `auditoria`) | — |
+| Aplicar um refactoring específico | `refatorador-java` | `java-revisor` (modo `tempestivo`) |
+| Desenhar contrato de API | `projetista-api` | `java-construtor` (implementa) → `java-revisor` (modo `auditoria`, valida) |
 | Investigar query lenta | `especialista-banco-dados` | — |
 | Configurar observabilidade | `especialista-monitoramento` | — |
-| Auditar segurança | `engenheiro-seguranca` | `java-especialista` (para fechar achados críticos) |
-| Montar pipeline | `engenheiro-devops` | `especialista-docker` (Dockerfile) / `especialista-kubernetes` (manifests) |
+| Auditar segurança dedicada | `engenheiro-seguranca` | `java-revisor` (modo `auditoria`, para fechar achados críticos) |
+| Montar pipeline (CI/Docker/K8s) | `engenheiro-devops` (variante `pipeline`/`docker`/`k8s`/`all`) | `java-revisor` (modo `auditoria`, se parte de entrega Java) |
 
 ### Regra de esforço
 
-`java-especialista` é deliberadamente o único agent com `effort: high`. Ele é a **última linha
-de defesa** antes de algo ser declarado pronto. Use-o para:
+`java-revisor` no modo `auditoria` é o único ponto com `effort: high` neste catálogo. É a
+**última linha de defesa** antes de algo ser declarado pronto. Use-o para:
 
 - Veredicto final de merge de mudança grande.
 - Auditoria do trabalho de outro agent (ex.: saída do `java-construtor`).
 - Pré-produção de feature crítica.
 
-Para o dia a dia, prefira `java-revisor` (tempestivo, esforço médio) — feedback rápido sem
-bloquear o fluxo.
+Para o dia a dia, prefira `java-revisor` no modo `tempestivo` (effort `medium`) — feedback
+rápido sem bloquear o fluxo.
 
 ## Princípios do catálogo
 
@@ -183,5 +178,5 @@ bloquear o fluxo.
   proativamente pela sessão principal. Toda `description` termina indicando o(s) agent(s) que a
   usam como fonte de verdade, ou a invocação manual via `/<nome-da-skill>`.
 - **Toda fila SQS nasce com DLQ, todo consumo de mensageria tem interceptor central de erro** —
-  regras obrigatórias detalhadas em `mensageria-sqs-kafka` (seções 2 e 3), validadas pelo agent
-  `java-especialista`.
+  regras obrigatórias detalhadas em `mensageria-sqs-kafka` (seções 2 e 3), validadas pelo
+  `java-revisor` no modo `auditoria`.

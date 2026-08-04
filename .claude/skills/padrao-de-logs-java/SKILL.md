@@ -1,6 +1,6 @@
 ---
 name: padrao-de-logs-java
-description: Use quando o usuário pedir para adicionar ou melhorar logs, padronizar logging, configurar logs JSON estruturados, correlacionar requisições com MDC/traceId, ou depurar o fluxo da aplicação pelos logs. Gatilhos - "adicione logs", "melhore os logs", "log estruturado", "traceId", "correlação". Uso: agents `engenheiro-seguranca`/`especialista-monitoramento`/`java-especialista`/`java-revisor` ou invocação manual via `/padrao-de-logs-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando o usuário pedir para adicionar ou melhorar logs, padronizar logging, configurar logs JSON estruturados, correlacionar requisições com MDC/traceId, ou depurar o fluxo da aplicação pelos logs. Gatilhos - "adicione logs", "melhore os logs", "log estruturado", "traceId", "correlação". Uso: agents `engenheiro-seguranca`/`especialista-monitoramento`/`java-revisor` ou invocação manual via `/padrao-de-logs-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Padrão de Logs Java

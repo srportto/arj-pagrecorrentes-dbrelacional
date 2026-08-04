@@ -1,6 +1,6 @@
 ---
 name: devops-cicd
-description: Use ao montar ou ajustar pipeline de CI/CD para aplicação Java/Maven (GitHub Actions, GitLab CI, Jenkins), containerizar aplicação (Dockerfile multi-stage, .dockerignore, usuário não-root), ou escrever manifest Kubernetes de aplicação (Deployment, Service, ConfigMap, probes de saúde, graceful shutdown). Gatilhos - "GitHub Actions", "pipeline CI", "Dockerfile", "Kubernetes deployment", "k8s manifest", "rolling update", "graceful shutdown". Uso: agents `engenheiro-devops`/`especialista-docker`/`especialista-kubernetes` ou invocação manual via `/devops-cicd`; não deve ser carregada proativamente pela sessão principal.
+description: Use ao montar ou ajustar pipeline de CI/CD para aplicação Java/Maven (GitHub Actions, GitLab CI, Jenkins), containerizar aplicação (Dockerfile multi-stage, .dockerignore, usuário não-root), ou escrever manifest Kubernetes de aplicação (Deployment, Service, ConfigMap, probes de saúde, graceful shutdown). Gatilhos - "GitHub Actions", "pipeline CI", "Dockerfile", "Kubernetes deployment", "k8s manifest", "rolling update", "graceful shutdown". Uso: agent `engenheiro-devops` (variantes `pipeline`/`docker`/`k8s`/`all`) ou invocação manual via `/devops-cicd`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # DevOps & CI/CD (Java/Maven, Docker, Kubernetes)
@@ -312,7 +312,7 @@ kubectl rollout status deployment/minha-app
 | Situação | Quem | Skill/agent |
 |---|---|---|
 | Montar/ajustar pipeline CI/CD | session principal ou `engenheiro-devops` | esta skill |
-| Escrever Dockerfile | session principal ou `especialista-docker` | esta skill |
-| Escrever manifest Kubernetes | session principal ou `especialista-kubernetes` | esta skill |
+| Escrever Dockerfile | session principal ou `engenheiro-devops` (variante `docker`) | esta skill |
+| Escrever manifest Kubernetes | session principal ou `engenheiro-devops` (variante `k8s`) | esta skill |
 | Configurar observabilidade pós-deploy | session principal | `monitoramento-java` |
-| Validar trabalho DevOps antes de merge | `java-especialista` | `revisao-de-codigo-java` |
+| Validar trabalho DevOps antes de merge | `java-revisor` (modo `auditoria`) | `revisao-de-codigo-java` |

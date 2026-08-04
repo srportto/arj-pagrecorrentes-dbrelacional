@@ -1,6 +1,6 @@
 ---
 name: criar-aplicacao-java
-description: Use quando o usuário pedir para criar uma aplicação, microserviço ou esqueleto Java/Spring Boot em qualquer variante - REST puro, CRUD com banco, listener de fila SQS, fila para Kafka, fila para banco, consumidor Kafka ou REST que publica em Kafka. Gatilhos - "crie uma aplicação", "novo microserviço", "esqueleto de app java", "app que consome fila", "consumidor kafka". Uso: agents `java-construtor`/`java-especialista` ou invocação manual via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando o usuário pedir para criar uma aplicação, microserviço ou esqueleto Java/Spring Boot em qualquer variante - REST puro, CRUD com banco, listener de fila SQS, fila para Kafka, fila para banco, consumidor Kafka ou REST que publica em Kafka. Gatilhos - "crie uma aplicação", "novo microserviço", "esqueleto de app java", "app que consome fila", "consumidor kafka". Uso: agent `java-construtor` (e `java-revisor` no modo `auditoria` para validação final) ou invocação manual via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Criar Aplicação Java (Spring Boot, hexagonal)
@@ -116,7 +116,7 @@ consumo** — não é opcional, é parte da definição da variante (ver regra d
 4. **Smoke test**: suba a aplicação (`mvn spring-boot:run`) e confirme `GET /disponibilidade`
    respondendo `{"aplicacao":"<nome>","status":"DISPONIVEL"}`.
 
-5. **Validação obrigatória**: invoque o agent `java-especialista`, passando a lista de arquivos
+5. **Validação obrigatória**: invoque o agent `java-revisor` (modo `auditoria`), passando a lista de arquivos
    gerados e a saída do build. Quando a aplicação tocar mensageria, o agent valida também DLQ e
    interceptor central (ver `mensageria-sqs-kafka` seção 8). Achados **críticos** bloqueiam a
    entrega — corrija e revalide antes de considerar a tarefa concluída.
@@ -125,7 +125,7 @@ consumo** — não é opcional, é parte da definição da variante (ver regra d
 
 Quando o pedido ocorrer dentro de um contexto de trabalho maior, a **geração** (passos 1–4) pode ser
 delegada ao agent `java-construtor`. A **validação final** (passo 5) é sempre responsabilidade do
-agent `java-especialista`, independentemente de quem gerou os arquivos.
+agent `java-revisor` (modo `auditoria`), independentemente de quem gerou os arquivos.
 
 ## Erros comuns
 
@@ -146,4 +146,4 @@ agent `java-especialista`, independentemente de quem gerou os arquivos.
 - [ ] Rota `GET /disponibilidade` responde com o nome correto da aplicação
 - [ ] Estrutura hexagonal (`entrypoint`/`application`/`domain`/`shared`) presente e completa
 - [ ] Se a variante envolve SQS: fila tem DLQ + `RedrivePolicy`, e existe interceptor central de erro
-- [ ] Veredicto do agent `java-especialista` sem achados críticos
+- [ ] Veredicto do agent `java-revisor` (modo `auditoria`) sem achados críticos

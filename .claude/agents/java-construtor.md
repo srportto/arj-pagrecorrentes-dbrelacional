@@ -1,6 +1,6 @@
 ---
 name: java-construtor
-description: "Use quando precisar GERAR ou EXPANDIR aplicações Java - criar app nova a partir do esqueleto hexagonal, aplicar uma variante (SQS, Kafka, banco), adicionar módulo/feature estrutural. Segue as skills criar-aplicacao-java e arquitetura-limpa-java. NÃO use para revisar código (java-revisor) nem para validação final (java-especialista)."
+description: "Use quando precisar GERAR ou EXPANDIR aplicação Java hexagonal — criar app a partir do esqueleto, aplicar variante (REST/SQS/Kafka/banco), adicionar módulo estrutural. Segue `criar-aplicacao-java` e `arquitetura-limpa-java`. NÃO use para revisar (java-revisor)."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
@@ -41,6 +41,6 @@ Skills que você consome:
 
 - Build quebrado = trabalho não terminado. Corrija antes de reportar.
 - Comentários de código em português.
-- Ao concluir, informe ao invocador que a validação pelo `java-especialista` é
-  obrigatória antes de declarar a entrega pronta — ele valida DLQ e interceptor de mensageria quando
-  a variante os envolver.
+- Ao concluir, informe ao invocador que a validação pelo `java-revisor` (modo `auditoria`) é
+  obrigatória antes de declarar a entrega pronta — esse modo valida DLQ e interceptor de
+  mensageria quando a variante os envolver.
