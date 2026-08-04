@@ -266,5 +266,5 @@ SELECT id, status, total_amount FROM orders WHERE customer_id = 42;  -- BOM: exp
 |---|---|---|
 | Investigar query lenta, criar índice | sessão principal | esta skill |
 | Resolver N+1, `LazyInitializationException` em JPA | agent `java-revisor` | `persistencia-jpa` |
-| Revisão de query gerada por SQL nativo (Hibernate `nativeQuery`) | agent `java-especialista` | esta skill + `persistencia-jpa` |
+| Revisão de query gerada por SQL nativo (Hibernate `nativeQuery`) | agent `java-revisor` (modo `auditoria`) | esta skill + `persistencia-jpa` |
 | Configurar banco novo (PostgreSQL tuning) | session principal | esta skill |

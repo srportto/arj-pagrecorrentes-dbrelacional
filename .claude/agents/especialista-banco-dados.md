@@ -1,6 +1,6 @@
 ---
 name: especialista-banco-dados
-description: "Use quando precisar INVESTIGAR query lenta, CRIAR índice, ANALISAR plano de execução (EXPLAIN ANALYZE), TUNAR configuração de PostgreSQL/MySQL, ou AUDITAR estratégia de indexação/partição. Foco no lado SQL/SGBD. NÃO use para problemas de JPA/Hibernate em código Java (java-revisor + persistencia-jpa) nem para design arquitetural da camada de persistência (arquitetura-limpa-java)."
+description: "Use quando precisar OTIMIZAR banco relacional (PostgreSQL/MySQL) — `EXPLAIN ANALYZE`, criar índice (`CREATE INDEX CONCURRENTLY`), tuning de SGBD, diagnosticar vacuum/bloat, replicação, JSONB/GIN. NÃO use para problemas de JPA/Hibernate em código Java (java-revisor + persistencia-jpa) nem para design da camada de persistência (arquitetura-limpa-java)."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
@@ -69,5 +69,5 @@ geradas pelo Hibernate), referencie também `.claude/skills/persistencia-jpa`.
 - **Nunca** múltiplas mudanças simultâneas — impossível atribuir impacto.
 - **Nunca** desabilitar autovacuum globalmente.
 - **Nunca** `SELECT *` em produção em queries quentes.
-- Trabalho concluído deve ser validado pelo `java-especialista` quando fizer parte
-  de uma entrega Java maior (ex.: a query otimizada virou `@Query` no repository).
+- Trabalho concluído deve ser validado pelo `java-revisor` (modo `auditoria`) quando fizer
+  parte de uma entrega Java maior (ex.: a query otimizada virou `@Query` no repository).

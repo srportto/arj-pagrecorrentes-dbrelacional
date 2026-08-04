@@ -1,6 +1,6 @@
 ---
 name: java-moderno
-description: Use quando precisar escrever código novo que pode aproveitar features modernas do Java (records, sealed classes, pattern matching, virtual threads, text blocks), migrar código de Java 8/11/17/21 para 25, ao revisar se uma feature moderna se aplica, ou quando o usuário perguntar "qual a forma moderna de fazer X em Java". Uso: agents `java-construtor`/`java-especialista`/`java-revisor` ou invocação manual via `/java-moderno`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando precisar escrever código novo que pode aproveitar features modernas do Java (records, sealed classes, pattern matching, virtual threads, text blocks), migrar código de Java 8/11/17/21 para 25, ao revisar se uma feature moderna se aplica, ou quando o usuário perguntar "qual a forma moderna de fazer X em Java". Uso: agents `java-construtor`/`java-revisor` ou invocação manual via `/java-moderno`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Java Moderno

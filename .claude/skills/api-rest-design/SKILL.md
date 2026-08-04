@@ -13,7 +13,7 @@ paginação, HATEOAS, validação de borda).
 
 **Quando NÃO usar:** para implementar controllers (`@RestController`), use `arquitetura-limpa-java`
 (camada e padrão de DTOs). Para validar a API gerada (testes de contrato, mocks), use
-`revisao-de-codigo-java` ou o agent `java-especialista`. Para design de microsserviços (borda entre
+`revisao-de-codigo-java` ou o agent `java-revisor` (modo `auditoria`). Para design de microsserviços (borda entre
 serviços), use `arquitetura-limpa-java` (seção DDD) — esta skill é só o **contrato HTTP** de um
 único serviço.
 
@@ -283,5 +283,5 @@ public ResponseEntity<ProdutoResponse> criar(@RequestBody @Valid CriarProdutoReq
 |---|---|---|
 | Desenhar API nova, modelar recursos | sessão principal | esta skill |
 | Implementar controller e DTOs | session principal ou `java-construtor` | `arquitetura-limpa-java` |
-| Auditar contrato de API existente | agent `java-especialista` | esta skill + `revisao-de-codigo-java` |
+| Auditar contrato de API existente | agent `java-revisor` (modo `auditoria`) | esta skill + `revisao-de-codigo-java` |
 | Definir estratégia de microsserviço (fronteira entre serviços) | sessão principal | `arquitetura-limpa-java` (seção DDD) |

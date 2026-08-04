@@ -1,6 +1,6 @@
 ---
 name: mensageria-sqs-kafka
-description: Use quando surgir dúvida sobre visibility timeout, DLQ, idempotência de mensagem, ordenação por chave Kafka, consumer group, retry ou interceptação central de erro de consumo — em uma aplicação já existente. Gatilhos - "configurar DLQ", "fila fica reentregando", "consumer não avança offset", "erro não tratado no listener". Uso: agents `java-especialista`/`java-construtor`/`java-revisor` ou invocação manual via `/mensageria-sqs-kafka`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando surgir dúvida sobre visibility timeout, DLQ, idempotência de mensagem, ordenação por chave Kafka, consumer group, retry ou interceptação central de erro de consumo — em uma aplicação já existente. Gatilhos - "configurar DLQ", "fila fica reentregando", "consumer não avança offset", "erro não tratado no listener". Uso: agents `java-revisor`/`java-construtor` ou invocação manual via `/mensageria-sqs-kafka`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Mensageria SQS e Kafka
@@ -69,7 +69,7 @@ aws --endpoint-url=http://localhost:4566 sqs set-queue-attributes \
 ```
 
 `maxReceiveCount=3` é o default recomendado — 3 tentativas de entrega antes de mover para a DLQ.
-**Toda auditoria de código de mensageria (agent `java-especialista`, seção 8) deve reprovar uma fila
+**Toda auditoria de código de mensageria (agent `java-revisor` no modo `auditoria`, seção 8) deve reprovar uma fila
 SQS nova ou alterada em IaC que não tenha DLQ associada.**
 
 ### Visibility timeout
@@ -214,11 +214,11 @@ spring:
 
 ## 8. Validação
 
-- **Aplicação de mensageria nova**: gere via `criar-aplicacao-java`, que invoca `java-especialista`
+- **Aplicação de mensageria nova**: gere via `criar-aplicacao-java`, que invoca `java-revisor` (modo `auditoria`)
   como validação obrigatória (achados críticos bloqueiam a entrega).
 - **Mudança pontual em código de mensageria existente**: revise com `java-revisor`, aplicando
   `revisao-de-codigo-java` (que referencia `padrao-de-logs-java` para logs).
-- **`java-especialista` valida explicitamente**, quando o código tocar mensageria: (1) toda fila SQS
+- **`java-revisor` (modo `auditoria`) valida explicitamente**, quando o código tocar mensageria: (1) toda fila SQS
   nova/alterada em IaC tem DLQ + `RedrivePolicy`; (2) existe um ponto único de classificação de erro
   de consumo (interceptor dedicado ou `DefaultErrorHandler`/`SqsMessageListenerErrorHandler`), não
   `catch` espalhados no listener.
@@ -231,5 +231,5 @@ spring:
 | Dúvida sobre em qual camada uma classe de mensageria deve viver | skill `arquitetura-limpa-java` |
 | O que logar em um listener/consumer, e o que nunca logar | skill `padrao-de-logs-java` |
 | Checklist completo de revisão de código (mensageria é um item entre vários) | skill `revisao-de-codigo-java` |
-| Validação de aplicação nova gerada, DLQ e interceptor de erro | agent `java-especialista` |
+| Validação de aplicação nova gerada, DLQ e interceptor de erro | agent `java-revisor` (modo `auditoria`) |
 | Revisão de diff pontual em código de mensageria existente | agent `java-revisor` |

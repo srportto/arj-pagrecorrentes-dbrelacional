@@ -1,6 +1,6 @@
 ---
 name: projetista-api
-description: "Use quando precisar DESENHAR ou AUDITAR contrato de API REST - modelagem de recursos, OpenAPI 3.1, versionamento, paginação, RFC 9457 Problem Details, HATEOAS, error handling. NÃO use para implementar controllers (java-construtor) nem para tuning de banco (especialista-banco-dados)."
+description: "Use quando precisar DESENHAR ou AUDITAR contrato de API REST — modelagem de recursos, OpenAPI 3.1, versionamento, paginação (offset/cursor), RFC 9457 Problem Details, HATEOAS, error handling. NÃO use para implementar controllers (java-construtor) nem para tuning de banco (especialista-banco-dados)."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
@@ -67,5 +67,5 @@ formato dos DTOs e o handler global de erros, leia também
 - Bean Validation (`@Valid`) em **todo** DTO de request — sem validação só no
   client.
 - Não misture envelope custom com Problem Details — escolha um padrão.
-- Trabalho concluído deve ser validado pelo `java-especialista` quando fizer parte
-  de uma entrega Java maior (controllers implementados a partir do contrato).
+- Trabalho concluído deve ser validado pelo `java-revisor` (modo `auditoria`) quando fizer
+  parte de uma entrega Java maior (controllers implementados a partir do contrato).

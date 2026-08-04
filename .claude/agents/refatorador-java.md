@@ -1,6 +1,6 @@
 ---
 name: refatorador-java
-description: "Use quando precisar APLICAR refactorings do catálogo do Fowler em código Java (Remove Parameter, Extract Method, Replace Magic Number, Introduce Parameter Object, Replace Loop with Pipeline, etc.) - seja um diff pontual ou uma classe inteira. NÃO use para revisar com checklist de severidade (java-revisor) nem para gerar código novo (java-construtor)."
+description: "Use quando precisar APLICAR refactorings do Fowler em código Java existente — Remove Parameter, Extract Method, Replace Magic Number, Introduce Parameter Object, Replace Loop with Pipeline, Replace Conditional with Polymorphism. NÃO altera comportamento; valida com testes antes/depois. NÃO use para revisar com checklist de severidade (java-revisor) nem para gerar código novo (java-construtor)."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
@@ -56,9 +56,8 @@ com o passo-a-passo. Para remover imports não usados após o refactoring, use
    significativo. Se quebrar, reverta esse passo e reavalie.
 5. **Limpe:** após Extract Method ou Move Method, remova imports não usados (skill
    `remover-imports-nao-usados`).
-6. **Revise** o diff com o `java-revisor` antes de considerar concluído — o veredicto
-   final é dele para mudanças grandes, ou do `java-especialista` se a mudança
-   envolver regras de negócio.
+6. **Revise** o diff com o `java-revisor` (modo `tempestivo`) antes de considerar concluído —
+   o veredicto final é dele no modo `auditoria` para mudanças grandes.
 
 ## Regras
 
@@ -71,5 +70,5 @@ com o passo-a-passo. Para remover imports não usados após o refactoring, use
   que o original fazia.
 - **Sempre** termine o trabalho rodando `remover-imports-nao-usados` na classe
   alterada (limpeza automática).
-- **Sempre** recomende revalidação por `java-revisor` (tempestiva) ou
-  `java-especialista` (mudança grande) após refactorings não triviais.
+- **Sempre** recomende revalidação por `java-revisor` (modo `tempestivo` para diffs
+  pequenos; modo `auditoria` para mudanças grandes) após refactorings não triviais.

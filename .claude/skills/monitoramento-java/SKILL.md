@@ -1,6 +1,6 @@
 ---
 name: monitoramento-java
-description: Use ao configurar monitoramento, implementar logging estruturado, criar dashboards Prometheus/Grafana, definir alerting rules, instrumentar distributed tracing com OpenTelemetry, ou diagnosticar problemas de produção usando logs/métricas/traces. Gatilhos - "monitoramento", "observabilidade", "Prometheus", "Grafana", "OpenTelemetry", "tracing distribuído", "alert", "MTTR". Uso: agents `especialista-kubernetes`/`especialista-monitoramento` ou invocação manual via `/monitoramento-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use ao configurar monitoramento, implementar logging estruturado, criar dashboards Prometheus/Grafana, definir alerting rules, instrumentar distributed tracing com OpenTelemetry, ou diagnosticar problemas de produção usando logs/métricas/traces. Gatilhos - "monitoramento", "observabilidade", "Prometheus", "Grafana", "OpenTelemetry", "tracing distribuído", "alert", "MTTR". Uso: agents `engenheiro-devops` (variante `k8s`)/`especialista-monitoramento` ou invocação manual via `/monitoramento-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Monitoramento de Aplicações Java
@@ -252,5 +252,5 @@ os beans estão presentes. Veja a config do Kubernetes em `arquitetura-limpa-jav
 | Adicionar métrica Micrometer em código | sessão principal | esta skill |
 | Configurar stack Prometheus + Grafana + OTel Collector | sessão principal | esta skill |
 | Padronizar formato de log + MDC | sessão principal | `padrao-de-logs-java` |
-| Auditar instrumentação existente de um serviço | agent `java-especialista` | esta skill + `padrao-de-logs-java` |
+| Auditar instrumentação existente de um serviço | agent `java-revisor` (modo `auditoria`) | esta skill + `padrao-de-logs-java` |
 | Definir/alertas de SLO | sessão principal | esta skill |

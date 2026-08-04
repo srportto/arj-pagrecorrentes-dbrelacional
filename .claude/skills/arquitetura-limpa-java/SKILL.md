@@ -1,6 +1,6 @@
 ---
 name: arquitetura-limpa-java
-description: Use quando houver dúvida sobre em qual camada colocar um código, ao revisar fronteiras entre camadas, ao estruturar pacotes de uma aplicação Java hexagonal, ao decidir onde vive um novo componente, ou ao decompor um monólito em serviços com bounded contexts. Consolida o modelo hexagonal (entrypoint / application / domain / shared) com o mapa de DDD/microservices. Gatilhos - "onde coloco", "qual camada", "estrutura de pacotes", "arquitetura limpa", "arquitetura hexagonal", "bounded context", "decompor monólito". Uso: agent `java-especialista` ou invocação manual via `/arquitetura-limpa-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando houver dúvida sobre em qual camada colocar um código, ao revisar fronteiras entre camadas, ao estruturar pacotes de uma aplicação Java hexagonal, ao decidir onde vive um novo componente, ou ao decompor um monólito em serviços com bounded contexts. Consolida o modelo hexagonal (entrypoint / application / domain / shared) com o mapa de DDD/microservices. Gatilhos - "onde coloco", "qual camada", "estrutura de pacotes", "arquitetura limpa", "arquitetura hexagonal", "bounded context", "decompor monólito". Uso: agent `java-revisor` (modo `auditoria`) ou invocação manual via `/arquitetura-limpa-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Arquitetura Limpa Java (Hexagonal + DDD)
@@ -176,6 +176,6 @@ de partir para hexagonal:
 | Situação | Quem | Skill usada |
 |---|---|---|
 | Dúvida sobre em qual camada colocar uma classe | sessão principal | esta skill |
-| Revisão arquitetural completa (camadas + DDD) | agent `java-especialista` | esta skill + `revisao-de-codigo-java` |
+| Revisão arquitetural completa (camadas + DDD) | agent `java-revisor` (modo `auditoria`) | esta skill + `revisao-de-codigo-java` |
 | Decompor monolito em microsserviços (design) | sessão principal (design, não há agent dedicado) | esta skill |
 | Aplicar microsserviço novo (gerar) | agent `java-construtor` | `criar-aplicacao-java` + esta skill |

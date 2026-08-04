@@ -1,6 +1,6 @@
 ---
 name: padroes-de-projeto-java
-description: Use quando o usuário pedir para aplicar ou implementar um design pattern (factory, builder, strategy, observer, decorator...), ao refatorar código rígido ou acoplado, ou ao decidir se um pattern é necessário. Inclui exemplos antes/depois de 21 patterns GoF. Gatilhos - "aplique o pattern", "usa strategy", "refatorar com factory", "esse código está rígido". Uso: agents `java-especialista`/`refatorador-java` ou invocação manual via `/padroes-de-projeto-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando o usuário pedir para aplicar ou implementar um design pattern (factory, builder, strategy, observer, decorator...), ao refatorar código rígido ou acoplado, ou ao decidir se um pattern é necessário. Inclui exemplos antes/depois de 21 patterns GoF. Gatilhos - "aplique o pattern", "usa strategy", "refatorar com factory", "esse código está rígido". Uso: agents `java-revisor`/`refatorador-java` ou invocação manual via `/padroes-de-projeto-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Padrões de Projeto Java (GoF)

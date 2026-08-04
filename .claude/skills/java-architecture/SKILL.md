@@ -233,7 +233,7 @@ expressions, text blocks, virtual threads, `var`. Pontos mais relevantes em arqu
 |---|---|---|
 | Desenhar arquitetura de aplicação Spring Boot nova | session principal | esta skill |
 | Implementar camada em arquitetura hexagonal deste catálogo | session principal | `arquitetura-limpa-java` |
-| Revisar estrutura de pacotes e escolhas de stack | agent `java-especialista` | `revisao-de-codigo-java` |
+| Revisar estrutura de pacotes e escolhas de stack | agent `java-revisor` (modo `auditoria`) | `revisao-de-codigo-java` |
 | Tuning de JPA/Hibernate | session principal | `persistencia-jpa` |
 | Configurar segurança (JWT, CORS, headers) | session principal | `seguranca-aplicacao-java` |
 | Configurar observabilidade | session principal | `monitoramento-java` |

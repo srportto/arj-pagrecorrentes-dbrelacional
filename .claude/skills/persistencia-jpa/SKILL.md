@@ -1,6 +1,6 @@
 ---
 name: persistencia-jpa
-description: Use quando houver problemas ou dúvidas de JPA/Hibernate - N+1 queries, LazyInitializationException, transações, locking otimista, paginação, projeções ou modelagem de entidades e relacionamentos. Gatilhos - "muitas queries", "N+1", "LazyInitializationException", "transação", "lock", "paginação lenta". Uso: agents `especialista-banco-dados`/`java-construtor`/`java-especialista`/`java-revisor` ou invocação manual via `/persistencia-jpa`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando houver problemas ou dúvidas de JPA/Hibernate - N+1 queries, LazyInitializationException, transações, locking otimista, paginação, projeções ou modelagem de entidades e relacionamentos. Gatilhos - "muitas queries", "N+1", "LazyInitializationException", "transação", "lock", "paginação lenta". Uso: agents `especialista-banco-dados`/`java-construtor`/`java-revisor` ou invocação manual via `/persistencia-jpa`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Persistência JPA

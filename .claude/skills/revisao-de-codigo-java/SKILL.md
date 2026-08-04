@@ -1,6 +1,6 @@
 ---
 name: revisao-de-codigo-java
-description: Use quando o usuário pedir revisão de código Java ("revise", "code review", "está bom?", "melhore este código"), antes de um merge, ou após qualquer geração significativa de código. Consolida clean code, tratamento de erros, imutabilidade e testes em um checklist único por severidade. Uso: agents `java-revisor`/`java-especialista`/`projetista-api` ou invocação manual via `/revisao-de-codigo-java`; não deve ser carregada proativamente pela sessão principal.
+description: Use quando o usuário pedir revisão de código Java ("revise", "code review", "está bom?", "melhore este código"), antes de um merge, ou após qualquer geração significativa de código. Consolida clean code, tratamento de erros, imutabilidade e testes em um checklist único por severidade. Uso: agents `java-revisor`/`projetista-api` ou invocação manual via `/revisao-de-codigo-java`; não deve ser carregada proativamente pela sessão principal.
 ---
 
 # Revisão de Código Java
@@ -17,7 +17,7 @@ depois de gerar código Java significativo.
 `arquitetura-limpa-java` diretamente (esta skill só referencia o checklist dela no grupo
 "Arquitetura"). Para revisar somente o padrão de logs, use `padrao-de-logs-java`. Esta skill é a
 fonte de verdade usada tanto para autorrevisão quanto pelos agents `java-revisor` e
-`java-especialista` — veja "Quem revisa o quê" abaixo para saber qual agent invocar.
+`java-revisor` (modo `auditoria`) — veja "Quem revisa o quê" abaixo para saber qual agent invocar.
 
 ## Fluxo de revisão
 
@@ -323,7 +323,7 @@ Nesta revisão, verifique pelo menos:
 | Situação | Quem revisa | Papel |
 |---|---|---|
 | Diff pontual durante o desenvolvimento (uma classe, um método, um PR pequeno) | agent `java-revisor` | Revisão **tempestiva** — feedback rápido durante o trabalho, aplicando este checklist |
-| Pré-merge, mudança grande, ou revisão do trabalho de outro agent (ex.: saída do `java-construtor`) | agent `java-especialista` | **Veredicto final** — achados Críticos bloqueiam o merge |
+| Pré-merge, mudança grande, ou revisão do trabalho de outro agent (ex.: saída do `java-construtor`) | agent `java-revisor` (modo `auditoria`) | **Veredicto final** — achados Críticos bloqueiam o merge |
 
 Esta skill é o checklist que ambos os agents aplicam — a diferença entre eles é o momento e o peso
 do veredicto, não o critério de revisão.
