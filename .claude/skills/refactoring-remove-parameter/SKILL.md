@@ -1,6 +1,19 @@
 ---
+
 name: refactoring-remove-parameter
-description: 'Refactoring usando Remove Parameter em Java Language. Aplica o refactoring do catálogo do Fowler focado em remover parâmetros não usados/redundantes. Use quando um método tem parâmetro que pode ser inferido, ou ao revisar métodos longos com assinaturas inchadas. Uso: agent `refatorador-java` ou invocação manual via `/refactoring-remove-parameter`; não deve ser carregada proativamente pela sessão principal.'
+description: "Step-by-step guide for the **Remove Parameter** refactoring from Fowler's catalog — applies when a method parameter is unused or redundant (obtainable from a class field, constant, or another method call). Use when a method has a parameter that can be inferred, or when reviewing long methods with bloated signatures. Uso: agent `refatorador-java` or manual invocation via `/refactoring-remove-parameter`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: refactoring
+  triggers: Remove Parameter, Fowler, parâmetro não usado, parâmetro redundante, refactoring, assinatura inchada
+  role: specialist
+  scope: refactoring
+  output-format: code
+  related-skills: qualidade-codigo-java, padroes-de-projeto-java, remover-imports-nao-usados
+---
 ---
 
 # Refactoring Java: Remove Parameter

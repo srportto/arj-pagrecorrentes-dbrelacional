@@ -40,12 +40,16 @@ Fluxo típico:
 
 ```
 .claude/
-├── skills/                                # 17 skills (+ 5 skills openspec, fora deste catálogo)
+├── skills/                                # 22 skills (+ 5 skills openspec, fora deste catálogo)
 │   ├── api-rest-design/                   # REST + OpenAPI + RFC 9457
 │   ├── arquitetura-limpa-java/            # Hexagonal + DDD + microservices
 │   ├── banco-de-dados-performance/        # SQL + EXPLAIN + tuning (PostgreSQL/MySQL)
+│   ├── chaos-engineer/                    # Chaos engineering, game days, Litmus
+│   ├── cloud-architect/                   # AWS / Azure / GCP topology, FinOps, DR
 │   ├── criar-aplicacao-java/              # Esqueleto hexagonal + variantes (SQS/Kafka/banco)
+│   ├── design-system-architecture/        # System design + ADRs (renomeada de architecture-designer)
 │   ├── devops-cicd/                       # CI/CD GitHub Actions + Dockerfile + K8s manifest
+│   ├── gerar-diagramas/                   # Mermaid padronizado em .md versionados
 │   ├── java-architecture/                 # Spring stack + camadas clássicas
 │   ├── java-moderno/                      # Records, sealed, pattern matching, virtual threads
 │   ├── mensageria-sqs-kafka/              # SQS + Kafka (DLQ, idempotência, retry)
@@ -58,7 +62,10 @@ Fluxo típico:
 │   ├── remover-imports-nao-usados/        # Limpeza de imports multi-linguagem
 │   ├── revisao-de-codigo-java/            # Checklist de revisão por severidade
 │   └── seguranca-aplicacao-java/          # OWASP Top 10 + JWT + CORS + secrets
-└── agents/                                # 8 agents (após fusão de 2026-08-03)
+└── agents/                                # 11 agents (após padronização de 2026-08-04)
+    ├── arquiteto-sistemas.md              # Design de sistemas / ADRs / revisão arquitetural
+    ├── cloud-architect.md                 # Topologia AWS/Azure/GCP + FinOps + DR
+    ├── engenheiro-chaos.md                # Chaos engineering + game days
     ├── engenheiro-devops.md               # Pipeline CI + Dockerfile + manifest K8s (variantes)
     ├── engenheiro-seguranca.md            # Auditoria dedicada de segurança
     ├── especialista-banco-dados.md        # Performance de banco (SQL/SGBD)
@@ -68,6 +75,12 @@ Fluxo típico:
     ├── projetista-api.md                  # Design de API REST
     └── refatorador-java.md                # Aplicar refactorings do Fowler
 ```
+
+> **Nota sobre `design-system-architecture`:** a skill foi renomeada em 2026-08-04
+> (de `architecture-designer`) para deixar claro o escopo de **sistemas distribuídos**
+> (topologia, ADRs, escolha entre monolito e microsserviços) e evitar sobreposição
+> com `arquitetura-limpa-java` (hexagonal) e `java-architecture` (camadas clássicas
+> Spring). O conteúdo técnico base é adaptado de `https://github.com/Jeffallan/claude-skills`.
 
 ## Padrão de cada skill
 

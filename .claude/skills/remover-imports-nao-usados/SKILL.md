@@ -1,6 +1,19 @@
 ---
+
 name: remover-imports-nao-usados
-description: Remove imports/usings não utilizados em Java, TypeScript, JavaScript, C#, Python, Go, Kotlin e outras linguagens. Use ao limpar imports, organizar imports, remover imports não usados, ou antes de um commit. Uso: agent `refatorador-java` (etapa de limpeza pós-refactoring) ou invocação manual via `/remover-imports-nao-usados`; não deve ser carregada proativamente pela sessão principal.
+description: "Safely removes unused `import` / `using` statements in Java, TypeScript, JavaScript, C#, Python, Go, Kotlin and other languages — hybrid approach: native language tool first, manual analysis as fallback. Always verifies (build/test) at the end. Use when cleaning up imports, organizing imports, removing unused imports, or before a commit. Uso: agent `refatorador-java` (post-refactoring cleanup step) or manual invocation via `/remover-imports-nao-usados`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: refactoring
+  triggers: imports não usados, organizar imports, unused imports, cleanup, commit
+  role: specialist
+  scope: code-cleanup
+  output-format: code
+  related-skills: qualidade-codigo-java, refactoring-remove-parameter
+---
 ---
 
 # Remover Imports Não Utilizados

@@ -1,6 +1,19 @@
 ---
+
 name: gerar-diagramas
-description: Use quando o usuário pedir para criar, atualizar ou documentar visualmente um fluxo, arquitetura, sequência de chamadas, modelo de dados ou máquina de estados em algum arquivo .md do repositório. Gatilhos - "criar diagrama", "documentar o fluxo", "desenhar a arquitetura", "diagrama de sequência", "modelar o banco visualmente", "atualizar o CLAUDE.md com o fluxo". Todo diagrama gravado em arquivo (docs/arquitetura/*.md, CLAUDE.md, AGENTS.md, design.md do OpenSpec) SHALL usar bloco ```mermaid``` — nunca ASCII art nesses arquivos. ASCII continua sendo o normal para diagramas soltos direto na conversa (não é escopo desta skill). NÃO use para gráfico de dados/KPI/dashboard (skill global `dataviz`) nem para diagrama dentro de um Artifact/página web (skills globais `artifact-design`/`artifact-capabilities`) — esta skill cobre só arquivos .md versionados no repo. Uso: sessão principal, carregada proativamente sempre que o pedido casar com os gatilhos acima — desvio intencional do padrão deste catálogo, onde as demais skills exigem invocação manual via `/nome-da-skill`; também disponível via `/gerar-diagramas`.
+description: "Standardizes how technical diagrams are drawn and saved in this monorepo — always Mermaid when the result is written to a versioned `.md` file (architecture, sequence, data-flow, state machine), never ASCII art in those files. ASCII remains normal for diagrams drawn directly in conversation. Use when the user asks to create, update, or document a flow visually. Uso: sessão principal, carregada proativamente sempre que o pedido casar com os gatilhos acima; também disponível via `/gerar-diagramas`."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: documentation
+  triggers: criar diagrama, documentar o fluxo, desenhar a arquitetura, diagrama de sequência, modelar o banco visualmente, atualizar o CLAUDE.md com o fluxo, Mermaid
+  role: documenter
+  scope: diagram-format
+  output-format: diagram
+  related-skills: design-system-architecture, arquitetura-limpa-java, java-architecture
+---
 ---
 
 # Gerar Diagramas

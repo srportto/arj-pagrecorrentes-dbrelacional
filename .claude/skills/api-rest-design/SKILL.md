@@ -1,6 +1,19 @@
 ---
+
 name: api-rest-design
-description: Use ao projetar API REST, modelar recursos, escrever OpenAPI 3.1, decidir versionamento, paginação, HATEOAS, error handling com RFC 9457 Problem Details, ou revisar o contrato HTTP de uma API Java/Spring Boot. Gatilhos - "desenhar API", "OpenAPI", "swagger", "versionar endpoint", "RFC 9457", "Problem Details", "HATEOAS". Uso: agent `projetista-api` ou invocação manual via `/api-rest-design`; não deve ser carregada proativamente pela sessão principal.
+description: "Designs and audits REST API contracts for Java/Spring Boot — resource modeling, OpenAPI 3.1, versioning, pagination (offset/cursor), HATEOAS, error handling with RFC 9457 Problem Details, edge validation. Use when designing a new API, reviewing an existing contract, or standardizing error/pagination patterns. Uso: agent `projetista-api` ou invocação manual via `/api-rest-design`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: api-design
+  triggers: REST API, OpenAPI, swagger, versionamento, paginação, HATEOAS, RFC 9457, Problem Details, contrato HTTP
+  role: architect
+  scope: api-contract
+  output-format: document
+  related-skills: arquitetura-limpa-java, java-architecture, revisao-de-codigo-java, seguranca-aplicacao-java
+---
 ---
 
 # API REST Design (Java/Spring Boot)

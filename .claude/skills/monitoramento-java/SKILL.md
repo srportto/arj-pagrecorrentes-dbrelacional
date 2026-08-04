@@ -1,6 +1,19 @@
 ---
+
 name: monitoramento-java
-description: Use ao configurar monitoramento, implementar logging estruturado, criar dashboards Prometheus/Grafana, definir alerting rules, instrumentar distributed tracing com OpenTelemetry, ou diagnosticar problemas de produção usando logs/métricas/traces. Gatilhos - "monitoramento", "observabilidade", "Prometheus", "Grafana", "OpenTelemetry", "tracing distribuído", "alert", "MTTR". Uso: agents `engenheiro-devops` (variante `k8s`)/`especialista-monitoramento` ou invocação manual via `/monitoramento-java`; não deve ser carregada proativamente pela sessão principal.
+description: "Configures the three observability pillars for Java/Spring Boot — structured logs, Micrometer + Prometheus metrics (RED/USE), distributed tracing with OpenTelemetry — and the surrounding stack (Grafana, alerting rules, liveness/readiness probes). Use when instrumenting a new service, adding custom metrics, configuring alerts, or investigating a production incident. Uso: agents `engenheiro-devops` (variante `k8s`) / `especialista-monitoramento` or manual invocation via `/monitoramento-java`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: observability
+  triggers: monitoramento, observabilidade, Prometheus, Grafana, OpenTelemetry, tracing distribuído, alert, MTTR, Micrometer, RED, USE
+  role: specialist
+  scope: observability
+  output-format: code
+  related-skills: padrao-de-logs-java, arquitetura-limpa-java, devops-cicd, java-architecture
+---
 ---
 
 # Monitoramento de Aplicações Java

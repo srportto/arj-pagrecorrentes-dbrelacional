@@ -1,6 +1,19 @@
 ---
+
 name: java-architecture
-description: Use ao desenhar a arquitetura interna de uma aplicação Java/Spring Boot empresarial (camadas, módulos, estrutura de pacotes, padrões de injeção de dependência), ou ao revisar decisões arquiteturais (qual framework, qual versão, qual estilo de API). Consolida Spring Boot 4 + Java 25 com DDD e padrões de projeto. Gatilhos - "arquitetura Spring Boot", "design interno", "estrutura de pacotes", "Spring Security", "Spring Data JPA", "WebFlux", "testcontainers". Uso: sessão principal ou invocação manual via `/java-architecture`; não deve ser carregada proativamente pela sessão principal.
+description: "Reference for designing the internal architecture of an enterprise Java/Spring Boot 4 + Java 25 application — classic layered structure (controller / service / repository / domain / dto), dependency injection conventions, choice of Spring modules (Web vs WebFlux, JPA, Security, Data Redis), and test structure (slice, integration, Testcontainers). Use when reviewing the internal design of a non-hexagonal application or making framework-level decisions. Uso: sessão principal ou invocação manual via `/java-architecture`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: architecture
+  triggers: arquitetura Spring Boot, design interno, estrutura de pacotes, Spring Security, Spring Data JPA, WebFlux, testcontainers, camadas clássicas
+  role: architect
+  scope: code-organization
+  output-format: document
+  related-skills: arquitetura-limpa-java, design-system-architecture, criar-aplicacao-java, revisao-de-codigo-java
+---
 ---
 
 # Arquitetura de Aplicações Java (Spring Boot 4 + Java 25)

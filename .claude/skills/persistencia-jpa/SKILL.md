@@ -1,6 +1,19 @@
 ---
+
 name: persistencia-jpa
-description: Use quando houver problemas ou dúvidas de JPA/Hibernate - N+1 queries, LazyInitializationException, transações, locking otimista, paginação, projeções ou modelagem de entidades e relacionamentos. Gatilhos - "muitas queries", "N+1", "LazyInitializationException", "transação", "lock", "paginação lenta". Uso: agents `especialista-banco-dados`/`java-construtor`/`java-revisor` ou invocação manual via `/persistencia-jpa`; não deve ser carregada proativamente pela sessão principal.
+description: "Pocket reference for the most common JPA/Hibernate problems — N+1, `LazyInitializationException`, misplaced transactions, lost-update concurrency, slow listings without pagination, entity/projection design, optimistic locking. Use whenever there is doubt about persistence performance or behavior, or when reviewing code that touches `Repository`/`@Entity`. Uso: agents `especialista-banco-dados` / `java-construtor` / `java-revisor` or manual invocation via `/persistencia-jpa`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: persistence
+  triggers: muitas queries, N+1, LazyInitializationException, transação, lock, paginação lenta, JPA, Hibernate, dirty checking
+  role: specialist
+  scope: persistence
+  output-format: code
+  related-skills: banco-de-dados-performance, arquitetura-limpa-java, qualidade-codigo-java
+---
 ---
 
 # Persistência JPA

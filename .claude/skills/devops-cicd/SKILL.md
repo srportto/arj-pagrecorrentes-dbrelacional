@@ -1,6 +1,19 @@
 ---
+
 name: devops-cicd
-description: Use ao montar ou ajustar pipeline de CI/CD para aplicação Java/Maven (GitHub Actions, GitLab CI, Jenkins), containerizar aplicação (Dockerfile multi-stage, .dockerignore, usuário não-root), ou escrever manifest Kubernetes de aplicação (Deployment, Service, ConfigMap, probes de saúde, graceful shutdown). Gatilhos - "GitHub Actions", "pipeline CI", "Dockerfile", "Kubernetes deployment", "k8s manifest", "rolling update", "graceful shutdown". Uso: agent `engenheiro-devops` (variantes `pipeline`/`docker`/`k8s`/`all`) ou invocação manual via `/devops-cicd`; não deve ser carregada proativamente pela sessão principal.
+description: "Builds the deploy chain for a Java application — CI/CD pipeline (GitHub Actions, GitLab CI, Jenkins), Dockerfile multi-stage, and Kubernetes manifests (Deployment, Service, ConfigMap, health probes, graceful shutdown). Focused on the path from code to running app, not on cluster provisioning or Terraform for cloud infrastructure. Uso: agent `engenheiro-devops` (variants `pipeline`/`docker`/`k8s`/`all`) or manual invocation via `/devops-cicd`; não deve ser carregada proativamente pela sessão principal."
+license: MIT
+metadata:
+  author: https://github.com/srportto/srportto
+  co-author: https://github.com/Jeffallan/claude-skills
+  version: "1.1.0"
+  domain: devops
+  triggers: GitHub Actions, pipeline CI, Dockerfile, Kubernetes deployment, k8s manifest, rolling update, graceful shutdown, Maven
+  role: devops
+  scope: application-deploy
+  output-format: code
+  related-skills: monitoramento-java, cloud-architect, seguranca-aplicacao-java, java-architecture
+---
 ---
 
 # DevOps & CI/CD (Java/Maven, Docker, Kubernetes)
