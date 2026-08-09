@@ -1,17 +1,16 @@
 package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
-import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,7 @@ public class CancelarAutorizacaoUseCase {
 
     private final AutorizacaoRepository repository;
     private final CancelamentoValidator cancelamentoValidator;
-    private final EntityManager entityManager;
+    private final ExpurgoAutorizacaoService expurgoAutorizacaoService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -66,9 +65,7 @@ public class CancelarAutorizacaoUseCase {
         autorizacao.setCancelamento(dadosCancelamento);
 
         var dataCancelamento = dataHoraCancelamento.toLocalDate();
-        var particaoExpurgoWrite = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataCancelamento);
-
-        var autorizacaoCanceladaEmNovaParticao = transferirParaNovaParticao(autorizacao, particaoExpurgoWrite);
+        var autorizacaoCanceladaEmNovaParticao = expurgoAutorizacaoService.transferirParaExpurgo(autorizacao, dataCancelamento);
 
         eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacaoCanceladaEmNovaParticao));
 
@@ -85,29 +82,5 @@ public class CancelarAutorizacaoUseCase {
         } catch (Exception e) {
             throw new ApplicationException(e.getMessage());
         }
-    }
-
-    private Autorizacao transferirParaNovaParticao(Autorizacao autorizacao, Integer novaParticao) {
-        UUID idAutorizacaoUuid = autorizacao.getIdAutorizacao().getIdAutorizacao();
-        Integer particaoAntiga = autorizacao.getIdAutorizacao().getIdParticaoConta();
-
-        if (novaParticao.equals(particaoAntiga)) {
-            return repository.save(autorizacao);
-        }
-
-        log.info("Transferindo autorização {} da partição {} para partição {}",
-                idAutorizacaoUuid, particaoAntiga, novaParticao);
-
-        repository.deleteById(autorizacao.getIdAutorizacao());
-
-        // Dentro do mesmo persistence context (@Transactional no execute), o JPA não permite
-        // alterar o @EmbeddedId de uma entidade gerenciada nem fazer merge de uma instância já
-        // removida (ObjectDeletedException). O flush executa o DELETE imediatamente e o detach
-        // desanexa a instância, permitindo reaproveitá-la como nova linha na partição de expurgo.
-        repository.flush();
-        entityManager.detach(autorizacao);
-
-        autorizacao.getIdAutorizacao().setIdParticaoConta(novaParticao);
-        return repository.save(autorizacao);
     }
 }

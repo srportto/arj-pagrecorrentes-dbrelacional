@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.application.decisao;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
@@ -34,6 +35,7 @@ public class DecidirAutorizacaoUseCase {
 
     private final AutorizacaoRepository repository;
     private final DecisaoValidator decisaoValidator;
+    private final ExpurgoAutorizacaoService expurgoAutorizacaoService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -52,8 +54,13 @@ public class DecidirAutorizacaoUseCase {
         var acao = AcaoDecisao.obterAcaoDecisaoEnumPorNome(context.dados().acao());
         aplicarDecisao(autorizacao, acao);
 
-        autorizacao.setDataHoraUltimaAtualizacao(LocalDateTime.now());
-        var autorizacaoDecidida = repository.save(autorizacao);
+        var dataHoraDecisao = LocalDateTime.now();
+        autorizacao.setDataHoraUltimaAtualizacao(dataHoraDecisao);
+
+        var statusResultante = StatusAutorizacao.obterStatusEnumPorIdStatus(autorizacao.getStatus());
+        var autorizacaoDecidida = statusResultante == StatusAutorizacao.REJEITADA
+                ? expurgoAutorizacaoService.transferirParaExpurgo(autorizacao, dataHoraDecisao.toLocalDate())
+                : repository.save(autorizacao);
 
         eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacaoDecidida));
 
