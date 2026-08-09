@@ -7,26 +7,43 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Testes unitários do que é verificável sem banco: escolha da partição de destino, atalho quando
+ * ela coincide com a atual, e a guarda de linhas afetadas.
+ *
+ * A versão anterior desta classe afirmava a *ordem* das chamadas ao repositório
+ * (`deleteById` → `flush` → `detach` → `save`) e permaneceu verde durante todo o período em que
+ * toda expiração e todo cancelamento com troca de partição falhavam com `409` em banco real. Um
+ * teste que confirma a sequência de chamadas não pode detectar um defeito que vive na decisão que
+ * o provedor JPA toma diante do estado do banco — por isso essas asserções foram removidas, e o
+ * comportamento real é coberto por
+ * {@code br.com.srportto.contratocommand.integration.ExpurgoParticaoIntegrationTest}.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do ExpurgoAutorizacaoService")
 class ExpurgoAutorizacaoServiceTest {
 
-    private static final int PARTICAO_ATUAL = 950;
+    private static final LocalDate DATA_REFERENCIA = LocalDate.of(2026, 8, 9);
+    private static final int PARTICAO_DESTINO =
+            ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(DATA_REFERENCIA);
+    private static final int PARTICAO_QUENTE = 5;
 
     @Mock
     private AutorizacaoRepository repository;
@@ -37,55 +54,57 @@ class ExpurgoAutorizacaoServiceTest {
     private ExpurgoAutorizacaoService service;
 
     @Test
-    @DisplayName("partição de destino diferente da atual: delete -> flush -> detach -> save na nova partição")
-    void transferePartiacaoDiferente() {
-        var idAutorizacao = new IdAutorizacao(java.util.UUID.randomUUID(), PARTICAO_ATUAL);
-        var autorizacao = new Autorizacao();
-        autorizacao.setIdAutorizacao(idAutorizacao);
+    @DisplayName("particao de destino diferente da atual: move a linha e devolve a autorizacao na nova particao")
+    void particaoDiferente_MoveALinha() {
+        var autorizacao = autorizacaoNaParticao(PARTICAO_QUENTE);
+        UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
+        when(repository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.moverParaParticao(id, PARTICAO_QUENTE, PARTICAO_DESTINO)).thenReturn(1);
 
-        LocalDate dataReferencia = LocalDate.of(2026, 8, 9);
-        int particaoEsperada = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataReferencia);
-        assertNotEqualsPartition(particaoEsperada, PARTICAO_ATUAL);
-
-        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        Autorizacao resultado = service.transferirParaExpurgo(autorizacao, dataReferencia);
+        Autorizacao resultado = service.transferirParaExpurgo(autorizacao, DATA_REFERENCIA);
 
         assertNotNull(resultado);
-        assertEquals(particaoEsperada, resultado.getIdAutorizacao().getIdParticaoConta());
-
-        InOrder inOrder = inOrder(repository, entityManager);
-        inOrder.verify(repository).deleteById(any());
-        inOrder.verify(repository).flush();
-        inOrder.verify(entityManager).detach(autorizacao);
-        inOrder.verify(repository).save(any());
+        assertEquals(PARTICAO_DESTINO, resultado.getIdAutorizacao().getIdParticaoConta(),
+                "A autorizacao devolvida deve refletir a nova localizacao fisica");
+        verify(repository).moverParaParticao(id, PARTICAO_QUENTE, PARTICAO_DESTINO);
+        verify(entityManager).detach(autorizacao);
     }
 
     @Test
-    @DisplayName("partição de destino igual à atual: apenas salva, sem delete+insert")
-    void naoTransfereQuandoParticaoIgual() {
-        LocalDate dataReferencia = LocalDate.of(2026, 8, 9);
-        int particaoEsperada = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataReferencia);
-
-        var idAutorizacao = new IdAutorizacao(java.util.UUID.randomUUID(), particaoEsperada);
-        var autorizacao = new Autorizacao();
-        autorizacao.setIdAutorizacao(idAutorizacao);
-
+    @DisplayName("particao de destino igual a atual: apenas salva, sem mover a linha")
+    void particaoIgual_ApenasSalva() {
+        var autorizacao = autorizacaoNaParticao(PARTICAO_DESTINO);
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Autorizacao resultado = service.transferirParaExpurgo(autorizacao, dataReferencia);
+        Autorizacao resultado = service.transferirParaExpurgo(autorizacao, DATA_REFERENCIA);
 
         assertNotNull(resultado);
-        assertEquals(particaoEsperada, resultado.getIdAutorizacao().getIdParticaoConta());
-        verify(repository, never()).deleteById(any());
-        verify(repository, never()).flush();
-        verify(entityManager, never()).detach(any());
+        assertEquals(PARTICAO_DESTINO, resultado.getIdAutorizacao().getIdParticaoConta());
         verify(repository).save(autorizacao);
+        verify(repository, never()).moverParaParticao(any(), anyInt(), anyInt());
+        verify(entityManager, never()).detach(any());
     }
 
-    private void assertNotEqualsPartition(int esperada, int atual) {
-        if (esperada == atual) {
-            throw new IllegalStateException("Fixture inválida: partição esperada coincide com a atual, ajuste PARTICAO_ATUAL");
-        }
+    @Test
+    @DisplayName("movimentacao que nao afeta exatamente uma linha aborta a transacao")
+    void movimentacaoSemLinhaAfetada_Falha() {
+        var autorizacao = autorizacaoNaParticao(PARTICAO_QUENTE);
+        UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
+        when(repository.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.moverParaParticao(id, PARTICAO_QUENTE, PARTICAO_DESTINO)).thenReturn(0);
+
+        assertThrows(ObjectOptimisticLockingFailureException.class,
+                () -> service.transferirParaExpurgo(autorizacao, DATA_REFERENCIA),
+                "Linha ausente na origem so pode significar remocao concorrente — nao pode passar calada");
+
+        verify(entityManager, never()).detach(any());
+        assertEquals(PARTICAO_QUENTE, autorizacao.getIdAutorizacao().getIdParticaoConta(),
+                "A instancia nao pode ser marcada como transferida quando a movimentacao falhou");
+    }
+
+    private Autorizacao autorizacaoNaParticao(int particao) {
+        var autorizacao = new Autorizacao();
+        autorizacao.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), particao));
+        return autorizacao;
     }
 }

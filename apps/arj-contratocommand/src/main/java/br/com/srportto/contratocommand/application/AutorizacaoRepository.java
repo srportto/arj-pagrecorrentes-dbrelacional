@@ -3,6 +3,7 @@ package br.com.srportto.contratocommand.application;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -32,5 +33,28 @@ public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAuto
      */
     boolean existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(
             Integer idParticaoConta, String idAutorizacaoEmpresa);
+
+    /**
+     * Move fisicamente a linha para outra partição, alterando a chave de particionamento. O
+     * PostgreSQL (≥ 11) faz o <em>row movement</em> entre partições sozinho e de forma atômica.
+     *
+     * <p>É SQL nativo por necessidade, não por atalho: JPA não altera chave primária de entidade
+     * gerenciada, e a alternativa anterior (delete + flush + detach + save) dependia de o Hibernate
+     * inferir que uma instância detached sem linha correspondente era nova — inferência que a
+     * introdução de {@code @Version} inverteu, quebrando toda transferência de partição com
+     * {@code StaleObjectStateException}. Ver a mudança {@code corrigir-expurgo-merge-version}.
+     *
+     * @return quantidade de linhas afetadas; o chamador SHALL tratar valor diferente de 1
+     */
+    @Modifying
+    @Query(value = """
+            UPDATE autorizacoes
+               SET id_particao_conta = :novaParticao
+             WHERE id_autorizacao = :idAutorizacao
+               AND id_particao_conta = :particaoAtual
+            """, nativeQuery = true)
+    int moverParaParticao(@Param("idAutorizacao") UUID idAutorizacao,
+            @Param("particaoAtual") Integer particaoAtual,
+            @Param("novaParticao") Integer novaParticao);
 
 }

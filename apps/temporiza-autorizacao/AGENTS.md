@@ -148,6 +148,15 @@ ack/retenção:
 > `CommandDecisaoAutorizacaoClient` captura `HttpClientErrorException.Conflict` (409) **antes**
 > do catch genérico de `HttpClientErrorException`, relançando como `ExpiracaoRetryavelException`.
 
+> **409 no caminho feliz não existe mais.** Entre 2026-08-09 e a mudança
+> `corrigir-expurgo-merge-version`, **toda** expiração recebia 409 do command: a transferência da
+> autorização para a partição de expurgo estava quebrada de forma determinística (o `merge` de
+> instância detached parou de funcionar quando `@Version` foi adicionado à entidade), e o retry
+> jamais poderia ter sucesso. Nada desta app precisou mudar — o retry em 409 e o teto de 5
+> tentativas se comportaram exatamente como especificado, e foram eles que transformaram um bug
+> silencioso do command em sinal operacional. Hoje a expiração conclui na primeira tentativa; 409
+> volta a significar apenas o que sempre devia significar: disputa real com outro chamador.
+
 ## Armadilhas críticas
 
 1. **Porta 8084** — diferente de 8080/8081/8082/8083.

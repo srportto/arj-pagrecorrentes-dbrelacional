@@ -9,6 +9,7 @@ import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import org.junit.jupiter.api.AfterAll;
@@ -18,21 +19,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -42,44 +46,42 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * `integridade-fluxo-escrita` — sem esta validação real (não mockada), não há evidência de que a
  * correção funciona.
  *
- * Usa Testcontainers (Postgres vanilla, não a imagem custom com pg_partman/pg_cron — este teste
- * não exercita expurgo automatizado, só o comportamento de @Version sob concorrência real, então
- * um schema minimalista com partição DEFAULT é suficiente e evita o custo de build da imagem
- * custom). Hermético e reprodutível: sobe/derruba o container sozinho, não depende de Postgres
- * local rodando.
- *
- * Gerenciamento manual do container (em vez de {@code @Testcontainers}/{@code @Container}): em
- * ambientes sem Docker acessível pela API Java do Testcontainers (mesmo com o Docker CLI
- * funcionando — ex.: alguns sandboxes de CI), a classe inteira é desabilitada via
- * {@link DockerDisponivelCondition}, reportado como "Skipped" pelo Surefire — visível no
- * resumo do build, ao contrário de {@code Assumptions.assumeTrue} num {@code @BeforeAll} de
- * {@code @SpringBootTest}, que aborta silenciosamente como "Tests run: 0".
+ * Roda contra o PostgreSQL 18 local (pré-requisito declarado do build, "sem fallback H2") num
+ * schema dedicado, criado e destruído por esta própria classe. Antes usava Testcontainers, que
+ * neste projeto não consegue falar com builds recentes do Docker Desktop — a API Java falha com
+ * HTTP 400 em {@code /info} mesmo com o CLI funcionando, e a classe inteira era pulada. Um teste
+ * de concorrência que nunca executa não é evidência de nada: foi sob essa cobertura ausente que o
+ * defeito corrigido por {@code corrigir-expurgo-merge-version} sobreviveu. Ver
+ * {@link PostgresLocalDisponivelCondition}.
  */
 @SpringBootTest
-@ExtendWith(DockerDisponivelCondition.class)
+@ExtendWith(PostgresLocalDisponivelCondition.class)
 @DisplayName("Teste de integração: concorrência otimista no cancelamento")
 class ConcorrenciaOptimisticaIntegrationTest {
 
-    static PostgreSQLContainer<?> postgres;
+    /** Schema isolado: nada aqui toca a tabela `autorizacoes` real do banco de desenvolvimento. */
+    private static final String SCHEMA = "test_concorrencia_otimista";
+
+    private static final int PARTICAO_EXPURGO_HOJE =
+            ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(LocalDate.now());
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", () -> postgres.getJdbcUrl());
-        registry.add("spring.datasource.username", () -> postgres.getUsername());
-        registry.add("spring.datasource.password", () -> postgres.getPassword());
+        registry.add("spring.datasource.url",
+                () -> PostgresLocalDisponivelCondition.urlBase() + "?currentSchema=" + SCHEMA);
+        registry.add("spring.datasource.username", () -> PostgresLocalDisponivelCondition.USUARIO);
+        registry.add("spring.datasource.password", () -> PostgresLocalDisponivelCondition.SENHA);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
     }
 
     @BeforeAll
-    static void subirContainerECriarSchema() throws Exception {
-        postgres = new PostgreSQLContainer<>("postgres:18")
-                .withDatabaseName("db-csp-postgres-test")
-                .withUsername("docker")
-                .withPassword("test-only-nao-e-segredo-real");
-        postgres.start();
-
-        try (Connection conn = postgres.createConnection("");
+    static void criarSchemaIsolado() throws Exception {
+        try (Connection conn = DriverManager.getConnection(PostgresLocalDisponivelCondition.urlBase(),
+                     PostgresLocalDisponivelCondition.USUARIO, PostgresLocalDisponivelCondition.SENHA);
              Statement stmt = conn.createStatement()) {
+            stmt.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE;");
+            stmt.execute("CREATE SCHEMA " + SCHEMA + ";");
+            stmt.execute("SET search_path TO " + SCHEMA + ";");
             stmt.execute("""
                 CREATE TABLE autorizacoes (
                     id_autorizacao UUID NOT NULL,
@@ -111,18 +113,29 @@ class ConcorrenciaOptimisticaIntegrationTest {
                     motivo_cancelamento TEXT,
                     metadados JSON,
                     version BIGINT NOT NULL DEFAULT 0,
-                    CONSTRAINT pk_autorizacoees PRIMARY KEY (id_autorizacao, id_particao_conta),
-                    CONSTRAINT uq_autorizacoes_empresa UNIQUE (id_particao_conta, id_autorizacao_empresa)
+                    CONSTRAINT pk_autorizacoees PRIMARY KEY (id_autorizacao, id_particao_conta)
                 ) PARTITION BY LIST (id_particao_conta);
                 """);
+            // DEFAULT absorve a partição quente (derivada do hash da conta, imprevisível); a de
+            // expurgo é explícita, para que a transferência seja movimentação real entre partições.
             stmt.execute("CREATE TABLE autorizacoes_default PARTITION OF autorizacoes DEFAULT;");
+            stmt.execute("CREATE TABLE autorizacoes_pe%d PARTITION OF autorizacoes FOR VALUES IN (%d);"
+                    .formatted(PARTICAO_EXPURGO_HOJE, PARTICAO_EXPURGO_HOJE));
+            // Espelha a migration v1.0.4: unicidade da chave de negócio só nas partições quentes.
+            stmt.execute("""
+                CREATE UNIQUE INDEX uk_autorizacao_empresa_ativa
+                    ON autorizacoes (id_particao_conta, id_autorizacao_empresa)
+                    WHERE id_particao_conta < 900;
+                """);
         }
     }
 
     @AfterAll
-    static void pararContainer() {
-        if (postgres != null) {
-            postgres.stop();
+    static void removerSchemaIsolado() throws Exception {
+        try (Connection conn = DriverManager.getConnection(PostgresLocalDisponivelCondition.urlBase(),
+                     PostgresLocalDisponivelCondition.USUARIO, PostgresLocalDisponivelCondition.SENHA);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE;");
         }
     }
 
@@ -133,8 +146,8 @@ class ConcorrenciaOptimisticaIntegrationTest {
     private CancelarAutorizacaoUseCase cancelarUseCase;
 
     @Test
-    @DisplayName("Dois cancelamentos concorrentes: ao menos uma transacao deve falhar com OptimisticLockException (as duas podem falhar)")
-    void doisCancelamentosConcorrentes_AoMenosUmaFalhaComLockException() throws InterruptedException {
+    @DisplayName("Dois cancelamentos concorrentes: exatamente um vence, o outro falha com OptimisticLockException")
+    void doisCancelamentosConcorrentes_ExatamenteUmVence() throws InterruptedException {
         Autorizacao aut = criarAutorizacaoTeste();
         repository.saveAndFlush(aut);
         UUID idAutorizacao = aut.getIdAutorizacao().getIdAutorizacao();
@@ -174,17 +187,38 @@ class ConcorrenciaOptimisticaIntegrationTest {
         boolean terminouATempo = terminou.await(30, TimeUnit.SECONDS);
         assertTrue(terminouATempo, "As threads de cancelamento concorrente não terminaram em 30s — possível deadlock");
 
-        boolean algumaFalhouComLock =
-                causaContemLockException(primeiroErro.get()) || causaContemLockException(segundoErro.get());
+        long quantidadeQueVenceu = Stream.of(primeiroErro.get(), segundoErro.get())
+                .filter(Objects::isNull)
+                .count();
+        long quantidadeQueFalhouPorConcorrencia = Stream.of(primeiroErro.get(), segundoErro.get())
+                .filter(this::causaContemFalhaDeConcorrencia)
+                .count();
 
-        assertTrue(algumaFalhouComLock,
-                "Nenhuma das transacoes concorrentes disparou OptimisticLockException/ObjectOptimisticLockingFailureException. "
+        // Antes da mudanca `corrigir-expurgo-merge-version`, esta classe tolerava "as duas podem
+        // falhar" — resultado registrado como validado empiricamente na spec de concorrencia. Nao
+        // era concorrencia: era a transacao falhando contra si mesma no `merge` de instancia
+        // detached, com ou sem disputa. Corrigido o defeito, exatamente uma tem de vencer.
+        assertEquals(1, quantidadeQueVenceu,
+                "Exatamente uma das transacoes concorrentes deve ser confirmada. "
+                        + "Primeiro erro: " + primeiroErro.get() + ", Segundo erro: " + segundoErro.get());
+        assertEquals(1, quantidadeQueFalhouPorConcorrencia,
+                "A transacao perdedora deve falhar por conflito de concorrencia, nao por outro motivo. "
                         + "Primeiro erro: " + primeiroErro.get() + ", Segundo erro: " + segundoErro.get());
     }
 
-    private boolean causaContemLockException(Throwable t) {
+    /**
+     * Aceita qualquer {@link ConcurrencyFailureException} — e não apenas a variante otimista —
+     * porque a movimentação de partição muda a *forma* do conflito: quando a transação vencedora
+     * move a linha para outra partição, o PostgreSQL não consegue seguir a cadeia de atualização
+     * e devolve {@code "tuple to be locked was already moved to another partition due to
+     * concurrent update"} (SQLSTATE 40001), que o Spring traduz para
+     * {@code CannotAcquireLockException}, irmã de {@code ObjectOptimisticLockingFailureException}
+     * sob {@code ConcurrencyFailureException}. Ambas significam a mesma coisa para o contrato da
+     * API: conflito real entre chamadores, resposta 409.
+     */
+    private boolean causaContemFalhaDeConcorrencia(Throwable t) {
         while (t != null) {
-            if (t instanceof ObjectOptimisticLockingFailureException
+            if (t instanceof ConcurrencyFailureException
                     || t instanceof jakarta.persistence.OptimisticLockException) {
                 return true;
             }
