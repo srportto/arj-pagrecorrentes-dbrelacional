@@ -2,7 +2,7 @@
 name: engenheiro-chaos
 description: "Use quando precisar DESENHAR ou EXECUTAR experimentos de chaos engineering em sistemas distribuídos — failure injection (Chaos Monkey, Litmus Chaos, toxiproxy), game days, controle de blast radius, rollback automatizado, melhoria contínua de resiliência. Fronteira clara: para observabilidade que valida o experimento, use `especialista-monitoramento`. Para deploy/infraestrutura da aplicação, use `engenheiro-devops`. Para design de sistemas, use `arquiteto-sistemas`."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: sonnet
+model: haiku
 effort: medium
 ---
 

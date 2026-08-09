@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.application.cancelamento;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
@@ -9,22 +10,21 @@ import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,7 +40,7 @@ class CancelarAutorizacaoUseCaseTest {
     @Mock
     private CancelamentoValidator cancelamentoValidator;
     @Mock
-    private EntityManager entityManager;
+    private ExpurgoAutorizacaoService expurgoAutorizacaoService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
@@ -48,7 +48,7 @@ class CancelarAutorizacaoUseCaseTest {
     private CancelarAutorizacaoUseCase useCase;
 
     @Test
-    @DisplayName("cancela: marca status 5, registra cancelamento e persiste na nova partição")
+    @DisplayName("cancela: marca status 5, registra cancelamento e delega a transferência de partição ao serviço de expurgo")
     void cancela() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
@@ -57,7 +57,7 @@ class CancelarAutorizacaoUseCaseTest {
         aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
-        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         AutorizacaoCompletaResponseDto resp = useCase.execute(request);
 
@@ -66,14 +66,7 @@ class CancelarAutorizacaoUseCaseTest {
         assertNotNull(aut.getCancelamento());
         assertEquals("C1", aut.getCancelamento().getCodigoCanalCancelamento());
         verify(cancelamentoValidator).validar(any(CancelamentoContext.class));
-
-        // A troca de partição exige delete -> flush -> detach -> save na mesma transação;
-        // sem o flush+detach o merge de instância removida estoura ObjectDeletedException.
-        InOrder inOrder = inOrder(repository, entityManager);
-        inOrder.verify(repository).deleteById(any());
-        inOrder.verify(repository).flush();
-        inOrder.verify(entityManager).detach(aut);
-        inOrder.verify(repository).save(any());
+        verify(expurgoAutorizacaoService).transferirParaExpurgo(eq(aut), any(LocalDate.class));
 
         verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
@@ -91,8 +84,8 @@ class CancelarAutorizacaoUseCaseTest {
     }
 
     @Test
-    @DisplayName("propaga a exceção quando a reinserção falha após o delete (limite transacional do execute garante rollback) e não publica evento")
-    void rollbackQuandoReinsercaoFalha() {
+    @DisplayName("propaga a exceção quando o serviço de expurgo falha (limite transacional do execute garante rollback) e não publica evento")
+    void rollbackQuandoExpurgoFalha() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
@@ -100,12 +93,12 @@ class CancelarAutorizacaoUseCaseTest {
         aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
-        when(repository.save(any())).thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
+        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
+                .thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
 
-        // O delete ocorre antes do save; como o save falha e a exceção propaga para fora do
-        // execute() (anotado com @Transactional), o container faz rollback do delete.
+        // A exceção propaga para fora do execute() (anotado com @Transactional), o container
+        // faz rollback de qualquer alteração já aplicada na transação.
         assertThrows(RuntimeException.class, () -> useCase.execute(request));
-        verify(repository).deleteById(any());
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 }

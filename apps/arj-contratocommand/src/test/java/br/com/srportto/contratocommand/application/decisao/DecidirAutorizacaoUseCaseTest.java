@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.application.decisao;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.application.decisao.rules.AcaoDecisaoValida;
 import br.com.srportto.contratocommand.application.decisao.rules.TipoProdutoDecisao;
 import br.com.srportto.contratocommand.application.decisao.rules.TransicaoValidaDecisao;
@@ -22,12 +23,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,6 +45,8 @@ class DecidirAutorizacaoUseCaseTest {
     private AutorizacaoRepository repository;
     @Mock
     private DecisaoValidator decisaoValidator;
+    @Mock
+    private ExpurgoAutorizacaoService expurgoAutorizacaoService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
@@ -63,7 +68,7 @@ class DecidirAutorizacaoUseCaseTest {
     }
 
     @Test
-    @DisplayName("APROVAR grava ATIVA com motivo AUTORIZACAO_ACEITA_POR_TODOS e publica um evento")
+    @DisplayName("APROVAR grava ATIVA com motivo AUTORIZACAO_ACEITA_POR_TODOS, salva direto (sem expurgo) e publica um evento")
     void aprova() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
@@ -75,35 +80,41 @@ class DecidirAutorizacaoUseCaseTest {
         assertNotNull(resp);
         assertEquals(4, aut.getStatus()); // StatusAutorizacao.ATIVA
         assertEquals("AUTORIZACAO_ACEITA_POR_TODOS", aut.getMotivoStatus());
+        verify(repository).save(aut);
+        verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
         verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
 
     @Test
-    @DisplayName("REJEITAR grava REJEITADA com motivo REJEITADA_PAGADOR")
+    @DisplayName("REJEITAR grava REJEITADA com motivo REJEITADA_PAGADOR e transfere para a partição de expurgo")
     void rejeita() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
-        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         useCase.execute(contexto(uuid, "REJEITAR"));
 
         assertEquals(6, aut.getStatus()); // StatusAutorizacao.REJEITADA
         assertEquals("REJEITADA_PAGADOR", aut.getMotivoStatus());
+        verify(expurgoAutorizacaoService).transferirParaExpurgo(eq(aut), any(LocalDate.class));
+        verify(repository, never()).save(any());
     }
 
     @Test
-    @DisplayName("EXPIRAR grava REJEITADA com motivo REJEITADA_SISTEMA_TIMEOUT_J1")
+    @DisplayName("EXPIRAR grava REJEITADA com motivo REJEITADA_SISTEMA_TIMEOUT_J1 e transfere para a partição de expurgo")
     void expira() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
-        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         useCase.execute(contexto(uuid, "EXPIRAR"));
 
         assertEquals(6, aut.getStatus()); // StatusAutorizacao.REJEITADA
         assertEquals("REJEITADA_SISTEMA_TIMEOUT_J1", aut.getMotivoStatus());
+        verify(expurgoAutorizacaoService).transferirParaExpurgo(eq(aut), any(LocalDate.class));
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -128,7 +139,8 @@ class DecidirAutorizacaoUseCaseTest {
         void setUp() {
             var validatorReal = new DecisaoValidator(
                     List.of(new AcaoDecisaoValida(), new TipoProdutoDecisao(), new TransicaoValidaDecisao()));
-            useCaseComValidacaoReal = new DecidirAutorizacaoUseCase(repository, validatorReal, eventPublisher);
+            useCaseComValidacaoReal = new DecidirAutorizacaoUseCase(
+                    repository, validatorReal, expurgoAutorizacaoService, eventPublisher);
         }
 
         @Test
@@ -145,6 +157,7 @@ class DecidirAutorizacaoUseCaseTest {
 
             assertEquals(4, aut.getStatus()); // permanece ATIVA
             verify(repository, never()).save(any());
+            verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
             verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
         }
 
@@ -154,7 +167,7 @@ class DecidirAutorizacaoUseCaseTest {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
             var aut = autorizacaoRecebida(uuid);
             when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
-            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(contexto(uuid, "EXPIRAR"));
             assertEquals(6, aut.getStatus()); // agora REJEITADA
@@ -177,6 +190,7 @@ class DecidirAutorizacaoUseCaseTest {
                     () -> useCaseComValidacaoReal.execute(contexto(uuid, "CONFIRMAR")));
 
             verify(repository, never()).save(any());
+            verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
         }
     }
 }
