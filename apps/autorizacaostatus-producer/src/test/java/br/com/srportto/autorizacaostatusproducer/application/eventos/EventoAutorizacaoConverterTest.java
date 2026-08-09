@@ -27,6 +27,7 @@ class EventoAutorizacaoConverterTest {
                 950,
                 LocalDate.of(2027, 1, 1),
                 1L,
+                1L,
                 4,
                 "motivo",
                 LocalDate.of(2026, 1, 1),
@@ -63,6 +64,7 @@ class EventoAutorizacaoConverterTest {
         assertEquals(payload.idParticaoConta(), evento.getIdParticaoConta());
         assertEquals(payload.dataFimVigencia(), evento.getDataFimVigencia());
         assertEquals(payload.tipoProduto(), evento.getTipoProduto());
+        assertEquals(payload.tipoJornada(), evento.getTipoJornada());
         assertEquals(payload.status(), evento.getStatus());
         assertEquals(payload.codigoCanalContratacao(), evento.getCodigoCanalContratacao());
         assertEquals(payload.dataHoraUltimaAtualizacao(), evento.getDataHoraUltimaAtlz());

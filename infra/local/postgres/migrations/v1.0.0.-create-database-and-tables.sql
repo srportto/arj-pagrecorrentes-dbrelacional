@@ -14,6 +14,7 @@ CREATE TABLE autorizacoes (
     id_autorizacao UUID NOT NULL,
     id_particao_conta INT NOT NULL,
 	tipo_produto NUMERIC(6,0) NOT NULL,
+    tipo_jornada NUMERIC(6,0) NOT NULL DEFAULT 0, -- 0 = jornada desconhecida (linhas anteriores a esta coluna)
     status INT NOT null,
     motivo_status TEXT,
 	data_hora_inclusao timestamp  not null,

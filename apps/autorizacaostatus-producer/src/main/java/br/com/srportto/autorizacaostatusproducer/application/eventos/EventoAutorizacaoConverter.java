@@ -20,6 +20,7 @@ public class EventoAutorizacaoConverter {
                 .setIdParticaoConta(payload.idParticaoConta())
                 .setDataFimVigencia(payload.dataFimVigencia())
                 .setTipoProduto(payload.tipoProduto())
+                .setTipoJornada(payload.tipoJornada())
                 .setStatus(payload.status())
                 .setMotivoStatus(payload.motivoStatus())
                 .setDataInicioVigencia(payload.dataInicioVigencia())

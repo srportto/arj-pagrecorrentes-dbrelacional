@@ -27,6 +27,9 @@ public interface AutorizacaoMapper {
     // IllegalArgumentException nao mapeada); a resolucao real e feita via obterTipoProdutoEnumPorNome
     // no afterMapping abaixo.
     @Mapping(target = "tipoProduto", ignore = true)
+    // Ignorado pelo mesmo motivo de tipoProduto acima: setado explicitamente no afterMapping,
+    // não via matching implícito de parâmetro por nome/tipo.
+    @Mapping(target = "tipoJornada", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "motivoStatus", ignore = true)
     @Mapping(target = "dataInicioVigencia", ignore = true)
@@ -43,6 +46,7 @@ public interface AutorizacaoMapper {
             @MappingTarget Autorizacao autorizacao) {
 
         autorizacao.setTipoProduto(TipoProduto.obterTipoProdutoEnumPorNome(dados.tipoProduto()));
+        autorizacao.setTipoJornada(tipoJornada);
 
         if (dados.metadados() != null) {
             autorizacao.setMetadados(dados.metadados().toString());

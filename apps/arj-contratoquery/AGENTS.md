@@ -25,7 +25,7 @@ mvn test -Dtest=ListarAutorizacoesServiceTest#metodo # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
-Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoesServiceTest`, `ConsultarAutorizacaoServiceTest`, `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `TipoProdutoConverterTest`, `TipoProdutoTest`, `StatusAutorizacaoTest`, `ReversibleUUIDv7Test`.
+Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoesServiceTest`, `ConsultarAutorizacaoServiceTest`, `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `TipoProdutoConverterTest`, `TipoProdutoTest`, `StatusAutorizacaoTest`, `ReversibleUUIDv7Test`, `TipoJornadaAutorizacaoConverterTest`.
 
 ## Pré-requisitos
 
@@ -102,7 +102,15 @@ Tabela `autorizacoes` particionada por `id_particao_conta` (range **900–999** 
 
 ### Enums de domínio
 
-`domain/enums/StatusAutorizacao` (espelho do `arj-contratocommand`) carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado por esta app (somente leitura), disponível para eventual validação futura. `domain/enums/TipoEventoAutorizacao` (8 valores, `porStatus(status)`) também é um espelho, sem uso atual nesta app.
+`domain/enums/StatusAutorizacao` (espelho do `arj-contratocommand`) carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado por esta app (somente leitura), disponível para eventual validação futura. `domain/enums/TipoEventoAutorizacao` (8 valores, `porStatus(status)`) também é um espelho, sem uso atual nesta app. `domain/enums/TipoJornadaAutorizacao` (espelho parcial: só resolve código→enum, sem `obterJornadaAutorizacaoEnumPorNome` — esta app não recebe o header `tipoJornada`) existe apenas para o converter da coluna `tipo_jornada` funcionar; inclui `DESCONHECIDA(0)` para linhas anteriores à coluna existir.
+
+### Coluna tipo_jornada
+
+A entidade `Autorizacao` espelha a coluna `tipo_jornada` (`TipoJornadaAutorizacaoConverter`,
+mesmo padrão de `TipoProdutoConverter`). Não é exposta nos DTOs de resposta
+(`AutorizacaoDetalheResponseDto`/`AutorizacaoResumidaResponseDto`) — expor ou não é decisão de
+contrato de API em aberto (ver `design.md` da mudança `temporizacao-jornada-01-pix-auto`,
+Open Questions), não bloqueante para esta app funcionar.
 
 ### Exceções e códigos HTTP
 

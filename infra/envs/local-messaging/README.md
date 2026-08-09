@@ -15,6 +15,20 @@ recursos de mensageria de eventos de autorização no
   tolerando uma indisponibilidade transitória do Kafka sem esvaziar a fila
 - Subscription SNS → SQS com `raw_message_delivery = true` (o body entregue na
   fila é o JSON puro publicado no tópico, sem o envelope SNS)
+- Fila SQS `SQS-temporizacao-autorizacao`, com DLQ própria, consumida pela aplicação
+  `temporiza-autorizacao`. A subscription para essa fila declara **filter policy** por
+  message attribute (`tipoEvento=RECEPCAO`, `tipoProduto=PIX_AUTO`, `tipoJornada=SPI_J1`)
+  — só a recepção de `PIX_AUTO` na jornada 1 chega nela; a fila
+  `SQS-eventos-autorizacao` continua sem filtro, recebendo todos os eventos.
+
+  **Limitação conhecida do emulador**: se o Floci não suportar `filter_policy` em
+  `aws_sns_topic_subscription`, o `apply` ainda cria a subscription, mas ela passa a
+  entregar *todos* os eventos do tópico (o emulador ignora o filtro em vez de rejeitar o
+  recurso). Nesse caso, a filtragem por jornada precisaria ser replicada manualmente do
+  lado da aplicação apenas em ambiente local — mas isso **não deve ser feito**: a
+  aplicação `temporiza-autorizacao` não tem, e não deve ganhar, lógica condicional por
+  ambiente. Trate como uma limitação documentada do ambiente local, não como algo a
+  compensar em código.
 
 Separado de `envs/local` para que o `apply` não suba VPC/ECS junto — aplica em
 segundos e não interfere no ambiente de containers.

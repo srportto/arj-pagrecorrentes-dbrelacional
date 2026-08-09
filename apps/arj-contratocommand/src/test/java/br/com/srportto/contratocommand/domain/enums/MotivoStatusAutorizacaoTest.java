@@ -32,5 +32,25 @@ class MotivoStatusAutorizacaoTest {
     void exposeCodigo() {
         assertEquals(1L, MotivoStatusAutorizacao.RECEPCAO_SPI_J1.getCodigoMotivo());
         assertEquals(24L, MotivoStatusAutorizacao.FINALIZADA_01.getCodigoMotivo());
+        assertEquals(25L, MotivoStatusAutorizacao.REJEITADA_SISTEMA_TIMEOUT_J1.getCodigoMotivo());
+    }
+
+    @Test
+    @DisplayName("nenhum código de motivo colide com outro")
+    void codigosSaoUnicos() {
+        var codigos = new java.util.HashSet<Long>();
+        for (MotivoStatusAutorizacao motivo : MotivoStatusAutorizacao.values()) {
+            assertTrue(codigos.add(motivo.getCodigoMotivo()),
+                    "Código duplicado para " + motivo);
+        }
+    }
+
+    @Test
+    @DisplayName("REJEITADA_SISTEMA_TIMEOUT_J1 é distinto de REJEITADA_PAGADOR")
+    void timeoutSistemaDistintoDeRejeicaoCliente() {
+        assertNotEquals(MotivoStatusAutorizacao.REJEITADA_PAGADOR,
+                MotivoStatusAutorizacao.REJEITADA_SISTEMA_TIMEOUT_J1);
+        assertNotEquals(MotivoStatusAutorizacao.REJEITADA_PAGADOR.getCodigoMotivo(),
+                MotivoStatusAutorizacao.REJEITADA_SISTEMA_TIMEOUT_J1.getCodigoMotivo());
     }
 }

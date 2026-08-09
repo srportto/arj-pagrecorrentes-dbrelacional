@@ -27,7 +27,7 @@ class AutorizacaoEventoPayloadValidatorTest {
             LocalDate dataFimVigencia, Long tipoProduto, Integer status,
             LocalDateTime dataHoraInclusao, LocalDateTime dataHoraUltimaAtlz, String codigoCanalContratacao) {
         return new AutorizacaoEventoPayload(idAutorizacao, idParticaoConta, dataFimVigencia, tipoProduto,
-                status, null, null, dataHoraInclusao, dataHoraUltimaAtlz, null, null, null, null, null,
+                null, status, null, null, dataHoraInclusao, dataHoraUltimaAtlz, null, null, null, null, null,
                 null, null, codigoCanalContratacao, null, null, null, null, null, null, null, null, null, null);
     }
 
@@ -135,7 +135,7 @@ class AutorizacaoEventoPayloadValidatorTest {
 
     /** Monta um payload completo trocando apenas valor e valor_limite. */
     private AutorizacaoEventoPayload comDecimais(BigDecimal valor, BigDecimal valorLimite) {
-        return new AutorizacaoEventoPayload(ID, 950, DATA, 1L, 4, null, null, DATA_HORA, DATA_HORA,
+        return new AutorizacaoEventoPayload(ID, 950, DATA, 1L, null, 4, null, null, DATA_HORA, DATA_HORA,
                 valor, null, valorLimite, null, null, null, null, "canal", null, null, null, null,
                 null, null, null, null, null, null);
     }

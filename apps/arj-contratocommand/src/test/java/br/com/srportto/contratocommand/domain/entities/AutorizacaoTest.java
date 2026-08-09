@@ -1,5 +1,7 @@
 package br.com.srportto.contratocommand.domain.entities;
 
+import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +18,7 @@ class AutorizacaoTest {
     void inicializaComDefaults() {
         Autorizacao autorizacao = new Autorizacao();
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.DDA_AUTO);
 
         Autorizacao resultado = autorizacao.inicializaCriacao();
 
@@ -24,8 +27,7 @@ class AutorizacaoTest {
         int particao = resultado.getIdAutorizacao().getIdParticaoConta();
         assertTrue(particao >= 0 && particao < 889, "partição embutida deve estar em 0..888, foi " + particao);
 
-        assertEquals((int) br.com.srportto.contratocommand.domain.enums.StatusAutorizacao.ATIVA.getStatusAutorizacao(),
-                resultado.getStatus());
+        assertEquals((int) StatusAutorizacao.ATIVA.getStatusAutorizacao(), resultado.getStatus());
         assertEquals(LocalDate.now(), resultado.getDataInicioVigencia());
         assertNotNull(resultado.getDataHoraInclusao());
         assertNotNull(resultado.getDataHoraUltimaAtualizacao());
@@ -38,11 +40,45 @@ class AutorizacaoTest {
     void preservaDataFimInformada() {
         Autorizacao autorizacao = new Autorizacao();
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.DDA_AUTO);
         LocalDate fim = LocalDate.of(2030, 1, 1);
         autorizacao.setDataFimVigencia(fim);
 
         autorizacao.inicializaCriacao();
 
         assertEquals(fim, autorizacao.getDataFimVigencia());
+    }
+
+    @Test
+    @DisplayName("inicializaCriacao grava status RECEBIDA para PIX_AUTO")
+    void inicializaComPixAutoGravaRecebida() {
+        Autorizacao autorizacao = new Autorizacao();
+        autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.PIX_AUTO);
+
+        Autorizacao resultado = autorizacao.inicializaCriacao();
+
+        assertEquals((int) StatusAutorizacao.RECEBIDA.getStatusAutorizacao(), resultado.getStatus());
+    }
+
+    @Test
+    @DisplayName("inicializaCriacao grava status ATIVA para DDA_AUTO")
+    void inicializaComDdaAutoGravaAtiva() {
+        Autorizacao autorizacao = new Autorizacao();
+        autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.DDA_AUTO);
+
+        Autorizacao resultado = autorizacao.inicializaCriacao();
+
+        assertEquals((int) StatusAutorizacao.ATIVA.getStatusAutorizacao(), resultado.getStatus());
+    }
+
+    @Test
+    @DisplayName("inicializaCriacao lança IllegalStateException quando tipoProduto não tem status inicial mapeado")
+    void inicializaSemProdutoLancaExcecao() {
+        Autorizacao autorizacao = new Autorizacao();
+        autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+
+        assertThrows(IllegalStateException.class, autorizacao::inicializaCriacao);
     }
 }

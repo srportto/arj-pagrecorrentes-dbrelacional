@@ -1,6 +1,6 @@
 # arj-pagrecorrentes-dbrelacional
 
-Sistema de **autorizações de pagamentos recorrentes** (PIX Automático e DDA Automático), composto por dois microserviços Java que operam sobre um banco PostgreSQL particionado temporalmente.
+Sistema de **autorizações de pagamentos recorrentes** (PIX Automático e DDA Automático), composto por cinco microserviços Java que operam sobre um banco PostgreSQL particionado temporalmente.
 
 ```mermaid
 flowchart TD
@@ -10,23 +10,30 @@ flowchart TD
     Command --> Postgres[("PostgreSQL 18<br/>pg_partman + pg_cron + pgvector")]
     Query --> Postgres
 
-    Command -->|"publica evento após cada<br/>commit (criação/cancelamento)"| SNS["sns-estados-autorizacao (SNS)"]
+    Command -->|"publica evento após cada<br/>commit (criação/cancelamento/decisão)"| SNS["sns-estados-autorizacao (SNS)"]
     SNS -->|"subscription<br/>(raw delivery)"| SQS["SQS-eventos-autorizacao (SQS)"]
     SQS --> Producer["autorizacaostatus-producer<br/>porta 8082 · ponte SQS → Kafka"]
     Producer -->|"produz evento Avro<br/>(idempotente)"| Kafka["eventos-autorizacao<br/>(tópico Kafka, Schema Registry)"]
     Kafka --> Consumer["eventos-consumer<br/>porta 8083"]
+
+    SNS -->|"subscription filtrada<br/>(RECEPCAO+PIX_AUTO+SPI_J1)"| SQST["SQS-temporizacao-autorizacao (SQS)"]
+    SQST --> Temporiza["temporiza-autorizacao<br/>porta 8084 · sem banco"]
+    Temporiza -->|"ZADD (agenda)"| Valkey[("Valkey<br/>sorted set + stream")]
+    Valkey -->|"vencido: XADD (script Lua)"| Temporiza
+    Temporiza -->|"PATCH /decisao<br/>acao=EXPIRAR"| Command
 ```
 
 ## Microserviços
 
 | Serviço | Porta | Responsabilidade | Read-Only |
 |---------|-------|-----------------|-----------|
-| [arj-contratocommand](apps/arj-contratocommand/README.md) | 8080 | Criar e cancelar autorizações (POST, PATCH); publica eventos de estado no SNS | Não |
+| [arj-contratocommand](apps/arj-contratocommand/README.md) | 8080 | Criar, cancelar e decidir autorizações (POST, PATCH); publica eventos de estado no SNS | Não |
 | [arj-contratoquery](apps/arj-contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
 | [autorizacaostatus-producer](apps/autorizacaostatus-producer/README.md) | 8082 | Ponte SQS → Kafka: consome a fila de eventos, converte para Avro e produz no tópico `eventos-autorizacao` de forma idempotente | N/A |
 | [eventos-consumer](apps/eventos-consumer/README.md) | 8083 | Consome o tópico Kafka `eventos-autorizacao`, loga e confirma (ack) | N/A |
+| [temporiza-autorizacao](apps/temporiza-autorizacao/README.md) | 8084 | Temporiza a jornada 1 do PIX_AUTO: agenda a expiração no Valkey e aciona `PATCH /decisao` no vencimento | N/A |
 
-`arj-contratocommand` e `arj-contratoquery` compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura. `autorizacaostatus-producer` e `eventos-consumer` não acessam o banco: a primeira consome a fila SQS alimentada pelos eventos publicados pelo `arj-contratocommand` (ver [`infra/envs/local-messaging/`](infra/envs/local-messaging/) para provisionar o tópico/fila no Floci) e produz no Kafka local (ver [`infra/local/kafka/`](infra/local/kafka/README.md)); a segunda apenas consome esse tópico.
+`arj-contratocommand` e `arj-contratoquery` compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura. `autorizacaostatus-producer`, `eventos-consumer` e `temporiza-autorizacao` não acessam o banco: os dois primeiros formam a ponte SQS → Kafka (a primeira consome a fila SQS alimentada pelos eventos publicados pelo `arj-contratocommand` — ver [`infra/envs/local-messaging/`](infra/envs/local-messaging/) para provisionar tópico/filas no Floci — e produz no Kafka local, ver [`infra/local/kafka/`](infra/local/kafka/README.md); a segunda apenas consome esse tópico); `temporiza-autorizacao` consome uma fila **filtrada** do mesmo tópico SNS (só recepção de `PIX_AUTO` em `SPI_J1`), agenda no [Valkey local](infra/local/redis/README.md) e aciona de volta o `arj-contratocommand` no vencimento de 10 minutos, sem nunca ler a tabela `autorizacoes`.
 
 ## Estrutura do Repositório
 
@@ -37,13 +44,15 @@ arj-pagrecorrentes-dbrelacional/
 │   ├── arj-contratoquery/           # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
 │   ├── autorizacaostatus-producer/  # Ponte SQS -> Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── eventos-consumer/            # Consumidora do tópico Kafka (Java 25 + Spring Boot 4.0.7)
+│   ├── temporiza-autorizacao/       # Temporizador da jornada 1 do PIX_AUTO, sem banco (Java 25 + Spring Boot 4.0.7)
 │   └── docker-compose.yml      # Ambiente local: as 2 apps de leitura/escrita + Postgres (partman/cron/pgvector)
 ├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
-│   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, observability)
+│   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, elasticache-valkey, observability)
 │   ├── envs/{local,local-messaging,prod}/  # Composição dos módulos por ambiente
 │   ├── bootstrap/               # State remoto (pré-requisito dos envs)
 │   ├── local/postgres/          # Dockerfile do Postgres 18 com pg_partman + pg_cron + pgvector (dev local)
-│   └── local/kafka/             # Kafka local standalone (broker KRaft, Schema Registry, Kafbat UI)
+│   ├── local/kafka/             # Kafka local standalone (broker KRaft, Schema Registry, Kafbat UI)
+│   └── local/redis/             # Valkey local (sorted set + stream para temporiza-autorizacao)
 ├── docs/
 │   ├── arquitetura/                        # Diagramas de arquitetura
 │   ├── info_build-my-image-and-execute.md  # Docker + PostgreSQL com partman/cron
@@ -133,6 +142,23 @@ mvn spring-boot:run
 
 Dashboard do Kafka (mensagens, consumer groups, lag): http://localhost:8090.
 
+#### 5. (Opcional) Temporização da jornada 1 do PIX_AUTO
+
+Exige o Floci e o Terraform de `local-messaging` do passo anterior (já provisiona a fila
+filtrada `SQS-temporizacao-autorizacao`), mais o [Valkey local](infra/local/redis/README.md):
+
+```bash
+docker compose -f infra/local/redis/compose.yaml up -d
+
+cd apps/temporiza-autorizacao
+mvn spring-boot:run
+# Disponível em http://localhost:8084 — agenda e expira autorizações PIX_AUTO/SPI_J1
+```
+
+Crie uma autorização `PIX_AUTO` com `tipoJornada: SPI_J1` no `arj-contratocommand` e, sem
+uma aprovação via `PATCH /api/autorizacoes/{id}/decisao`, ela é rejeitada automaticamente
+(`REJEITADA_SISTEMA_TIMEOUT_J1`) 10 minutos depois.
+
 > Consulte o README de cada app para a lista completa de variáveis de ambiente e comandos de build.
 
 ## Profiles Spring
@@ -150,9 +176,11 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 | [apps/arj-contratoquery/README.md](apps/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
 | [apps/autorizacaostatus-producer/README.md](apps/autorizacaostatus-producer/README.md) | Documentação completa da ponte SQS -> Kafka |
 | [apps/eventos-consumer/README.md](apps/eventos-consumer/README.md) | Documentação completa da consumidora do tópico Kafka |
+| [apps/temporiza-autorizacao/CLAUDE.md](apps/temporiza-autorizacao/CLAUDE.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |
 | [infra/README.md](infra/README.md) | Topologia-alvo de infraestrutura (Terraform, ambientes, escopo) |
-| [infra/envs/local-messaging/README.md](infra/envs/local-messaging/README.md) | Provisionamento do tópico SNS e da fila SQS de eventos no Floci |
+| [infra/envs/local-messaging/README.md](infra/envs/local-messaging/README.md) | Provisionamento do tópico SNS e das filas SQS (eventos + temporização) no Floci |
 | [infra/local/kafka/README.md](infra/local/kafka/README.md) | Kafka local standalone (broker, Schema Registry, dashboard) |
+| [infra/local/redis/README.md](infra/local/redis/README.md) | Valkey local (sorted set + stream de expiração) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
 | [docs/comandos-sql.txt](docs/comandos-sql.txt) | Scripts SQL de particionamento |
 | [docs/post-autorizacoes.txt](docs/post-autorizacoes.txt) | Exemplos de payloads REST |

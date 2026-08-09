@@ -70,6 +70,16 @@ class StatusAutorizacaoTest {
     }
 
     @Test
+    @DisplayName("caminhos usados pela decisão (aprovar/rejeitar/expirar) já existem no grafo, sem alteração")
+    void caminhosDaDecisaoJaExistemNoGrafo() {
+        // RECEBIDA -> REJEITADA: usado por REJEITAR e EXPIRAR (capacidade decisao-autorizacao)
+        assertTrue(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.REJEITADA));
+        // RECEBIDA -> EM_PROCESSO_ATIVACAO -> ATIVA: os dois saltos usados por APROVAR, na mesma transação
+        assertTrue(StatusAutorizacao.RECEBIDA.podeTransicionarPara(StatusAutorizacao.EM_PROCESSO_ATIVACAO));
+        assertTrue(StatusAutorizacao.EM_PROCESSO_ATIVACAO.podeTransicionarPara(StatusAutorizacao.ATIVA));
+    }
+
+    @Test
     @DisplayName("estados terminais não transicionam para nenhum outro estado")
     void estadosTerminaisNaoTransicionam() {
         for (StatusAutorizacao terminal : new StatusAutorizacao[] {

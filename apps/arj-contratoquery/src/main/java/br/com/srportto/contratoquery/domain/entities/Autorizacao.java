@@ -1,6 +1,8 @@
 package br.com.srportto.contratoquery.domain.entities;
 
+import br.com.srportto.contratoquery.domain.converters.TipoJornadaAutorizacaoConverter;
 import br.com.srportto.contratoquery.domain.converters.TipoProdutoConverter;
+import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -36,6 +38,10 @@ public class Autorizacao {
     @Column(name = "tipo_produto", nullable = false)
     @Convert(converter = TipoProdutoConverter.class)
     private TipoProduto tipoProduto;
+
+    @Column(name = "tipo_jornada", nullable = false)
+    @Convert(converter = TipoJornadaAutorizacaoConverter.class)
+    private TipoJornadaAutorizacao tipoJornada;
 
     @Column(name = "status", nullable = false)
     private Integer status;

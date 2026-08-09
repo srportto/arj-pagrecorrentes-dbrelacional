@@ -39,3 +39,21 @@ variable "sqs_visibility_timeout_seconds" {
   type        = number
   default     = 60
 }
+
+variable "sqs_temporizacao_queue_name" {
+  description = "Nome da fila SQS que alimenta a aplicacao temporiza-autorizacao."
+  type        = string
+  default     = "SQS-temporizacao-autorizacao"
+}
+
+variable "sqs_temporizacao_visibility_timeout_seconds" {
+  description = "Visibility timeout da fila de temporizacao. Curto: o consumo so agenda no Valkey (ZADD), sem chamada de rede lenta."
+  type        = number
+  default     = 30
+}
+
+variable "sqs_temporizacao_dlq_max_receive_count" {
+  description = "Quantidade de tentativas de entrega antes de mover a mensagem de temporizacao para a DLQ."
+  type        = number
+  default     = 10
+}

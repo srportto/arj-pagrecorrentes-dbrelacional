@@ -1,0 +1,20 @@
+management:
+    endpoint:
+        health:
+            show-details: never
+
+spring:
+    cloud:
+        aws:
+            region:
+                static: ${AWS_REGION}
+    data:
+        redis:
+            host: ${VALKEY_HOST}
+            port: ${VALKEY_PORT:6379}
+
+sqs:
+    queue-url: ${AWS_SQS_QUEUE_URL}
+
+temporizacao:
+    command-base-url: ${COMMAND_BASE_URL}

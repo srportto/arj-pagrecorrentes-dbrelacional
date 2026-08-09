@@ -32,7 +32,9 @@ public enum MotivoStatusAutorizacao {
     EXPIRADA_02(23L,
             "PSP recebedor excedeu tempo limite resposta pos autorizacao do cliente"),
     FINALIZADA_01(24L,
-            "Autorizacao chegou ao fim do seu ciclo de vida, ou seja, autorizacao ativa chegou ao fim do seu prazo de vigencia");
+            "Autorizacao chegou ao fim do seu ciclo de vida, ou seja, autorizacao ativa chegou ao fim do seu prazo de vigencia"),
+    REJEITADA_SISTEMA_TIMEOUT_J1(25L,
+            "Autorizacao rejeitada pelo sistema por ausencia de resposta do cliente pagador dentro do prazo, jornada 1");
 
     private long codigoMotivo;
     private String descricao;

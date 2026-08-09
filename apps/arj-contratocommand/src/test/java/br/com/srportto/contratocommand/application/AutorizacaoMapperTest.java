@@ -29,17 +29,29 @@ class AutorizacaoMapperTest {
         assertEquals((short) 2, aut.getFrequenciaPagamento());
         assertNotNull(aut.getIdAutorizacao());
         assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
-        assertEquals(4, aut.getStatus()); // StatusAutorizacao.ATIVA
+        assertEquals(1, aut.getStatus()); // StatusAutorizacao.RECEBIDA
         assertEquals("RECEPCAO_SPI_J1", aut.getMotivoStatus());
+        assertEquals(TipoJornadaAutorizacao.SPI_J1, aut.getTipoJornada());
     }
 
     @Test
-    @DisplayName("toDomain mapeia produto DDA pelo nome do request")
+    @DisplayName("toDomain mapeia produto DDA pelo nome do request e grava status ATIVA")
     void toDomainDda() {
         Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestDda(), TipoJornadaAutorizacao.SPI_J1);
 
         assertNotNull(aut);
         assertEquals(TipoProduto.DDA_AUTO, aut.getTipoProduto());
+        assertEquals(4, aut.getStatus()); // StatusAutorizacao.ATIVA
+        assertEquals(TipoJornadaAutorizacao.SPI_J1, aut.getTipoJornada());
+    }
+
+    @Test
+    @DisplayName("toDomain persiste a jornada recebida mesmo quando difere da jornada usada no motivo (QRC_J3)")
+    void toDomainPersisteJornadaQrcJ3() {
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarRequestPix(), TipoJornadaAutorizacao.QRC_J3);
+
+        assertEquals(TipoJornadaAutorizacao.QRC_J3, aut.getTipoJornada());
+        assertEquals("LEITURA_QRC_J3", aut.getMotivoStatus());
     }
 
     @Test

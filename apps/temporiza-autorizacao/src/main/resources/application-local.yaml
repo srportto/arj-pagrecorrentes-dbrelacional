@@ -1,0 +1,24 @@
+management:
+    endpoint:
+        health:
+            show-details: always
+
+spring:
+    cloud:
+        aws:
+            endpoint: http://localhost:4566
+            region:
+                static: us-east-1
+            credentials:
+                access-key: test
+                secret-key: test
+    data:
+        redis:
+            host: localhost
+            port: 6379
+
+sqs:
+    queue-url: http://localhost:4566/000000000000/SQS-temporizacao-autorizacao
+
+temporizacao:
+    command-base-url: http://localhost:8080
