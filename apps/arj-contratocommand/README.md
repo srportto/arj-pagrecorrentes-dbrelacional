@@ -14,7 +14,7 @@ O **Contrato Command** é um microserviço backend construído com **Spring Boot
 - ✅ **Suporte a Múltiplos Produtos**: PIX_AUTO, DDA_AUTO (extensível via interface ContratacaoService)
 - ✅ **Particionamento Temporal**: Dados particionados por conta com PostgreSQL + pg_partman + pg_cron
 - ✅ **Validações em Cascata**: Validadores customizados + regras de negócio
-- ✅ **Tratamento Centralizado de Exceções**: `BusinessException` (422), `ApplicationException` (500)
+- ✅ **Tratamento Centralizado de Exceções**: `BusinessException` (422), `RecursoJaExisteException` + `ObjectOptimisticLockingFailureException` (409), `ApplicationException` (500)
 - ✅ **Persistência Robusta**: PostgreSQL 18 com UUIDs reversíveis e composite primary keys
 - ✅ **Logging Estruturado**: Interceptadores HTTP e tratamento de erros consistente
 
@@ -91,7 +91,7 @@ O projeto segue **arquitetura hexagonal** com camadas bem isoladas e responsabil
 │   │ DTOs: CriarAutorizacaoRequest, AutorizacaoResponseDto  │   │
 │   └────────────────────────────────────────────────────────┘   │
 └────────────────────────┬────────────────────────────────────────┘
-                         │ @Valid (400 Bad Request)
+                         │ @Valid (422 Unprocessable Content)
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    APPLICATION (Services)                       │
@@ -244,6 +244,27 @@ mvn clean test jacoco:report
 
 ⚠️ **Nota**: Testes de integração exigem PostgreSQL rodando localmente.
 
+## Códigos de erro (handler global)
+
+`ApiExceptionHandler` (`shared/interceptors/api/`) é o único mapeador entre exceção e status HTTP. Respostas de erro seguem `LayoutErrosApiResponse` (regra de negócio / conflito / não encontrado) ou `LayoutErrosApiValidationsResponse` (falha de validação de formato). Caminhos relevantes desta API:
+
+| Status | Exceção | Quando |
+|---|---|---|
+| 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente (corpo de requisição) não respeitou as validações declarativas (ex.: `@NotNull`, `@Min`, `@Max`). Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
+| 404 | `ResourceNotFoundException` | Autorização inexistente |
+| 409 | `RecursoJaExisteException` | `id_autorizacao_empresa` já existe no `POST /api/autorizacoes` (constraint UNIQUE em `(id_particao_conta, id_autorizacao_empresa)`) |
+| 409 | `ObjectOptimisticLockingFailureException` | Concorrência em `PATCH /api/autorizacoes/{id}/cancelar` ou `/decisao` — outro chamador já alterou a linha |
+| 409 | `StaleStateException` / `DataIntegrityViolationException` | Concorrência no `delete+insert` do `ExpurgoAutorizacaoService` (troca de partição durante cancelamento) |
+| 422 | `BusinessException` | Violação de regra de negócio (validação de produto, dados inválidos, transição de status inválida) |
+| 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
+| 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
+
+> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/reconciliar-contrato-spec-doc/design.md` (D3).
+
+> **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
+
+> **Quebra de contrato (mudança desta versão):** clientes que tratavam o POST duplicado como 422 precisam migrar para 409. O id já criado está na resposta de 409 — basta retornar essa linha ao chamador em vez de tentar recriar.
+
 ## 📚 API REST Endpoints
 
 ### AutorizacaoController
@@ -252,7 +273,7 @@ mvn clean test jacoco:report
 |--------|----------|-----------|--------|
 | **POST** | `/api/autorizacoes` | Criar autorização (multi-produto) | 201 |
 | **PATCH** | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar (header `tipoProduto` obrigatório) | 200 |
-| **GET** | `/api/autorizacoes/listar` | Listar paginado por conta | 200 |
+| **PATCH** | `/api/autorizacoes/{idAutorizacao}/decisao` | Decisão sobre autorização em `RECEBIDA` (jornada 1 do PIX_AUTO): `acao` = `APROVAR`\|`REJEITAR`\|`EXPIRAR` (header `tipoProduto` obrigatório) | 200 (aplicada) / 422 (status não permite) |
 
 ### Criar Autorização - Request (POST `/api/autorizacoes`)
 
@@ -283,12 +304,14 @@ mvn clean test jacoco:report
 
 | Campo | Tipo | Validação | HTTP se inválido |
 |-------|------|-----------|------------------|
-| `dataFimVigencia` | LocalDate | Não pode estar no passado | 422 |
-| `tipoProduto` | Enum | PIX_AUTO, DDA_AUTO | 400 |
-| `valor` | BigDecimal | @NotNull obrigatório | 400 |
-| `frequencia` | Integer | @Min(1) @Max(4) (semanal a trimestral) | 400 |
-| `quantidadeDividasCiclo` | Integer | @Min(1) obrigatório | 400 |
-| `idUnicoContaContratante` | UUID | @NotNull obrigatório | 400 |
+| `dataFimVigencia` | LocalDate | Não pode estar no passado (regra de negócio) | 422 — `BusinessException` |
+| `tipoProduto` | Enum | PIX_AUTO, DDA_AUTO | 422 — `MethodArgumentNotValidException` |
+| `valor` | BigDecimal | @NotNull obrigatório | 422 — `MethodArgumentNotValidException` |
+| `frequencia` | Integer | @Min(1) @Max(4) (semanal a trimestral) | 422 — `MethodArgumentNotValidException` |
+| `quantidadeDividasCiclo` | Integer | @Min(1) obrigatório | 422 — `MethodArgumentNotValidException` |
+| `idUnicoContaContratante` | UUID | @NotNull obrigatório | 422 — `MethodArgumentNotValidException` |
+
+> A coluna **HTTP se inválido** reflete a convenção vigente (D3, 2026-08-09): **422** para qualquer entrada inválida do cliente, tanto de formato quanto de regra. A distinção está no **shape da resposta** — `LayoutErrosApiValidationsResponse` (com `occurrences` por campo) para formato, `LayoutErrosApiResponse` (com `message` único) para regra de negócio.
 
 #### Respostas
 
@@ -299,21 +322,26 @@ mvn clean test jacoco:report
     "idAutos": "550e8400-e29b-41d4-a716-446655440000",
     "idParticaoConta": 45
   },
-  "statusAutorizacao": "ATIVO",
+  "status": "ATIVA",
   "dataFimVigencia": "2026-12-31",
   "tipoProduto": "PIX_AUTO",
   "valor": 500.00
 }
 ```
 
-**400 Bad Request** (validação de input):
+**422 Unprocessable Content** (validação de input — formato):
 ```json
 {
   "timestamp": "2026-05-17T23:32:31.000Z",
-  "status": 400,
-  "error": "Bad Request",
-  "message": "Validation failed: frequencia must be between 1 and 4",
-  "path": "/api/autorizacoes"
+  "error": "Requisicao nao respeitou as validacoes basicas do contrato, confira as occurrences para mais detalhes",
+  "message": "Erro durante a validacao da requisicao, confira as occurrences...",
+  "path": "/api/autorizacoes",
+  "occurrences": [
+    {
+      "fieldName": "frequencia",
+      "message": "O campo 'frequencia' deve ser maior ou igual a 1."
+    }
+  ]
 }
 ```
 
@@ -348,7 +376,7 @@ mvn clean test jacoco:report
 }
 ```
 
-**200 OK:** Retorna `AutorizacaoCompletaResponseDto` atualizada com `statusAutorizacao: "CANCELADO"`
+**200 OK:** Retorna `AutorizacaoCompletaResponseDto` atualizada com `status: "CANCELADA"`
 
 ## 📝 Alterações Recentes - v0.0.1 (maio 2026)
 
@@ -356,8 +384,8 @@ mvn clean test jacoco:report
 
 **Endpoints implementados com Strategy Pattern:**
 - `POST /api/autorizacoes` - Criação com orquestrador multi-produto
-- `GET /api/autorizacoes/listar` - Listagem paginada por conta
 - `PATCH /api/autorizacoes/{idAutorizacao}/cancelar` - Cancelamento programado
+- `PATCH /api/autorizacoes/{idAutorizacao}/decisao` - Decisão sobre autorização em `RECEBIDA` (jornada 1 do PIX_AUTO)
 
 ### ✅ Strategy Pattern para Múltiplos Produtos
 
@@ -391,7 +419,7 @@ public record AutorizacaoCompletaResponseDto(
     TipoProduto tipoProduto,
     LocalDate dataFimVigencia,
     BigDecimal valor,
-    StatusAutorizacao statusAutorizacao,
+    StatusAutorizacao status,
     JsonNode metadados
 ) {}
 ```
@@ -426,15 +454,15 @@ public record IdAutorizacao(
 public interface PixAutoMapper {
     @Mapping(target = "id", ignore = true)
     Autorizacao toEntity(CriarAutorizacaoRequest dto);
-    
+
     @AfterMapping
-    default void afterToEntity(CriarAutorizacaoRequest dto, 
+    default void afterToEntity(CriarAutorizacaoRequest dto,
                                 @MappingTarget Autorizacao auto) {
         // Gera UUID com partição embutida
         Integer particao = IdContaUUIDPartitionDistributor.getPartitionFast();
         UUID uuid = ReversibleUUIDv7.generate(particao);
         auto.setId(new IdAutorizacao(uuid, particao));
-        auto.setStatusAutorizacao(StatusAutorizacao.ATIVO);
+        auto.setStatus(StatusAutorizacao.ATIVA);
     }
 }
 ```
@@ -445,9 +473,11 @@ public interface PixAutoMapper {
 
 | Nível | Componente | Validação | Exceção | HTTP |
 |-------|-----------|-----------|---------|------|
-| 1 | DTOs com `@Valid` | @NotNull, @Min, @Max | `BindException` | 400 |
+| 1 | DTOs com `@Valid` | @NotNull, @Min, @Max | `MethodArgumentNotValidException` | 422 |
 | 2 | Validadores customizados | Regras específicas | `BusinessException` | 422 |
 | 3 | Service layer | Regras de negócio | `BusinessException` | 422 |
+
+> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — formato e regra de negócio — retorna **422** (ver tabela de status acima). A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`).
 
 ### ✅ Particionamento Temporal com Composite Key
 
@@ -553,7 +583,7 @@ CREATE TABLE autorizacoes (
     data_criacao TIMESTAMP NOT NULL DEFAULT NOW(),
     valor DECIMAL(19,2) NOT NULL,
     tipoProduto VARCHAR(50),
-    statusAutorizacao VARCHAR(20),
+    status VARCHAR(20),
     PRIMARY KEY (id_autorizacao, id_particao_conta)
 ) PARTITION BY RANGE (id_particao_conta);
 
@@ -812,7 +842,7 @@ CriarAutorizacaoRequest novoRequest = new CriarAutorizacaoRequest(..., 5000, ...
 - DTOs imutáveis com records quando possível
 - Validadores customizados em regras específicas, não espalhados
 - Composite PK `(UUID, Integer)` apenas no contexto particionamento temporal
-- Exceptions mapeadas para status HTTP apropriado (400/422/500)
+- Exceptions mapeadas para status HTTP apropriado (422/409/500)
 
 ## 📄 Licença
 

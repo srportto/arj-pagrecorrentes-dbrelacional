@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,9 +26,11 @@ public class ListarAutorizacoesService {
 
     private static final Integer PAGINA_PADRAO = 0;
     private static final Integer TAMANHO_PADRAO = 20;
+    private static final Integer TAMANHO_MAXIMO = 100;
     private static final String CAMPO_ORDENACAO_PADRAO = "dataHoraInclusao";
     private static final Sort.Direction DIRECAO_PADRAO = Sort.Direction.DESC;
 
+    @Transactional(readOnly = true)
     public PaginacaoResponseDto<AutorizacaoResumidaResponseDto> listar(
             UUID idUnicoContaContratante,
             List<String> statuses,
@@ -41,6 +44,19 @@ public class ListarAutorizacoesService {
 
         Integer paginaFinal = pagina != null ? pagina : PAGINA_PADRAO;
         Integer tamanhoFinal = tamanho != null ? tamanho : TAMANHO_PADRAO;
+
+        // Validar paginação
+        if (paginaFinal < 0) {
+            throw new BusinessException("pagina deve ser maior ou igual a 0");
+        }
+
+        if (tamanhoFinal <= 0) {
+            throw new BusinessException("tamanho deve ser maior que 0");
+        }
+
+        if (tamanhoFinal > TAMANHO_MAXIMO) {
+            throw new BusinessException(String.format("tamanho não pode ser maior que %d", TAMANHO_MAXIMO));
+        }
 
         Pageable pageable = construirPageable(paginaFinal, tamanhoFinal, ordenarPor);
 
@@ -91,15 +107,38 @@ public class ListarAutorizacoesService {
     }
 
     private String mapearCampoDTO(String campoDtoOuEntidade) {
-        return switch (campoDtoOuEntidade) {
+        // Mapeamento de DTO para entidade
+        String mapeado = switch (campoDtoOuEntidade) {
             case "dataCriacao" -> "dataHoraInclusao";
             case "valor" -> "valorAutorizacao";
             case "idAutorizacao" -> "idAutorizacao.idAutorizacao";
             case "dataInicioVigencia" -> "dataInicioVigencia";
             case "dataFimVigencia" -> "dataFimVigencia";
             case "idPessoaRecebedora" -> "idPessoaRecebedora";
-            default -> campoDtoOuEntidade;
+            default -> null;
         };
+
+        // Se foi mapeado do DTO, retorna o campo de entidade
+        if (mapeado != null) {
+            return mapeado;
+        }
+
+        // Whitelist de campos de entidade que podem ser usados diretamente
+        if (campoDtoOuEntidade.equals("dataHoraInclusao") ||
+            campoDtoOuEntidade.equals("status") ||
+            campoDtoOuEntidade.equals("valorAutorizacao") ||
+            campoDtoOuEntidade.equals("dataInicioVigencia") ||
+            campoDtoOuEntidade.equals("dataFimVigencia") ||
+            campoDtoOuEntidade.equals("idPessoaRecebedora")) {
+            return campoDtoOuEntidade;
+        }
+
+        // Campo desconhecido - rejeitar
+        throw new BusinessException(
+                String.format("Campo de ordenação inválido: %s. Campos aceitos: " +
+                        "dataCriacao, dataHoraInclusao, valor, valorAutorizacao, idAutorizacao, " +
+                        "dataInicioVigencia, dataFimVigencia, idPessoaRecebedora, status",
+                        campoDtoOuEntidade));
     }
 
     private List<Integer> converterStatusParaInteiros(List<String> statuses) {

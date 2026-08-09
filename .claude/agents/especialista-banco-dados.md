@@ -2,7 +2,7 @@
 name: especialista-banco-dados
 description: "Use quando precisar OTIMIZAR banco relacional (PostgreSQL/MySQL) — `EXPLAIN ANALYZE`, criar índice (`CREATE INDEX CONCURRENTLY`), tuning de SGBD, diagnosticar vacuum/bloat, replicação, JSONB/GIN. NÃO use para problemas de JPA/Hibernate em código Java (java-revisor + persistencia-jpa) nem para design da camada de persistência (arquitetura-limpa-java)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: haiku
+model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
 effort: medium
 ---
 

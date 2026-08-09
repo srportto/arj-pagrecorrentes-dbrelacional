@@ -5,9 +5,7 @@
 TBD — capability criada a partir da mudança `add-eventos-autorizacao-kafka`. Descreve
 como a `autorizacaostatus-producer` produz eventos Avro no tópico Kafka
 `eventos-autorizacao` a partir das mensagens consumidas da fila SQS.
-
 ## Requirements
-
 ### Requirement: Produtor Kafka como adaptador de saída atrás de porta
 
 O produtor Kafka SHALL ser um adaptador de **saída** residente em
@@ -143,8 +141,14 @@ A `autorizacaostatus-producer` SHALL produzir cada evento consumido da fila SQS 
 tópico Kafka `eventos-autorizacao` como Avro `SpecificRecord` gerado por
 `avro-maven-plugin` a partir do schema `EventoAutorizacao` (namespace
 `br.com.srportto.eventos.autorizacao`), serializado com o `KafkaAvroSerializer` da
-Confluent contra o Schema Registry (subject `eventos-autorizacao-value`,
-`auto.register.schemas=true` no profile `local`).
+Confluent contra o Schema Registry (subject `eventos-autorizacao-value`).
+
+O registro automático de schemas (`auto.register.schemas`) SHALL ser habilitado apenas no profile
+`local` e SHALL estar desabilitado nos demais profiles, em especial `prod`. A configuração SHALL
+ser parametrizada por profile, não fixada em código. Fora do profile `local`, o registro de um
+schema novo ou alterado SHALL ocorrer por um caminho explícito e revisável, anterior ao primeiro
+produce que o utilize — de modo que uma alteração incompatível não seja registrada em produção
+como efeito colateral do tráfego.
 
 O schema SHALL espelhar a linha da tabela `autorizacoes`: campos em snake_case com os
 nomes das colunas; nulabilidade conforme o DDL (`["null", X]` com `"default": null`
@@ -168,6 +172,20 @@ JSON serializado para `metadados`.
 - **WHEN** o JSON traz `data_hora_ultima_atlz` com precisão de microssegundos
 - **THEN** o campo Avro `local-timestamp-micros` preserva o valor sem truncamento nem
   conversão de fuso
+
+#### Scenario: Registro automático habilitado no profile local
+- **WHEN** a aplicação roda com o profile `local` e produz o primeiro evento
+- **THEN** o subject `eventos-autorizacao-value` é registrado automaticamente no Schema Registry
+
+#### Scenario: Registro automático desabilitado em produção
+- **WHEN** a configuração efetiva da aplicação no profile `prod` é inspecionada
+- **THEN** `auto.register.schemas` SHALL estar desabilitado
+- **AND** o valor SHALL vir de configuração por profile, não de literal fixado no código
+
+#### Scenario: Schema não registrado falha de forma visível em produção
+- **WHEN** a aplicação em `prod` tenta produzir um evento cujo schema ainda não foi registrado
+- **THEN** o produce SHALL falhar com erro explícito, em vez de registrar o schema
+  automaticamente
 
 ### Requirement: Key de idempotência por transição de estado
 
@@ -222,7 +240,7 @@ log de erro + ack/descarte, mesma classificação de payload inválido).
 - **THEN** a mensagem é classificada como inválida (log de erro + ack), sem produção
   no Kafka
 
-### Requirement: Ordenação e deduplicação delegadas ao consumidor a jusante
+### Requirement: Ordenação e deduplicação — bridge oferece key estável; dedup é ônus do consumidor
 
 A ponte NÃO SHALL oferecer garantia de ordem entre eventos, nem mesmo entre eventos da
 mesma autorização. A ordenação SHALL ser responsabilidade do consumidor a jusante,
@@ -244,6 +262,22 @@ de uma vez no tópico. A deduplicação SHALL ser responsabilidade do consumidor
 pela key — que é idêntica entre reentregas do mesmo evento. Este é um **contrato
 explícito** com os consumidores do tópico, não um comportamento tácito.
 
+A delegação acima é uma **obrigação transferida, não uma garantia oferecida**. Enquanto um
+consumidor não implementar reordenação por `data_hora_ultima_atlz` e deduplicação por key, as
+garantias correspondentes NÃO existem no fluxo. Por consequência:
+
+- Um consumidor do tópico `eventos-autorizacao` que ainda não implemente deduplicação por key
+  NÃO SHALL aplicar efeito colateral persistente a partir do evento — persistir estado, disparar
+  cobrança, notificar terceiros ou qualquer ação não idempotente.
+- Um consumidor que ainda não implemente reordenação NÃO SHALL derivar estado a partir da ordem de
+  chegada dos eventos.
+- Consumo apenas para log, métrica ou auditoria de conectividade SHALL permanecer permitido sem
+  essas implementações, por não produzir efeito colateral.
+
+Esta exigência existe porque a delegação foi declarada quando nenhum consumidor a implementava, e o
+aviso precisa alcançar quem for adicionar lógica de negócio ao consumidor — no contrato do fluxo, e
+não apenas em documento de mudança arquivado.
+
 O tópico `eventos-autorizacao` NÃO SHALL ser configurado com log compaction: com key
 única por transição, a compactação nunca teria efeito. A retenção SHALL ser por tempo.
 
@@ -264,6 +298,23 @@ O tópico `eventos-autorizacao` NÃO SHALL ser configurado com log compaction: c
 - **WHEN** a mesma mensagem SQS é entregue duas vezes e produzida duas vezes no tópico
 - **THEN** os dois registros Kafka possuem key idêntica
 - **AND** o consumidor a jusante os reconhece como o mesmo evento
+
+#### Scenario: Consumidor sem deduplicação não persiste estado
+
+- **WHEN** um consumidor do tópico não implementa deduplicação por key
+- **THEN** ele NÃO SHALL aplicar efeito colateral persistente a partir do evento consumido
+
+#### Scenario: Consumo apenas para log permanece permitido
+
+- **WHEN** um consumidor apenas registra o evento em log ou métrica, sem efeito colateral
+- **THEN** SHALL poder operar sem implementar deduplicação nem reordenação
+
+#### Scenario: Adicionar lógica de negócio exige as implementações
+
+- **WHEN** um consumidor passa a persistir estado ou disparar ação não idempotente a partir do
+  evento
+- **THEN** SHALL implementar deduplicação por key e reordenação por `data_hora_ultima_atlz` na
+  mesma mudança
 
 ### Requirement: Produce síncrono com timeouts abaixo do visibility timeout
 
@@ -304,3 +355,4 @@ do produce sem teto de tempo garantido.
 - **WHEN** várias mensagens de um mesmo lote são processadas concorrentemente
 - **THEN** nenhuma mensagem aguarda o processamento das demais para iniciar o seu
 - **AND** o tempo até seu ack é o de seu próprio produce, não a soma do lote
+

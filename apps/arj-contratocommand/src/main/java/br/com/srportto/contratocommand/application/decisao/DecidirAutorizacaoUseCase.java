@@ -92,7 +92,8 @@ public class DecidirAutorizacaoUseCase {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            throw new ApplicationException(e.getMessage());
+            throw new ApplicationException(
+                    "Falha ao obter autorização " + idAutorizacao + " na partição " + idParticaoAutorizacao, e);
         }
     }
 }

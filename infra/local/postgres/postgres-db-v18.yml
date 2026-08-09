@@ -11,7 +11,7 @@ services:
     environment:
       POSTGRES_DB: db-csp-postgres # Set the default database name
       POSTGRES_USER: docker
-      POSTGRES_PASSWORD: JTMQ9YxDkHfRQbX2
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD nao definida - copie .env.example para .env}
       # Optional: Explicitly set PGDATA for clarity or if customizing
       PGDATA: /var/lib/postgresql/data
     volumes:

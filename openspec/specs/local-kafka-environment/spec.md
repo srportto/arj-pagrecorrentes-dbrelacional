@@ -5,13 +5,11 @@
 TBD — capability criada a partir da mudança `add-eventos-autorizacao-kafka`. Descreve o
 ambiente Kafka local (broker, Schema Registry e dashboard) usado para desenvolvimento e
 observação da ponte SQS → Kafka.
-
 ## Requirements
-
 ### Requirement: Compose Kafka dedicado e isolado
 
 A infraestrutura Kafka local SHALL residir em um Docker Compose próprio
-(`infra/local/kafka/docker-compose.yml`), com broker `cp-kafka` em modo KRaft (nó
+(`infra/local/kafka/compose.yaml`), com broker `cp-kafka` em modo KRaft (nó
 único, sem ZooKeeper), `cp-schema-registry` e o dashboard Kafbat UI. Subir ou derrubar
 esse compose NÃO SHALL criar, alterar ou depender de recursos do compose de apps
 (`apps/docker-compose.yml`) nem do Terraform de mensageria SQS
@@ -31,19 +29,31 @@ esse compose NÃO SHALL criar, alterar ou depender de recursos do compose de app
 
 ### Requirement: Tópico eventos-autorizacao criado explicitamente
 
-O compose SHALL criar o tópico `eventos-autorizacao` com 3 partições por meio de um
-init-container (ex.: `kafka-topics --create --if-not-exists`), com a criação automática
-de tópicos (`auto.create.topics.enable`) desabilitada no broker. O tópico é contrato
-explícito, não efeito colateral do primeiro produce.
+O compose SHALL criar os tópicos `eventos-autorizacao` e `eventos-autorizacao.DLT`, ambos com 3
+partições, por meio de um init-container (ex.: `kafka-topics --create --if-not-exists`), com a
+criação automática de tópicos (`auto.create.topics.enable`) desabilitada no broker. Os tópicos são
+contrato explícito, não efeito colateral do primeiro produce.
 
-#### Scenario: Tópico existe após subir o ambiente
+O tópico `eventos-autorizacao.DLT` é destino do `DeadLetterPublishingRecoverer` da
+`eventos-consumer`. Sua ausência NÃO SHALL ser suprida por auto-create — com `auto.create.topics.enable`
+desabilitado, a publicação na DLT falharia, o offset não avançaria e a partição ficaria bloqueada
+indefinidamente pela mesma mensagem que a DLT deveria isolar.
+
+#### Scenario: Tópicos existem após subir o ambiente
 - **WHEN** o compose termina de subir
-- **THEN** `kafka-topics --list` no broker inclui `eventos-autorizacao`
-- **AND** o tópico possui 3 partições
+- **THEN** `kafka-topics --list` no broker inclui `eventos-autorizacao` e `eventos-autorizacao.DLT`
+- **AND** ambos os tópicos possuem 3 partições
 
 #### Scenario: Tópico inexistente não é criado por engano
 - **WHEN** um producer tenta publicar em um tópico que não existe
 - **THEN** o broker rejeita a operação em vez de criar o tópico automaticamente
+
+#### Scenario: Mensagem venenosa alcança a DLT sem travar a partição
+- **WHEN** uma mensagem falha o processamento no `eventos-consumer` em todas as tentativas
+  configuradas
+- **THEN** o `DeadLetterPublishingRecoverer` SHALL publicá-la em `eventos-autorizacao.DLT` com
+  sucesso
+- **AND** o offset SHALL avançar, liberando a partição para as mensagens seguintes
 
 ### Requirement: Schema Registry acessível para as aplicações
 
@@ -75,3 +85,4 @@ decodificadas via Avro, os consumer groups ativos e o lag por partição.
 #### Scenario: Lag do consumidor é visível
 - **WHEN** a `eventos-consumer` está consumindo o tópico
 - **THEN** o dashboard lista o group `eventos-consumer` com o lag por partição
+

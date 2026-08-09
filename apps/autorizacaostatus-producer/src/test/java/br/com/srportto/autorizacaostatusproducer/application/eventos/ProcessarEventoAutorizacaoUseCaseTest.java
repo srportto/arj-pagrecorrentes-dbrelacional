@@ -181,6 +181,30 @@ class ProcessarEventoAutorizacaoUseCaseTest {
     }
 
     @Test
+    @DisplayName("propriedade desconhecida no payload é ignorada e a mensagem é processada normalmente")
+    void propriedadeDesconhecidaEIgnorada() {
+        inicializar();
+        String mensagemComCampoNovo = MENSAGEM_VALIDA.replace(
+                "\"codigo_canal_contratacao\":\"canal\"",
+                "\"codigo_canal_contratacao\":\"canal\",\"campo_futuro_ainda_nao_replicado\":\"qualquer valor\"");
+
+        assertDoesNotThrow(() -> useCase.processar(mensagemComCampoNovo));
+
+        verify(publicador).produzir(anyString(), any(EventoAutorizacao.class), eq("ATIVACAO"));
+    }
+
+    @Test
+    @DisplayName("regressão: campo obrigatório ausente continua não-retryable mesmo com ignoreUnknown habilitado")
+    void campoObrigatorioAusenteContinuaNaoRetryable() {
+        inicializar();
+
+        assertThrows(EventoAutorizacaoInvalidoException.class,
+                () -> useCase.processar("{\"campo_futuro_ainda_nao_replicado\":\"x\"}"));
+
+        verifyNoInteractions(publicador);
+    }
+
+    @Test
     @DisplayName("falha do Kafka propaga sem tratamento (retryable)")
     void falhaDoKafkaPropaga() {
         inicializar();

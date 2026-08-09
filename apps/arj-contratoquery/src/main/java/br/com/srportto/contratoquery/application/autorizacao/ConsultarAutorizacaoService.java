@@ -3,6 +3,7 @@ package br.com.srportto.contratoquery.application.autorizacao;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.srportto.contratoquery.domain.entities.Autorizacao;
 import br.com.srportto.contratoquery.domain.entities.IdAutorizacao;
@@ -20,6 +21,7 @@ public class ConsultarAutorizacaoService {
 
     private final AutorizacaoRepository repository;
 
+    @Transactional(readOnly = true)
     public AutorizacaoDetalheResponseDto consultarPorId(UUID autorizacaoId) {
         int idParticaoConta = extrairParticao(autorizacaoId);
 

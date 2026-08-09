@@ -5,7 +5,7 @@
 
 Consumidora do tópico Kafka `eventos-autorizacao`, em **arquitetura hexagonal**. Recebe
 os eventos Avro produzidos pela `autorizacaostatus-producer` (ponte SQS → Kafka), loga o
-consumo com sucesso incluindo a representação do evento e comita o offset (ack) somente
+consumo com sucesso (identificadores apenas: `idAutorizacao`, `tipoEvento`) e comita o offset (ack) somente
 após o log. Nesta fase não há processamento de negócio — apenas log + ack. Mensagens que
 esgotam as tentativas de processamento (falha de negócio ou de desserialização) vão para
 a DLT (`eventos-autorizacao.DLT`).
@@ -42,6 +42,12 @@ mvn test                                     # Todos os testes
   `infra/local/kafka/`)
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado
   explicitamente via `SPRING_PROFILES_ACTIVE=prod`)
+- **`auto.register.schemas` é `true` só no profile `local`** (`kafka.auto-register-schemas`,
+  `KafkaProperties`/`KafkaConsumerConfig` — usado pelos templates da DLT) — em `prod` é `false`.
+  Antes do primeiro deploy de um schema novo/alterado em produção, registre manualmente o subject
+  `eventos-autorizacao-value` no Schema Registry (CLI ou API REST do Registry, com o `.avsc`
+  atualizado) e confirme compatibilidade. Ver
+  `openspec/changes/rede-seguranca-contrato-evento/design.md` (D5).
 
 ## Stack
 
@@ -84,7 +90,7 @@ EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, containerFactory com 
   ├─ recebe o EventoAutorizacao desserializado (specific.avro.reader=true, via ErrorHandlingDeserializer)
   ├─ ProcessarEventoAutorizacaoUseCase.processar(evento)
   │    ├─ TipoEventoAutorizacao.porStatus(evento.getStatus()) → deriva o tipo do evento
-  │    └─ loga sucesso com a representação do evento e o tipo derivado
+  │    └─ loga sucesso: idAutorizacao e tipo derivado (nunca o record Avro inteiro — ele contém PII)
   └─ offset avança automaticamente — só se o método retornar sem lançar exceção
 ```
 
@@ -138,10 +144,40 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
    um `KafkaTemplate<String, EventoAutorizacao>` com `KafkaAvroSerializer`. O
    `DeadLetterPublishingRecoverer` roteia entre os dois pelo tipo do valor do record — se
    um novo tipo de falha aparecer, pode ser necessário um terceiro template.
-9. **Tópico `eventos-autorizacao.DLT`** não é provisionado explicitamente no compose
-   Kafka local (diferente do tópico principal, que tem auto-create desabilitado de
-   propósito) — é criado sob demanda pelo auto-create padrão do broker local na primeira
-   publicação.
+9. **Tópico `eventos-autorizacao.DLT` é provisionado explicitamente** no
+   `kafka-topic-init` de `infra/local/kafka/compose.yaml`, com 3 partições — mesmo
+   critério do tópico principal, que também tem auto-create desabilitado
+   (`auto.create.topics.enable: false`). Sem essa criação explícita, a publicação na DLT
+   falha com `UnknownTopicOrPartitionException`, o offset não avança e a partição trava
+   na mensagem venenosa que a DLT deveria isolar — exatamente o cenário que a DLT existe
+   para evitar (ver `openspec/changes/rede-seguranca-contrato-evento`).
+10. **O destino da DLT é resolvido explicitamente para `<tópico>.DLT`** em
+    `KafkaConsumerConfig.eventoAutorizacaoDeadLetterRecoverer` (`BiFunction` passado ao
+    `DeadLetterPublishingRecoverer`) — **não confie no destino default do spring-kafka**:
+    nesta versão (4.0.6) ele resolve para `<tópico>-dlt` (hífen, minúsculo), não
+    `<tópico>.DLT`. Usar o default faria a publicação na DLT falhar contra um tópico
+    inexistente, mesmo com `eventos-autorizacao.DLT` provisionado no compose. Verificado
+    ao vivo antes desta correção: reproduziu exatamente a partição travada.
+
+## Regra de logs — proteção de dado sensível
+
+**Nunca interpole um objeto de domínio, record Avro, payload ou DTO em log.** O `EventoAutorizacao`
+carrega dado pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`) e
+financeiro (`valor`, `descricao`, `metadados`). Identifique a mensagem por campos nominalmente:
+apenas `idAutorizacao` e `tipoEvento` em log é seguro; o record inteiro não é.
+
+**Padrão correto:**
+```java
+log.info("Autorização {} consumida com sucesso (tipoEvento={})",
+        evento.getIdAutorizacao(), tipoEvento);
+```
+
+**Padrão proibido:**
+```java
+log.info("Autorização {} consumida: {}", evento.getIdAutorizacao(), evento);  // ❌ vaza PII
+```
+
+Ver a mudança `parar-vazamento-dado-sensivel` no `openspec/changes/` para contexto completo.
 
 ## Documentação relacionada
 

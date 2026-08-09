@@ -13,6 +13,7 @@ import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.DecisaoAutorizacaoRequest;
+import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -125,6 +126,23 @@ class DecidirAutorizacaoUseCaseTest {
 
         assertThrows(BusinessException.class, () -> useCase.execute(contexto(uuid, "APROVAR")));
 
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+    }
+
+    @Test
+    @DisplayName("encapsula exceção de repository em ApplicationException preservando a causa")
+    void encapsulaExcecaoRepositoryComCausa() {
+        UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+
+        RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
+        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenThrow(causaOriginal);
+
+        ApplicationException ex = assertThrows(ApplicationException.class,
+                () -> useCase.execute(contexto(uuid, "APROVAR")));
+
+        // Verifica que a exceção original foi preservada como causa
+        assertNotNull(ex.getCause());
+        assertSame(causaOriginal, ex.getCause());
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 

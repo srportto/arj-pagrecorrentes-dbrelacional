@@ -43,13 +43,14 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("ApplicationException → 500")
+    @DisplayName("ApplicationException → 500 com mensagem genérica (sem detalhe técnico)")
     void aplicacao500() {
         ResponseEntity<LayoutErrosApiResponse> resp =
                 handler.erroAplicacao(new ApplicationException("falha"), req());
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
-        assertEquals("falha", resp.getBody().getMessage());
+        // Resposta não contém o getMessage() da exceção original (proteção contra vazamento de detalhe técnico)
+        assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
     }
 
     @Test
@@ -77,5 +78,18 @@ class ApiExceptionHandlerTest {
         assertEquals(1, resp.getBody().getOccurrences().size());
         assertEquals("idUnicoContaContratante", resp.getBody().getOccurrences().get(0).getFieldName());
         assertEquals("é obrigatório", resp.getBody().getOccurrences().get(0).getMessage());
+    }
+
+    @Test
+    @DisplayName("Exception genérica não mapeada → 500 com mensagem genérica (sem detalhe técnico)")
+    void erroNaoMapeado500() {
+        ResponseEntity<LayoutErrosApiResponse> resp =
+                handler.erroInesperado(new NullPointerException("npe inesperada"), req());
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
+        // Resposta não contém o getMessage() da exceção original (proteção contra vazamento de detalhe técnico)
+        assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
+        assertEquals("/api/autorizacoes", resp.getBody().getPath());
+        assertNotNull(resp.getBody().getTimestamp());
     }
 }

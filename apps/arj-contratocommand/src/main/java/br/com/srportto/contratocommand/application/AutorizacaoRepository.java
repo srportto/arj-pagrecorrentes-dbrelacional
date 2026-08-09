@@ -25,4 +25,12 @@ public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAuto
     @Query("SELECT a FROM Autorizacao a WHERE a.idAutorizacao.idAutorizacao = :idAutorizacao")
     List<Autorizacao> findByIdAutorizacao(@Param("idAutorizacao") UUID idAutorizacao);
 
+    /**
+     * Verifica a existência de autorização por chave de negócio (id_autorizacao_empresa), restrita
+     * à partição da conta — poda para 1 partição em vez de varrer as ~989 existentes, e casa com o
+     * escopo real da constraint UNIQUE (id_particao_conta, id_autorizacao_empresa).
+     */
+    boolean existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(
+            Integer idParticaoConta, String idAutorizacaoEmpresa);
+
 }

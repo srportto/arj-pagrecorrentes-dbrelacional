@@ -1,0 +1,2 @@
+# Copie para terraform.tfvars (git-ignorado, *.tfvars) ou exporte TF_VAR_db_password.
+db_password = "<defina-sua-senha-local>"

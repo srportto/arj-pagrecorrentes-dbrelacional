@@ -1,0 +1,25 @@
+name: Contrato de evento verificado
+
+on:
+  push:
+    paths:
+      - "apps/**"
+      - "ci/contrato-eventos/**"
+  pull_request:
+    paths:
+      - "apps/**"
+      - "ci/contrato-eventos/**"
+
+jobs:
+  verificar-contrato-eventos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Comparar copias espelhadas do contrato de evento
+        run: java ci/contrato-eventos/VerificarContratoEventos.java .

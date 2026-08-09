@@ -90,16 +90,6 @@ AutorizacaoController.consultarPorId()
             └─ AutorizacaoDetalheResponseDto.from(autorizacao)
 ```
 
-### Exceções e Códigos HTTP
-
-Tratadas centralmente em `ApiExceptionHandler`.
-
-| Origem | HTTP | Quando |
-|--------|------|--------|
-| `BusinessException` | 422 | Parâmetro inválido (ex.: valor de status desconhecido) |
-| `ResourceNotFoundException` | 404 | Autorização não encontrada pelo id |
-| `ApplicationException` | 500 | Erro inesperado de sistema |
-
 ## Como Executar
 
 ### Pré-requisitos
@@ -160,6 +150,34 @@ cd ../../infra/local/postgres
 docker compose -f postgres-db-v18.yml up -d
 ```
 
+## Validações e códigos de erro
+
+`ApiExceptionHandler` (`shared/interceptors/api/`) é o único mapeador entre exceção e status HTTP. Respostas seguem `LayoutErrosApiResponse`.
+
+### Parâmetros de borda do `GET /api/autorizacoes`
+
+| Param | Regra | Erro se violar |
+|---|---|---|
+| `idUnicoContaContratante` | opcional no controller; se **omitido**, o service valida nulidade | 422 — `BusinessException`: "idUnicoContaContratante é obrigatório" |
+| `pagina` | deve ser **≥ 0** | 422 — `BusinessException`: "pagina deve ser maior ou igual a 0" |
+| `tamanho` | deve ser **entre 1 e 100** (inclusive) | 422 — `BusinessException`: "tamanho deve estar entre 1 e 100" |
+| `ordenarPor` | aceita apenas a **whitelist** de campos ordenáveis (atualmente: `dataHoraInclusao,desc` é o default; outros valores reconhecidos dependem do mapeamento de campos) | 422 — `BusinessException` listando os campos aceitos |
+
+> **Teto de `tamanho` = 100** impede `?tamanho=999999`, que dispararia varredura completa de partições sem limite.
+> **Quebra de contrato (mudança desta versão):** clientes que enviam `idUnicoContaContratante` vazio e esperavam 400 do Spring agora recebem **422** desta API — o controller deixou o binding ser opcional e a validação virou de negócio. Era 400 (Spring) → agora 422 (handler).
+
+### Códigos de erro desta API
+
+| Status | Exceção | Quando |
+|---|---|---|
+| 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — resposta no formato `LayoutErrosApiValidationsResponse` (convenção mantida D3) |
+| 404 | `ResourceNotFoundException` | Autorização inexistente no `GET /{autorizacaoId}` (ou UUID com partição fora da faixa 0–889) |
+| 422 | `BusinessException` | Violação de regra de negócio — borda de paginação (ver tabela acima), `idUnicoContaContratante` ausente, `ordenarPor` desconhecido |
+| 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
+| 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
+
+> **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
+
 ## API REST Endpoints
 
 ### GET `/api/autorizacoes` — Listagem paginada
@@ -169,7 +187,7 @@ docker compose -f postgres-db-v18.yml up -d
 | Parâmetro | Tipo | Obrigatório | Padrão | Descrição |
 |-----------|------|-------------|--------|-----------|
 | `idUnicoContaContratante` | UUID | Sim | — | Filtra autorizações da conta |
-| `status` | String[] | Não | todos | Ex.: `ATIVO`, `CANCELADO` |
+| `status` | String[] | Não | todos | Ex.: `ATIVA`, `CANCELADA` |
 | `pagina` | Integer | Não | 0 | Página (base 0) |
 | `tamanho` | Integer | Não | 20 | Itens por página |
 | `ordenarPor` | String | Não | `dataHoraInclusao,desc` | Campo + direção (`asc`/`desc`) |
@@ -183,7 +201,7 @@ docker compose -f postgres-db-v18.yml up -d
     {
       "idAutorizacao": "550e8400-e29b-41d4-a716-446655440000",
       "tipoProduto": "PIX_AUTO",
-      "statusAutorizacao": "ATIVO",
+      "status": "ATIVA",
       "valor": 500.00,
       "dataFimVigencia": "2026-12-31"
     }
@@ -199,7 +217,7 @@ docker compose -f postgres-db-v18.yml up -d
 ```json
 {
   "status": 422,
-  "mensagem": "Status inválido: INVALIDO. Use um dos valores: ATIVO, CANCELADO"
+  "mensagem": "Status inválido: INVALIDO. Use um dos valores: ATIVA, CANCELADA"
 }
 ```
 
@@ -214,7 +232,7 @@ docker compose -f postgres-db-v18.yml up -d
 {
   "idAutorizacao": "550e8400-e29b-41d4-a716-446655440000",
   "tipoProduto": "PIX_AUTO",
-  "statusAutorizacao": "ATIVO",
+  "status": "ATIVA",
   "valor": 500.00,
   "valorLimite": 10000.00,
   "dataFimVigencia": "2026-12-31",

@@ -2,7 +2,7 @@
 name: refatorador-java
 description: "Use quando precisar APLICAR refactorings do Fowler em código Java existente — Remove Parameter, Extract Method, Replace Magic Number, Introduce Parameter Object, Replace Loop with Pipeline, Replace Conditional with Polymorphism. NÃO altera comportamento; valida com testes antes/depois. NÃO use para revisar com checklist de severidade (java-revisor) nem para gerar código novo (java-construtor)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: sonnet
+model: [sonnet, 'MiniMax: MiniMax M3 (copilot)']
 effort: medium
 ---
 

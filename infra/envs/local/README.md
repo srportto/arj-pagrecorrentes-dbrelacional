@@ -28,6 +28,13 @@ internet-facing, e os dois ECS Services (`arj-contratocommand` :8080,
    alcançar o IP da task).
 4. **Postgres local no ar** — `infra/local/postgres/postgres-db-v18.yml`, na porta
    `5432` do host. As tasks alcançam via `host.docker.internal:5432`.
+5. **`db_password` via variável de ambiente** — a variável `db_password` (ver
+   `variables.tf`) não tem default nem `terraform.tfvars` versionado (removido do git em
+   2026-08; segredo não pertence a arquivo versionado). Exporte antes do `terraform plan`/`apply`:
+   ```bash
+   export TF_VAR_db_password="<mesma senha do apps/.env ou infra/local/postgres/.env>"
+   ```
+   Sem isso, o Terraform pede o valor interativamente.
 
 ## Rodar
 

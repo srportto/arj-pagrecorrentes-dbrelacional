@@ -51,6 +51,13 @@ mvn test                                     # Todos os testes
   apontando para o Floci e para `infra/local/kafka/`)
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado
   explicitamente via `SPRING_PROFILES_ACTIVE=prod`)
+- **`auto.register.schemas` é `true` só no profile `local`** (`kafka.auto-register-schemas`,
+  `KafkaProperties`/`KafkaProducerClientConfig`) — em `prod` é `false`. Antes do primeiro deploy
+  de um schema novo/alterado em produção, registre manualmente o subject
+  `eventos-autorizacao-value` no Schema Registry (CLI ou API REST do Registry, com o `.avsc`
+  atualizado) e confirme compatibilidade — sem esse passo, o produce em `prod` falha com erro
+  explícito de schema não registrado, em vez de registrar silenciosamente algo incompatível. Ver
+  `openspec/changes/rede-seguranca-contrato-evento/design.md` (D5).
 
 ## Stack
 
@@ -59,8 +66,8 @@ mvn test                                     # Todos os testes
 | Java | 25 | `void main()` pendente do maven plugin |
 | Spring Boot | 4.0.7 | Web MVC (só para o Actuator), Actuator |
 | Spring Cloud AWS | 4.0.0 | `spring-cloud-aws-starter-sqs` — `@SqsListener`, autoconfigura `SqsAsyncClient` (AWS SDK v2 vem transitivo) |
-| kafka-clients | 3.7.1 | Producer Kafka puro — sem spring-kafka |
-| Avro | 1.11.3 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
+| kafka-clients | 3.9.2 | Producer Kafka puro — sem spring-kafka |
+| Avro | 1.11.4 | `avro-maven-plugin` gera `EventoAutorizacao` a partir de `src/main/resources/avro/EventoAutorizacao.avsc` |
 | kafka-avro-serializer | 7.7.1 (Confluent) | Serialização Avro + integração com o Schema Registry |
 | Lombok | 1.18.40 | **sem nenhum uso no código-fonte** — a dependência ainda está no `pom.xml`, mas nenhuma classe a importa; candidata a remoção |
 

@@ -6,9 +6,7 @@ TBD — capacidade criada a partir da mudança `add-maquina-estados-autorizacao`
 o enum `StatusAutorizacao` com o grafo de transições de estado da autorização e o enum
 `TipoEventoAutorizacao` derivado 1:1 do status, espelhados manualmente nas 4 aplicações
 do monorepo.
-
 ## Requirements
-
 ### Requirement: Enum StatusAutorizacao com grafo de transições nas 4 aplicações
 
 As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, `autorizacaostatus-producer`, `eventos-consumer`) SHALL conter um enum `StatusAutorizacao` com os 8 estados do ciclo de vida da autorização e seus códigos (`RECEBIDA=1`, `PENDENTE_ACEITE=2`, `EM_PROCESSO_ATIVACAO=3`, `ATIVA=4`, `CANCELADA=5`, `REJEITADA=6`, `EXPIRADA=7`, `FINALIZADA=8`), lookup por código (`obterStatusEnumPorIdStatus`) e o grafo de transições embutido, exposto pelo método `podeTransicionarPara(StatusAutorizacao destino)`. As transições permitidas SHALL ser exatamente:
@@ -61,3 +59,46 @@ As quatro aplicações SHALL conter um enum `TipoEventoAutorizacao` com 8 valore
 #### Scenario: Bijeção completa
 - **WHEN** cada um dos 8 códigos de status válidos é passado a `porStatus`
 - **THEN** cada código resulta em um valor distinto do enum, cobrindo os 8 valores
+
+### Requirement: Grafo de transições aplicado no fluxo de escrita
+
+O grafo de transições exposto por `StatusAutorizacao.podeTransicionarPara` SHALL ser consultado
+pelo `arj-contratocommand` antes de persistir qualquer mudança de status de autorização. Uma
+transição não permitida pelo grafo SHALL ser rejeitada, e a mudança de status NÃO SHALL ser
+persistida nem gerar evento.
+
+Esta exigência complementa o requisito existente "Enum StatusAutorizacao com grafo de transições
+nas 4 aplicações", que hoje determina apenas que o grafo **exista** — sem exigir que seja
+aplicado. O grafo passa a ser normativo em runtime.
+
+#### Scenario: Cancelamento de autorização ativa é permitido
+
+- **WHEN** um cancelamento é solicitado para autorização com status `ATIVA`
+- **THEN** a transição `ATIVA` → `CANCELADA` SHALL ser reconhecida como válida pelo grafo
+- **AND** o cancelamento SHALL prosseguir
+
+#### Scenario: Cancelamento de autorização já cancelada é rejeitado
+
+- **WHEN** um cancelamento é solicitado para autorização com status `CANCELADA`
+- **THEN** a requisição SHALL ser rejeitada com erro de regra de negócio
+- **AND** os dados de cancelamento existentes NÃO SHALL ser sobrescritos
+- **AND** nenhum evento `CANCELAMENTO` SHALL ser publicado
+
+#### Scenario: Cancelamento a partir de qualquer estado terminal é rejeitado
+
+- **WHEN** um cancelamento é solicitado para autorização com status `REJEITADA`, `EXPIRADA` ou
+  `FINALIZADA`
+- **THEN** a requisição SHALL ser rejeitada com erro de regra de negócio, pois nenhum desses
+  estados admite transição
+
+#### Scenario: Validação de transição roda como rule do validador
+
+- **WHEN** o `CancelamentoValidator` do `arj-contratocommand` é inspecionado
+- **THEN** ele SHALL incluir uma rule que consulta `podeTransicionarPara`, seguindo o mesmo padrão
+  das demais rules de cancelamento
+
+#### Scenario: Método deixa de ser código sem uso em produção
+
+- **WHEN** as referências a `podeTransicionarPara` no `arj-contratocommand` são inspecionadas
+- **THEN** SHALL existir ao menos uma chamada em código de produção, além das chamadas em teste
+

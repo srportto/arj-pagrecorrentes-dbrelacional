@@ -14,8 +14,8 @@ public class ProcessarEventoAutorizacaoUseCase {
 
     public void processar(EventoAutorizacao evento) {
         TipoEventoAutorizacao tipoEvento = TipoEventoAutorizacao.porStatus(evento.getStatus());
-        log.info("Autorização {} consumida com sucesso (tipoEvento={}): {}",
-                evento.getIdAutorizacao(), tipoEvento, evento);
+        log.info("Autorização {} consumida com sucesso (tipoEvento={})",
+                evento.getIdAutorizacao(), tipoEvento);
     }
 
 }

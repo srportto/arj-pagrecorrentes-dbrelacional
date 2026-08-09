@@ -41,7 +41,7 @@ class KafkaEventoAutorizacaoProducerTest {
     private Producer<String, EventoAutorizacao> producer;
 
     private final KafkaProperties kafkaProperties =
-            new KafkaProperties("localhost:19092", "http://localhost:8085", "eventos-autorizacao");
+            new KafkaProperties("localhost:19092", "http://localhost:8085", "eventos-autorizacao", true);
 
     private KafkaEventoAutorizacaoProducer kafkaEventoAutorizacaoProducer;
 

@@ -7,6 +7,7 @@ import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistida
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
+import br.com.srportto.contratocommand.shared.exceptions.RecursoJaExisteException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,10 +18,11 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do CriarAutorizacaoUseCase")
@@ -66,6 +68,53 @@ class CriarAutorizacaoUseCaseTest {
 
         useCase.execute(context);
 
+        verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
+    }
+
+    @Test
+    @DisplayName("rejeita criação quando id_autorizacao_empresa já existe na mesma partição com RecursoJaExisteException (409)")
+    void duplicidadeIdAutorizacaoEmpresa_Rejeitada() {
+        ContratacaoContext context = TestFixtures.criarContextPix();
+        Autorizacao aut = new Autorizacao();
+        aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 10));
+        String idEmpresa = context.dados().idAutorizacaoEmpresa();
+
+        // Mock: já existe uma autorização com esse id_autorizacao_empresa na partição da conta
+        when(repository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(anyInt(), eq(idEmpresa)))
+                .thenReturn(true);
+
+        // Esperado: RecursoJaExisteException (409), não BusinessException (422) — são erros
+        // distintos: recurso já existe vs. regra de negócio violada.
+        RecursoJaExisteException ex = assertThrows(RecursoJaExisteException.class, () -> useCase.execute(context));
+        assertTrue(ex.getMessage().contains("já existe"));
+
+        // Validação: não deve chamar mapper nem save
+        verify(contratacaoValidator).validar(context);
+        verify(repository).existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(anyInt(), eq(idEmpresa));
+        verify(repository, never()).save(any(Autorizacao.class));
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+    }
+
+    @Test
+    @DisplayName("criação bem-sucedida quando id_autorizacao_empresa não existe na partição da conta")
+    void idAutorizacaoEmpresaNaoExiste_Criada() {
+        ContratacaoContext context = TestFixtures.criarContextPix();
+        Autorizacao aut = new Autorizacao();
+        aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 10));
+        String idEmpresa = context.dados().idAutorizacaoEmpresa();
+
+        // Mock: não existe autorização com esse id na partição da conta
+        when(repository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(anyInt(), eq(idEmpresa)))
+                .thenReturn(false);
+        when(mapper.toDomain(context.dados(), context.tipoJornada())).thenReturn(aut);
+        when(repository.save(aut)).thenReturn(aut);
+
+        AutorizacaoCompletaResponseDto resp = useCase.execute(context);
+
+        assertNotNull(resp);
+        verify(contratacaoValidator).validar(context);
+        verify(repository).existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(anyInt(), eq(idEmpresa));
+        verify(repository).save(aut);
         verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
 }

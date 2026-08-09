@@ -2,7 +2,7 @@
 name: java-construtor
 description: "Use quando precisar GERAR ou EXPANDIR aplicação Java hexagonal — criar app a partir do esqueleto, aplicar variante (REST/SQS/Kafka/banco), adicionar módulo estrutural. Segue `criar-aplicacao-java` e `arquitetura-limpa-java`. NÃO use para revisar (java-revisor)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: haiku
+model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
 effort: medium
 ---
 
