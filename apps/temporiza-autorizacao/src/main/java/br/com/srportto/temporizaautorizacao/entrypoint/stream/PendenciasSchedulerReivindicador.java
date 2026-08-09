@@ -26,6 +26,7 @@ public class PendenciasSchedulerReivindicador {
 
     private static final Logger log = LoggerFactory.getLogger(PendenciasSchedulerReivindicador.class);
     private static final long LOTE_PENDENTES = 100;
+    private static final long MAX_TENTATIVAS_EXPIRACAO = 5;
 
     private final StringRedisTemplate redisTemplate;
     private final ExpiracaoStreamListener listener;
@@ -56,16 +57,31 @@ public class PendenciasSchedulerReivindicador {
         }
 
         var minIdle = Duration.ofMillis(properties.streamMinIdleTimeMs());
-        List<String> idsOciosos = pendentes.stream()
+        List<PendingMessage> ociosas = pendentes.stream()
                 .filter(msg -> msg.getElapsedTimeSinceLastDelivery().compareTo(minIdle) >= 0)
-                .map(PendingMessage::getIdAsString)
                 .toList();
 
-        if (idsOciosos.isEmpty()) {
+        if (ociosas.isEmpty()) {
             return;
         }
 
-        var xClaimOptions = XClaimOptions.minIdle(minIdle).ids(idsOciosos);
+        List<PendingMessage> esgotadas = ociosas.stream()
+                .filter(msg -> msg.getTotalDeliveryCount() >= MAX_TENTATIVAS_EXPIRACAO)
+                .toList();
+        List<String> idsReprocessaveis = ociosas.stream()
+                .filter(msg -> msg.getTotalDeliveryCount() < MAX_TENTATIVAS_EXPIRACAO)
+                .map(PendingMessage::getIdAsString)
+                .toList();
+
+        if (!esgotadas.isEmpty()) {
+            desistirDeEntradasEsgotadas(streamOps, minIdle, esgotadas);
+        }
+
+        if (idsReprocessaveis.isEmpty()) {
+            return;
+        }
+
+        var xClaimOptions = XClaimOptions.minIdle(minIdle).ids(idsReprocessaveis);
         List<MapRecord<String, Object, Object>> reivindicadas = streamOps.claim(
                 properties.chaveStream(), properties.grupoConsumidor(), properties.consumidorId(), xClaimOptions);
 
@@ -75,6 +91,27 @@ public class PendenciasSchedulerReivindicador {
         for (MapRecord<String, Object, Object> record : reivindicadas) {
             String idAutorizacao = String.valueOf(record.getValue().get("id_autorizacao"));
             listener.processarEConfirmarSeConcluido(record.getId(), idAutorizacao);
+        }
+    }
+
+    /**
+     * Entradas que já esgotaram {@link #MAX_TENTATIVAS_EXPIRACAO} entregas param de recircular
+     * entre o PEL e este reivindicador: são confirmadas diretamente (sem novo acionamento do
+     * command) e logadas como erro para investigação manual.
+     */
+    private void desistirDeEntradasEsgotadas(StreamOperations<String, Object, Object> streamOps,
+            Duration minIdle, List<PendingMessage> esgotadas) {
+        var ids = esgotadas.stream().map(PendingMessage::getIdAsString).toList();
+        var xClaimOptions = XClaimOptions.minIdle(minIdle).ids(ids);
+        List<MapRecord<String, Object, Object>> reivindicadas = streamOps.claim(
+                properties.chaveStream(), properties.grupoConsumidor(), properties.consumidorId(), xClaimOptions);
+
+        for (MapRecord<String, Object, Object> record : reivindicadas) {
+            String idAutorizacao = String.valueOf(record.getValue().get("id_autorizacao"));
+            log.error("Entrada {} (autorização {}) esgotou o teto de {} tentativas — confirmando sem novo "
+                            + "acionamento do command; requer investigação manual",
+                    record.getId(), idAutorizacao, MAX_TENTATIVAS_EXPIRACAO);
+            streamOps.acknowledge(properties.chaveStream(), properties.grupoConsumidor(), record.getId());
         }
     }
 

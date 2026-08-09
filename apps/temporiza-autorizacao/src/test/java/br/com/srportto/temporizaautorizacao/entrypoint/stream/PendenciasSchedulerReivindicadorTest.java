@@ -89,6 +89,63 @@ class PendenciasSchedulerReivindicadorTest {
     }
 
     @Test
+    @DisplayName("entrada que esgota o teto de tentativas é confirmada sem novo acionamento do command")
+    void entradaEsgotadaNaoReprocessaEApenasConfirma() {
+        when(redisTemplate.opsForStream()).thenReturn((StreamOperations) streamOperations);
+
+        var esgotada = new PendingMessage(RecordId.of("3-0"), Consumer.from("g", "c"),
+                Duration.ofMillis(999999), 5);
+        var pendentes = new PendingMessages(properties.grupoConsumidor(), List.of(esgotada));
+
+        when(streamOperations.pending(eq(properties.chaveStream()), eq(properties.grupoConsumidor()),
+                any(Range.class), anyLong())).thenReturn(pendentes);
+
+        MapRecord<String, Object, Object> reivindicada = StreamRecords.<String, Object, Object>newRecord()
+                .in(properties.chaveStream())
+                .withId(RecordId.of("3-0"))
+                .ofMap(Map.of("id_autorizacao", "esgotada-456"));
+
+        when(streamOperations.claim(eq(properties.chaveStream()), eq(properties.grupoConsumidor()),
+                eq(properties.consumidorId()), any(XClaimOptions.class)))
+                .thenReturn(List.of(reivindicada));
+
+        var scheduler = new PendenciasSchedulerReivindicador(redisTemplate, listener, properties);
+        scheduler.reivindicarPendenciasOciosas();
+
+        verify(streamOperations).acknowledge(properties.chaveStream(), properties.grupoConsumidor(),
+                RecordId.of("3-0"));
+        verify(listener, never()).processarEConfirmarSeConcluido(any(), any());
+    }
+
+    @Test
+    @DisplayName("entrada abaixo do teto de tentativas continua sendo reivindicada e reprocessada")
+    void entradaAbaixoDoTetoContinuaReprocessando() {
+        when(redisTemplate.opsForStream()).thenReturn((StreamOperations) streamOperations);
+
+        var quaseNoTeto = new PendingMessage(RecordId.of("4-0"), Consumer.from("g", "c"),
+                Duration.ofMillis(999999), 4);
+        var pendentes = new PendingMessages(properties.grupoConsumidor(), List.of(quaseNoTeto));
+
+        when(streamOperations.pending(eq(properties.chaveStream()), eq(properties.grupoConsumidor()),
+                any(Range.class), anyLong())).thenReturn(pendentes);
+
+        MapRecord<String, Object, Object> reivindicada = StreamRecords.<String, Object, Object>newRecord()
+                .in(properties.chaveStream())
+                .withId(RecordId.of("4-0"))
+                .ofMap(Map.of("id_autorizacao", "quase-789"));
+
+        when(streamOperations.claim(eq(properties.chaveStream()), eq(properties.grupoConsumidor()),
+                eq(properties.consumidorId()), any(XClaimOptions.class)))
+                .thenReturn(List.of(reivindicada));
+
+        var scheduler = new PendenciasSchedulerReivindicador(redisTemplate, listener, properties);
+        scheduler.reivindicarPendenciasOciosas();
+
+        verify(listener).processarEConfirmarSeConcluido(RecordId.of("4-0"), "quase-789");
+        verify(streamOperations, never()).acknowledge(any(), any(), any(RecordId.class));
+    }
+
+    @Test
     @DisplayName("grupo/stream ainda não existe: exceção é engolida, sem reivindicar")
     void grupoInexistenteNaoLanca() {
         when(redisTemplate.opsForStream()).thenReturn((StreamOperations) streamOperations);

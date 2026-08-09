@@ -136,8 +136,17 @@ ack/retenção:
 | Resposta do command | Ação do worker |
 |---|---|
 | 2xx (expiração aplicada) | XACK |
-| 4xx, incluindo 422 (já resolvida/não encontrada) | XACK — nada a fazer |
+| 409 (conflito de lock otimista — "Tente novamente") | sem XACK, permanece no PEL |
+| 4xx exceto 409, incluindo 422 (já resolvida/não encontrada) | XACK — nada a fazer |
 | 5xx / timeout / erro de conexão | sem XACK, permanece no PEL |
+
+> **409 não é um 4xx comum**: ao contrário de 422 (a transação rodou e confirmou que não há
+> nada a fazer), 409 significa que a transação do command **foi revertida** — a expiração
+> pode não ter sido aplicada. Tratar 409 como os demais 4xx faz o worker confirmar (XACK) um
+> trabalho que na verdade não foi concluído, prendendo a autorização em `RECEBIDA` para
+> sempre, sem retry possível (bug corrigido pela mudança `corrigir-ack-indevido-expiracao-409`).
+> `CommandDecisaoAutorizacaoClient` captura `HttpClientErrorException.Conflict` (409) **antes**
+> do catch genérico de `HttpClientErrorException`, relançando como `ExpiracaoRetryavelException`.
 
 ## Armadilhas críticas
 
@@ -165,6 +174,14 @@ ack/retenção:
 9. **Nenhum log carrega o corpo do evento consumido** — o payload de origem (mesmo o
    subconjunto) não deve aparecer em logs de erro; identifique sempre por
    `idAutorizacao`/`messageId`/`streamId`.
+10. **Teto de 5 tentativas por entrada do stream de expirações** — `PendenciasSchedulerReivindicador`
+    lê `PendingMessage.getTotalDeliveryCount()` (contador nativo do `XPENDING`, incrementado a
+    cada `XCLAIM`) e, ao atingir `MAX_TENTATIVAS_EXPIRACAO` (5), confirma (XACK) a entrada
+    diretamente **sem** reivindicá-la/reprocessá-la, registrando `log.error` com `streamId` e
+    `idAutorizacao` (nunca o corpo do evento). Sem esse teto, uma entrada que falhe de forma
+    persistente recircularia entre o PEL e o reivindicador indefinidamente, a cada
+    `stream-min-idle-time-ms`, sem nenhum sinal operacional. Não há stream Valkey dedicado a
+    "mortas" — a investigação de uma entrada esgotada é manual, via log.
 
 ## Documentação relacionada
 
