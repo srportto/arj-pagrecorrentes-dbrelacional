@@ -8,6 +8,7 @@
     { "name": "id_particao_conta", "type": "int" },
     { "name": "data_fim_vigencia", "type": { "type": "int", "logicalType": "date" } },
     { "name": "tipo_produto", "type": "long" },
+    { "name": "tipo_jornada", "type": ["null", "long"], "default": null },
     { "name": "status", "type": "int" },
     { "name": "motivo_status", "type": ["null", "string"], "default": null },
     { "name": "data_inicio_vigencia", "type": ["null", { "type": "int", "logicalType": "date" }], "default": null },

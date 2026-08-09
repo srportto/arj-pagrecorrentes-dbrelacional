@@ -192,7 +192,8 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
    isso é uma mudança de escopo desta app.
 3. **`AutorizacaoEventoPayload` é um espelho manual** do payload equivalente em
    `arj-contratocommand` (`application/eventos/AutorizacaoEventoPayload.java`) — os dois
-   não compartilham código; se o schema do evento mudar lá, replique aqui.
+   não compartilham código; se o schema do evento mudar lá, replique aqui. Inclui
+   `tipo_jornada` (nullable) desde a mudança `temporizacao-jornada-01-pix-auto`.
 4. **`EventoAutorizacao.avsc` também é um espelho manual**, replicado em
    `apps/eventos-consumer/src/main/resources/avro/`. Mudou o schema aqui? Replique lá
    também — não há módulo Avro compartilhado no monorepo (mesma decisão do payload

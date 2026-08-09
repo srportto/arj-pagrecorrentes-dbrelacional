@@ -22,6 +22,8 @@ public record AutorizacaoEventoPayload(
 
         @JsonProperty("tipo_produto") Long tipoProduto,
 
+        @JsonProperty("tipo_jornada") Long tipoJornada,
+
         @JsonProperty("status") Integer status,
 
         @JsonProperty("motivo_status") String motivoStatus,

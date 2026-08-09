@@ -19,6 +19,8 @@ public class AutorizacaoEventoPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(AutorizacaoEventoPublisher.class);
     private static final String MESSAGE_ATTRIBUTE_TIPO_EVENTO = "tipoEvento";
+    private static final String MESSAGE_ATTRIBUTE_TIPO_PRODUTO = "tipoProduto";
+    private static final String MESSAGE_ATTRIBUTE_TIPO_JORNADA = "tipoJornada";
 
     private final SnsClient snsClient;
     private final AwsProperties awsProperties;
@@ -41,15 +43,21 @@ public class AutorizacaoEventoPublisher {
                     .topicArn(awsProperties.sns().topicArn())
                     .message(mensagem)
                     .messageAttributes(Map.of(
-                            MESSAGE_ATTRIBUTE_TIPO_EVENTO, MessageAttributeValue.builder()
-                                    .dataType("String")
-                                    .stringValue(tipoEvento.name())
-                                    .build()))
+                            MESSAGE_ATTRIBUTE_TIPO_EVENTO, stringAttribute(tipoEvento.name()),
+                            MESSAGE_ATTRIBUTE_TIPO_PRODUTO, stringAttribute(evento.autorizacao().getTipoProduto().name()),
+                            MESSAGE_ATTRIBUTE_TIPO_JORNADA, stringAttribute(evento.autorizacao().getTipoJornada().name())))
                     .build());
         } catch (Exception e) {
             log.error("Falha ao publicar evento {} da autorização {} no tópico SNS",
                     tipoEvento, payload.idAutorizacao(), e);
         }
+    }
+
+    private static MessageAttributeValue stringAttribute(String valor) {
+        return MessageAttributeValue.builder()
+                .dataType("String")
+                .stringValue(valor)
+                .build();
     }
 
 }

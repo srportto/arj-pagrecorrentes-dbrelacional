@@ -25,6 +25,8 @@ public record AutorizacaoEventoPayload(
 
         @JsonProperty("tipo_produto") Long tipoProduto,
 
+        @JsonProperty("tipo_jornada") Long tipoJornada,
+
         @JsonProperty("status") Integer status,
 
         @JsonProperty("motivo_status") String motivoStatus,
@@ -76,6 +78,7 @@ public record AutorizacaoEventoPayload(
     public static AutorizacaoEventoPayload from(Autorizacao autorizacao) {
         var id = autorizacao.getIdAutorizacao();
         var tipoProduto = autorizacao.getTipoProduto();
+        var tipoJornada = autorizacao.getTipoJornada();
         var cancelamento = autorizacao.getCancelamento();
 
         return new AutorizacaoEventoPayload(
@@ -83,6 +86,7 @@ public record AutorizacaoEventoPayload(
                 id.getIdParticaoConta(),
                 autorizacao.getDataFimVigencia(),
                 tipoProduto != null ? tipoProduto.getTipoProduto() : null,
+                tipoJornada != null ? tipoJornada.getCodigoJornada() : null,
                 autorizacao.getStatus(),
                 autorizacao.getMotivoStatus(),
                 autorizacao.getDataInicioVigencia(),

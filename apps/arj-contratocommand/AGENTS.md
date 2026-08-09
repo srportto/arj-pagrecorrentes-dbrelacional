@@ -62,6 +62,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 |--------|---------|-----------|
 | POST | `/api/autorizacoes` | Criar autorização (multi-produto). Body `CriarAutorizacaoRequest`. → 201 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar. **Header obrigatório `tipoProduto`**. → 200 |
+| PATCH | `/api/autorizacoes/{idAutorizacao}/decisao` | Decisão sobre autorização em `RECEBIDA` (jornada 1 do PIX_AUTO): `acao` = `APROVAR`\|`REJEITAR`\|`EXPIRAR`. **Header obrigatório `tipoProduto`**. → 200 (aplicada) / 422 (status não permite — inclui já resolvida) |
 | GET | `/actuator/health` | Health-check (Actuator) com readiness de banco (indicador `db`). → 200 (UP) / 503 (DOWN) |
 
 > A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `arj-contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
@@ -76,9 +77,10 @@ shared/       → Exceções, Interceptadores (ApiExceptionHandler), config/, fr
 ```
 
 `application/` divide-se em:
-- raiz de `application/` — componentes **compartilhados** por todos os produtos e por ambas as features: `AutorizacaoRepository`, `AutorizacaoMapper`. Não têm subpacote próprio (não são uma feature).
+- raiz de `application/` — componentes **compartilhados** por todos os produtos e por todas as features: `AutorizacaoRepository`, `AutorizacaoMapper`. Não têm subpacote próprio (não são uma feature).
 - `contratacao/` — `CriarAutorizacaoUseCase`, `ContratacaoContext`, `ContratacaoValidator`, `ContratacaoRule` e `rules/` (inclui `ProdutoSuportado`)
 - `cancelamento/` — `CancelarAutorizacaoUseCase`, `CancelamentoContext`, `CancelamentoValidator`, `CancelamentoRule` e `rules/`
+- `decisao/` — `DecidirAutorizacaoUseCase`, `DecisaoContext`, `DecisaoValidator`, `DecisaoRule` e `rules/` (`AcaoDecisaoValida`, `TipoProdutoDecisao`, `TransicaoValidaDecisao`) — aprovação/rejeição/expiração de autorização em `RECEBIDA` (jornada 1 do PIX_AUTO, acionada pela app `temporiza-autorizacao` no caso de `EXPIRAR`)
 - `eventos/` — `AutorizacaoPersistidaEvent` (evento interno), `AutorizacaoEventoPayload` (representação da linha, chaves = colunas), `AutorizacaoEventoPublisher` (`@TransactionalEventListener(AFTER_COMMIT)`, publica no SNS)
 
 `shared/config/` contém `AwsProperties` e `SnsClientConfig` (bean do `SnsClient`, AWS SDK v2 puro).
@@ -102,21 +104,60 @@ AutorizacaoController.insert()
 
 O cancelamento segue o mesmo padrão simétrico: o controller resolve o header, monta `CancelamentoContext.doRequest(...)` (path `idAutorizacao` + header `tipoProduto` + corpo) e chama `CancelarAutorizacaoUseCase.execute()` (application/cancelamento) diretamente.
 
-### Publicação de eventos (após commit)
+### Decisão sobre autorização em RECEBIDA (jornada 1 do PIX_AUTO)
 
-Ao final de `CriarAutorizacaoUseCase.execute()` e `CancelarAutorizacaoUseCase.execute()`, um `AutorizacaoPersistidaEvent` (só a entidade final — sem campo de tipo) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher`, um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
+`PATCH /api/autorizacoes/{id}/decisao` segue o mesmo padrão estrutural de cancelamento —
+`DecisaoContext.doRequest(...)` → `DecidirAutorizacaoUseCase.execute()` (`@Transactional`,
+`application/decisao`) — mas com uma diferença central: **a rota precisa ser segura para
+chamada repetida por um chamador automatizado at-least-once** (a app `temporiza-autorizacao`,
+que aciona `EXPIRAR` no vencimento de um timer, podendo chegar depois de o cliente já ter
+decidido).
 
 ```
-CriarAutorizacaoUseCase / CancelarAutorizacaoUseCase (fim do execute(), ainda na transação)
+DecidirAutorizacaoUseCase.execute(context)
+  ├─ carrega por UUID + partição extraída (mesmo padrão do cancelamento)
+  ├─ DecisaoValidator roda as rules:
+  │    ├─ AcaoDecisaoValida (@Order HIGHEST_PRECEDENCE) — acao resolve para APROVAR/REJEITAR/EXPIRAR
+  │    ├─ TipoProdutoDecisao — produto do header bate com o persistido
+  │    └─ TransicaoValidaDecisao — status atual PRECISA SER RECEBIDA (não basta o grafo
+  │         permitir a transição a partir de outro estado — ATIVA também pode ir para
+  │         REJEITADA no grafo, para outro fluxo; sem essa checagem explícita, uma
+  │         expiração atrasada "rejeitaria" uma autorização já aprovada)
+  ├─ aplica o efeito da ação:
+  │    APROVAR  → status ATIVA,      motivo AUTORIZACAO_ACEITA_POR_TODOS (2 saltos do grafo
+  │                                  numa única transação: RECEBIDA→EM_PROCESSO_ATIVACAO→ATIVA)
+  │    REJEITAR → status REJEITADA,  motivo REJEITADA_PAGADOR
+  │    EXPIRAR  → status REJEITADA,  motivo REJEITADA_SISTEMA_TIMEOUT_J1
+  └─ publica um único AutorizacaoPersistidaEvent
+```
+
+Status que já não é `RECEBIDA` (incluindo já resolvida por outra decisão) resulta em
+`BusinessException` → 422, sem alterar a linha nem publicar evento — é o sinal que o
+chamador automatizado usa para não repetir. O grafo de `StatusAutorizacao` **não muda**:
+`RECEBIDA → REJEITADA` e `RECEBIDA → EM_PROCESSO_ATIVACAO → ATIVA` já existiam.
+
+### Publicação de eventos (após commit)
+
+Ao final de `CriarAutorizacaoUseCase.execute()`, `CancelarAutorizacaoUseCase.execute()` **e** `DecidirAutorizacaoUseCase.execute()`, um `AutorizacaoPersistidaEvent` (só a entidade final — sem campo de tipo) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher`, um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
+
+```
+CriarAutorizacaoUseCase / CancelarAutorizacaoUseCase / DecidirAutorizacaoUseCase (fim do execute(), ainda na transação)
   └─ eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacao))
        ⋮ (commit da transação)
 AutorizacaoEventoPublisher.aoPersistir()   ← só roda se o commit teve sucesso
   ├─ AutorizacaoEventoPayload.from(autorizacao)  ← chaves = nomes das colunas, não campos Java
   ├─ TipoEventoAutorizacao.porStatus(autorizacao.getStatus())  ← deriva o tipo do status persistido
-  └─ SnsClient.publish()  ← tópico sns-estados-autorizacao, message attribute tipoEvento
+  └─ SnsClient.publish()  ← tópico sns-estados-autorizacao, message attributes tipoEvento/tipoProduto/tipoJornada
 ```
 
-O `tipoEvento` **não é mais informado pelo use case** — é derivado do `status` da entidade (`TipoEventoAutorizacao`, 8 valores em bijeção com `StatusAutorizacao`: `RECEPCAO`, `PENDENCIA_ACEITE`, `INICIO_ATIVACAO`, `ATIVACAO`, `CANCELAMENTO`, `REJEICAO`, `EXPIRACAO`, `FINALIZACAO`). Criação (status `ATIVA`) publica `tipoEvento=ATIVACAO`; cancelamento (status `CANCELADA`) publica `tipoEvento=CANCELAMENTO`. O antigo par `CRIACAO`/`CANCELAMENTO` não existe mais.
+O `tipoEvento` **não é mais informado pelo use case** — é derivado do `status` da entidade (`TipoEventoAutorizacao`, 8 valores em bijeção com `StatusAutorizacao`: `RECEPCAO`, `PENDENCIA_ACEITE`, `INICIO_ATIVACAO`, `ATIVACAO`, `CANCELAMENTO`, `REJEICAO`, `EXPIRACAO`, `FINALIZACAO`). Criação de `DDA_AUTO` (status `ATIVA`) publica `tipoEvento=ATIVACAO`; criação de `PIX_AUTO` (status `RECEBIDA`) publica `RECEPCAO`; cancelamento (status `CANCELADA`) publica `CANCELAMENTO`; decisão `APROVAR` publica `ATIVACAO`, `REJEITAR`/`EXPIRAR` publicam `REJEICAO`. O antigo par `CRIACAO`/`CANCELAMENTO` não existe mais.
+
+Além do `tipoEvento`, todo evento carrega **`tipoProduto`** e **`tipoJornada`** como message
+attributes — espelhos das colunas `tipo_produto`/`tipo_jornada` da própria linha, existentes
+para permitir filtro por filter policy no SNS sem inspecionar o corpo (é assim que a
+subscription de `SQS-temporizacao-autorizacao` restringe a entrega a `RECEPCAO` + `PIX_AUTO` +
+`SPI_J1`, sem precisar de lógica de filtro na app consumidora). Nenhum attribute expressa
+informação ausente do body.
 
 Rollback (ex.: `BusinessException` de validação) nunca chega ao listener — nenhum evento é publicado. Falha no `publish()` (ex.: Floci fora do ar) é apenas logada; a resposta HTTP, já confirmada pelo commit, não é afetada. Não há outbox pattern nesta fase — é um trade-off aceito e documentado em `openspec/changes/add-eventos-autorizacao-sns-sqs/design.md`.
 
@@ -154,7 +195,12 @@ Chave composta: `IdAutorizacao(UUID idAutorizacao, Integer idParticaoConta)` com
 
 ### Mapeamento de status
 
-`status` na entidade `Autorizacao` é `Integer`, **não** enum — mas o enum `StatusAutorizacao` é a **fonte da verdade** dos valores: criação grava `ATIVA` (= 4) e cancelamento grava `CANCELADA` (= 5), via `StatusAutorizacao.X.getStatusAutorizacao()` (sem números mágicos). O enum também carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado ainda pelas operações de criação/cancelamento, disponível para validações futuras.
+`status` na entidade `Autorizacao` é `Integer`, **não** enum — mas o enum `StatusAutorizacao` é a **fonte da verdade** dos valores. Cancelamento sempre grava `CANCELADA` (= 5). Na **criação**, o status inicial depende do produto (`Autorizacao.STATUS_INICIAL_POR_PRODUTO`, consultado dentro de `inicializaCriacao()`): `PIX_AUTO` nasce `RECEBIDA` (= 1) — vira `ATIVA` após aprovação do cliente pagador (`PATCH /decisao`, `acao: APROVAR`), ou `REJEITADA` (= 6) se o cliente rejeitar ou se o prazo de 10 minutos da jornada 1 expirar sem resposta (ver `application/decisao/`) — e `DDA_AUTO` nasce `ATIVA` (= 4) diretamente, sem etapa de aprovação. Produto sem entrada nesse mapa faz `inicializaCriacao()` lançar `IllegalStateException` (falha explícita, não herda `ATIVA` por omissão). Todas as gravações usam `StatusAutorizacao.X.getStatusAutorizacao()` (sem números mágicos). O enum também carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)`, consultado por `DecidirAutorizacaoUseCase` — mas **a checagem de idempotência da decisão exige `statusAtual == RECEBIDA` explicitamente**, não apenas alcançabilidade no grafo: `ATIVA → REJEITADA` também é uma aresta válida (para outro fluxo de negócio), e sem a checagem explícita uma expiração atrasada rejeitaria uma autorização já aprovada (ver `TransicaoValidaDecisao`).
+
+A jornada de origem (header `tipoJornada` na criação) é persistida em coluna própria
+`tipo_jornada` (`Autorizacao.tipoJornada`, enum `TipoJornadaAutorizacao`) — **não** é
+recuperável só por `motivo_status`, que é sobrescrito a cada transição de status. Linhas
+anteriores a essa coluna existir têm `tipo_jornada = 0` (`TipoJornadaAutorizacao.DESCONHECIDA`).
 
 ### Exceções e códigos HTTP
 
@@ -182,7 +228,16 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 5. **PostgreSQL 18 obrigatório** — sem fallback H2; dialeto Hibernate específico.
 6. **Records imutáveis** — não tente reatribuir campos; recrie o record.
 7. **`AutorizacaoEventoPayload` não serializa a entidade JPA diretamente** — é um record dedicado com `@JsonProperty` mapeando cada campo para o nome da coluna. Se adicionar/renomear coluna em `Autorizacao`, atualize o payload manualmente (e replique em `apps/autorizacaostatus-producer`, que tem uma cópia própria do mesmo contrato).
-8. **Publish no SNS nunca lança para fora do listener** — `AutorizacaoEventoPublisher.aoPersistir()` captura qualquer exceção e só loga. Não confunda isso com falha silenciosa da API: a criação/cancelamento já foi commitada antes do listener rodar.
+8. **Publish no SNS nunca lança para fora do listener** — `AutorizacaoEventoPublisher.aoPersistir()` captura qualquer exceção e só loga. Não confunda isso com falha silenciosa da API: a criação/cancelamento/decisão já foi commitada antes do listener rodar.
+9. **A checagem de transição da decisão não é só `podeTransicionarPara`** — exige `statusAtual == RECEBIDA` explicitamente antes de checar o grafo (ver seção "Mapeamento de status" acima). Reusar só `podeTransicionarPara` quebraria a idempotência da rota `/decisao`.
+10. **`tipo_jornada` é NOT NULL** — qualquer novo caminho de criação de `Autorizacao` (fora do `AutorizacaoMapper`) precisa setar `tipoJornada`, ou a gravação falha na constraint.
+
+## Aplicação relacionada
+
+`apps/temporiza-autorizacao` (porta 8084) consome o evento de recepção de `PIX_AUTO`/`SPI_J1`
+publicado por esta app e aciona `PATCH /decisao` (`acao: EXPIRAR`) no vencimento de 10 minutos.
+Ver [CLAUDE.md](../temporiza-autorizacao/CLAUDE.md) dela para o fluxo completo do lado do
+temporizador.
 
 ## Documentação em `docs/`
 
@@ -199,4 +254,6 @@ Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
 - [ ] Exceções corretas: `BusinessException` (422) para regras, `ApplicationException` (500) para inesperados
 - [ ] Se mexeu em particionamento, rodar `ControleExpurgoAutorizacaoTest`
 - [ ] DTOs (records) recriados, não mutados
-- [ ] Se mexeu no schema de `autorizacoes`, atualizar `AutorizacaoEventoPayload` aqui **e** em `apps/autorizacaostatus-producer`
+- [ ] Se mexeu no schema de `autorizacoes`, atualizar `AutorizacaoEventoPayload` aqui, em `apps/autorizacaostatus-producer` **e** o `.avsc` em `apps/autorizacaostatus-producer`/`apps/eventos-consumer`
+- [ ] Se mexeu na entidade `Autorizacao`, conferir se `apps/arj-contratoquery` precisa do mesmo campo
+- [ ] Se mexeu na rota `/decisao` ou no cálculo de `data_hora_inclusao`, conferir `apps/temporiza-autorizacao` (consumidor do evento de recepção)

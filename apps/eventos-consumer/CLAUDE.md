@@ -114,7 +114,8 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
    `apps/autorizacaostatus-producer` — os dois não compartilham código; se o schema
    mudar lá, replique aqui. Ambos ficam em `src/main/resources/avro` (não
    `src/main/avro`), empacotados no JAR como insumo de documentação — o runtime não os
-   lê, quem governa o schema é o Schema Registry.
+   lê, quem governa o schema é o Schema Registry. Inclui `tipo_jornada` (nullable) desde
+   a mudança `temporizacao-jornada-01-pix-auto`.
 4. **Conexão Kafka é lazy** — `@SpringBootTest` sobe normalmente sem broker real (o
    `KafkaConsumer` só toca a rede ao fazer poll, em thread de background do container);
    não confunda "contexto sobe" com "está consumindo".

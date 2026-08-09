@@ -1,0 +1,30 @@
+spring:
+    application:
+        name: temporiza-autorizacao
+    profiles:
+        default: local
+    threads:
+        virtual:
+            enabled: true
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health
+
+server:
+    port: 8084
+    shutdown: graceful
+
+temporizacao:
+    prazo-minutos: 10
+    varredura-intervalo-ms: 5000
+    varredura-lote: 100
+    stream-min-idle-time-ms: 120000
+    chave-agenda: "agenda:{pixauto:j1}"
+    chave-stream: "stream:{pixauto:j1}:expiracoes"
+    grupo-consumidor: temporizaautorizacao
+    consumidor-id: ${HOSTNAME:worker-local}
+    command-base-url: http://localhost:8080
+    command-timeout-ms: 5000
