@@ -43,7 +43,8 @@ public class CancelarAutorizacaoUseCase {
 
         var autorizacao = obterAutorizacaoPorIdEParticao(idAutorizacaoStr, idParticaoAutorizacao);
 
-        var contextoValidado = context.comProdutoAutorizacao(autorizacao.getTipoProduto());
+        var statusAtual = StatusAutorizacao.obterStatusEnumPorIdStatus(autorizacao.getStatus());
+        var contextoValidado = context.comAutorizacaoCarregada(autorizacao.getTipoProduto(), statusAtual);
         cancelamentoValidator.validar(contextoValidado);
 
         CancelarAutorizacaoRequest dados = context.dados();
@@ -80,7 +81,8 @@ public class CancelarAutorizacaoUseCase {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            throw new ApplicationException(e.getMessage());
+            throw new ApplicationException(
+                    "Falha ao obter autorização " + idAutorizacao + " na partição " + idParticaoAutorizacao, e);
         }
     }
 }

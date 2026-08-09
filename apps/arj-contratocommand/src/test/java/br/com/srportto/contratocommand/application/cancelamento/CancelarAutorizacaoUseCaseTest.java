@@ -3,13 +3,19 @@ package br.com.srportto.contratocommand.application.cancelamento;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.application.cancelamento.rules.ProdutoSuportadoCancelamento;
+import br.com.srportto.contratocommand.application.cancelamento.rules.TipoProdutoCancelamento;
+import br.com.srportto.contratocommand.application.cancelamento.rules.TransicaoStatusValida;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
+import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,6 +63,7 @@ class CancelarAutorizacaoUseCaseTest {
         Autorizacao aut = new Autorizacao();
         aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
+        aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
@@ -92,6 +100,7 @@ class CancelarAutorizacaoUseCaseTest {
         Autorizacao aut = new Autorizacao();
         aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
+        aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
         when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
                 .thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
@@ -100,5 +109,76 @@ class CancelarAutorizacaoUseCaseTest {
         // faz rollback de qualquer alteração já aplicada na transação.
         assertThrows(RuntimeException.class, () -> useCase.execute(request));
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+    }
+
+    @Test
+    @DisplayName("encapsula exceção de repository em ApplicationException preservando a causa")
+    void encapsulaExcecaoRepositoryComCausa() {
+        UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+        CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
+
+        RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
+        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenThrow(causaOriginal);
+
+        ApplicationException ex = assertThrows(ApplicationException.class, () -> useCase.execute(request));
+
+        // Verifica que a exceção original foi preservada como causa
+        assertNotNull(ex.getCause());
+        assertSame(causaOriginal, ex.getCause());
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+    }
+
+    /** Testes com validação REAL (rules de verdade), para exercitar TransicaoStatusValida ponta a ponta. */
+    @org.junit.jupiter.api.Nested
+    @DisplayName("Idempotência (validator real, sem mock de regras)")
+    class ComValidacaoReal {
+
+        private CancelarAutorizacaoUseCase useCaseComValidacaoReal;
+
+        @BeforeEach
+        void setUp() {
+            var validatorReal = new CancelamentoValidator(
+                    List.of(new ProdutoSuportadoCancelamento(), new TipoProdutoCancelamento(), new TransicaoStatusValida()));
+            useCaseComValidacaoReal = new CancelarAutorizacaoUseCase(
+                    repository, validatorReal, expurgoAutorizacaoService, eventPublisher);
+        }
+
+        @Test
+        @DisplayName("cancelar autorização já CANCELADA é erro de negócio e não publica evento")
+        void autorizacaoJaCanceladaNaoPublicaEvento() {
+            UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+            CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
+
+            Autorizacao aut = new Autorizacao();
+            aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+            aut.setTipoProduto(TipoProduto.PIX_AUTO);
+            aut.setStatus((int) StatusAutorizacao.CANCELADA.getStatusAutorizacao());
+            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+
+            assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(request));
+
+            assertEquals(5, aut.getStatus()); // permanece CANCELADA
+            verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
+            verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+        }
+
+        @Test
+        @DisplayName("cancelar autorização ATIVA com validator real tem sucesso")
+        void autorizacaoAtivaCancelaComSucesso() {
+            UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+            CancelamentoContext request = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
+
+            Autorizacao aut = new Autorizacao();
+            aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+            aut.setTipoProduto(TipoProduto.PIX_AUTO);
+            aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
+            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+            when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
+
+            useCaseComValidacaoReal.execute(request);
+
+            assertEquals(5, aut.getStatus());
+            verify(eventPublisher).publishEvent(any(AutorizacaoPersistidaEvent.class));
+        }
     }
 }

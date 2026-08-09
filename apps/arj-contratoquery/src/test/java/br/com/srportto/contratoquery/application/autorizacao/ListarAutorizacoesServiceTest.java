@@ -228,7 +228,7 @@ class ListarAutorizacoesServiceTest {
     }
 
     @Test
-    @DisplayName("Deve mapear todos os campos de ordenação e tolerar direção inválida")
+    @DisplayName("Deve mapear todos os campos de ordenação válidos e tolerar direção inválida")
     void testOrdenacaoCobreMapeamentoDeCampos() {
         Page<Autorizacao> pagina = new PageImpl<>(Arrays.asList(autorizacao1), PageRequest.of(0, 20), 1);
         when(repository.findByIdUnicoContaContratante(
@@ -242,12 +242,63 @@ class ListarAutorizacoesServiceTest {
                 "dataInicioVigencia",
                 "dataFimVigencia,desc",
                 "idPessoaRecebedora,asc",
-                "campoDesconhecido,direcaoInvalida");
+                "dataHoraInclusao,desc",
+                "status,asc");
 
         for (String ordenarPor : ordenacoes) {
             PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
                     listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, ordenarPor);
             assertNotNull(resultado);
         }
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar campos de ordenação desconhecidos com erro de negócio")
+    void testOrdenacaoComCampoDesconhecido() {
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 20, "campoDesconhecido,asc"));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar tamanho acima do teto com erro de negócio")
+    void testTamanhoPaginaAcimaDoTeto() {
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 101, null));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar página negativa com erro de negócio")
+    void testPaginaNegativa() {
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, -1, 20, null));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar tamanho zero com erro de negócio")
+    void testTamanhoZero() {
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 0, null));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar tamanho negativo com erro de negócio")
+    void testTamanhoNegativo() {
+        assertThrows(BusinessException.class, () ->
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, -1, null));
+    }
+
+    @Test
+    @DisplayName("Deve aceitar tamanho no limite máximo (100)")
+    void testTamanhoNoTeto() {
+        Page<Autorizacao> pagina = new PageImpl<>(Arrays.asList(autorizacao1), PageRequest.of(0, 100), 1);
+        when(repository.findByIdUnicoContaContratante(
+                eq(idUnicoContaContratante), any(Pageable.class)))
+                .thenReturn(pagina);
+
+        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> resultado =
+                listarAutorizacoesService.listar(idUnicoContaContratante, null, 0, 100, null);
+
+        assertNotNull(resultado);
+        assertEquals(100, resultado.getTamanho());
     }
 }

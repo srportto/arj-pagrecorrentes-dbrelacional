@@ -8,6 +8,7 @@ import java.util.UUID;
 import br.com.srportto.contratoquery.domain.entities.Autorizacao;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class AutorizacaoResumidaResponseDto {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private UUID idAutorizacao;
     private LocalDateTime dataCriacao;
@@ -34,8 +37,7 @@ public class AutorizacaoResumidaResponseDto {
         JsonNode metadadoNode = null;
         if (autorizacao.getMetadados() != null) {
             try {
-                metadadoNode = new tools.jackson.databind.ObjectMapper()
-                        .readTree(autorizacao.getMetadados());
+                metadadoNode = OBJECT_MAPPER.readTree(autorizacao.getMetadados());
             } catch (Exception e) {
                 metadadoNode = null;
             }

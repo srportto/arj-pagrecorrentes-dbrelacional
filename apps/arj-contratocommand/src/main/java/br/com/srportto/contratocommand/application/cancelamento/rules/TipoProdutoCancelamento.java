@@ -3,10 +3,12 @@ package br.com.srportto.contratocommand.application.cancelamento.rules;
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoRule;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 
 @Component
+@Order(5) // Roda antes de TransicaoStatusValida (10): produto divergente é erro mais específico que status
 public class TipoProdutoCancelamento implements CancelamentoRule {
 
     @Override

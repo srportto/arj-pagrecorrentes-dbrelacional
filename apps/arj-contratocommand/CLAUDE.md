@@ -67,12 +67,41 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 
 > A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `arj-contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
 
+## Códigos de erro (handler global)
+
+`ApiExceptionHandler` (`shared/interceptors/api/`) é o único mapeador entre exceção e status HTTP. Respostas seguem `LayoutErrosApiResponse` (regra de negócio / conflito / não encontrado) ou `LayoutErrosApiValidationsResponse` (falha de validação de formato). Caminhos desta API:
+
+| Status | Exceção | Quando |
+|---|---|---|
+| 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente não respeitou as validações declarativas. Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
+| 404 | `ResourceNotFoundException` | Autorização inexistente |
+| 409 | `RecursoJaExisteException` | `id_autorizacao_empresa` já existe no `POST /api/autorizacoes` (constraint UNIQUE em `(id_particao_conta, id_autorizacao_empresa)`) |
+| 409 | `ObjectOptimisticLockingFailureException` | Concorrência em `PATCH /api/autorizacoes/{id}/cancelar` ou `/decisao` — outro chamador já alterou a linha |
+| 409 | `StaleStateException` / `DataIntegrityViolationException` | Concorrência no `delete+insert` do `ExpurgoAutorizacaoService` (troca de partição durante cancelamento) |
+| 422 | `BusinessException` | Violação de regra de negócio (validação de produto, dados inválidos, transição de status inválida) |
+| 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
+| 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
+
+> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/reconciliar-contrato-spec-doc/design.md` (D3).
+
+> **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
+
+> **Breaking change (mudança desta versão):** clientes que tratavam o POST duplicado como 422 precisam migrar para 409. A resposta 409 carrega o id já criado — basta retorná-lo ao chamador.
+
+### Lock otimista e idempotência
+
+`Autorizacao` tem `@Version` (lock otimista JPA). Dois cancelamentos ou duas decisões concorrentes na mesma autorização disparam `ObjectOptimisticLockingFailureException` → 409. O cliente pode tentar de novo (a segunda tentativa vai ler o estado já persistido e cair em 422 por status inválido se já estiver sido resolvida).
+
+A criação é idempotente por `id_autorizacao_empresa`: o segundo POST com o mesmo id (constraint composta em `(id_particao_conta, id_autorizacao_empresa)`) recebe 409, **sem** publicar evento adicional.
+
+A rule `TransicaoStatusValida` (`application/cancelamento/rules/`, `@Order(10)`) consulta `StatusAutorizacao.podeTransicionarPara` e bloqueia cancelamento a partir de `CANCELADA`, `REJEITADA`, `EXPIRADA` e `FINALIZADA` — antes essa proteção não existia, e dois cancelamentos concorrentes podiam sobrescrever dados.
+
 ## Arquitetura (hexagonal, 4 camadas)
 
 ```
 entrypoint/   → AutorizacaoController + DTOs (records imutáveis em contratosrest/)
 application/  → Use Cases por feature (contratacao/, cancelamento/), Mappers, Repositories, eventos/
-domain/       → Entidades, Enums, Converters, Utilities — lógica pura, sem Spring
+domain/       → Entidades, Enums (TipoProduto, StatusAutorizacao, TipoEventoAutorizacao, MotivoStatusAutorizacao, CanaisConhecidosEnum, TipoConta, TipoJornadaAutorizacao), Converters, Utilities — lógica pura, sem Spring
 shared/       → Exceções, Interceptadores (ApiExceptionHandler), config/, framework de validação
 ```
 
@@ -178,7 +207,7 @@ ContratacaoValidator → implements Validator<ContratacaoRule, ContratacaoContex
 ```
 
 Regras de contratação existentes (`application/contratacao/rules/`): `ProdutoSuportado` (roda primeiro), `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`. Todas recebem `ContratacaoContext` e acessam o body via `contexto.dados()`.
-Regra de cancelamento (`application/cancelamento/rules/`): `TipoProdutoCancelamento`.
+Regras de cancelamento (`application/cancelamento/rules/`): `ProdutoSuportadoCancelamento` (anotada com `@Order(Ordered.HIGHEST_PRECEDENCE)` — roda **antes** de `TipoProdutoCancelamento`, rejeitando produto não habilitado para cancelamento) e `TipoProdutoCancelamento` (`@Order(5)` — produto do header vs. produto persistido; roda antes de `TransicaoStatusValida` para que divergência de produto falhe com mensagem mais específica que erro de transição). Ambas recebem `CancelamentoContext`.
 
 **Adicionar regra de criação**: crie um `@Component` (não `@Service` — rules são estratégias plugáveis, não o orquestrador) que implemente `ContratacaoRule` com `aceita(ContratacaoContext contexto)`/`validar(ContratacaoContext contexto)` — é injetado automaticamente no `ContratacaoValidator`. Use `@Order` se a regra precisar rodar antes/depois de outra.
 
@@ -201,16 +230,6 @@ A jornada de origem (header `tipoJornada` na criação) é persistida em coluna 
 `tipo_jornada` (`Autorizacao.tipoJornada`, enum `TipoJornadaAutorizacao`) — **não** é
 recuperável só por `motivo_status`, que é sobrescrito a cada transição de status. Linhas
 anteriores a essa coluna existir têm `tipo_jornada = 0` (`TipoJornadaAutorizacao.DESCONHECIDA`).
-
-### Exceções e códigos HTTP
-
-Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
-
-| Origem | HTTP | Quando |
-|--------|------|--------|
-| `@Valid` em DTO | 400 | Violação de `@NotNull`, `@Min`, `@Max` |
-| `BusinessException` | 422 | Regra de negócio (data no passado, produto inválido, etc.) |
-| `ApplicationException` | 500 | Erro inesperado de sistema |
 
 ### Convenções
 

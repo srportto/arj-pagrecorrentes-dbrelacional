@@ -5,10 +5,12 @@ import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,7 +74,12 @@ class KafkaConsumerConfigTest {
 
         recoverer.accept(record, new IllegalArgumentException("status 99 não mapeado"));
 
-        verify(avroTemplate).send(any(org.apache.kafka.clients.producer.ProducerRecord.class));
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<ProducerRecord<String, EventoAutorizacao>> captor = ArgumentCaptor.forClass(ProducerRecord.class);
+        verify(avroTemplate).send(captor.capture());
+        assertEquals("eventos-autorizacao.DLT", captor.getValue().topic(),
+                "o destino real deve ser <topico>.DLT — o default do spring-kafka resolve para "
+                        + "<topico>-dlt (hífen, minúsculo) e falharia contra um tópico inexistente");
     }
 
     @Test
@@ -100,7 +108,12 @@ class KafkaConsumerConfigTest {
 
         recoverer.accept(record, new org.apache.kafka.common.errors.SerializationException("falha de desserialização"));
 
-        verify(bytesTemplate).send(any(org.apache.kafka.clients.producer.ProducerRecord.class));
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<ProducerRecord<String, byte[]>> captor = ArgumentCaptor.forClass(ProducerRecord.class);
+        verify(bytesTemplate).send(captor.capture());
+        assertEquals("eventos-autorizacao.DLT", captor.getValue().topic(),
+                "o destino real deve ser <topico>.DLT — o default do spring-kafka resolve para "
+                        + "<topico>-dlt (hífen, minúsculo) e falharia contra um tópico inexistente");
     }
 
 }

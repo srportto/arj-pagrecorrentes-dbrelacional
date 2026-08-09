@@ -77,6 +77,11 @@ arj-pagrecorrentes-dbrelacional/
 
 ## Começando
 
+> `DB_PASSWORD` não tem mais valor padrão embutido nos arquivos de compose — a subida falha com
+> erro explícito se a variável não estiver definida. Copie `apps/.env.example` para `apps/.env`
+> (e `infra/local/postgres/.env.example` para `infra/local/postgres/.env`, se for usar a Opção B)
+> e defina sua própria senha local, ou passe `DB_PASSWORD` inline como nos exemplos abaixo.
+
 ### Opção A — Docker Compose (recomendado)
 
 Sobe o Postgres (partman/cron) e as duas aplicações com um único comando:
@@ -96,7 +101,7 @@ DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
 
 ```bash
 cd infra/local/postgres
-docker compose -f postgres-db-v18.yml up -d
+DB_PASSWORD=sua_senha docker compose -f postgres-db-v18.yml up -d
 ```
 
 #### 2. Rodar o serviço de escrita (command)

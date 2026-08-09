@@ -33,9 +33,12 @@ services:
       retries: 15
     restart: unless-stopped
 
-  # Cria o topico eventos-autorizacao (3 particoes) e encerra. auto.create.topics.enable
-  # fica desligado no broker: o topico e contrato explicito, nao efeito colateral do
-  # primeiro produce.
+  # Cria eventos-autorizacao e eventos-autorizacao.DLT (3 particoes cada) e encerra.
+  # auto.create.topics.enable fica desligado no broker: os topicos sao contrato
+  # explicito, nao efeito colateral do primeiro produce. A DLT e destino do
+  # DeadLetterPublishingRecoverer da eventos-consumer - sem ela criada aqui, a
+  # publicacao na DLT falha, o offset nao avanca e a particao trava na mensagem
+  # venenosa que a DLT deveria isolar.
   kafka-topic-init:
     image: confluentinc/cp-kafka:7.7.1
     networks:
@@ -45,7 +48,8 @@ services:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - "kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic eventos-autorizacao --partitions 3 --replication-factor 1"
+      - "kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic eventos-autorizacao --partitions 3 --replication-factor 1 &&
+         kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic eventos-autorizacao.DLT --partitions 3 --replication-factor 1"
     restart: "no"
 
   schema-registry:

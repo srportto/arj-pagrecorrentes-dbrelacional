@@ -2,18 +2,23 @@ package br.com.srportto.contratocommand.shared.interceptors.api;
 
 import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
 import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.shared.exceptions.RecursoJaExisteException;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.hibernate.StaleStateException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,23 +44,35 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("ApplicationException → 500")
+    @DisplayName("RecursoJaExisteException → 409 (não 422 — recurso já existe é conflito, não regra de negócio)")
+    void recursoJaExiste409() {
+        ResponseEntity<LayoutErrosApiResponse> resp =
+                handler.recursoJaExiste(new RecursoJaExisteException("já existe"), req());
+
+        assertEquals(HttpStatus.CONFLICT, resp.getStatusCode());
+        assertEquals("já existe", resp.getBody().getMessage());
+    }
+
+    @Test
+    @DisplayName("ApplicationException → 500 com mensagem genérica (sem detalhe técnico)")
     void aplicacao500() {
         ResponseEntity<LayoutErrosApiResponse> resp =
                 handler.erroNegociosResponseEntity(new ApplicationException("falha"), req());
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
-        assertEquals("falha", resp.getBody().getMessage());
+        // Resposta não contém o getMessage() da exceção original (proteção contra vazamento de detalhe técnico)
+        assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
     }
 
     @Test
-    @DisplayName("Exception genérica não mapeada → 500 no layout padrão da API")
+    @DisplayName("Exception genérica não mapeada → 500 com mensagem genérica (sem detalhe técnico)")
     void erroNaoMapeado500() {
         ResponseEntity<LayoutErrosApiResponse> resp =
                 handler.erroInesperadoResponseEntity(new NullPointerException("npe inesperada"), req());
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
-        assertEquals("npe inesperada", resp.getBody().getMessage());
+        // Resposta não contém o getMessage() da exceção original (proteção contra vazamento de detalhe técnico)
+        assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
     }
 
     @Test
@@ -71,5 +88,79 @@ class ApiExceptionHandlerTest {
         assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, resp.getStatusCode());
         assertEquals(1, resp.getBody().getOccurrences().size());
         assertEquals("valor", resp.getBody().getOccurrences().get(0).getFieldName());
+    }
+
+    // ========== Testes dos novos handlers de concorrência ==========
+
+    @Test
+    @DisplayName("OptimisticLockException → 409 Conflict")
+    void optimisticLockException_Retorna409() {
+        OptimisticLockException ex = new OptimisticLockException("Versão conflitante");
+
+        ResponseEntity<LayoutErrosApiResponse> response = handler.conflitoLockOtimista(ex, req());
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Conflito de concorrencia: a autorizacao foi modificada por outra requisicao",
+                response.getBody().getError());
+        assertFalse(response.getBody().getMessage().contains("Exception"));
+    }
+
+    @Test
+    @DisplayName("ObjectOptimisticLockingFailureException → 409 Conflict")
+    void objectOptimisticLockingFailure_Retorna409() {
+        ObjectOptimisticLockingFailureException ex = mock(ObjectOptimisticLockingFailureException.class);
+
+        ResponseEntity<LayoutErrosApiResponse> response = handler.conflitoLockOtimista(ex, req());
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Conflito de concorrencia: a autorizacao foi modificada por outra requisicao",
+                response.getBody().getError());
+    }
+
+    @Test
+    @DisplayName("DataIntegrityViolationException → 409 Conflict (sem expor nome de constraint)")
+    void dataIntegrityViolation_Retorna409() {
+        DataIntegrityViolationException ex = new DataIntegrityViolationException(
+                "Violação de constraint UNIQUE", new Exception("Constraint viola uk_autorizacao_empresa_particao"));
+
+        ResponseEntity<LayoutErrosApiResponse> response = handler.conflitoIntegridade(ex, req());
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Conflito de dados: a operacao viola uma regra de unicidade ou integridade",
+                response.getBody().getError());
+        // Valida que o nome da constraint não é exposto
+        assertFalse(response.getBody().getMessage().contains("uk_autorizacao_empresa_particao"));
+    }
+
+    @Test
+    @DisplayName("StaleStateException → 409 Conflict (estado obsoleto)")
+    void staleStateException_Retorna409() {
+        StaleStateException ex = new StaleStateException("Linha não encontrada após operação");
+
+        ResponseEntity<LayoutErrosApiResponse> response = handler.conflitoEstadoObsoleto(ex, req());
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Conflito de concorrencia: a autorizacao foi modificada ou removida por outra requisicao",
+                response.getBody().getError());
+    }
+
+    @Test
+    @DisplayName("Respostas de concorrência não expõem stack trace ou detalhes técnicos")
+    void resposta_SanitizadaSemDetalhes() {
+        OptimisticLockException ex = new OptimisticLockException("Detalhes técnicos que não devem ser expostos");
+
+        ResponseEntity<LayoutErrosApiResponse> response = handler.conflitoLockOtimista(ex, req());
+
+        String error = response.getBody().getError();
+        String message = response.getBody().getMessage();
+
+        assertFalse(error.contains("OptimisticLockException"));
+        assertFalse(message.contains("OptimisticLockException"));
+        assertFalse(error.contains("Detalhes técnicos"));
+        assertFalse(message.contains("Detalhes técnicos"));
     }
 }

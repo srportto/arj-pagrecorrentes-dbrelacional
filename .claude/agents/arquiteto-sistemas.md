@@ -2,7 +2,7 @@
 name: arquiteto-sistemas
 description: "Use quando precisar DESENHAR ou REVISAR a arquitetura de alto nível de um sistema distribuído — escolher entre monolito e microsserviços, escrever ADRs (Architecture Decision Records), mapear interações entre componentes, avaliar trade-offs de tecnologia, planejar escalabilidade e resiliência. Fronteira clara: para a arquitetura INTERNA de uma aplicação (camadas, hexagonal vs clássica), use `arquitetura-limpa-java` ou `java-architecture`. Para topologia cloud (VPC, IAM, DR), use `cloud-architect`."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: sonnet
+model: [sonnet, 'MiniMax: MiniMax M3 (copilot)']
 effort: high
 ---
 

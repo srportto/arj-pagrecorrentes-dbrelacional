@@ -62,6 +62,36 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 
 > **Não existem** POST, PATCH ou DELETE nesta app — toda escrita fica no `arj-contratocommand` (porta 8080).
 
+## Validações e códigos de erro
+
+`ApiExceptionHandler` (`shared/interceptors/api/`) é o único mapeador entre exceção e status HTTP. Respostas seguem `LayoutErrosApiResponse`.
+
+### Parâmetros de borda do `GET /api/autorizacoes`
+
+| Param | Regra | Erro se violar |
+|---|---|---|
+| `idUnicoContaContratante` | opcional no controller; se **omitido**, o service valida nulidade | 422 — `BusinessException`: "idUnicoContaContratante é obrigatório" |
+| `pagina` | deve ser **≥ 0** | 422 — `BusinessException`: "pagina deve ser maior ou igual a 0" |
+| `tamanho` | deve ser **entre 1 e 100** (inclusive) | 422 — `BusinessException`: "tamanho deve estar entre 1 e 100" |
+| `ordenarPor` | aceita apenas a **whitelist** de campos ordenáveis (atualmente: `dataHoraInclusao,desc` é o default; outros valores reconhecidos dependem do mapeamento de campos) | 422 — `BusinessException` listando os campos aceitos |
+
+> **Teto de `tamanho` = 100** impede `?tamanho=999999`, que dispararia varredura completa de partições sem limite.
+> **Quebra de contrato (mudança desta versão):** clientes que enviam `idUnicoContaContratante` vazio e esperavam 400 do Spring agora recebem **422** desta API — o controller deixou o binding ser opcional e a validação virou de negócio. Era 400 (Spring) → agora 422 (handler).
+
+### Códigos de erro desta API
+
+| Status | Exceção | Quando |
+|---|---|---|
+| 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente não respeitou as validações declarativas. Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
+| 404 | `ResourceNotFoundException` | Autorização inexistente no `GET /{autorizacaoId}` (ou UUID com partição fora da faixa 0–889) |
+| 422 | `BusinessException` | Violação de regra de negócio — borda de paginação (ver tabela acima), `idUnicoContaContratante` ausente, `ordenarPor` desconhecido |
+| 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
+| 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
+
+> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/reconciliar-contrato-spec-doc/design.md` (D3).
+
+> **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
+
 ## Arquitetura (hexagonal, 4 camadas)
 
 ```
@@ -111,16 +141,6 @@ mesmo padrão de `TipoProdutoConverter`). Não é exposta nos DTOs de resposta
 (`AutorizacaoDetalheResponseDto`/`AutorizacaoResumidaResponseDto`) — expor ou não é decisão de
 contrato de API em aberto (ver `design.md` da mudança `temporizacao-jornada-01-pix-auto`,
 Open Questions), não bloqueante para esta app funcionar.
-
-### Exceções e códigos HTTP
-
-Tratadas em `shared/interceptors/api/ApiExceptionHandler`.
-
-| Origem | HTTP | Quando |
-|--------|------|--------|
-| `BusinessException` | 422 | Parâmetro inválido (ex.: status inexistente) |
-| `ResourceNotFoundException` | 404 | Autorização não encontrada |
-| `ApplicationException` | 500 | Erro inesperado de sistema |
 
 ## Armadilhas críticas
 

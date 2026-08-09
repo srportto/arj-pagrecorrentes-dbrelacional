@@ -12,7 +12,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-db-csp-postgres}
       POSTGRES_USER: ${DB_USER_NAME:-docker}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-JTMQ9YxDkHfRQbX2}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD nao definida - copie .env.example para .env}
       PGDATA: /var/lib/postgresql/data
     volumes:
       - pg_data:/var/lib/postgresql/data
@@ -35,7 +35,7 @@ services:
       DB_HOST: postgres
       DB_NAME: ${DB_NAME:-db-csp-postgres}
       DB_USER_NAME: ${DB_USER_NAME:-docker}
-      DB_PASSWORD: ${DB_PASSWORD:-JTMQ9YxDkHfRQbX2}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD nao definida - copie .env.example para .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,7 +51,7 @@ services:
       DB_HOST: postgres
       DB_NAME: ${DB_NAME:-db-csp-postgres}
       DB_USER_NAME: ${DB_USER_NAME:-docker}
-      DB_PASSWORD: ${DB_PASSWORD:-JTMQ9YxDkHfRQbX2}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD nao definida - copie .env.example para .env}
     depends_on:
       postgres:
         condition: service_healthy

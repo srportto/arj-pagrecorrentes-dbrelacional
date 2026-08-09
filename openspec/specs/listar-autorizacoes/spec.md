@@ -4,10 +4,15 @@
 
 Definir a listagem paginada de autorizações resumidas por conta contratante no `contratoquery` via `GET /api/autorizacoes`, com filtro por status, paginação e ordenação, e a estrutura do DTO de resposta. A listagem pertence exclusivamente ao `contratoquery` (lado de leitura do CQRS).
 
-## Requirements
+> **Nota (2026-08-09):** esta spec é o que o `arj-contratoquery` expõe. O `arj-contratocommand` representa a mesma autorização com nomes de campo e formato de `status` diferentes (`status` como `Integer`, nomes longos como `valorAutorizacao` / `dataHoraInclusao` / `dataHoraUltimaAtualizacao`). Não há migração planejada — ver change `reconciliar-contrato-spec-doc` D1/D2.
 
+## Requirements
 ### Requirement: Listar autorizações paginadas por conta contratante
 O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes` que retorna uma página de autorizações resumidas de uma conta contratante, com suporte a filtro por status, paginação e ordenação configuráveis.
+
+A validação do parâmetro `idUnicoContaContratante` SHALL ocorrer na camada de aplicação, não no binding do framework. O parâmetro SHALL ser declarado como opcional no controller, de modo que sua ausência alcance a validação de negócio e produza resposta no formato `LayoutErrosApiResponse` — e não o erro genérico do framework.
+
+Os parâmetros de paginação e ordenação SHALL respeitar os limites definidos na capacidade `limites-consulta-autorizacoes`: teto máximo de `tamanho`, rejeição de `pagina` negativa e de `tamanho` não positivo, e whitelist fechada de campos de `ordenarPor`.
 
 #### Scenario: Listagem sem filtro de status retorna todas as autorizações da conta
 - **WHEN** o cliente envia `GET /api/autorizacoes?idUnicoContaContratante={uuid}`
@@ -20,6 +25,12 @@ O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes` que retorna uma
 #### Scenario: idUnicoContaContratante ausente resulta em erro de negócio
 - **WHEN** o cliente omite o parâmetro `idUnicoContaContratante`
 - **THEN** o sistema retorna HTTP 422 com mensagem indicando que o campo é obrigatório
+- **AND** o corpo da resposta segue o formato `LayoutErrosApiResponse`
+
+#### Scenario: Validação de conta contratante é alcançável
+- **WHEN** o controller e o service de listagem são inspecionados
+- **THEN** o parâmetro `idUnicoContaContratante` NÃO SHALL ser declarado como obrigatório no binding
+- **AND** a verificação de nulidade no service SHALL ser alcançável em execução, não código morto
 
 #### Scenario: Status inválido resulta em erro de negócio
 - **WHEN** o cliente passa `status=STATUS_DESCONHECIDO`
@@ -58,3 +69,4 @@ O endpoint de listagem `GET /api/autorizacoes` SHALL existir apenas no `contrato
 #### Scenario: contratocommand continua respondendo às rotas de escrita
 - **WHEN** o cliente envia `POST /api/autorizacoes` ou `PATCH /api/autorizacoes/{id}/cancelar` para o `contratocommand`
 - **THEN** o sistema processa normalmente sem alteração de comportamento
+

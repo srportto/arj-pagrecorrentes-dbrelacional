@@ -1,11 +1,14 @@
 package br.com.srportto.contratoquery.shared.interceptors.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 
@@ -16,6 +19,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
 public class ApiExceptionHandler {
+
+	private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<LayoutErrosApiResponse> erroNegocio(BusinessException exception,
@@ -47,13 +52,52 @@ public class ApiExceptionHandler {
 	public ResponseEntity<LayoutErrosApiResponse> erroAplicacao(ApplicationException exception,
 			HttpServletRequest req) {
 
+		log.error("Erro de aplicacao ao processar {} {}", req.getMethod(), req.getRequestURI(), exception);
+
 		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
 		layoutError.setTimestamp(Instant.now());
 		layoutError.setError("Ocorreu um erro inesperado, entre em contato com o suporte");
-		layoutError.setMessage(exception.getMessage());
+		layoutError.setMessage("Consulte o suporte para mais informações");
 		layoutError.setPath(req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(layoutError);
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<LayoutErrosApiResponse> erroInesperado(Exception exception,
+			HttpServletRequest req) {
+
+		log.error("Erro inesperado (nao mapeado) ao processar {} {}", req.getMethod(), req.getRequestURI(),
+				exception);
+
+		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
+		layoutError.setTimestamp(Instant.now());
+		layoutError.setError("Ocorreu um erro inesperado, entre em contato com o suporte");
+		layoutError.setMessage("Consulte o suporte para mais informações");
+		layoutError.setPath(req.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(layoutError);
+	}
+
+	/**
+	 * Deixa o handler de "recurso estatico nao encontrado" passar direto como 404 nativo,
+	 * sem interceptar com o catch-all (que devolveria 500). Importante para o endpoint
+	 * `/v3/api-docs` do springdoc em testes de slice sem auto-configuracao completa.
+	 */
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<LayoutErrosApiResponse> recursoEstaticoNaoEncontrado(NoResourceFoundException exception,
+			HttpServletRequest req) {
+
+		log.debug("Recurso estatico nao encontrado em {} {}: {}", req.getMethod(), req.getRequestURI(),
+				exception.getMessage());
+
+		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
+		layoutError.setTimestamp(Instant.now());
+		layoutError.setError("Recurso nao encontrado");
+		layoutError.setMessage("O recurso solicitado nao foi encontrado");
+		layoutError.setPath(req.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(layoutError);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

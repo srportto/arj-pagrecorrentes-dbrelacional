@@ -8,3 +8,4 @@ kafka:
     schema-registry-url: http://localhost:8085
     topic: eventos-autorizacao
     group-id: eventos-consumer
+    auto-register-schemas: true

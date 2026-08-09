@@ -1,5 +1,6 @@
 package br.com.srportto.autorizacaostatusproducer.application.eventos;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.databind.JsonNode;
 
@@ -11,7 +12,13 @@ import java.util.UUID;
 /**
  * Espelho do payload publicado pelo arj-contratocommand: representacao exata da linha
  * da tabela {@code autorizacoes}, com as chaves iguais aos nomes das colunas.
+ *
+ * <p>{@code ignoreUnknown = true} declara explicitamente o comportamento ja adotado por
+ * padrao pelo Jackson 3 nesta app: uma propriedade nova no payload, ainda nao replicada
+ * aqui, e ignorada em vez de descartar a mensagem inteira (ver design.md de
+ * openspec/changes/rede-seguranca-contrato-evento, decisao D3).
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record AutorizacaoEventoPayload(
 
         @JsonProperty("id_autorizacao") UUID idAutorizacao,

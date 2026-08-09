@@ -3,7 +3,9 @@ package br.com.srportto.contratocommand.application.contratacao;
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
+import br.com.srportto.contratocommand.shared.exceptions.RecursoJaExisteException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,14 @@ public class CriarAutorizacaoUseCase {
                 dados.tipoProduto(), dados.idAutorizacaoEmpresa());
 
         contratacaoValidator.validar(context);
+
+        // Verifica idempotência: rejeita se já existe autorização com o mesmo id_autorizacao_empresa
+        // na mesma partição (conta) — mesmo escopo da constraint UNIQUE (id_particao_conta,
+        // id_autorizacao_empresa) no banco, e poda a busca para 1 partição em vez de varrer todas.
+        var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(dados.idUnicoContaContratante());
+        if (repository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(idParticaoConta, dados.idAutorizacaoEmpresa())) {
+            throw new RecursoJaExisteException("Autorização com id_autorizacao_empresa já existe: " + dados.idAutorizacaoEmpresa());
+        }
 
         var autorizacaoMontada = mapper.toDomain(dados, context.tipoJornada());
         var autorizadaPersistida = repository.save(autorizacaoMontada);

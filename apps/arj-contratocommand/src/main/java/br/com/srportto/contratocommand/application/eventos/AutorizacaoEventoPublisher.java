@@ -1,17 +1,19 @@
 package br.com.srportto.contratocommand.application.eventos;
 
-import br.com.srportto.contratocommand.shared.config.AwsProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.Map;
+
+import br.com.srportto.contratocommand.domain.enums.TipoEventoAutorizacao;
+import br.com.srportto.contratocommand.shared.config.AwsProperties;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.Map;
 
 /** Publica no SNS a autorização persistida após o commit; falha de publish só é logada (ver design.md). */
 @Component

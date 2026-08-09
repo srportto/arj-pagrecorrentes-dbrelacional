@@ -25,7 +25,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "autorizacoes") // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
+@Table(name = "autorizacoes", // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
+        uniqueConstraints = @UniqueConstraint(name = "uk_autorizacao_empresa_particao",
+                columnNames = {"id_particao_conta", "id_autorizacao_empresa"}))
 public class Autorizacao {
 
     @EmbeddedId
@@ -60,8 +62,15 @@ public class Autorizacao {
     @Column(name = "valor", nullable = false, precision = 17, scale = 2)
     private BigDecimal valorAutorizacao;
 
-    @Column(name = "id_autorizacao_empresa", nullable = false, unique = false)
+    // Unicidade real: constraint composta (id_particao_conta, id_autorizacao_empresa), declarada
+    // em @Table acima — não `unique = true` aqui, que geraria constraint de coluna única sem a
+    // chave de particionamento, rejeitada pelo Postgres em tabela PARTITION BY.
+    @Column(name = "id_autorizacao_empresa", nullable = false)
     private String idAutorizacaoEmpresa;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "valor_limite", nullable = false, precision = 17, scale = 2)
     private BigDecimal valorLimite;

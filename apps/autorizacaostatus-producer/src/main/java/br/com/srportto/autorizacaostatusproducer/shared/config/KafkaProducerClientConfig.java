@@ -1,9 +1,5 @@
 package br.com.srportto.autorizacaostatusproducer.shared.config;
 
-import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -14,10 +10,15 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Properties;
 
+import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
+
 /**
  * Producer Kafka via cliente puro (kafka-clients + KafkaAvroSerializer), sem
  * spring-kafka. enable.idempotence + acks=all cobrem a idempotencia de transporte; os
- * timeouts ficam abaixo do visibility timeout da fila SQS (30s) para que uma falha de
+ * timeouts ficam abaixo do visibility timeout da fila SQS (60s) para que uma falha de
  * producao se resolva (sucesso ou excecao) antes de o SQS reentregar a mensagem.
  */
 @Configuration
@@ -31,7 +32,10 @@ public class KafkaProducerClientConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaProperties.schemaRegistryUrl());
-        props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, true);
+        // habilitado so no profile local (application-local.yaml); fora dele, schema novo
+        // ou alterado precisa de registro explicito antes do primeiro produce (ver design.md
+        // de openspec/changes/rede-seguranca-contrato-evento, decisao D5)
+        props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, kafkaProperties.autoRegisterSchemas());
 
         // serializacao Avro + round-trip ao Schema Registry ocorrem dentro de
         // Producer.send(), antes do Future: nem max.block.ms nem o Future.get() cobrem

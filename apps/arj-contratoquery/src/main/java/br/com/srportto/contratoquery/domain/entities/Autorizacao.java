@@ -103,4 +103,7 @@ public class Autorizacao {
     @Column(name = "metadados", nullable = false, unique = false, columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private String metadados;
+
+    @Column(name = "version", nullable = false, insertable = false, updatable = false)
+    private Long version;
 }

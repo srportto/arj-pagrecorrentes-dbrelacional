@@ -7,6 +7,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -84,6 +85,11 @@ public class KafkaConsumerConfig {
      * Falha de desserialização (bytes crus, via ErrorHandlingDeserializer) e falha de
      * negócio após desserialização com sucesso (EventoAutorizacao típado) são publicadas
      * na DLT por templates diferentes, roteados pelo tipo do valor do record.
+     *
+     * <p>O destino é resolvido explicitamente para {@code <topico>.DLT} (ponto, nao
+     * o sufixo default do spring-kafka nesta versao, que e {@code -dlt} em minusculo —
+     * divergiria do topico provisionado em infra/local/kafka/compose.yaml e da
+     * documentacao do app, e a DLT nunca receberia mensagem).
      */
     @Bean
     public DeadLetterPublishingRecoverer eventoAutorizacaoDeadLetterRecoverer(
@@ -91,7 +97,8 @@ public class KafkaConsumerConfig {
             KafkaTemplate<String, EventoAutorizacao> eventoAutorizacaoDltAvroKafkaTemplate) {
         return new DeadLetterPublishingRecoverer(Map.of(
                 byte[].class, eventoAutorizacaoDltBytesKafkaTemplate,
-                EventoAutorizacao.class, eventoAutorizacaoDltAvroKafkaTemplate));
+                EventoAutorizacao.class, eventoAutorizacaoDltAvroKafkaTemplate),
+                (record, exception) -> new TopicPartition(record.topic() + ".DLT", record.partition()));
     }
 
     @Bean
@@ -111,7 +118,10 @@ public class KafkaConsumerConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaProperties.schemaRegistryUrl());
-        props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, true);
+        // habilitado so no profile local; fora dele, schema novo ou alterado precisa de
+        // registro explicito antes do primeiro produce (ver design.md de
+        // openspec/changes/rede-seguranca-contrato-evento, decisao D5)
+        props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, kafkaProperties.autoRegisterSchemas());
         ProducerFactory<String, EventoAutorizacao> producerFactory = new DefaultKafkaProducerFactory<>(props);
         return new KafkaTemplate<>(producerFactory);
     }

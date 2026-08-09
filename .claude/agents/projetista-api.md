@@ -2,7 +2,7 @@
 name: projetista-api
 description: "Use quando precisar DESENHAR ou AUDITAR contrato de API REST — modelagem de recursos, OpenAPI 3.1, versionamento, paginação (offset/cursor), RFC 9457 Problem Details, HATEOAS, error handling. NÃO use para implementar controllers (java-construtor) nem para tuning de banco (especialista-banco-dados)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: haiku
+model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
 effort: medium
 ---
 
