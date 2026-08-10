@@ -34,3 +34,15 @@ management:
 server:
     port: 8081
     shutdown: graceful
+
+contratoquery:
+    consulta:
+        # Nivel 3 da cascata de localizacao do GET /api/autorizacoes/{id}: procura nas demais
+        # particoes quentes quando a autorizacao nao esta nem na particao derivada do id nem na
+        # faixa de expurgo. Encontrar algo aqui e anomalia (invariante de localizacao violado),
+        # nao caminho normal -- por isso nasce habilitado, para que a anomalia apareca.
+        #
+        # Desligue se o custo do caminho de "nao encontrado" incomodar: o pior caso da cascata e
+        # o id INEXISTENTE, que percorre todos os niveis habilitados antes do 404. O custo e CPU
+        # de planejamento sobre 888 particoes, nao I/O.
+        busca-em-particoes-inesperadas: ${CONSULTA_BUSCA_PARTICOES_INESPERADAS:true}

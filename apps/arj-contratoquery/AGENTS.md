@@ -83,7 +83,8 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 | Status | Exceção | Quando |
 |---|---|---|
 | 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente não respeitou as validações declarativas. Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
-| 404 | `ResourceNotFoundException` | Autorização inexistente no `GET /{autorizacaoId}` (ou UUID com partição fora da faixa 0–889) |
+| 404 | `ResourceNotFoundException` | Autorização inexistente no `GET /{autorizacaoId}` — significa "não existe em partição alguma", após esgotar os níveis habilitados da cascata. Também cobre UUID com partição embutida fora da faixa 0–889, aí sem tocar no banco |
+| 500 | `ApplicationException` | Mesma autorização encontrada em mais de uma partição — corrupção, provável resíduo de transferência de partição interrompida. Nenhuma linha é escolhida |
 | 422 | `BusinessException` | Violação de regra de negócio — borda de paginação (ver tabela acima), `idUnicoContaContratante` ausente, `ordenarPor` desconhecido |
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
@@ -117,11 +118,31 @@ AutorizacaoController.listar()
 ```
 AutorizacaoController.consultarPorId()
   └─ ConsultarAutorizacaoService.consultarPorId()
-       ├─ ReversibleUUIDv7.extract(uuid) ← extrai partição sem query adicional
-       ├─ valida faixa de partição (0–889), lança 404 se fora
-       └─ AutorizacaoRepository.findById(IdAutorizacao(uuid, particao))
+       ├─ ReversibleUUIDv7.extract(uuid) ← extrai a partição de CRIAÇÃO, sem query adicional
+       ├─ valida faixa de partição (0–889), lança 404 se fora — sem tocar no banco
+       └─ cascata de localização (para no primeiro nível que encontrar):
+            N1  findById(IdAutorizacao(uuid, particao))          1 part.   ~3 ms  → ativa
+            N2  buscarNaFaixaDeExpurgo(uuid, 900)              100 part.  ~16 ms  → terminal
+            N3  buscarEmOutrasParticoesQuentes(uuid, 900, part) 888 part. ~137 ms → anomalia + WARN
             └─ AutorizacaoDetalheResponseDto.from(autorizacao)
 ```
+
+**Por que existe a cascata** — e não é otimização prematura nem paranoia: a partição em que a
+linha reside **deixou de ser derivável do id**. O `ReversibleUUIDv7` carrega a partição de
+*criação*, imutável; mas o `ExpurgoAutorizacaoService` do `arj-contratocommand` transfere toda
+autorização em estado terminal (`CANCELADA`, `REJEITADA`, `EXPIRADA`, `FINALIZADA`) para a faixa
+de expurgo (900–999, balde da semana da transição). Sem a cascata, o `GET /{id}` devolve **404
+para toda autorização em estado terminal** — foi o que aconteceu entre 2026-08-09 e a mudança
+`fallback-consulta-autorizacao-expurgada`.
+
+Os três níveis cobrem conjuntos de partições **disjuntos**, e juntos cobrem a tabela inteira.
+Isso é o que faz um acerto em N3 ser, por definição, violação do invariante "ou está na partição
+do seu id, ou está no expurgo" — daí o `log.warn`. N3 é desligável via
+`contratoquery.consulta.busca-em-particoes-inesperadas` (default `true`): o pior caso da cascata
+é o id **inexistente**, que percorre todos os níveis habilitados antes do 404.
+
+Mais de uma linha para o mesmo id em qualquer nível é **corrupção**, não empate: resulta em
+`ApplicationException` (500), nunca em escolher uma das linhas.
 
 ### Particionamento temporal (crítico para leitura)
 
@@ -149,13 +170,16 @@ Open Questions), não bloqueante para esta app funcionar.
 3. **Não há Strategy Pattern** — sem orquestradores de contratação/cancelamento, sem use cases `Criar*` ou `Cancelar*`.
 4. **Sem MapStruct** — conversão feita via `from()` estático nos DTOs (ex.: `AutorizacaoResumidaResponseDto.from(autorizacao)`).
 5. **Container é Jetty**, não Tomcat — o `pom.xml` exclui o Tomcat explicitamente.
-6. **Faixa de partição na leitura**: `ConsultarAutorizacaoService` valida partição 0–889 (diferente da faixa 900–999 usada na escrita) — UUIDs fora disso → 404 sem consultar o banco.
-7. **Queries JPQL explícitas** — `AutorizacaoRepository` não usa métodos derivados; cuidado ao renomear campos da entidade.
+6. **Faixa de partição na leitura**: `ConsultarAutorizacaoService` valida a partição **embutida no id** em 0–889 — UUIDs fora disso → 404 sem consultar o banco. Isso é a validação do *id*, não o escopo da *busca*: a cascata consulta também 900–999 (nível 2) e as demais quentes (nível 3). Não confunda os dois.
+7. **A partição do id ≠ a partição onde a linha está.** O id carrega a partição de criação e é imutável; o expurgo move a linha. Toda leitura por id precisa da cascata. Se você adicionar um caminho novo que localize por `(uuid, partição extraída)` e pare aí, ele vai devolver 404 para autorização em estado terminal — exatamente o defeito corrigido pela mudança `fallback-consulta-autorizacao-expurgada`.
+8. **O custo dominante das consultas desta app é planejamento, não I/O.** Medido: 148 ms por chamada na listagem, varrendo as 989 partições. Não melhora com índice nem com menos dados — é linear no número de partições consideradas. Índice só ajuda a execução, que é a fatia pequena.
+9. **Queries JPQL explícitas** — `AutorizacaoRepository` não usa métodos derivados; cuidado ao renomear campos da entidade.
 
 ## Checklist antes do commit
 
 - [ ] `mvn test` passa
 - [ ] `mvn clean compile` sem erros
 - [ ] Endpoints mantidos como GET — sem adicionar POST/PATCH
-- [ ] Se mexeu em `ConsultarAutorizacaoService`, verificar a faixa de partição (0–889)
+- [ ] Se mexeu em `ConsultarAutorizacaoService`, verificar a faixa de validação do id (0–889) **e** os três níveis da cascata — eles precisam continuar disjuntos, ou o acerto em N3 deixa de significar anomalia
+- [ ] Se mexeu na localização por id, rodar `ConsultaCascataIntegrationTest` (exige PostgreSQL local no ar e `DB_PASSWORD` exportada)
 - [ ] DTOs (records) recriados, não mutados
