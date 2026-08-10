@@ -36,9 +36,15 @@ services:
       DB_NAME: ${DB_NAME:-db-csp-postgres}
       DB_USER_NAME: ${DB_USER_NAME:-docker}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD nao definida - copie .env.example para .env}
+      AWS_ENDPOINT: http://floci:4566
+      AWS_SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:sns-estados-autorizacao
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - default
+      - postgres_default
+      - floci_local
     restart: unless-stopped
 
   arj-contratoquery:
@@ -55,7 +61,70 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - default
+      - postgres_default
     restart: unless-stopped
+
+  autorizacaostatus-producer:
+    build:
+      context: ./autorizacaostatus-producer
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_CLOUD_AWS_ENDPOINT: http://floci:4566
+      SQS_QUEUE_URL: http://floci:4566/000000000000/SQS-eventos-autorizacao
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    networks:
+      - default
+      - floci_local
+      - kafka-eventos-autorizacao
+    restart: unless-stopped
+
+  eventos-consumer:
+    build:
+      context: ./eventos-consumer
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    networks:
+      - default
+      - kafka-eventos-autorizacao
+    restart: unless-stopped
+
+  temporiza-autorizacao:
+    build:
+      context: ./temporiza-autorizacao
+    ports:
+      - "8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_CLOUD_AWS_ENDPOINT: http://floci:4566
+      SQS_QUEUE_URL: http://floci:4566/000000000000/SQS-temporizacao-autorizacao
+      SPRING_DATA_REDIS_HOST: valkey
+      TEMPORIZACAO_COMMAND_BASE_URL: http://arj-contratocommand:8080
+    networks:
+      - default
+      - floci_local
+      - redis_default
+    restart: unless-stopped
+
+networks:
+  default: {}
+  postgres_default:
+    external: true
+  floci_local:
+    external: true
+    name: floci-aws-local_default
+  redis_default:
+    external: true
+  kafka-eventos-autorizacao:
+    external: true
 
 volumes:
   pg_data:

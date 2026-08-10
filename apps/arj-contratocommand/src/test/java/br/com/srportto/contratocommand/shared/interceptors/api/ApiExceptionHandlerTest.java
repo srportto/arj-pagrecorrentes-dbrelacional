@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.hibernate.StaleStateException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -146,6 +147,26 @@ class ApiExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals("Conflito de concorrencia: a autorizacao foi modificada ou removida por outra requisicao",
                 response.getBody().getError());
+    }
+
+    @Test
+    @DisplayName("CannotAcquireLockException → 409 Conflict (linha movida de partição por transação concorrente)")
+    void cannotAcquireLock_Retorna409() {
+        // Forma que o conflito assume quando a transação vencedora move a linha para a partição de
+        // expurgo: o PostgreSQL não consegue seguir a cadeia de atualização entre partições e
+        // devolve "tuple to be locked was already moved to another partition due to concurrent
+        // update" (SQLSTATE 40001), traduzido pelo Spring para CannotAcquireLockException. Sem
+        // tratamento explícito, cairia no catch-all e viraria 500 — um conflito real de
+        // concorrência disfarçado de erro interno.
+        CannotAcquireLockException ex = new CannotAcquireLockException(
+                "tuple to be locked was already moved to another partition due to concurrent update");
+
+        ResponseEntity<LayoutErrosApiResponse> response = handler.conflitoConcorrencia(ex, req());
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().getMessage().contains("CannotAcquireLockException"));
+        assertFalse(response.getBody().getError().contains("partition"));
     }
 
     @Test

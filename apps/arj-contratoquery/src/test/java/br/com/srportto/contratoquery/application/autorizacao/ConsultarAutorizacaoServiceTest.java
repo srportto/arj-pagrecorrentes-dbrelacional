@@ -4,12 +4,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +27,7 @@ import br.com.srportto.contratoquery.domain.entities.IdAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratoquery.entrypoint.contratosrest.AutorizacaoDetalheResponseDto;
+import br.com.srportto.contratoquery.shared.exceptions.ApplicationException;
 import br.com.srportto.contratoquery.shared.exceptions.ResourceNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,12 +35,12 @@ import br.com.srportto.contratoquery.shared.exceptions.ResourceNotFoundException
 class ConsultarAutorizacaoServiceTest {
 
     private static final int PARTICAO_VALIDA = 500;
-    private static final int PARTICAO_INVALIDA = 950;
+    private static final int PARTICAO_FORA_DA_FAIXA_DE_IDS = 950;
+    private static final int PARTICAO_EXPURGO = 953;
 
     @Mock
     private AutorizacaoRepository repository;
 
-    @InjectMocks
     private ConsultarAutorizacaoService consultarAutorizacaoService;
 
     private UUID idAutorizacaoValido;
@@ -46,6 +48,11 @@ class ConsultarAutorizacaoServiceTest {
     @BeforeEach
     void setUp() {
         idAutorizacaoValido = ReversibleUUIDv7.generate(PARTICAO_VALIDA);
+        consultarAutorizacaoService = servicoComNivel3(true);
+    }
+
+    private ConsultarAutorizacaoService servicoComNivel3(boolean habilitado) {
+        return new ConsultarAutorizacaoService(repository, habilitado);
     }
 
     private Autorizacao criarAutorizacao(UUID idAutorizacao, int idParticaoConta) {
@@ -76,8 +83,8 @@ class ConsultarAutorizacaoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve retornar o DTO de detalhe quando a autorização existe")
-    void deveRetornarDetalheQuandoExiste() {
+    @DisplayName("Nivel 1: encontra na particao do id e nao aciona os niveis seguintes")
+    void nivel1_NaoAcionaNiveisSeguintes() {
         Autorizacao autorizacao = criarAutorizacao(idAutorizacaoValido, PARTICAO_VALIDA);
         when(repository.findById(any(IdAutorizacao.class)))
                 .thenReturn(Optional.of(autorizacao));
@@ -95,27 +102,75 @@ class ConsultarAutorizacaoServiceTest {
         assertTrue(resultado.getMetadado().has("origem"));
 
         verify(repository, times(1)).findById(any(IdAutorizacao.class));
+        verify(repository, never()).buscarNaFaixaDeExpurgo(any(), anyInt());
+        verify(repository, never()).buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt());
     }
 
     @Test
-    @DisplayName("Deve lançar ResourceNotFoundException quando a autorização não existe")
-    void deveLancarQuandoNaoEncontrada() {
-        when(repository.findById(any(IdAutorizacao.class)))
-                .thenReturn(Optional.empty());
+    @DisplayName("Nivel 2: encontra na faixa de expurgo e nao aciona o nivel 3")
+    void nivel2_NaoAcionaNivel3() {
+        when(repository.findById(any(IdAutorizacao.class))).thenReturn(Optional.empty());
+        when(repository.buscarNaFaixaDeExpurgo(any(), anyInt()))
+                .thenReturn(List.of(criarAutorizacao(idAutorizacaoValido, PARTICAO_EXPURGO)));
+
+        AutorizacaoDetalheResponseDto resultado =
+                consultarAutorizacaoService.consultarPorId(idAutorizacaoValido);
+
+        assertNotNull(resultado);
+        assertEquals(idAutorizacaoValido, resultado.getIdAutorizacao());
+        verify(repository, never()).buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Nivel 3 desabilitado: nao consulta as demais particoes quentes antes do 404")
+    void nivel3Desabilitado_EncerraCascataMaisCedo() {
+        ConsultarAutorizacaoService servico = servicoComNivel3(false);
+        when(repository.findById(any(IdAutorizacao.class))).thenReturn(Optional.empty());
+        when(repository.buscarNaFaixaDeExpurgo(any(), anyInt())).thenReturn(List.of());
+
+        assertThrows(ResourceNotFoundException.class, () -> servico.consultarPorId(idAutorizacaoValido));
+
+        verify(repository, never()).buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Nivel 3 habilitado: consulta as demais particoes quentes antes de desistir")
+    void nivel3Habilitado_EsgotaCascataAntesDo404() {
+        when(repository.findById(any(IdAutorizacao.class))).thenReturn(Optional.empty());
+        when(repository.buscarNaFaixaDeExpurgo(any(), anyInt())).thenReturn(List.of());
+        when(repository.buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt())).thenReturn(List.of());
 
         assertThrows(ResourceNotFoundException.class, () ->
                 consultarAutorizacaoService.consultarPorId(idAutorizacaoValido));
+
+        verify(repository, times(1)).buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt());
     }
 
     @Test
-    @DisplayName("Deve lançar ResourceNotFoundException quando a partição está fora da faixa 900-999")
+    @DisplayName("Duplicidade entre particoes vira erro de aplicacao, sem escolher uma linha")
+    void duplicidade_NaoDesempata() {
+        when(repository.findById(any(IdAutorizacao.class))).thenReturn(Optional.empty());
+        when(repository.buscarNaFaixaDeExpurgo(any(), anyInt())).thenReturn(List.of(
+                criarAutorizacao(idAutorizacaoValido, PARTICAO_EXPURGO),
+                criarAutorizacao(idAutorizacaoValido, PARTICAO_EXPURGO + 1)));
+
+        assertThrows(ApplicationException.class, () ->
+                consultarAutorizacaoService.consultarPorId(idAutorizacaoValido));
+
+        verify(repository, never()).buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Deve lançar ResourceNotFoundException quando a partição do id está fora da faixa de partições quentes")
     void deveLancarQuandoParticaoForaDaFaixa() {
-        UUID idParticaoInvalida = ReversibleUUIDv7.generate(PARTICAO_INVALIDA);
+        UUID idParticaoInvalida = ReversibleUUIDv7.generate(PARTICAO_FORA_DA_FAIXA_DE_IDS);
 
         assertThrows(ResourceNotFoundException.class, () ->
                 consultarAutorizacaoService.consultarPorId(idParticaoInvalida));
 
         verify(repository, never()).findById(any(IdAutorizacao.class));
+        verify(repository, never()).buscarNaFaixaDeExpurgo(any(), anyInt());
+        verify(repository, never()).buscarEmOutrasParticoesQuentes(any(), anyInt(), anyInt());
     }
 
     @Test

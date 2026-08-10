@@ -55,6 +55,23 @@ class CommandDecisaoAutorizacaoClientTest {
     }
 
     @Test
+    @DisplayName("409 (conflito de lock otimista): trabalho NÃO concluído, lança exceção retryável")
+    void status409LancaExcecaoRetryavel() {
+        var builder = RestClient.builder().baseUrl("http://command-fake");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var client = new CommandDecisaoAutorizacaoClient(builder.build());
+        var id = UUID.randomUUID();
+
+        server.expect(requestTo("http://command-fake/api/autorizacoes/" + id + "/decisao"))
+                .andRespond(withStatus(org.springframework.http.HttpStatusCode.valueOf(409))
+                        .body("{\"message\":\"Tente novamente\"}")
+                        .contentType(MediaType.APPLICATION_JSON));
+
+        assertThrows(ExpiracaoRetryavelException.class, () -> client.expirar(id));
+        server.verify();
+    }
+
+    @Test
     @DisplayName("5xx: falha retryável, mensagem permanece pendente")
     void status5xxLancaExcecaoRetryavel() {
         var builder = RestClient.builder().baseUrl("http://command-fake");

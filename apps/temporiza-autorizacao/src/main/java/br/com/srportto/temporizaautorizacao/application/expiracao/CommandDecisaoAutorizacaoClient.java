@@ -33,8 +33,13 @@ public class CommandDecisaoAutorizacaoClient implements DecisaoAutorizacaoClient
                     .body(Map.of("acao", "EXPIRAR"))
                     .retrieve()
                     .toBodilessEntity();
+        } catch (HttpClientErrorException.Conflict e) {
+            // 409: conflito de lock otimista no command — a transação foi revertida, o trabalho
+            // NÃO foi concluído. Diferente dos demais 4xx: precisa de nova tentativa.
+            throw new ExpiracaoRetryavelException(
+                    "Conflito de concorrência (409) ao expirar " + idAutorizacao + " — tentar novamente", e);
         } catch (HttpClientErrorException e) {
-            // 4xx (incluindo 422 "status já não é RECEBIDA"): nada a fazer, trabalho concluído.
+            // Demais 4xx (incluindo 422 "status já não é RECEBIDA"): nada a fazer, trabalho concluído.
             log.info("Command respondeu {} para expiração de {} — nada a fazer (autorização já resolvida "
                     + "ou não encontrada)", e.getStatusCode(), idAutorizacao);
         } catch (HttpServerErrorException | ResourceAccessException e) {

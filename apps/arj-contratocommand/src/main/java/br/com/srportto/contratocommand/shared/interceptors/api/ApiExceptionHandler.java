@@ -3,6 +3,7 @@ package br.com.srportto.contratocommand.shared.interceptors.api;
 import org.hibernate.StaleStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -138,6 +139,35 @@ public class ApiExceptionHandler {
 
         log.warn("Conflito de concorrencia detectado (ObjectOptimisticLockingFailureException) ao processar {} {}",
                 req.getMethod(), req.getRequestURI());
+
+        LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
+        layoutError.setTimestamp(Instant.now());
+        layoutError.setError("Conflito de concorrencia: a autorizacao foi modificada por outra requisicao");
+        layoutError.setMessage("Tente novamente");
+        layoutError.setPath(req.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(layoutError);
+    }
+
+    /**
+     * Mapeia as demais falhas de concorrencia do Spring para 409 Conflict.
+     *
+     * <p>Cobre em especial {@code CannotAcquireLockException}, a forma que o conflito assume quando
+     * a transacao vencedora move a linha para a particao de expurgo: o PostgreSQL nao consegue
+     * seguir a cadeia de atualizacao entre particoes e devolve "tuple to be locked was already
+     * moved to another partition due to concurrent update" (SQLSTATE 40001), que nao e um conflito
+     * de versao e portanto nao casa com os handlers de lock otimista acima. Sem este handler, um
+     * conflito real entre chamadores cairia no catch-all e viraria 500.
+     *
+     * <p>Os handlers de {@code OptimisticLockException} e {@code ObjectOptimisticLockingFailureException}
+     * permanecem: o Spring escolhe sempre o mais especifico.
+     */
+    @ExceptionHandler(ConcurrencyFailureException.class)
+    public ResponseEntity<LayoutErrosApiResponse> conflitoConcorrencia(ConcurrencyFailureException exception,
+            HttpServletRequest req) {
+
+        log.warn("Conflito de concorrencia detectado ({}) ao processar {} {}",
+                exception.getClass().getSimpleName(), req.getMethod(), req.getRequestURI());
 
         LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
         layoutError.setTimestamp(Instant.now());

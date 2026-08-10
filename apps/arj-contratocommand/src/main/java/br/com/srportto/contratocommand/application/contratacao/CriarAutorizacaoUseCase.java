@@ -37,8 +37,10 @@ public class CriarAutorizacaoUseCase {
         contratacaoValidator.validar(context);
 
         // Verifica idempotência: rejeita se já existe autorização com o mesmo id_autorizacao_empresa
-        // na mesma partição (conta) — mesmo escopo da constraint UNIQUE (id_particao_conta,
-        // id_autorizacao_empresa) no banco, e poda a busca para 1 partição em vez de varrer todas.
+        // na mesma partição (conta) — mesmo escopo do índice único parcial uk_autorizacao_empresa_ativa
+        // no banco, restrito às partições quentes (id_particao_conta < 900), e poda a busca para 1
+        // partição em vez de varrer todas. Como getPartitionFast sempre devolve 0..888, a checagem da
+        // aplicação e a garantia do banco cobrem exatamente a mesma faixa.
         var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(dados.idUnicoContaContratante());
         if (repository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(idParticaoConta, dados.idAutorizacaoEmpresa())) {
             throw new RecursoJaExisteException("Autorização com id_autorizacao_empresa já existe: " + dados.idAutorizacaoEmpresa());

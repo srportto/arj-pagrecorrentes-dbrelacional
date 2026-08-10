@@ -136,8 +136,26 @@ ack/retenção:
 | Resposta do command | Ação do worker |
 |---|---|
 | 2xx (expiração aplicada) | XACK |
-| 4xx, incluindo 422 (já resolvida/não encontrada) | XACK — nada a fazer |
+| 409 (conflito de lock otimista — "Tente novamente") | sem XACK, permanece no PEL |
+| 4xx exceto 409, incluindo 422 (já resolvida/não encontrada) | XACK — nada a fazer |
 | 5xx / timeout / erro de conexão | sem XACK, permanece no PEL |
+
+> **409 não é um 4xx comum**: ao contrário de 422 (a transação rodou e confirmou que não há
+> nada a fazer), 409 significa que a transação do command **foi revertida** — a expiração
+> pode não ter sido aplicada. Tratar 409 como os demais 4xx faz o worker confirmar (XACK) um
+> trabalho que na verdade não foi concluído, prendendo a autorização em `RECEBIDA` para
+> sempre, sem retry possível (bug corrigido pela mudança `corrigir-ack-indevido-expiracao-409`).
+> `CommandDecisaoAutorizacaoClient` captura `HttpClientErrorException.Conflict` (409) **antes**
+> do catch genérico de `HttpClientErrorException`, relançando como `ExpiracaoRetryavelException`.
+
+> **409 no caminho feliz não existe mais.** Entre 2026-08-09 e a mudança
+> `corrigir-expurgo-merge-version`, **toda** expiração recebia 409 do command: a transferência da
+> autorização para a partição de expurgo estava quebrada de forma determinística (o `merge` de
+> instância detached parou de funcionar quando `@Version` foi adicionado à entidade), e o retry
+> jamais poderia ter sucesso. Nada desta app precisou mudar — o retry em 409 e o teto de 5
+> tentativas se comportaram exatamente como especificado, e foram eles que transformaram um bug
+> silencioso do command em sinal operacional. Hoje a expiração conclui na primeira tentativa; 409
+> volta a significar apenas o que sempre devia significar: disputa real com outro chamador.
 
 ## Armadilhas críticas
 
@@ -165,6 +183,32 @@ ack/retenção:
 9. **Nenhum log carrega o corpo do evento consumido** — o payload de origem (mesmo o
    subconjunto) não deve aparecer em logs de erro; identifique sempre por
    `idAutorizacao`/`messageId`/`streamId`.
+10. **Teto de 5 tentativas por entrada do stream de expirações** — `PendenciasSchedulerReivindicador`
+    lê `PendingMessage.getTotalDeliveryCount()` (contador nativo do `XPENDING`, incrementado a
+    cada `XCLAIM`) e, ao atingir `MAX_TENTATIVAS_EXPIRACAO` (5), confirma (XACK) a entrada
+    diretamente **sem** reivindicá-la/reprocessá-la, registrando `log.error` com `streamId` e
+    `idAutorizacao` (nunca o corpo do evento). Sem esse teto, uma entrada que falhe de forma
+    persistente recircularia entre o PEL e o reivindicador indefinidamente, a cada
+    `stream-min-idle-time-ms`, sem nenhum sinal operacional. Não há stream Valkey dedicado a
+    "mortas" — a investigação de uma entrada esgotada é manual, via log.
+11. **Consumidores mortos se acumulam no consumer group, e ninguém os remove.** O
+    `consumidor-id` é `${HOSTNAME:worker-local}` — o id do container —, então cada reinício,
+    deploy e réplica cria um consumidor novo, e não há `XGROUP DELCONSUMER` em lugar algum do
+    código. Em 2026-08-09 o ambiente local tinha 7 consumidores para 2 pods vivos. Não quebra
+    nada enquanto os órfãos têm `pending = 0` (o reivindicador age por tempo ocioso **da
+    entrada**, não por dono), mas polui o `XINFO CONSUMERS`, que é o principal instrumento de
+    diagnóstico do grupo. Pendência registrada na change `limpar-consumidores-orfaos-stream`.
+    Contorno manual:
+    `valkey-cli XGROUP DELCONSUMER stream:{pixauto:j1}:expiracoes temporizaautorizacao <nome>`.
+12. **Nunca remova um consumidor com PEL não vazio.** `XGROUP DELCONSUMER` **descarta** as
+    entradas pendentes do consumidor removido: elas não voltam ao grupo, não são reivindicáveis
+    por `XCLAIM` e nunca mais são entregues — a autorização correspondente fica presa em
+    `RECEBIDA` para sempre, sem sinal nenhum. Confira `pending` antes, sempre. O caminho certo
+    para um órfão com pendências é deixar o `PendenciasSchedulerReivindicador` reivindicar as
+    entradas primeiro; só depois o consumidor fica seguro para remoção.
+13. **Rodar a app fora do Docker cria o consumidor `worker-local`** (o default de
+    `${HOSTNAME:worker-local}`). Duas execuções locais simultâneas compartilhariam o mesmo
+    consumidor e disputariam o mesmo PEL.
 
 ## Documentação relacionada
 

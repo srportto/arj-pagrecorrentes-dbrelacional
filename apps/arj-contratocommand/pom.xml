@@ -32,7 +32,6 @@
     <lombok.version>1.18.40</lombok.version> <!-- Supports Java 25 -->
     <aws-sdk.version>2.49.0</aws-sdk.version>
     <postgresql.version>42.7.12</postgresql.version>
-    <testcontainers.version>1.19.8</testcontainers.version>
     <springdoc.version>3.0.3</springdoc.version>
 	</properties>
 
@@ -56,27 +55,14 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Testcontainers para testes de concorrencia com Postgres real -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<version>${testcontainers.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>${testcontainers.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<version>${testcontainers.version}</version>
-			<scope>test</scope>
-		</dependency>
+		<!--
+			Testcontainers foi removido: a versao 1.19.8 nao consegue falar com builds recentes
+			do Docker Desktop (a API Java falha com HTTP 400 em /info mesmo com o CLI
+			funcionando) e as classes de teste de integracao eram sempre puladas. Os testes de
+			integracao agora rodam contra o PostgreSQL 18 local — pre-requisito ja declarado
+			deste build, "sem fallback H2" — em schemas isolados criados e destruidos pela
+			propria classe de teste. Ver src/test/.../integration/PostgresLocalDisponivelCondition.
+		-->
 
 		<!-- pacote utilitarios web do spring -->
 		<dependency>

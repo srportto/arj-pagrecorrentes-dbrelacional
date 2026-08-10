@@ -25,9 +25,12 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "autorizacoes", // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
-        uniqueConstraints = @UniqueConstraint(name = "uk_autorizacao_empresa_particao",
-                columnNames = {"id_particao_conta", "id_autorizacao_empresa"}))
+// A unicidade de id_autorizacao_empresa NÃO é declarada aqui: desde a migration v1.0.4 ela é um
+// índice único PARCIAL (`WHERE id_particao_conta < 900`, só as partições quentes), forma que JPA
+// não sabe expressar. Declará-la como @UniqueConstraint prometeria uma garantia diferente da que o
+// banco impõe — e, com ddl-auto: none, seria só documentação errada. Ver
+// infra/local/postgres/migrations/v1.0.4 para o racional.
+@Table(name = "autorizacoes") // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
 public class Autorizacao {
 
     @EmbeddedId
