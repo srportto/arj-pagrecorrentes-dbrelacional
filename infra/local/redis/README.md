@@ -27,10 +27,16 @@ docker exec valkey-temporiza-autorizacao valkey-cli ping
 ## Inspecionar o agendamento e a fila de trabalho (debug)
 
 ```bash
-docker exec valkey-temporiza-autorizacao valkey-cli ZRANGE agenda:pixauto:j1 0 -1 WITHSCORES
-docker exec valkey-temporiza-autorizacao valkey-cli XRANGE stream:expiracoes:pixauto:j1 - +
-docker exec valkey-temporiza-autorizacao valkey-cli XPENDING stream:expiracoes:pixauto:j1 temporizaautorizacao
+docker exec valkey-temporiza-autorizacao valkey-cli ZRANGE 'agenda:{pixauto:j1}' 0 -1 WITHSCORES
+docker exec valkey-temporiza-autorizacao valkey-cli XRANGE 'stream:{pixauto:j1}:expiracoes' - +
+docker exec valkey-temporiza-autorizacao valkey-cli XPENDING 'stream:{pixauto:j1}:expiracoes' temporizaautorizacao
 ```
+
+> As chaves usam **hash tag** (`{pixauto:j1}`) — obrigatório para operação em cluster mode do
+> ElastiCache em produção (garante que agenda e stream caiam no mesmo slot). Sem as chaves `{}`,
+> os comandos acima consultam uma chave diferente da que a aplicação usa e retornam vazio em
+> silêncio. Ver `application.yaml` (`chave-agenda`/`chave-stream`) e a armadilha 7 do `CLAUDE.md`
+> de `apps/temporiza-autorizacao`.
 
 ## Parar
 

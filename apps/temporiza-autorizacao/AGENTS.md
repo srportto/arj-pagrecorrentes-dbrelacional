@@ -212,7 +212,8 @@ ack/retenção:
 
 ## Documentação relacionada
 
-- [design.md da mudança temporizacao-jornada-01-pix-auto](../../openspec/changes/temporizacao-jornada-01-pix-auto/design.md) — decisões técnicas completas (por que RECEBIDA e não PENDENTE_ACEITE, por que sorted set + stream, por que sem leitura de banco, etc.)
+- [temporizacao-jornada-01](../../openspec/specs/temporizacao-jornada-01/spec.md) — contrato vigente do porquê `RECEBIDA` e da revalidação sob transação
+- [agendamento-expiracao-valkey](../../openspec/specs/agendamento-expiracao-valkey/spec.md) — contrato vigente do sorted set + stream (decididos pela change arquivada `temporizacao-jornada-01-pix-auto`)
 - [infra/local/redis/README.md](../../infra/local/redis/README.md) — como subir o Valkey local
 - [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — fila, DLQ e filter policy da subscription
 

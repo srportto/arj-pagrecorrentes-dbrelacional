@@ -267,11 +267,10 @@ temporizador.
 
 ## Documentação em `docs/`
 
-- [info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) — Docker + PostgreSQL com partman/cron
-- [comandos-sql.txt](docs/comandos-sql.txt) — scripts SQL de particionamento
-- [post-autorizacoes.txt](docs/post-autorizacoes.txt) — exemplos de payloads REST
-- [resultado-poc/POC_PARTICIONAMENTO_BUFFER_RING_UUIDV7.md](docs/resultado-poc/POC_PARTICIONAMENTO_BUFFER_RING_UUIDV7.md) — racional do particionamento
-- `docs/strategyProduto/` — **exemplos didáticos** de Strategy (não é o código de produção)
+- [info_build-my-image-and-execute.md](../../docs/info_build-my-image-and-execute.md) — Docker + PostgreSQL com partman/cron
+- [exemplos-queries.sql](../../infra/local/postgres/exemplos-queries.sql) — scripts SQL de particionamento
+- [post-autorizacoes.txt](../../docs/post-autorizacoes.txt) — exemplos de payloads REST
+- [modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](../../docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) — racional do particionamento (Buffer Ring + UUIDv7 reversível)
 
 ## Checklist antes do commit
 

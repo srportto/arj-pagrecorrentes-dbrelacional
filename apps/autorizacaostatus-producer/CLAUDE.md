@@ -263,7 +263,7 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 
 ## Documentação relacionada
 
-- [design.md da migração para Spring Cloud AWS](../../openspec/changes/migrar-sqs-listener-spring-cloud-aws/design.md) — decisões, riscos e racional dos números (visibility timeout, maxReceiveCount, concorrência) desta arquitetura de consumo
+- [consumo-eventos-autorizacao](../../openspec/specs/consumo-eventos-autorizacao/spec.md) — contrato vigente de visibility timeout, maxReceiveCount e concorrência desta arquitetura de consumo (decidido pela change arquivada `migrar-sqs-listener-spring-cloud-aws`)
 - [design.md da mudança original](../../openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md) — decisões do fluxo original SNS/SQS (log + ack)
 - [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — como provisionar o tópico/fila SNS/SQS no Floci
 - [infra/local/kafka/README.md](../../infra/local/kafka/README.md) — como subir o Kafka local (broker, Schema Registry, dashboard)

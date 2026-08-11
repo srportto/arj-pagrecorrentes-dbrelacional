@@ -809,7 +809,7 @@ CriarAutorizacaoRequest novoRequest = new CriarAutorizacaoRequest(..., 5000, ...
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](./LICENSE) para detalhes.
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](../../LICENSE) para detalhes.
 
 ## 👨‍💻 Informações do Projeto
 

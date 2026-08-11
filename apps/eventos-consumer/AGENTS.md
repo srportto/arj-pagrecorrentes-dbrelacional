@@ -182,7 +182,7 @@ Ver a mudança `parar-vazamento-dado-sensivel` no `openspec/changes/` para conte
 ## Documentação relacionada
 
 - [design.md de add-eventos-autorizacao-kafka](../../openspec/changes/archive/2026-07-26-add-eventos-autorizacao-kafka/design.md) — decisões técnicas originais do fluxo Kafka (schema, idempotência, spring-kafka vs. cliente puro)
-- [design.md de refactor-eventos-consumer](../../openspec/changes/refactor-eventos-consumer/design.md) — AckMode.RECORD, DLT e realinhamento de camadas (entrypoint/domain)
+- [consumo-eventos-kafka](../../openspec/specs/consumo-eventos-kafka/spec.md) — contrato vigente de `AckMode.RECORD` e DLT (decidido pela change arquivada `refactor-eventos-consumer`)
 - [infra/local/kafka/README.md](../../infra/local/kafka/README.md) — como subir o Kafka local (broker, Schema Registry, dashboard)
 
 ## Checklist antes do commit

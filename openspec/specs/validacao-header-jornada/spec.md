@@ -17,9 +17,15 @@ O endpoint `POST /api/autorizacoes` SHALL exigir o header HTTP `tipoJornada` com
 - **WHEN** o cliente envia `POST /api/autorizacoes` com header `tipoJornada: JORNADA_INVALIDA`
 - **THEN** o sistema retorna HTTP 422 com `BusinessException` indicando que a jornada não é conhecida
 
-#### Scenario: Header ausente é rejeitado
-- **WHEN** o cliente envia `POST /api/autorizacoes` sem o header `tipoJornada`
-- **THEN** o sistema retorna HTTP 400 (Spring MVC rejeita missing required header antes do processamento)
+#### Scenario: Header ausente é rejeitado com 500 (defeito conhecido, não corrigido nesta spec)
+- **WHEN** o cliente envia `POST /api/autorizacoes` sem o header `tipoJornada` (com corpo válido)
+- **THEN** o sistema retorna HTTP **500**, não 400 — verificado por teste (`@WebMvcTest`) em
+  2026-08-11: a ausência do header obrigatório (`MissingRequestHeaderException`) não tem handler
+  dedicado em `ApiExceptionHandler`, e o catch-all `@ExceptionHandler(Exception.class)` a
+  intercepta antes do tratamento default de binding do Spring, reportando "erro inesperado" para
+  o que é, na verdade, entrada malformada do cliente. Esta spec documenta o comportamento real,
+  não o desejado — corrigir o handler é mudança de comportamento, fora do escopo de
+  `enxugar-documentacao-repo`.
 
 #### Scenario: Todos os 4 valores válidos são aceitos
 - **WHEN** o cliente envia `POST /api/autorizacoes` com header `tipoJornada` igual a `SPI_J1`, `QRC_J2`, `QRC_J3` ou `QRC_J4`

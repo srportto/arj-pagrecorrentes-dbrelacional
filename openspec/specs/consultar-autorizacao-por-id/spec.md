@@ -21,9 +21,15 @@ O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes/{autorizacaoId}`
 - **WHEN** o cliente envia um UUID sintaticamente válido cuja partição extraída está fora da faixa `900–999`
 - **THEN** o sistema retorna HTTP 404 (e NÃO HTTP 500), pois o id não pode corresponder a nenhuma autorização persistida
 
-#### Scenario: Id sintaticamente inválido resulta em 400
+#### Scenario: Id sintaticamente inválido resulta em 500 (defeito conhecido, não corrigido nesta spec)
 - **WHEN** o cliente envia um `autorizacaoId` que não é um UUID válido
-- **THEN** o sistema retorna HTTP 400 (falha de conversão do path variable), sem atingir a camada de aplicação
+- **THEN** o sistema retorna HTTP **500**, não 400 — verificado por teste (`@WebMvcTest`) em
+  2026-08-11: a falha de conversão do path variable (`MethodArgumentTypeMismatchException`) não
+  tem handler dedicado em `ApiExceptionHandler`, e o catch-all `@ExceptionHandler(Exception.class)`
+  a intercepta antes do tratamento default de binding do Spring, reportando "erro inesperado" para
+  o que é, na verdade, entrada malformada do cliente. Esta spec documenta o comportamento real,
+  não o desejado — corrigir o handler é mudança de comportamento, fora do escopo de
+  `enxugar-documentacao-repo`.
 
 ### Requirement: Estrutura do DTO de detalhe da autorização
 O `AutorizacaoDetalheResponseDto` SHALL conter a representação completa da autorização, incluindo no mínimo: `idAutorizacao`, `tipoProduto`, `status` (nome do enum, não o código inteiro), `dataInicioVigencia`, `dataFimVigencia`, `dataCriacao`, `valor`, `valorLimite`, `idUnicoContaContratante`, `idPessoaRecebedora` e `metadado`.

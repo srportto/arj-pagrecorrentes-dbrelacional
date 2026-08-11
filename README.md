@@ -54,11 +54,10 @@ arj-pagrecorrentes-dbrelacional/
 │   ├── local/kafka/             # Kafka local standalone (broker KRaft, Schema Registry, Kafbat UI)
 │   └── local/redis/             # Valkey local (sorted set + stream para temporiza-autorizacao)
 ├── docs/
-│   ├── arquitetura/                        # Diagramas de arquitetura
+│   ├── arquitetura/                        # Diagramas de arquitetura + POC de particionamento (Buffer Ring/UUIDv7)
 │   ├── info_build-my-image-and-execute.md  # Docker + PostgreSQL com partman/cron
-│   ├── comandos-sql.txt                    # Scripts SQL de particionamento
 │   ├── post-autorizacoes.txt               # Exemplos de payloads REST
-│   └── resultado-poc/                      # POC do particionamento com UUIDv7
+│   └── contrato-api-para-gateway.md        # Insumo temporário p/ montar o gateway (ver nota no topo do arquivo)
 ├── openspec/                  # Planejamento de mudanças (proposta → spec → tasks)
 ├── LICENSE                    # MIT
 └── README.md                  # Este arquivo
@@ -181,15 +180,15 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 | [apps/arj-contratoquery/README.md](apps/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
 | [apps/autorizacaostatus-producer/README.md](apps/autorizacaostatus-producer/README.md) | Documentação completa da ponte SQS -> Kafka |
 | [apps/eventos-consumer/README.md](apps/eventos-consumer/README.md) | Documentação completa da consumidora do tópico Kafka |
-| [apps/temporiza-autorizacao/CLAUDE.md](apps/temporiza-autorizacao/CLAUDE.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |
+| [apps/temporiza-autorizacao/README.md](apps/temporiza-autorizacao/README.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |
 | [infra/README.md](infra/README.md) | Topologia-alvo de infraestrutura (Terraform, ambientes, escopo) |
 | [infra/envs/local-messaging/README.md](infra/envs/local-messaging/README.md) | Provisionamento do tópico SNS e das filas SQS (eventos + temporização) no Floci |
 | [infra/local/kafka/README.md](infra/local/kafka/README.md) | Kafka local standalone (broker, Schema Registry, dashboard) |
 | [infra/local/redis/README.md](infra/local/redis/README.md) | Valkey local (sorted set + stream de expiração) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
-| [docs/comandos-sql.txt](docs/comandos-sql.txt) | Scripts SQL de particionamento |
+| [infra/local/postgres/exemplos-queries.sql](infra/local/postgres/exemplos-queries.sql) | Scripts SQL de particionamento |
 | [docs/post-autorizacoes.txt](docs/post-autorizacoes.txt) | Exemplos de payloads REST |
-| [docs/resultado-poc/](docs/resultado-poc/) | POC do particionamento com UUIDv7 reversível |
+| [docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) | POC do particionamento com UUIDv7 reversível (Buffer Ring) |
 
 ## Licença
 

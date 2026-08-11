@@ -41,20 +41,29 @@ serviços.
 Os dois serviços SHALL aplicar a mesma correspondência entre origem do erro e status HTTP, e a
 documentação SHALL descrever exatamente o que o código faz:
 
-- erro de formato ou violação de Bean Validation (`@Valid`): **400**
-- violação de regra de negócio: **422**
+- erro de formato (`@Valid`/`MethodArgumentNotValidException`) ou violação de regra de negócio:
+  **422**, distinguidos pelo **shape** da resposta (`LayoutErrosApiValidationsResponse` com
+  `occurrences` vs `LayoutErrosApiResponse` sem), não pelo status HTTP
 - conflito de estado ou recurso já existente: **409**
 - recurso não encontrado: **404**
 
-#### Scenario: Violação de Bean Validation retorna 400
+> **Decisão D3 (2026-08-09, change `reconciliar-contrato-spec-doc`):** entrada inválida do
+> cliente — tanto falha de formato quanto violação de regra de negócio — retorna 422. Esta spec
+> chegou a documentar 400 para falha de formato; corrigido em 2026-08-11 (`enxugar-documentacao-repo`)
+> após verificar por código e teste que os dois `ApiExceptionHandler`
+> (`arj-contratocommand`/`arj-contratoquery`) mapeiam `MethodArgumentNotValidException` para
+> `HttpStatus.UNPROCESSABLE_CONTENT` — `BAD_REQUEST` não aparece em nenhum dos dois arquivos.
+
+#### Scenario: Violação de Bean Validation retorna 422
 
 - **WHEN** uma requisição é rejeitada por violação de constraint de `@Valid`
-- **THEN** o status SHALL ser 400 em ambos os serviços
+  (`MethodArgumentNotValidException`)
+- **THEN** o status SHALL ser 422 em ambos os serviços, no formato `LayoutErrosApiValidationsResponse`
 
 #### Scenario: Violação de regra de negócio retorna 422
 
 - **WHEN** uma requisição é rejeitada por `BusinessException`
-- **THEN** o status SHALL ser 422 em ambos os serviços
+- **THEN** o status SHALL ser 422 em ambos os serviços, no formato `LayoutErrosApiResponse`
 
 #### Scenario: Documentação corresponde ao código
 
@@ -83,24 +92,34 @@ operando na versão anterior durante um período de convivência definido.
 - **WHEN** uma nova versão é introduzida
 - **THEN** o prazo de descontinuação da anterior SHALL estar documentado
 
-### Requirement: Contrato OpenAPI publicado e derivado do código
+### Requirement: Contrato de API não é documentado dentro do código dos serviços
 
-Os dois serviços REST SHALL publicar contrato OpenAPI gerado a partir do código, não mantido como
-documento independente. O contrato SHALL refletir rotas, parâmetros, corpos de requisição e
-resposta, e os status de erro efetivamente retornados.
+Os dois serviços REST MUST NOT publicar contrato OpenAPI gerado a partir de anotações no código
+de produção. A documentação de contrato (rotas, parâmetros, corpos de requisição e resposta,
+status de erro por operação) pertence ao **gateway** — ver capacidade `doc-api-fora-do-codigo`.
 
-#### Scenario: Contrato disponível para os dois serviços
+> **Superseded (2026-08-11):** este requisito exigia publicação de OpenAPI derivado do código via
+> springdoc. A change `limpar-codigo-das-apps` removeu springdoc e todas as anotações
+> `io.swagger.v3.oas.*` dos dois serviços — decisão de que documentação de API não é
+> responsabilidade do código de aplicação. Enquanto o gateway não absorve o contrato, o insumo de
+> transição vive em `docs/contrato-api-para-gateway.md` (documento mantido manualmente, com prazo
+> de validade — o oposto do que este requisito antes exigia). Reescrito para refletir a decisão
+> vigente em vez de a anterior.
 
-- **WHEN** cada serviço está em execução
-- **THEN** SHALL expor contrato OpenAPI correspondente aos seus endpoints
+#### Scenario: Nenhum serviço expõe endpoint de documentação de API
 
-#### Scenario: Contrato acompanha o código
+- **WHEN** um dos dois serviços está em execução
+- **THEN** `GET /v3/api-docs` e `GET /swagger-ui/**` SHALL responder 404
 
-- **WHEN** um endpoint ou DTO é alterado
-- **THEN** o contrato gerado SHALL refletir a alteração sem edição manual de documento separado
+#### Scenario: Nenhuma anotação de documentação de API no código
 
-#### Scenario: Status de erro documentados
+- **WHEN** o código de produção dos dois serviços é inspecionado
+- **THEN** nenhuma classe importa `io.swagger.v3.oas.annotations.*`
+- **THEN** nenhum `pom.xml` declara dependência `org.springdoc`
 
-- **WHEN** o contrato OpenAPI é inspecionado
-- **THEN** SHALL declarar os status de erro possíveis por operação, coerentes com a convenção única
+#### Scenario: Status de erro documentados fora do código
+
+- **WHEN** alguém precisa consultar os status de erro possíveis por operação
+- **THEN** a fonte é o gateway (quando o contrato for absorvido) ou
+  `docs/contrato-api-para-gateway.md` (enquanto não for), não uma anotação no controller
 
