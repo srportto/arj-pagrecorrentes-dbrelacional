@@ -75,8 +75,8 @@ public class ApiExceptionHandler {
 
     /**
      * Deixa o handler de "recurso estatico nao encontrado" passar direto como 404 nativo,
-     * sem interceptar com o catch-all (que devolveria 500). Importante para o endpoint
-     * `/v3/api-docs` do springdoc em testes de slice sem auto-configuracao completa.
+     * sem interceptar com o catch-all (que devolveria 500). Sem este handler, uma requisicao
+     * para um caminho desconhecido cairia no catch-all de Exception e responderia 500.
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<LayoutErrosApiResponse> recursoEstaticoNaoEncontrado(NoResourceFoundException exception,
@@ -211,8 +211,7 @@ public class ApiExceptionHandler {
 
     // Mapeia StaleStateException (estado obsoleto, tipicamente do delete+insert do ExpurgoAutorizacaoService) para 409 Conflict
     @ExceptionHandler(StaleStateException.class)
-    public ResponseEntity<LayoutErrosApiResponse> conflitoEstadoObsoleto(StaleStateException exception,
-            HttpServletRequest req) {
+    public ResponseEntity<LayoutErrosApiResponse> conflitoEstadoObsoleto(HttpServletRequest req) {
 
         log.warn("Estado obsoleto detectado (StaleStateException) ao processar {} {} - linha nao encontrada apos operacao",
                 req.getMethod(), req.getRequestURI());

@@ -44,6 +44,7 @@ public class ValkeyStreamConfig {
         return container;
     }
 
+    // TODO: consumidor nunca é removido do grupo (7 órfãos p/ 2 pods em 2026-08-09) — ver change limpar-consumidores-orfaos-stream
     @Bean
     public Subscription expiracaoStreamSubscription(
             @Qualifier("streamMessageListenerContainer")

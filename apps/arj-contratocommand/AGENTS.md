@@ -74,12 +74,11 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 | Status | Exceção | Quando |
 |---|---|---|
 | 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente não respeitou as validações declarativas. Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
-| 404 | `ResourceNotFoundException` | Autorização inexistente |
 | 409 | `RecursoJaExisteException` | `id_autorizacao_empresa` já existe no `POST /api/autorizacoes` (constraint UNIQUE em `(id_particao_conta, id_autorizacao_empresa)`) |
 | 409 | `ObjectOptimisticLockingFailureException` | Concorrência em `PATCH /api/autorizacoes/{id}/cancelar` ou `/decisao` — outro chamador já alterou a linha |
 | 409 | `ConcurrencyFailureException` (inclui `CannotAcquireLockException`) | Concorrência na troca de partição do `ExpurgoAutorizacaoService`. Quando a transação vencedora move a linha, o Postgres não consegue seguir a cadeia de atualização entre partições e devolve `tuple to be locked was already moved to another partition` (SQLSTATE 40001) — conflito real, não erro interno |
 | 409 | `StaleStateException` / `DataIntegrityViolationException` | Estado obsoleto ou violação de integridade em escrita concorrente |
-| 422 | `BusinessException` | Violação de regra de negócio (validação de produto, dados inválidos, transição de status inválida) |
+| 422 | `BusinessException` | Violação de regra de negócio — **inclui autorização inexistente** em `cancelar`/`decidir` (não existe 404 nestas rotas: `ResourceNotFoundException` não existe no código desta app), validação de produto, dados inválidos, transição de status inválida |
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
 

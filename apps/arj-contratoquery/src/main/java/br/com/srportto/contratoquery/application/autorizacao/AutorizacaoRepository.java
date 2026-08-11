@@ -14,6 +14,7 @@ import br.com.srportto.contratoquery.domain.entities.IdAutorizacao;
 
 public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {
 
+    // TODO: 148ms de planejamento por chamada, sem podar partição — ver change reduzir-custo-planejamento-consultas
     @Query("SELECT a FROM Autorizacao a WHERE a.idUnicoContaContratante = :idUnicoContaContratante AND a.status IN :statuses")
     Page<Autorizacao> findByIdUnicoContaContratanteAndStatusIn(
             @Param("idUnicoContaContratante") UUID idUnicoContaContratante,
