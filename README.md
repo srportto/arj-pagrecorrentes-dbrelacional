@@ -39,27 +39,29 @@ flowchart TD
 
 ```
 arj-pagrecorrentes-dbrelacional/
+├── compose.yaml                # Ponto de entrada único do ambiente local (include: dos 5 abaixo)
 ├── apps/                       # Código de aplicação
 │   ├── arj-contratocommand/         # Microserviço de escrita (Java 25 + Spring Boot 4.0.7)
 │   ├── arj-contratoquery/           # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
 │   ├── autorizacaostatus-producer/  # Ponte SQS -> Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── eventos-consumer/            # Consumidora do tópico Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── temporiza-autorizacao/       # Temporizador da jornada 1 do PIX_AUTO, sem banco (Java 25 + Spring Boot 4.0.7)
-│   └── docker-compose.yml      # Ambiente local: as 2 apps de leitura/escrita + Postgres (partman/cron/pgvector)
+│   └── docker-compose.yml      # Ambiente local: as 5 apps (Postgres vem só de infra/local/postgres/)
 ├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
 │   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, elasticache-valkey, observability)
 │   ├── envs/{local,local-messaging,prod}/  # Composição dos módulos por ambiente
 │   ├── bootstrap/               # State remoto (pré-requisito dos envs)
-│   ├── local/postgres/          # Dockerfile do Postgres 18 com pg_partman + pg_cron + pgvector (dev local)
+│   ├── local/postgres/          # Fonte única do Postgres 18 local (pg_partman + pg_cron + pgvector, migrations)
 │   ├── local/kafka/             # Kafka local standalone (broker KRaft, Schema Registry, Kafbat UI)
+│   ├── local/floci/             # Floci local (emula SNS/SQS)
 │   └── local/redis/             # Valkey local (sorted set + stream para temporiza-autorizacao)
 ├── docs/
-│   ├── arquitetura/                        # Diagramas de arquitetura
+│   ├── arquitetura/                        # Diagramas de arquitetura + POC de particionamento (Buffer Ring/UUIDv7)
 │   ├── info_build-my-image-and-execute.md  # Docker + PostgreSQL com partman/cron
-│   ├── comandos-sql.txt                    # Scripts SQL de particionamento
 │   ├── post-autorizacoes.txt               # Exemplos de payloads REST
-│   └── resultado-poc/                      # POC do particionamento com UUIDv7
+│   └── contrato-api-para-gateway.md        # Insumo temporário p/ montar o gateway (ver nota no topo do arquivo)
 ├── openspec/                  # Planejamento de mudanças (proposta → spec → tasks)
+├── .env.example                # Modelo do .env único (raiz) — copie para .env
 ├── LICENSE                    # MIT
 └── README.md                  # Este arquivo
 ```
@@ -77,92 +79,77 @@ arj-pagrecorrentes-dbrelacional/
 
 ## Começando
 
-> `DB_PASSWORD` não tem mais valor padrão embutido nos arquivos de compose — a subida falha com
-> erro explícito se a variável não estiver definida. Copie `apps/.env.example` para `apps/.env`
-> (e `infra/local/postgres/.env.example` para `infra/local/postgres/.env`, se for usar a Opção B)
-> e defina sua própria senha local, ou passe `DB_PASSWORD` inline como nos exemplos abaixo.
+> `DB_PASSWORD` não tem valor padrão embutido nos arquivos de compose — a subida falha com erro
+> explícito, nomeando a variável, se ela não estiver definida. Copie `.env.example` (raiz) para
+> `.env` e defina sua própria senha local. Fonte única: não crie cópias de `.env` em `apps/` nem
+> em `infra/local/*` — os composes desses caminhos leem do `.env` da raiz (veja `--env-file` na
+> Opção C abaixo, para quando um deles sobe fora do compose de raiz).
 
-### Opção A — Docker Compose (recomendado)
+### Opção A — Ponto de entrada único (recomendado)
 
-Sobe o Postgres (partman/cron) e as duas aplicações com um único comando:
+Um único comando sobe o banco (com schema aplicado), a mensageria local (Floci, Kafka) e as
+cinco aplicações — a ordem de subida está declarada no compose, não é conhecimento tácito:
 
 ```bash
-cd apps
-DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
-  docker compose up -d --build
+docker compose up -d --build
 ```
 
 - `arj-contratocommand` → http://localhost:8080
 - `arj-contratoquery` → http://localhost:8081
+- `autorizacaostatus-producer` → http://localhost:8082 — ponte SQS → Kafka
+- `eventos-consumer` → http://localhost:8083 — loga cada evento consumido do Kafka
+- `temporiza-autorizacao` → http://localhost:8084 — agenda e expira autorizações PIX_AUTO/SPI_J1
+- Dashboard do Kafka (mensagens, consumer groups, lag) → http://localhost:8090
 
-### Opção B — Rodando manualmente
+Para o fluxo de eventos fim a fim funcionar (SNS → SQS → Kafka, e o timer da jornada 1), o
+tópico/filas do Floci ainda precisam ser provisionados uma vez via Terraform — fora do escopo
+deste compose (ver `infra/envs/local-messaging/`):
 
-#### 1. Subir o banco de dados
+```bash
+cd infra/envs/local-messaging && terraform init && terraform apply
+```
+
+Crie uma autorização `PIX_AUTO` com `tipoJornada: SPI_J1` no `arj-contratocommand` e, sem uma
+aprovação via `PATCH /api/autorizacoes/{id}/decisao`, ela é rejeitada automaticamente
+(`REJEITADA_SISTEMA_TIMEOUT_J1`) 10 minutos depois.
+
+### Opção B — Só um ambiente isolado
+
+Cada compose de `infra/local/*` continua completo e válido por si — sobe sozinho, sem exigir
+os demais no ar (ver o `README.md` de cada um: [postgres](infra/local/postgres/README.md),
+[floci](infra/local/floci/README.md), [kafka](infra/local/kafka/README.md),
+[redis](infra/local/redis/README.md)). Exemplo, só o banco:
 
 ```bash
 cd infra/local/postgres
-DB_PASSWORD=sua_senha docker compose -f postgres-db-v18.yml up -d
+docker compose --env-file ../../../.env -f postgres-db-v18.yml up -d
 ```
 
-#### 2. Rodar o serviço de escrita (command)
+### Opção C — Só as apps, contra infra já no ar
+
+`apps/docker-compose.yml` permanece um arquivo próprio — útil para subir as cinco aplicações
+sozinhas contra uma infra que já está no ar (pela Opção A ou pela B, ambiente por ambiente):
+
+```bash
+cd apps
+docker compose --env-file ../.env up -d --build
+```
+
+### Opção D — Rodando uma aplicação manualmente (Maven)
+
+Para depurar uma app fora do container, com a infra correspondente no ar:
 
 ```bash
 cd apps/arj-contratocommand
-
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   mvn spring-boot:run
 # Disponível em http://localhost:8080
 ```
 
-#### 3. Rodar o serviço de leitura (query)
-
-```bash
-cd apps/arj-contratoquery
-
-DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
-  mvn spring-boot:run
-# Disponível em http://localhost:8081
-```
-
-#### 4. (Opcional) Eventos de autorização — SNS/SQS → Kafka fim a fim
-
-Para ver os eventos de criação/cancelamento fluindo por SNS/SQS até o Kafka, suba
-nesta ordem o [Floci](infra/local/floci/README.md), o tópico/fila via
-[`infra/envs/local-messaging/`](infra/envs/local-messaging/) e o
-[Kafka local](infra/local/kafka/README.md) (broker, Schema Registry, dashboard):
-
-```bash
-docker compose -f infra/local/floci/compose.yaml up -d
-cd infra/envs/local-messaging && terraform init && terraform apply
-cd ../../local/kafka && docker compose -f compose.yaml up -d
-
-cd ../../../apps/autorizacaostatus-producer
-mvn spring-boot:run
-# Disponível em http://localhost:8082 — ponte SQS -> Kafka
-
-cd ../eventos-consumer
-mvn spring-boot:run
-# Disponível em http://localhost:8083 — loga cada evento consumido do Kafka
-```
-
-Dashboard do Kafka (mensagens, consumer groups, lag): http://localhost:8090.
-
-#### 5. (Opcional) Temporização da jornada 1 do PIX_AUTO
-
-Exige o Floci e o Terraform de `local-messaging` do passo anterior (já provisiona a fila
-filtrada `SQS-temporizacao-autorizacao`), mais o [Valkey local](infra/local/redis/README.md):
-
-```bash
-docker compose -f infra/local/redis/compose.yaml up -d
-
-cd apps/temporiza-autorizacao
-mvn spring-boot:run
-# Disponível em http://localhost:8084 — agenda e expira autorizações PIX_AUTO/SPI_J1
-```
-
-Crie uma autorização `PIX_AUTO` com `tipoJornada: SPI_J1` no `arj-contratocommand` e, sem
-uma aprovação via `PATCH /api/autorizacoes/{id}/decisao`, ela é rejeitada automaticamente
-(`REJEITADA_SISTEMA_TIMEOUT_J1`) 10 minutos depois.
+Mesmo padrão para as outras quatro apps — `arj-contratoquery` (8081, exige Postgres),
+`autorizacaostatus-producer` (8082, exige Floci + Kafka), `eventos-consumer` (8083, exige Kafka)
+e `temporiza-autorizacao` (8084, exige Floci + Valkey, e o `arj-contratocommand` no ar para
+acionar a decisão no vencimento).
 
 > Consulte o README de cada app para a lista completa de variáveis de ambiente e comandos de build.
 
@@ -181,15 +168,15 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 | [apps/arj-contratoquery/README.md](apps/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
 | [apps/autorizacaostatus-producer/README.md](apps/autorizacaostatus-producer/README.md) | Documentação completa da ponte SQS -> Kafka |
 | [apps/eventos-consumer/README.md](apps/eventos-consumer/README.md) | Documentação completa da consumidora do tópico Kafka |
-| [apps/temporiza-autorizacao/CLAUDE.md](apps/temporiza-autorizacao/CLAUDE.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |
+| [apps/temporiza-autorizacao/README.md](apps/temporiza-autorizacao/README.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |
 | [infra/README.md](infra/README.md) | Topologia-alvo de infraestrutura (Terraform, ambientes, escopo) |
 | [infra/envs/local-messaging/README.md](infra/envs/local-messaging/README.md) | Provisionamento do tópico SNS e das filas SQS (eventos + temporização) no Floci |
 | [infra/local/kafka/README.md](infra/local/kafka/README.md) | Kafka local standalone (broker, Schema Registry, dashboard) |
 | [infra/local/redis/README.md](infra/local/redis/README.md) | Valkey local (sorted set + stream de expiração) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
-| [docs/comandos-sql.txt](docs/comandos-sql.txt) | Scripts SQL de particionamento |
+| [infra/local/postgres/exemplos-queries.sql](infra/local/postgres/exemplos-queries.sql) | Scripts SQL de particionamento |
 | [docs/post-autorizacoes.txt](docs/post-autorizacoes.txt) | Exemplos de payloads REST |
-| [docs/resultado-poc/](docs/resultado-poc/) | POC do particionamento com UUIDv7 reversível |
+| [docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) | POC do particionamento com UUIDv7 reversível (Buffer Ring) |
 
 ## Licença
 

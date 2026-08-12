@@ -12,7 +12,17 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - redis_default
     restart: unless-stopped
+
+networks:
+  # Nome literal explicito (nao mais o default implicito derivado do diretorio do
+  # projeto): apps/docker-compose.yml referencia esta rede pelo nome, e precisa que ele
+  # fique estavel tanto subindo isolado quanto via include: do compose de raiz (ver
+  # change unificar-orquestracao-docker-local, D4).
+  redis_default:
+    name: redis_default
 
 volumes:
   valkey_data:

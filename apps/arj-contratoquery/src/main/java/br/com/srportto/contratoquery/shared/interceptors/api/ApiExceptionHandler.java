@@ -81,8 +81,8 @@ public class ApiExceptionHandler {
 
 	/**
 	 * Deixa o handler de "recurso estatico nao encontrado" passar direto como 404 nativo,
-	 * sem interceptar com o catch-all (que devolveria 500). Importante para o endpoint
-	 * `/v3/api-docs` do springdoc em testes de slice sem auto-configuracao completa.
+	 * sem interceptar com o catch-all (que devolveria 500). Sem este handler, uma requisicao
+	 * para um caminho desconhecido cairia no catch-all de Exception e responderia 500.
 	 */
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<LayoutErrosApiResponse> recursoEstaticoNaoEncontrado(NoResourceFoundException exception,

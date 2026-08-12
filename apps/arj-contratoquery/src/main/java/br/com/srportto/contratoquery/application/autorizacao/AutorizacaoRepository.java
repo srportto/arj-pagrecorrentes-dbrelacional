@@ -14,6 +14,10 @@ import br.com.srportto.contratoquery.domain.entities.IdAutorizacao;
 
 public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {
 
+    // Sem poda de partição (id_unico_conta_contratante não é a chave de particionamento):
+    // varre as 889 partições quentes. plan_cache_mode=force_generic_plan (application.yaml)
+    // amortiza o CUSTO DE PLANEJAMENTO a quase zero, mas não muda o custo de EXECUÇÃO da
+    // varredura — ver openspec/changes/reduzir-custo-planejamento-consultas/design.md.
     @Query("SELECT a FROM Autorizacao a WHERE a.idUnicoContaContratante = :idUnicoContaContratante AND a.status IN :statuses")
     Page<Autorizacao> findByIdUnicoContaContratanteAndStatusIn(
             @Param("idUnicoContaContratante") UUID idUnicoContaContratante,

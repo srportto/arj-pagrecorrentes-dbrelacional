@@ -2,11 +2,13 @@ package br.com.srportto.contratoquery.shared.interceptors.api;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -91,5 +93,15 @@ class ApiExceptionHandlerTest {
         assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
         assertEquals("/api/autorizacoes", resp.getBody().getPath());
         assertNotNull(resp.getBody().getTimestamp());
+    }
+
+    @Test
+    @DisplayName("NoResourceFoundException → 404 (caminho desconhecido não cai no catch-all de 500)")
+    void recursoEstaticoNaoEncontrado404() {
+        NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/swagger-ui/index.html", null);
+
+        ResponseEntity<LayoutErrosApiResponse> resp = handler.recursoEstaticoNaoEncontrado(ex, req());
+
+        assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
     }
 }

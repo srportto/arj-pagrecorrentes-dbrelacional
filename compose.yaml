@@ -1,0 +1,13 @@
+# Ponto de entrada unico do ambiente local: sobe banco, mensageria e as cinco aplicacoes
+# com um unico comando, sem exigir conhecimento tacito da ordem de subida.
+#
+# Este arquivo e PURAMENTE composicao - nao declara servico, rede nem volume proprio.
+# Cada compose referenciado abaixo continua completo e valido por si (ver README de
+# cada infra/local/* para subir isolado). Ver a change unificar-orquestracao-docker-local
+# (D1) para o racional de usar include: em vez de fundir tudo num arquivo so.
+include:
+  - infra/local/postgres/postgres-db-v18.yml
+  - infra/local/floci/compose.yaml
+  - infra/local/kafka/compose.yaml
+  - infra/local/redis/compose.yaml
+  - apps/docker-compose.yml

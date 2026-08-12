@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,7 +36,7 @@ class VarreduraEAgendamentoIntegrationTest {
     private final TemporizacaoProperties properties = new TemporizacaoProperties(
             10, 5000, 100, 120000,
             "test:agenda:" + UUID.randomUUID(), "test:stream:" + UUID.randomUUID(),
-            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000);
+            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000, 600000);
 
     @BeforeAll
     static void subirConexao() {

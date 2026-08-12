@@ -651,7 +651,7 @@ def test_s3_create_bucket():
 
 ## Compatibility Testing
 
-The [`compatibility-tests`](./compatibility-tests/) directory validates Floci across SDKs and tooling workflows.
+Floci's own `compatibility-tests` directory (no repositório do Floci, não neste monorepo) valida o Floci contra SDKs e fluxos de ferramentas.
 
 | Module | Language / Tool | SDK / Client | Tests |
 |---|---|---|---:|

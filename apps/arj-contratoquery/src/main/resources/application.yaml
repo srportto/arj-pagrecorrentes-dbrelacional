@@ -19,6 +19,13 @@ spring:
             max-lifetime: ${DB_POOL_MAX_LIFETIME:1800000}
             transaction-isolation: ${DB_TRANSACTION_ISOLATION:TRANSACTION_READ_COMMITTED}
             read-only: ${DB_READ_ONLY:true}
+            # Elimina o replanejamento por chamada nas consultas que varrem as 989 particoes de
+            # `autorizacoes` sem podar (a listagem filtra por conta, nao pela chave de particao).
+            # Roda uma vez por CONEXAO FISICA (nao por chamada) -- ver
+            # PlanCacheModeHikariIntegrationTest, que prova que vale para todas as conexoes do
+            # pool, nao so a primeira. Detalhe do achado empirico em
+            # openspec/changes/reduzir-custo-planejamento-consultas/design.md.
+            connection-init-sql: SET plan_cache_mode = 'force_generic_plan'
     jpa:
         hibernate:
             ddl-auto: none
@@ -42,7 +49,10 @@ contratoquery:
         # faixa de expurgo. Encontrar algo aqui e anomalia (invariante de localizacao violado),
         # nao caminho normal -- por isso nasce habilitado, para que a anomalia apareca.
         #
-        # Desligue se o custo do caminho de "nao encontrado" incomodar: o pior caso da cascata e
-        # o id INEXISTENTE, que percorre todos os niveis habilitados antes do 404. O custo e CPU
-        # de planejamento sobre 888 particoes, nao I/O.
+        # A justificativa de CUSTO perdeu forca depois da adocao de plan_cache_mode=force_generic_plan
+        # (ver connection-init-sql acima): o pior caso da cascata (id inexistente, 888 particoes)
+        # caiu de ~44ms para ~7ms em nivel de consulta (medido em
+        # openspec/changes/reduzir-custo-planejamento-consultas/design.md). A flag continua
+        # existindo pelo motivo de DIAGNOSTICO -- desligar N3 se ele nunca acertar na pratica --
+        # nao mais como mitigacao de risco operacional de CPU.
         busca-em-particoes-inesperadas: ${CONSULTA_BUSCA_PARTICOES_INESPERADAS:true}

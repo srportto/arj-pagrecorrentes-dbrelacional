@@ -10,4 +10,14 @@ services:
     volumes:
       # Necessario para os servicos "real Docker" do Floci (ECS, ElastiCache, RDS, etc.)
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - floci_default
     restart: unless-stopped
+
+networks:
+  # Nome literal explicito (nao mais o default implicito derivado do diretorio do
+  # projeto): apps/docker-compose.yml referencia esta rede pelo nome, e precisa que ele
+  # fique estavel tanto subindo isolado quanto via include: do compose de raiz (ver
+  # change unificar-orquestracao-docker-local, D4).
+  floci_default:
+    name: floci_default

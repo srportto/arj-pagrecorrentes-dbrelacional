@@ -1,7 +1,6 @@
 package br.com.srportto.autorizacaostatusproducer.application.eventos;
 
 import br.com.srportto.autorizacaostatusproducer.shared.exceptions.EventoAutorizacaoInvalidoException;
-import br.com.srportto.autorizacaostatusproducer.domain.enums.TipoEventoAutorizacao;
 import br.com.srportto.autorizacaostatusproducer.shared.exceptions.EventoAutorizacaoKafkaIndisponivelException;
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
 import org.junit.jupiter.api.DisplayName;

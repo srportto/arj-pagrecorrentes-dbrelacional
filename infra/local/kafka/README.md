@@ -42,14 +42,14 @@ Abra o dashboard em [http://localhost:8090](http://localhost:8090) — configure
 cluster `eventos-autorizacao-local` (já pré-configurado via variáveis de ambiente) para
 ver mensagens, consumer groups e lag por partição.
 
-## Ordem de subida (ambiente completo)
+## Ambiente completo
 
-Este compose é independente, mas para o fluxo fim a fim funcionar, a ordem sugerida é:
-
-1. `apps/docker-compose.yml` (Postgres + `arj-contratocommand` + `arj-contratoquery`)
-2. `infra/local/floci/compose.yaml` + `infra/envs/local-messaging/` (SNS/SQS)
-3. Este compose (Kafka + Schema Registry + dashboard)
-4. `apps/autorizacaostatus-producer` e `apps/eventos-consumer` (via `mvn spring-boot:run`)
+Este compose é independente, mas para o fluxo fim a fim funcionar (evento fluindo de
+`arj-contratocommand` até `eventos-consumer`), use o ponto de entrada único da raiz do
+repositório (`compose.yaml`, `docker compose up -d`) — ele inclui este compose junto com
+Postgres, Floci, Valkey e as cinco aplicações, na ordem correta, sem exigir os passos manuais
+que existiam aqui antes. Ver o `README.md` da raiz, seção "Começando". O provisionamento do
+tópico/fila SNS/SQS (`infra/envs/local-messaging/`, via Terraform) continua um passo à parte.
 
 ## Limpar
 
