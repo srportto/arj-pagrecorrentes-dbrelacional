@@ -83,8 +83,18 @@
 > (`019fe814-…0006` e `019fe853-…0006`) **não serão reprocessadas** — são de teste em
 > ambiente local, sem dado real a recuperar.
 
-- [ ] 7.1 Teste fim-a-fim com autorização nova: `POST` → aguardar o prazo da jornada 1 →
+- [x] 7.1 Teste fim-a-fim com autorização nova: `POST` → aguardar o prazo da jornada 1 →
       confirmar que `temporiza-autorizacao` conclui na **primeira** tentativa, sem `409` no log
-      do command e sem `XCLAIM` de reivindicação.
-- [ ] 7.2 Confirmar no banco que a autorização do teste 7.1 está `REJEITADA` na partição de
-      expurgo do dia, ausente da partição de origem, e com `version` incrementada.
+      do command e sem `XCLAIM` de reivindicação. **Executado em 2026-08-11** com autorização
+      `019ff338-bbff-7a23-b612-750c6f9d0006` (`PIX_AUTO`/`SPI_J1`, empresa
+      `TESTE-E2E-EXPURGO-1786492009`): criada às 20:46:49, agendada para 20:56:49, varredura
+      moveu o agendamento vencido para o stream às 20:56:53.769, `DecidirAutorizacaoUseCase`
+      recebeu `EXPIRAR` às 20:56:53.881 e `ExpurgoAutorizacaoService` completou a transferência
+      às 20:56:53.897 — sem nenhuma linha de `409`/exceção no log do command nem de `XCLAIM`/
+      reivindicação no log do temporiza. Primeira tentativa, sem retry.
+- [x] 7.2 Confirmar no banco que a autorização do teste 7.1 está `REJEITADA` na partição de
+      expurgo do dia, ausente da partição de origem, e com `version` incrementada. **Confirmado**:
+      `autorizacoes_pe953` contém a linha (`status=6` `REJEITADA`,
+      `motivo_status=REJEITADA_SISTEMA_TIMEOUT_J1`, `version=1`); `autorizacoes_pa6` (partição de
+      origem) tem 0 linhas para o id — a versão subiu de 0 para 1, confirmando que o `UPDATE`
+      nativo (D1) fez `UPDATE` real, não `INSERT`.
