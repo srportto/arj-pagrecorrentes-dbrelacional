@@ -22,8 +22,11 @@ XINFO CONSUMERS →
   6cd97562879e   pending 0                ← pod vivo
 ```
 
-Limpeza manual aplicada no dia (mantida aqui como procedimento de contorno até esta mudança
-ser implementada):
+Limpeza manual aplicada no dia, quando este era o único recurso disponível — **superada por
+esta change**: as duas camadas de remoção automática (`ValkeyStreamConfig`/`SmartLifecycle` no
+encerramento gracioso, `ConsumidoresOrfaosLimpezaScheduler` na varredura por ociosidade) cobrem
+o que o comando abaixo fazia manualmente. Mantido aqui só como registro histórico do sintoma
+original, não como procedimento a seguir:
 
 ```bash
 XGROUP DELCONSUMER stream:{pixauto:j1}:expiracoes temporizaautorizacao <nome>
@@ -117,6 +120,41 @@ define aqui um alarme com limiar fixo: o número correto de consumidores é o n�
 instâncias, que varia com o autoscaling. O valor está em tornar a divergência visível, não em
 travar a aplicação por causa dela.
 
+## Nota de implementação (2026-08-11): como obter a contagem descartada de D2
+
+`XGROUP DELCONSUMER` devolve nativamente a contagem de entradas pendentes descartadas — mas
+nenhuma API tipada do Spring Data Redis expõe esse inteiro: `StreamOperations#deleteConsumer`
+devolve só `Boolean`, e `RedisConnection#execute("XGROUP", "DELCONSUMER", ...)` genérico
+decodifica a resposta como bulk string e lança `UnsupportedOperationException` em runtime para o
+inteiro real (confirmado empiricamente rodando os testes de integração). A implementação acessa a
+conexão nativa do driver Lettuce (`RedisClusterAsyncCommands#xgroupDelconsumer`, tipado `Long`,
+aguardado de forma síncrona) — acoplamento ao driver concreto, aceito pela mesma razão que o SQL
+nativo é aceito em outras changes: é o único caminho para uma garantia que a API portável não
+expõe.
+
+## Nota de implementação (2026-08-11): @PreDestroy roda tarde demais
+
+A primeira implementação da camada 1 (D1) usou `@PreDestroy` em `ValkeyStreamConfig`. Verificação
+manual com réplicas reais (tarefa 6.3) encontrou que a remoção **falhava sempre** em runtime:
+
+```
+java.lang.IllegalStateException: ...
+	at LettuceConnectionFactory.assertStarted
+	at ValkeyStreamConfig.removerConsumidorAoEncerrar
+	at InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeDestroyMethods
+```
+
+Causa: `LettuceConnectionFactory` implementa `SmartLifecycle` (fase padrão 0). No fechamento do
+`ApplicationContext`, o Spring primeiro executa a fase de `Lifecycle.stop()` de todos os beans
+`SmartLifecycle` (em ordem decrescente de fase) — e só **depois** disso executa a fase de
+destruição de singletons (`@PreDestroy`/`DisposableBean`). A conexão Redis já estava parada antes
+de `@PreDestroy` rodar.
+
+**Correção:** `ValkeyStreamConfig` passou a implementar `SmartLifecycle` diretamente, com
+`getPhase()` retornando um valor maior que o do connection factory (100 vs. 0) — beans de fase
+maior param **primeiro**, então a remoção do consumidor roda com a conexão ainda viva. Reconfirmado
+por verificação manual após a correção (ver tasks.md, 6.3).
+
 ## Risks / Trade-offs
 
 - **Shutdown hook remove o consumidor e a instância volta a processar antes de morrer** →
@@ -140,13 +178,23 @@ travar a aplicação por causa dela.
 
 ## Open Questions
 
-- **Qual limiar de ociosidade?** Precisa de um número que não seja atingível por instância
-  viva no pior caso de inatividade legítima. Depende do perfil de tráfego real da jornada 1,
-  que ainda não foi medido em produção.
-- **Onde expor a contagem?** `TemporizacaoHealthIndicator` (já reporta Valkey e SQS) ou
-  métrica Micrometer. O health indicator é mais simples; a métrica é o que serve para
-  alarme/histórico. A app ainda não tem Micrometer configurado.
-- **A limpeza deve viver no `PendenciasSchedulerReivindicador` ou em componente próprio?**
-  O reivindicador já faz `XPENDING` no grupo a cada ciclo, então aproveitaria a chamada — mas
-  a responsabilidade é outra (higiene do grupo vs. reprocessamento de trabalho), e a armadilha
-  6 do `CLAUDE.md` da app alerta contra inchar aquela classe.
+- ~~**Qual limiar de ociosidade?**~~ **Resolvido em 2026-08-11: 600000 ms (10 min).** Verificado
+  empiricamente contra o Valkey real (`XINFO CONSUMERS`) que o campo `idle` reseta a cada
+  `XREADGROUP`, **mesmo sem novo dado retornado** — é distinto do campo `inactive` (que só
+  reseta em entrega efetiva). O container do listener faz polling bloqueante contínuo
+  (`pollTimeout` de 2 s em `ValkeyStreamConfig`), então uma instância viva mantém `idle`
+  perto de zero indefinidamente, com ou sem expirações para processar; só para de decair
+  quando o processo para de existir. 600000 ms é 5× o `stream-min-idle-time-ms` (120000 ms) —
+  folga generosa acima do que qualquer flutuação legítima (GC, rebalance de rede) alcançaria,
+  e curto o suficiente para o grupo não acumular lixo por horas.
+- ~~**Onde expor a contagem?**~~ **Resolvido: `TemporizacaoHealthIndicator`.** Já é o padrão da
+  app para sinais operacionais (Valkey, SQS); métrica Micrometer exigiria configurar um novo
+  eixo de observabilidade só para este sinal, desproporcional ao problema.
+- ~~**A limpeza deve viver no `PendenciasSchedulerReivindicador` ou em componente próprio?**~~
+  **Resolvido: componente próprio** (`ConsumidoresOrfaosLimpezaScheduler`), na mesma cadência
+  de `stream-min-idle-time-ms` do reivindicador (reaproveita o intervalo, não introduz config
+  nova). Mantém a responsabilidade de higiene do grupo separada da de reprocessamento de
+  trabalho, coerente com a armadilha 6 do `CLAUDE.md` da app. A remoção em si (checar
+  `pending`, chamar `XGROUP DELCONSUMER`, validar o retorno) vive num terceiro componente,
+  `ConsumidorStreamLifecycle`, compartilhado entre o hook de encerramento (camada 1) e esta
+  varredura (camada 2) — evita duplicar a lógica de remoção segura nos dois lugares.

@@ -42,7 +42,7 @@ class PendenciasSchedulerReivindicadorTest {
 
     private final TemporizacaoProperties properties = new TemporizacaoProperties(
             10, 5000, 100, 120000, "agenda:{pixauto:j1}", "stream:{pixauto:j1}:expiracoes",
-            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000);
+            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000, 600000);
 
     @Test
     @DisplayName("reivindica e reprocessa apenas as pendências ociosas além do limiar")

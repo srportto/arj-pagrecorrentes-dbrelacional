@@ -191,22 +191,33 @@ ack/retenção:
     persistente recircularia entre o PEL e o reivindicador indefinidamente, a cada
     `stream-min-idle-time-ms`, sem nenhum sinal operacional. Não há stream Valkey dedicado a
     "mortas" — a investigação de uma entrada esgotada é manual, via log.
-11. **Consumidores mortos se acumulam no consumer group, e ninguém os remove.** O
-    `consumidor-id` é `${HOSTNAME:worker-local}` — o id do container —, então cada reinício,
-    deploy e réplica cria um consumidor novo, e não há `XGROUP DELCONSUMER` em lugar algum do
-    código. Em 2026-08-09 o ambiente local tinha 7 consumidores para 2 pods vivos. Não quebra
-    nada enquanto os órfãos têm `pending = 0` (o reivindicador age por tempo ocioso **da
-    entrada**, não por dono), mas polui o `XINFO CONSUMERS`, que é o principal instrumento de
-    diagnóstico do grupo. Pendência registrada na change `limpar-consumidores-orfaos-stream`.
-    Contorno manual:
-    `valkey-cli XGROUP DELCONSUMER stream:{pixauto:j1}:expiracoes temporizaautorizacao <nome>`.
+11. **Consumidores mortos não se acumulam mais — mas a remoção tem duas camadas, e nenhuma delas
+    usa `@PreDestroy`.** Camada 1: `ValkeyStreamConfig` implementa `SmartLifecycle` (fase 100,
+    maior que a fase padrão do `LettuceConnectionFactory`, que é 0) e remove o consumidor desta
+    instância em `stop()`, se `pending = 0`. **Não troque isso por `@PreDestroy`** — foi a
+    primeira tentativa, e falhava sempre em runtime (`IllegalStateException`): o Spring executa a
+    fase de `Lifecycle.stop()` de todo bean `SmartLifecycle` (a conexão Redis incluída) **antes**
+    da fase de `@PreDestroy`/`DisposableBean` no fechamento do contexto — a conexão já estava
+    morta quando `@PreDestroy` tentava usá-la. Fase maior para primeiro, com a conexão ainda viva
+    (ver `design.md` da change `limpar-consumidores-orfaos-stream`). Camada 2 (rede de segurança
+    para `SIGKILL`/OOM/nó perdido, que não aciona `SmartLifecycle.stop()`):
+    `ConsumidoresOrfaosLimpezaScheduler`, remove por tempo ocioso (`consumidor-ocioso-limite-ms`,
+    default 600000 ms) na cadência de `stream-min-idle-time-ms`.
 12. **Nunca remova um consumidor com PEL não vazio.** `XGROUP DELCONSUMER` **descarta** as
     entradas pendentes do consumidor removido: elas não voltam ao grupo, não são reivindicáveis
     por `XCLAIM` e nunca mais são entregues — a autorização correspondente fica presa em
-    `RECEBIDA` para sempre, sem sinal nenhum. Confira `pending` antes, sempre. O caminho certo
-    para um órfão com pendências é deixar o `PendenciasSchedulerReivindicador` reivindicar as
-    entradas primeiro; só depois o consumidor fica seguro para remoção.
-13. **Rodar a app fora do Docker cria o consumidor `worker-local`** (o default de
+    `RECEBIDA` para sempre, sem sinal nenhum. As duas camadas de remoção
+    (`ConsumidorRemocaoService.removerSeSemPendencia`) checam `pending` imediatamente antes de
+    remover, nunca reaproveitando leitura de um ciclo anterior. Se for tocar nesse código, não
+    remova a checagem achando redundante.
+13. **`XGROUP DELCONSUMER` via API tipada do Spring Data Redis não expõe a contagem de PEL
+    descartado** — nem `StreamOperations#deleteConsumer` (só `Boolean`), nem
+    `RedisConnection#execute("XGROUP", "DELCONSUMER", ...)` genérico (decodifica a resposta como
+    bulk string; lança `UnsupportedOperationException` em runtime para o inteiro real que o
+    comando devolve — confirmado rodando os testes). `ConsumidorRemocaoService` acessa a conexão
+    nativa do driver Lettuce (`RedisClusterAsyncCommands#xgroupDelconsumer`, tipado `Long`) para
+    conseguir esse valor, que a verificação de PEL descartado (armadilha 12) exige.
+14. **Rodar a app fora do Docker cria o consumidor `worker-local`** (o default de
     `${HOSTNAME:worker-local}`). Duas execuções locais simultâneas compartilhariam o mesmo
     consumidor e disputariam o mesmo PEL.
 

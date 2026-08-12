@@ -22,6 +22,10 @@ temporizacao:
     varredura-intervalo-ms: 5000
     varredura-lote: 100
     stream-min-idle-time-ms: 120000
+    # 5x o stream-min-idle-time-ms: instância viva mantém "idle" perto de zero (o container faz
+    # polling contínuo, mesmo sem dado novo), então só um consumidor de instância morta atinge
+    # este limiar. Ver change limpar-consumidores-orfaos-stream, D3.
+    consumidor-ocioso-limite-ms: 600000
     chave-agenda: "agenda:{pixauto:j1}"
     chave-stream: "stream:{pixauto:j1}:expiracoes"
     grupo-consumidor: temporizaautorizacao

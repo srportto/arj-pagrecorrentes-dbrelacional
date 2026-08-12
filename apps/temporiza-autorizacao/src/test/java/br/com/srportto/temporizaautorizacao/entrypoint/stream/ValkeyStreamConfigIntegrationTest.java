@@ -27,7 +27,7 @@ class ValkeyStreamConfigIntegrationTest {
     private final TemporizacaoProperties properties = new TemporizacaoProperties(
             10, 5000, 100, 120000,
             "test:agenda:" + UUID.randomUUID(), "test:stream:" + UUID.randomUUID(),
-            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000);
+            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000, 600000);
 
     @BeforeAll
     static void subirConexao() {
@@ -51,7 +51,7 @@ class ValkeyStreamConfigIntegrationTest {
     @Test
     @DisplayName("cria o consumer group (idempotente) e registra a subscription, mesmo sem o stream existir ainda")
     void criaGrupoERegistraSubscription() {
-        var config = new ValkeyStreamConfig();
+        var config = new ValkeyStreamConfig(redisTemplate, new ConsumidorRemocaoService(redisTemplate, properties), properties);
         StreamMessageListenerContainer<String, MapRecord<String, String, String>> container =
                 config.streamMessageListenerContainer(connectionFactory);
 

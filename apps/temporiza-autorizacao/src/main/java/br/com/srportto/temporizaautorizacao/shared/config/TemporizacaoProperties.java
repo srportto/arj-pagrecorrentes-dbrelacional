@@ -16,7 +16,8 @@ public record TemporizacaoProperties(
         String grupoConsumidor,
         String consumidorId,
         String commandBaseUrl,
-        long commandTimeoutMs) {
+        long commandTimeoutMs,
+        long consumidorOciosoLimiteMs) {
 
     public Duration prazo() {
         return Duration.ofMinutes(prazoMinutos);

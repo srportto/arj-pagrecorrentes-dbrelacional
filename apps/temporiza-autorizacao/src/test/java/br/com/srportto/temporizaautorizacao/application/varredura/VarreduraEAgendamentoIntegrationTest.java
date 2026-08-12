@@ -36,7 +36,7 @@ class VarreduraEAgendamentoIntegrationTest {
     private final TemporizacaoProperties properties = new TemporizacaoProperties(
             10, 5000, 100, 120000,
             "test:agenda:" + UUID.randomUUID(), "test:stream:" + UUID.randomUUID(),
-            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000);
+            "temporizaautorizacao", "worker-1", "http://localhost:8080", 5000, 600000);
 
     @BeforeAll
     static void subirConexao() {
