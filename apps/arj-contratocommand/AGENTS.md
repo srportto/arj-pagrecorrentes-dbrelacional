@@ -37,6 +37,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
   - `DB_TRANSACTION_ISOLATION` — nível de isolamento (default `TRANSACTION_READ_COMMITTED`; aceita `TRANSACTION_READ_UNCOMMITTED`, `TRANSACTION_READ_COMMITTED`, `TRANSACTION_REPEATABLE_READ`, `TRANSACTION_SERIALIZABLE`).
   - `DB_READ_ONLY` — modo de acesso (default `false` no `contratocommand`, `true` no `contratoquery`).
   - Pool HikariCP: `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT`, `DB_POOL_IDLE_TIMEOUT`, `DB_POOL_MAX_LIFETIME`.
+  - `hikari.connection-init-sql` fixa `plan_cache_mode = force_generic_plan` em toda conexão física do pool — elimina o replanejamento em `findByIdAutorizacao` (sem poda de partição); regride sub-milissegundo em consultas já podadas para 1 partição (`existsBy...`, `moverParaParticao`). Ver `openspec/changes/reduzir-custo-planejamento-consultas/design.md`.
 - Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório) — fonte única do Postgres local. Exemplos de payloads em `docs/post-autorizacoes.txt`.
 - Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `apps/docker-compose.yml` sobe as cinco aplicações (sem Postgres — ver `infra/local/postgres/`). Para o ambiente local completo num só comando, use o `compose.yaml` da raiz.
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado explicitamente via `SPRING_PROFILES_ACTIVE=prod`) — não existe mais o profile `dev`.
