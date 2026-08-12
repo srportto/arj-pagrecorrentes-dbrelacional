@@ -50,21 +50,22 @@ Acesse: `http://localhost:8080`
 
 ## Via Docker
 
-A aplicação tem `Dockerfile` próprio (multi-stage, Fargate-ready). Para subir tudo de uma vez
-(Postgres + as duas aplicações REST), use o `docker-compose.yml` em `apps/`
-(ver [README raiz](../../README.md)):
+A aplicação tem `Dockerfile` próprio (multi-stage, Fargate-ready). Para o ambiente local completo
+(banco, mensageria e as cinco aplicações) num único comando, use o `compose.yaml` da raiz do
+repositório (ver [README raiz](../../README.md), seção "Começando"). Para subir só as cinco
+aplicações contra uma infra já no ar, use o `docker-compose.yml` em `apps/`:
 
 ```bash
 cd ..
-DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha docker compose up -d --build
+docker compose --env-file ../.env up -d --build
 ```
 
-Para subir só o banco (PostgreSQL 18 com `pg_partman` + `pg_cron` + `pgvector`), o compose fica em
-`infra/local/postgres/` (raiz do repositório):
+Para subir só o banco (PostgreSQL 18 com `pg_partman` + `pg_cron` + `pgvector`), a fonte única
+fica em `infra/local/postgres/` (raiz do repositório):
 
 ```bash
 cd ../../infra/local/postgres
-docker compose -f postgres-db-v18.yml up -d
+docker compose --env-file ../../../.env -f postgres-db-v18.yml up -d
 ```
 
 ## Testes

@@ -32,7 +32,7 @@ internet-facing, e os dois ECS Services (`arj-contratocommand` :8080,
    `variables.tf`) não tem default nem `terraform.tfvars` versionado (removido do git em
    2026-08; segredo não pertence a arquivo versionado). Exporte antes do `terraform plan`/`apply`:
    ```bash
-   export TF_VAR_db_password="<mesma senha do apps/.env ou infra/local/postgres/.env>"
+   export TF_VAR_db_password="<mesma senha do DB_PASSWORD no .env da raiz do repositório>"
    ```
    Sem isso, o Terraform pede o valor interativamente.
 

@@ -36,8 +36,8 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
   - `DB_TRANSACTION_ISOLATION` — nível de isolamento (default `TRANSACTION_READ_COMMITTED`).
   - `DB_READ_ONLY` — modo de acesso (**default `true`** nesta app — somente leitura).
   - Pool HikariCP: `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT`, `DB_POOL_IDLE_TIMEOUT`, `DB_POOL_MAX_LIFETIME`.
-- Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório).
-- Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `apps/docker-compose.yml` sobe as 2 aplicações + Postgres de uma vez.
+- Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório) — fonte única do Postgres local.
+- Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `apps/docker-compose.yml` sobe as cinco aplicações (sem Postgres — ver `infra/local/postgres/`). Para o ambiente local completo num só comando, use o `compose.yaml` da raiz.
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado explicitamente via `SPRING_PROFILES_ACTIVE=prod`) — não existe mais o profile `dev`.
 
 ## Stack

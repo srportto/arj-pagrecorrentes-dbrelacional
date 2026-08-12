@@ -90,10 +90,13 @@ independência que elas exigem é preservada por construção (ver a restrição
 
 **Arquivos de orquestração**
 - `apps/docker-compose.yml` (131 linhas) — remoção do serviço `postgres` duplicado e das redes
-  externas
+  declaradas `external: true`
 - `infra/local/postgres/postgres-db-v18.yml` — vira a fonte única do PostgreSQL local
-- `infra/local/floci/compose.yaml`, `infra/local/kafka/compose.yaml`,
-  `infra/local/redis/compose.yaml` — inalterados no conteúdo, referenciados pelo `include:`
+- `infra/local/kafka/compose.yaml` — inalterado no conteúdo, referenciado pelo `include:` (já
+  nomeia sua rede explicitamente)
+- `infra/local/floci/compose.yaml`, `infra/local/redis/compose.yaml` — **revisão em 2026-08-11
+  (D4)**: precisam de rede nomeada explicitamente, ao contrário do que esta seção estimava
+  originalmente — ver `design.md` › D4 para a evidência empírica
 - Novo arquivo de composição na raiz
 
 **Configuração**

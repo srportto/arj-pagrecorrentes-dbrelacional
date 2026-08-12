@@ -1,16 +1,20 @@
 services:
   postgres:
-    build: . # Build the image from the Dockerfile in the current directory
+    build: . # Build the image from the Dockerfile in o diretorio atual
     image: postgres18-kiq-extras-partman_cron_vector:1.0 # Specify PostgreSQL 18 image com pg_cron, pg_partman e pgvector
     command: [
       "postgres",
-      "-c", "shared_preload_libraries=pg_cron",
-      "-c", "cron.database_name=db-csp-postgres", # Set the database name for pg_cron
+      # Uma unica diretiva com lista: a mesma GUC repetida em dois "-c" nao acumula,
+      # o ultimo valor prevalece e descarta o primeiro sem erro (ver change
+      # unificar-orquestracao-docker-local, D3). Antes desta correcao, pg_partman_bgw
+      # nunca chegou a carregar por nenhum dos dois caminhos de subida do Postgres local.
+      "-c", "shared_preload_libraries=pg_partman_bgw,pg_cron",
+      "-c", "cron.database_name=${DB_NAME:-db-csp-postgres}",
       ]
     container_name: postgres18-kiq # Optional: Name the container for easier identification
     environment:
-      POSTGRES_DB: db-csp-postgres # Set the default database name
-      POSTGRES_USER: docker
+      POSTGRES_DB: ${DB_NAME:-db-csp-postgres}
+      POSTGRES_USER: ${DB_USER_NAME:-docker}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD nao definida - copie .env.example para .env}
       # Optional: Explicitly set PGDATA for clarity or if customizing
       PGDATA: /var/lib/postgresql/data
@@ -19,7 +23,22 @@ services:
       - ./migrations:/docker-entrypoint-initdb.d:ro # Scripts rodam em ordem alfabetica (v1.0.0, v1.0.1, ...) na primeira subida do banco
     ports:
       - "5432:5432" # Porta 5432 do host ja esta em uso por outro projeto local; container continua na 5432 internamente
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_NAME:-docker} -d ${DB_NAME:-db-csp-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - postgres_default
     restart: unless-stopped
 
+networks:
+  # Nome literal explicito (nao o default implicito derivado do diretorio do projeto):
+  # precisa ficar estavel tanto subindo isolado quanto via include: do compose de raiz
+  # (ver change unificar-orquestracao-docker-local, D4).
+  postgres_default:
+    name: postgres_default
+
 volumes:
-  pg_data: # Define the named volume
+  pg_data:
+    name: postgres_pg_data # Nome literal explicito: troca de projeto Compose nao recria o banco em branco
