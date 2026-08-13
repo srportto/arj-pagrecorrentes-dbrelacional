@@ -140,8 +140,6 @@ class AutorizacaoControllerTest {
         verifyNoInteractions(decidirAutorizacaoUseCase);
     }
 
-    // "acao" desconhecida e corpo sem "acao" resultam em 422: validados dentro do use case
-    // (AcaoDecisaoValida / @NotNull no DTO -> MethodArgumentNotValidException), não no controller
-    // — ver DecidirAutorizacaoUseCaseTest.ComValidacaoReal, mesmo padrão de tipoProduto desconhecido
-    // acima, que também não é pré-validado nesta camada.
+    // "acao" invalida/ausente vira 422 dentro do use case (AcaoDecisaoValida / @NotNull), não aqui
+    // — ver DecidirAutorizacaoUseCaseTest.ComValidacaoReal.
 }

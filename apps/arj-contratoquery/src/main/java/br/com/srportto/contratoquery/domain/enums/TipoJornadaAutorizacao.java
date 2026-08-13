@@ -5,8 +5,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public enum TipoJornadaAutorizacao {
-    // Jornada desconhecida: usada apenas para ler registros persistidos antes da coluna
-    // tipo_jornada existir (default 0 no banco).
+    // Default 0 no banco: usada só para ler registros anteriores à coluna tipo_jornada existir.
     DESCONHECIDA(0L),
     SPI_J1(1L),
     QRC_J2(2L),

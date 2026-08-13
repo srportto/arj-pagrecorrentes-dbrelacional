@@ -4,10 +4,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-/**
- * Orquestra o trabalho de uma entrada do stream de expirações: aciona o command. Não decide
- * ack — quem lê o stream (worker) confirma somente se este método retornar sem exceção.
- */
+/** Orquestra o trabalho de uma entrada do stream: aciona o command. Não decide ack — isso é do worker. */
 @Service
 public class ProcessarExpiracaoUseCase {
 

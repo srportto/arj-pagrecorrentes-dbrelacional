@@ -130,16 +130,14 @@ class ProcessarEventoAutorizacaoUseCaseTest {
     void valorMalformadoEmCampoPiiNaoVazaPelaCause() {
         inicializar();
         String cpfNoUuid = "12345678900";
-        // 36 caracteres: cai no caminho de parse padrao do UUID, que lanca embutindo o valor
-        // literal na mensagem. Comprimentos diferentes seguem outro caminho no Jackson.
+        // 36 caracteres: cai no parse padrão do UUID, que embute o valor literal na mensagem
         String valorMalformado = "nao-e-um-uuid-valido-CPF-" + cpfNoUuid;
         String mensagem = MENSAGEM_VALIDA.replace("\"codigo_canal_contratacao\":\"canal\"",
                 "\"codigo_canal_contratacao\":\"canal\",\"id_pessoa_pagadora\":\"" + valorMalformado + "\"");
 
         var e = assertThrows(EventoAutorizacaoInvalidoException.class, () -> useCase.processar(mensagem));
 
-        // a mensagem do Jackson embutiria o valor literal do campo; nem ela nem a cadeia de
-        // causas (impressa pelo log.error do listener) podem carregar o conteudo
+        // nem a mensagem nem a cadeia de causas (impressa pelo log.error) podem carregar o conteúdo
         assertFalse(textoCompletoDe(e).contains(cpfNoUuid),
                 "o conteúdo do campo PII vazou na exceção: " + textoCompletoDe(e));
         assertTrue(e.getMessage().contains("id_pessoa_pagadora"), "o caminho do campo deve ser diagnosticável");

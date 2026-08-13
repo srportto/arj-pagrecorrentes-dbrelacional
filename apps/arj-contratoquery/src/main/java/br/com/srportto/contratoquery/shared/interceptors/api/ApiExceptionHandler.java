@@ -79,11 +79,7 @@ public class ApiExceptionHandler {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(layoutError);
 	}
 
-	/**
-	 * Deixa o handler de "recurso estatico nao encontrado" passar direto como 404 nativo,
-	 * sem interceptar com o catch-all (que devolveria 500). Sem este handler, uma requisicao
-	 * para um caminho desconhecido cairia no catch-all de Exception e responderia 500.
-	 */
+	/** Sem este handler, caminho desconhecido cairia no catch-all de Exception e responderia 500 em vez de 404. */
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<LayoutErrosApiResponse> recursoEstaticoNaoEncontrado(NoResourceFoundException exception,
 			HttpServletRequest req) {

@@ -15,13 +15,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Prova empírica de que {@code hikari.connection-init-sql} aplica {@code plan_cache_mode} a
- * TODAS as conexões físicas do pool, não só à primeira — é exatamente o que a tarefa 2.1 da
- * change {@code reduzir-custo-planejamento-consultas} pede para provar, não supor.
- *
- * <p>O pool é criado com {@code minimumIdle == maximumPoolSize} e as N conexões são pegas
- * simultaneamente (sem devolver nenhuma) antes de inspecionar qualquer uma — só assim é garantido
- * que o Hikari abriu N conexões físicas distintas, e não reaproveitou uma única.
+ * Prova que {@code hikari.connection-init-sql} aplica {@code plan_cache_mode} a TODAS as conexões
+ * físicas do pool, não só à primeira. Pool criado com {@code minimumIdle == maximumPoolSize} e as
+ * N conexões pegas simultaneamente antes de inspecionar, garantindo N conexões físicas distintas.
  */
 @ExtendWith(PostgresLocalDisponivelCondition.class)
 @DisplayName("Teste de integração: plan_cache_mode via connection-init-sql do HikariCP")

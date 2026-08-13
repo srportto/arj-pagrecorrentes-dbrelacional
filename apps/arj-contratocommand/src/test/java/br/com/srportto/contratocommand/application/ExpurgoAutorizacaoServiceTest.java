@@ -25,16 +25,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Testes unitários do que é verificável sem banco: escolha da partição de destino, atalho quando
- * ela coincide com a atual, e a guarda de linhas afetadas.
- *
- * A versão anterior desta classe afirmava a *ordem* das chamadas ao repositório
- * (`deleteById` → `flush` → `detach` → `save`) e permaneceu verde durante todo o período em que
- * toda expiração e todo cancelamento com troca de partição falhavam com `409` em banco real. Um
- * teste que confirma a sequência de chamadas não pode detectar um defeito que vive na decisão que
- * o provedor JPA toma diante do estado do banco — por isso essas asserções foram removidas, e o
- * comportamento real é coberto por
- * {@code br.com.srportto.contratocommand.integration.ExpurgoParticaoIntegrationTest}.
+ * Cobre só o que é verificável sem banco (escolha de partição, atalho, guarda de linhas afetadas).
+ * A versão anterior afirmava a *ordem* das chamadas e ficou verde mesmo com toda transferência
+ * falhando 409 em banco real — um teste de sequência não detecta defeito na decisão que o
+ * provedor JPA toma. Comportamento real coberto por {@code ExpurgoParticaoIntegrationTest}.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes do ExpurgoAutorizacaoService")

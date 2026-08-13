@@ -15,10 +15,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Representacao completa de uma autorizacao, usada na consulta por id
- * (GET /api/autorizacoes/{autorizacaoId}).
- */
+/** Representação completa de uma autorização, usada em GET /api/autorizacoes/{autorizacaoId}. */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

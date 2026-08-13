@@ -8,32 +8,26 @@ import java.time.temporal.ChronoUnit;
 public class ControleExpurgoAutorizacao {
 
   public static int obterParticaoExpurgoWrite(LocalDate dataFinalizacao) {
-        // O ChronoUnit.WEEKS calcula o número exato de semanas totais 
-        // entre o Epoch (01/01/1970) e a data finalização
+        // Semanas desde o Epoch, na "gaveta" 0-99, deslocada para o range 900-999.
         long semanasTotais = ChronoUnit.WEEKS.between(LocalDate.ofEpochDay(0), dataFinalizacao);
-        
-        // Encontra a "gaveta" de 0 a 99
         int gaveta = (int) (semanasTotais % 100);
-        
-        // Soma 900 para cair na partição correta (900 a 999)
         return 900 + gaveta;
     }
 
     public static int obterParticaoExpurgoDrop(LocalDate dataReferenciaCalculoParticaoExpurgo) {
-    
-        // Descobre a particao de expurgo que a aplicação esta escrevendo no momento atual
+
         LocalDate dataAtual = LocalDate.now();
-        var particaoExpurgoWriteMoment = obterParticaoExpurgoWrite(dataAtual);       
+        var particaoExpurgoWriteMoment = obterParticaoExpurgoWrite(dataAtual);
 
         if (dataReferenciaCalculoParticaoExpurgo.isBefore(dataAtual)) {
             throw new BusinessException("Data de referencia para expurgo invalida(no passado), pode pedir pra dropar a particao em escrita no momento " + dataReferenciaCalculoParticaoExpurgo);
         }
 
-        // Considerando que a próxima partição de expurgo segura para delete é a que está 2 gavetas à frente da atual (ou seja, 2 semanas à frente da data atual)
+        // Partição segura para delete: 2 gavetas (2 semanas) à frente da atual, margem de segurança.
         var particaoExpurgoDelete = (obterParticaoExpurgoWrite(dataReferenciaCalculoParticaoExpurgo)+ 2);
 
         if(particaoExpurgoDelete > 999) {
-            particaoExpurgoDelete = particaoExpurgoDelete - 100; // Volta para o início do ciclo (900)
+            particaoExpurgoDelete = particaoExpurgoDelete - 100; // volta ao início do ciclo
         }
 
         if(particaoExpurgoDelete == particaoExpurgoWriteMoment) {

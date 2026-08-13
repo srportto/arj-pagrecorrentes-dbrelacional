@@ -38,32 +38,22 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Teste de integração da transferência para a partição de expurgo, contra PostgreSQL real e com
- * partições físicas distintas — não com uma partição DEFAULT que absorveria origem e destino e
- * esconderia a movimentação.
+ * Testa a transferência para a partição de expurgo contra PostgreSQL real, com partições físicas
+ * distintas (uma DEFAULT esconderia a movimentação). Existe porque o defeito corrigido por
+ * `corrigir-expurgo-merge-version` era invisível a teste mockado: `ExpurgoAutorizacaoServiceTest`
+ * só verificava a ordem das chamadas, não a decisão que o Hibernate toma dentro do `save` com
+ * `@Version` num banco real.
  *
- * Existe porque o defeito corrigido pela mudança `corrigir-expurgo-merge-version` era invisível a
- * teste mockado: o `ExpurgoAutorizacaoServiceTest` verificava a *ordem* das chamadas ao
- * repositório (`deleteById` → `flush` → `detach` → `save`) e ficou verde durante todo o período em
- * que toda expiração e todo cancelamento com troca de partição respondiam `409`. O defeito não
- * estava na sequência de chamadas: estava na decisão que o Hibernate toma dentro do `save`, diante
- * de um banco real, quando a entidade tem `@Version`.
- *
- * Roda contra o PostgreSQL 18 local (pré-requisito declarado do build, "sem fallback H2") num
- * schema dedicado, criado e destruído por esta própria classe — e não via Testcontainers, que
- * neste projeto não consegue falar com builds recentes do Docker Desktop e faz a classe inteira
- * ser pulada. Ver {@link PostgresLocalDisponivelCondition}.
+ * Roda em schema dedicado (não via Testcontainers, que não fala com Docker Desktop recente aqui).
+ * Ver {@link PostgresLocalDisponivelCondition}.
  */
 @SpringBootTest
 @ExtendWith(PostgresLocalDisponivelCondition.class)
 @DisplayName("Teste de integração: transferência para a partição de expurgo")
 class ExpurgoParticaoIntegrationTest {
 
-    /**
-     * Partições quentes fixas, para o schema poder ser criado antes de conhecer as contas
-     * contratantes. Duas são necessárias: contas distintas vivem em partições quentes distintas,
-     * e é justamente esse par que converge para a mesma partição de expurgo.
-     */
+    // Partições fixas (schema criado antes de existirem contas); duas contas em partições
+    // quentes distintas convergem para a mesma partição de expurgo.
     private static final int PARTICAO_QUENTE = 5;
     private static final int OUTRA_PARTICAO_QUENTE = 7;
 
@@ -124,30 +114,22 @@ class ExpurgoParticaoIntegrationTest {
                     CONSTRAINT pk_autorizacoees PRIMARY KEY (id_autorizacao, id_particao_conta)
                 ) PARTITION BY LIST (id_particao_conta);
                 """);
-            // Partições físicas separadas: é o que torna a movimentação observável. Com uma
-            // partição DEFAULT única, origem e destino cairiam na mesma tabela física.
+            // Partições físicas separadas tornam a movimentação observável.
             for (int particao : new int[] {PARTICAO_QUENTE, OUTRA_PARTICAO_QUENTE}) {
                 stmt.execute("CREATE TABLE autorizacoes_pa%d PARTITION OF autorizacoes FOR VALUES IN (%d);"
                         .formatted(particao, particao));
             }
             stmt.execute("CREATE TABLE autorizacoes_pe%d PARTITION OF autorizacoes FOR VALUES IN (%d);"
                     .formatted(PARTICAO_EXPURGO_HOJE, PARTICAO_EXPURGO_HOJE));
-            // Unicidade da chave de negócio: espelha o que as migrations produzem hoje. Deve ser
-            // atualizada junto com elas — é o que mantém este teste honesto sobre o schema real.
+            // Espelha a unicidade de negócio das migrations — manter atualizado junto com elas.
             stmt.execute(unicidadeChaveDeNegocio());
         }
     }
 
-    /**
-     * Espelho da unicidade da chave de negócio produzida pelas migrations em
-     * {@code infra/local/postgres/migrations/}. Precisa ser atualizado junto com elas — é o que
-     * mantém este teste honesto sobre o schema real, em vez de testar um schema idealizado.
-     */
+    /** Espelho da unicidade de negócio das migrations em {@code infra/local/postgres/migrations/}. */
     private static String unicidadeChaveDeNegocio() {
-        // v1.0.4 — índice único PARCIAL: a unicidade da chave de negócio é regra sobre
-        // autorizações ativas, restrita às partições quentes. Nas de expurgo,
-        // `id_particao_conta` é o balde semanal, e impor a chave ali faria autorizações de
-        // contas distintas colidirem.
+        // Índice parcial (v1.0.4): unicidade só nas partições quentes. Na de expurgo,
+        // id_particao_conta é o balde semanal — impor a chave ali colidiria contas distintas.
         return """
             CREATE UNIQUE INDEX uk_autorizacao_empresa_ativa
                 ON autorizacoes (id_particao_conta, id_autorizacao_empresa)
@@ -212,7 +194,7 @@ class ExpurgoParticaoIntegrationTest {
     @Test
     @DisplayName("Cancelamento move a autorizacao para a particao de expurgo, sem conflito")
     void cancelar_MoveParaParticaoDeExpurgo() {
-        // Cancelamento só é permitido a partir de ATIVA (rule TransicaoStatusValida).
+        // TransicaoStatusValida só permite cancelar a partir de ATIVA.
         Autorizacao autorizacao = persistir("emp-cancelar-" + UUID.randomUUID(), PARTICAO_QUENTE,
                 StatusAutorizacao.ATIVA, "AUTORIZACAO_ACEITA_POR_TODOS");
         UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
@@ -242,9 +224,8 @@ class ExpurgoParticaoIntegrationTest {
     @Test
     @DisplayName("Chave de empresa repetida entre contas distintas nao impede o expurgo (D3a)")
     void chaveDeEmpresaRepetidaEntreContas_NaoImpedeExpurgo() {
-        // Contas distintas vivem em partições quentes distintas — é lá que a unicidade vale.
-        // Ao expirarem na mesma semana, ambas convergem para a MESMA partição de expurgo, onde
-        // `id_particao_conta` já não representa a conta e a chave (partição, empresa) colide.
+        // Contas em partições quentes distintas convergem para a mesma partição de expurgo ao
+        // expirarem na mesma semana, onde id_particao_conta deixa de identificar a conta.
         String chaveCompartilhada = "pedido-compartilhado-" + UUID.randomUUID();
         Autorizacao primeira = persistirRecebida(chaveCompartilhada, PARTICAO_QUENTE);
         Autorizacao segunda = persistirRecebida(chaveCompartilhada, OUTRA_PARTICAO_QUENTE);
@@ -295,10 +276,7 @@ class ExpurgoParticaoIntegrationTest {
         return persistir(idAutorizacaoEmpresa, particaoQuente, StatusAutorizacao.RECEBIDA, "RECEPCAO_SPI_J1");
     }
 
-    /**
-     * Persiste uma autorização na partição quente informada. A conta contratante é sorteada até
-     * que seu hash caia nessa partição, para que o schema possa ser criado antes de ela existir.
-     */
+    /** Sorteia a conta até o hash cair na partição informada (schema já existe antes da conta). */
     private Autorizacao persistir(String idAutorizacaoEmpresa, int particaoQuente,
             StatusAutorizacao status, String motivoStatus) {
         UUID idUnicoConta = contaNaParticao(particaoQuente);
@@ -327,7 +305,7 @@ class ExpurgoParticaoIntegrationTest {
         aut.setIdPessoaDevedora(UUID.randomUUID());
         aut.setIdPessoaRecebedora(UUID.randomUUID());
         aut.setMetadados("{}");
-        // version fica nulo de propósito: é assim que o Spring Data decide entre persist e merge.
+        // version nulo de propósito: é o que faz o Spring Data escolher persist em vez de merge.
 
         return repository.saveAndFlush(aut);
     }

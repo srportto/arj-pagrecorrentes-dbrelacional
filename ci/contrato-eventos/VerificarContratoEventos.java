@@ -10,17 +10,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Compara as copias manuais espelhadas do contrato de evento e falha (exit != 0) quando
- * divergem. Nao depende de build Maven de nenhum app - le os arquivos direto do disco, para
- * poder rodar como job de CI independente de modulo (ver design.md de
- * openspec/changes/rede-seguranca-contrato-evento, decisao D2).
+ * Compara as copias espelhadas do contrato de evento; falha (exit != 0) se divergirem. Le os
+ * arquivos direto do disco, sem build Maven (ver design.md de rede-seguranca-contrato-evento, D2).
  *
- * <p>Escopo da comparacao (.avsc): o CONJUNTO de campos e o tipo/nulabilidade de cada um -
- * reordenar a lista "fields" nao falha (o decoder Avro resolve por nome, nao por posicao), mas
- * inverter a ordem dentro de uma uniao de tipos (ex.: ["null","long"] vs ["long","null"]) falha,
- * porque isso muda qual branch e o default. "namespace"/"name" do schema (nivel raiz, fora de
- * "fields") nao entram na comparacao - uma divergencia ai geraria pacotes Java diferentes via
- * avro-maven-plugin e quebraria a compilacao de um dos lados por outro caminho.
+ * <p>.avsc: compara o CONJUNTO de campos e tipo/nulabilidade. Ordem de "fields" nao importa
+ * (decoder resolve por nome), mas ordem dentro de uma uniao importa (muda o branch default).
+ * "namespace"/"name" ficam fora da comparacao - via avro-maven-plugin, ja quebrariam a
+ * compilacao por outro caminho.
  *
  * Uso: java VerificarContratoEventos.java [raiz-do-repo]
  */

@@ -40,19 +40,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Teste de integração de concorrência real: dispara dois cancelamentos simultâneos sobre a mesma
- * autorização em threads distintas, verificando empiricamente se o lock otimista via @Version
- * dispara OptimisticLockException na segunda transação. Ponto central do design D5/D1 de
- * `integridade-fluxo-escrita` — sem esta validação real (não mockada), não há evidência de que a
- * correção funciona.
+ * Dispara dois cancelamentos simultâneos sobre a mesma autorização em threads distintas e
+ * verifica empiricamente se o lock otimista via @Version barra a segunda transação. Central ao
+ * design D5/D1 de `integridade-fluxo-escrita` — sem validação real (não mockada) não há evidência
+ * de que a correção funciona.
  *
- * Roda contra o PostgreSQL 18 local (pré-requisito declarado do build, "sem fallback H2") num
- * schema dedicado, criado e destruído por esta própria classe. Antes usava Testcontainers, que
- * neste projeto não consegue falar com builds recentes do Docker Desktop — a API Java falha com
- * HTTP 400 em {@code /info} mesmo com o CLI funcionando, e a classe inteira era pulada. Um teste
- * de concorrência que nunca executa não é evidência de nada: foi sob essa cobertura ausente que o
- * defeito corrigido por {@code corrigir-expurgo-merge-version} sobreviveu. Ver
- * {@link PostgresLocalDisponivelCondition}.
+ * Roda em schema dedicado (não via Testcontainers, que não fala com Docker Desktop recente aqui —
+ * a classe inteira era pulada, e foi sob essa cobertura ausente que o defeito corrigido por
+ * {@code corrigir-expurgo-merge-version} sobreviveu). Ver {@link PostgresLocalDisponivelCondition}.
  */
 @SpringBootTest
 @ExtendWith(PostgresLocalDisponivelCondition.class)
@@ -116,12 +111,12 @@ class ConcorrenciaOptimisticaIntegrationTest {
                     CONSTRAINT pk_autorizacoees PRIMARY KEY (id_autorizacao, id_particao_conta)
                 ) PARTITION BY LIST (id_particao_conta);
                 """);
-            // DEFAULT absorve a partição quente (derivada do hash da conta, imprevisível); a de
-            // expurgo é explícita, para que a transferência seja movimentação real entre partições.
+            // DEFAULT absorve a partição quente (hash da conta, imprevisível); a de expurgo é
+            // explícita, para a transferência ser movimentação real entre partições.
             stmt.execute("CREATE TABLE autorizacoes_default PARTITION OF autorizacoes DEFAULT;");
             stmt.execute("CREATE TABLE autorizacoes_pe%d PARTITION OF autorizacoes FOR VALUES IN (%d);"
                     .formatted(PARTICAO_EXPURGO_HOJE, PARTICAO_EXPURGO_HOJE));
-            // Espelha a migration v1.0.4: unicidade da chave de negócio só nas partições quentes.
+            // Espelha a migration v1.0.4 (unicidade só nas partições quentes).
             stmt.execute("""
                 CREATE UNIQUE INDEX uk_autorizacao_empresa_ativa
                     ON autorizacoes (id_particao_conta, id_autorizacao_empresa)
@@ -194,10 +189,9 @@ class ConcorrenciaOptimisticaIntegrationTest {
                 .filter(this::causaContemFalhaDeConcorrencia)
                 .count();
 
-        // Antes da mudanca `corrigir-expurgo-merge-version`, esta classe tolerava "as duas podem
-        // falhar" — resultado registrado como validado empiricamente na spec de concorrencia. Nao
-        // era concorrencia: era a transacao falhando contra si mesma no `merge` de instancia
-        // detached, com ou sem disputa. Corrigido o defeito, exatamente uma tem de vencer.
+        // Antes de `corrigir-expurgo-merge-version`, as duas podiam falhar: nao era concorrencia,
+        // era a transacao falhando contra si mesma no merge de instancia detached. Corrigido o
+        // defeito, exatamente uma tem de vencer.
         assertEquals(1, quantidadeQueVenceu,
                 "Exatamente uma das transacoes concorrentes deve ser confirmada. "
                         + "Primeiro erro: " + primeiroErro.get() + ", Segundo erro: " + segundoErro.get());
@@ -207,14 +201,9 @@ class ConcorrenciaOptimisticaIntegrationTest {
     }
 
     /**
-     * Aceita qualquer {@link ConcurrencyFailureException} — e não apenas a variante otimista —
-     * porque a movimentação de partição muda a *forma* do conflito: quando a transação vencedora
-     * move a linha para outra partição, o PostgreSQL não consegue seguir a cadeia de atualização
-     * e devolve {@code "tuple to be locked was already moved to another partition due to
-     * concurrent update"} (SQLSTATE 40001), que o Spring traduz para
-     * {@code CannotAcquireLockException}, irmã de {@code ObjectOptimisticLockingFailureException}
-     * sob {@code ConcurrencyFailureException}. Ambas significam a mesma coisa para o contrato da
-     * API: conflito real entre chamadores, resposta 409.
+     * Aceita qualquer {@link ConcurrencyFailureException}, não só a variante otimista: mover a
+     * linha de partição faz o Postgres devolver SQLSTATE 40001 ({@code CannotAcquireLockException}
+     * no Spring), não erro de versão — mas ambas viram 409 no contrato da API.
      */
     private boolean causaContemFalhaDeConcorrencia(Throwable t) {
         while (t != null) {
@@ -255,9 +244,8 @@ class ConcorrenciaOptimisticaIntegrationTest {
         aut.setIdPessoaDevedora(UUID.randomUUID());
         aut.setIdPessoaRecebedora(UUID.randomUUID());
         aut.setMetadados("{}");
-        // NÃO setar version explicitamente: Spring Data JPA usa version == null para decidir se a
-        // entidade é nova (persist) ou existente (merge/update). Setar 0L faz o save() tentar um
-        // UPDATE numa linha inexistente e falhar com StaleObjectStateException já no setup do teste.
+        // NÃO setar version: Spring Data usa version == null p/ decidir persist vs merge. Setar 0L
+        // faria save() tentar UPDATE numa linha inexistente e falhar já no setup do teste.
 
         return aut;
     }

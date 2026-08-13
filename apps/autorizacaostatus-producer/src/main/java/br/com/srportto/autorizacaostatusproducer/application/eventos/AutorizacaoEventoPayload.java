@@ -10,13 +10,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Espelho do payload publicado pelo arj-contratocommand: representacao exata da linha
- * da tabela {@code autorizacoes}, com as chaves iguais aos nomes das colunas.
+ * Espelho do payload publicado pelo arj-contratocommand: linha da tabela
+ * {@code autorizacoes}, chaves iguais aos nomes das colunas.
  *
- * <p>{@code ignoreUnknown = true} declara explicitamente o comportamento ja adotado por
- * padrao pelo Jackson 3 nesta app: uma propriedade nova no payload, ainda nao replicada
- * aqui, e ignorada em vez de descartar a mensagem inteira (ver design.md de
- * openspec/changes/rede-seguranca-contrato-evento, decisao D3).
+ * <p>{@code ignoreUnknown = true}: propriedade nova ainda não replicada aqui é ignorada,
+ * não descarta a mensagem inteira (design.md de rede-seguranca-contrato-evento, D3).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AutorizacaoEventoPayload(

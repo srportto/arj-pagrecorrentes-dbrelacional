@@ -11,11 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.ZoneId;
 
-/**
- * Consome um evento de recepção (já filtrado pela subscription SNS para RECEPCAO + PIX_AUTO +
- * SPI_J1) e agenda a expiração: vencimento = data_hora_inclusao (do payload, não do instante de
- * consumo) + prazo configurado.
- */
+/** Agenda a expiração: vencimento = data_hora_inclusao (do payload, não do instante de consumo) + prazo. */
 @Service
 public class AgendarExpiracaoUseCase {
 

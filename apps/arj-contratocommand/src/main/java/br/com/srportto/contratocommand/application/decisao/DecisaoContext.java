@@ -5,10 +5,8 @@ import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.DecisaoAutorizacaoRequest;
 
 /**
- * Contexto imutável da decisão, montado a partir do path ({@code idAutorizacao}), do header
- * ({@code tipoProduto}) e do corpo ({@code dados}). Espelha {@code CancelamentoContext}: os dados
- * lidos do banco ({@code tipoProdutoAutorizacao}, {@code statusAtual}) são preenchidos pelo caso
- * de uso via {@link #comAutorizacaoCarregada} antes da validação, sem mutar nenhum DTO de request.
+ * Contexto imutável da decisão (path + header + corpo). Espelha {@code CancelamentoContext}:
+ * dados do banco preenchidos via {@link #comAutorizacaoCarregada}, sem mutar o request.
  */
 public record DecisaoContext(
         String idAutorizacao,

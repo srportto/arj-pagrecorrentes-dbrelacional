@@ -48,8 +48,7 @@ class ContratacaoValidatorTest {
         ContratacaoValidator validatorComProdutoSuportadoPrimeiro = new ContratacaoValidator(
                 List.of(new ProdutoSuportado(), new DataFimVigenciaInvalida(), new ValorLimiteContrato(), new MetadadoRule()));
 
-        // produto desconhecido E data de vigência no passado: ambas as regras violariam,
-        // mas ProdutoSuportado (primeira na lista) deve reportar o erro antes da data.
+        // Ambas as regras violariam; ProdutoSuportado (primeira) deve reportar antes.
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> validatorComProdutoSuportadoPrimeiro.validar(TestFixtures.criarContext(
                         "CARTAO_CREDITO", new BigDecimal("100"), LocalDate.now().minusDays(1), null,

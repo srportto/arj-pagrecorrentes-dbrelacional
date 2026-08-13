@@ -34,30 +34,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Teste de integração da cascata de localização do `GET /api/autorizacoes/{id}`, contra
- * PostgreSQL real e com partições físicas distintas — sem elas, os três níveis da cascata
- * seriam indistinguíveis.
- *
- * Existe porque o defeito que a mudança `fallback-consulta-autorizacao-expurgada` corrige é
- * invisível a teste mockado: a busca por chave composta "funciona" contra um mock, e só falha
- * quando a linha realmente mudou de partição. Foi assim que o `GET /{id}` passou a devolver 404
- * para toda autorização em estado terminal sem que nenhum teste percebesse.
- *
- * Roda contra o PostgreSQL 18 local (pré-requisito declarado do build, "sem fallback H2") num
- * schema dedicado, criado e destruído por esta própria classe. Ver
- * {@link PostgresLocalDisponivelCondition}.
+ * PostgreSQL real com partições físicas distintas — teste mockado não pega o defeito corrigido
+ * por `fallback-consulta-autorizacao-expurgada` (404 para autorização em estado terminal), pois
+ * "funciona" contra chave composta mockada mesmo quando a linha já mudou de partição. Roda num
+ * schema dedicado, criado e destruído pela própria classe. Ver {@link PostgresLocalDisponivelCondition}.
  */
 @SpringBootTest
 @ExtendWith(PostgresLocalDisponivelCondition.class)
 @DisplayName("Teste de integração: cascata de localização na consulta por id")
 class ConsultaCascataIntegrationTest {
 
-    /** Partição quente "correta": a que os ids de teste carregam embutida. */
+    /** Partição embutida nos ids de teste. */
     private static final int PARTICAO_DO_ID = 5;
 
-    /** Outra partição quente, onde nenhuma autorização deveria estar — usada no cenário de anomalia. */
+    /** Outra partição quente, usada no cenário de anomalia. */
     private static final int PARTICAO_INESPERADA = 7;
 
-    /** Faixa de expurgo: partições arbitrárias dentro de 900–999, não precisam ser a da semana. */
+    /** Partições arbitrárias na faixa de expurgo (900–999). */
     private static final int PARTICAO_EXPURGO = 953;
     private static final int OUTRA_PARTICAO_EXPURGO = 954;
 
@@ -70,8 +63,7 @@ class ConsultaCascataIntegrationTest {
         registry.add("spring.datasource.username", () -> PostgresLocalDisponivelCondition.USUARIO);
         registry.add("spring.datasource.password", () -> PostgresLocalDisponivelCondition.SENHA);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
-        // A app é somente leitura por padrão; o setup deste teste escreve via JDBC puro, mas o
-        // datasource do Spring precisa poder gravar as fixtures pelo repositório.
+        // App é read-only por padrão, mas o setup grava fixtures via repositório.
         registry.add("spring.datasource.hikari.read-only", () -> "false");
     }
 
@@ -158,8 +150,7 @@ class ConsultaCascataIntegrationTest {
     @Test
     @DisplayName("N2: autorizacao expurgada e encontrada na faixa de expurgo")
     void nivel2_AutorizacaoExpurgada() {
-        // Id gerado para a partição quente 5, mas a linha reside na 953 — exatamente o que o
-        // ExpurgoAutorizacaoService produz ao levar a autorização a estado terminal.
+        // Id da partição 5, linha na 953 — o que o expurgo produz ao levar a autorização a estado terminal.
         UUID id = persistir(PARTICAO_DO_ID, PARTICAO_EXPURGO, 6, "REJEITADA_SISTEMA_TIMEOUT_J1");
 
         AutorizacaoDetalheResponseDto dto = service.consultarPorId(id);
@@ -172,7 +163,7 @@ class ConsultaCascataIntegrationTest {
     @Test
     @DisplayName("N3: autorizacao em particao quente inesperada e encontrada (anomalia)")
     void nivel3_ParticaoQuenteInesperada() {
-        // Nem na partição do próprio id, nem no expurgo: viola o invariante de localização.
+        // Nem na partição do id, nem no expurgo: viola o invariante de localização.
         UUID id = persistir(PARTICAO_DO_ID, PARTICAO_INESPERADA, 4, "AUTORIZACAO_ACEITA_POR_TODOS");
 
         AutorizacaoDetalheResponseDto dto = service.consultarPorId(id);
@@ -192,9 +183,7 @@ class ConsultaCascataIntegrationTest {
     @Test
     @DisplayName("Mesma autorizacao em duas particoes nao e resolvida silenciosamente")
     void duplicidadeEntreParticoes_NaoEscolheUma() {
-        // A duplicidade precisa cair DENTRO de um mesmo nível para ser observável: se uma das
-        // cópias estivesse na partição do próprio id, N1 a encontraria e a cascata pararia ali.
-        // Duas cópias na faixa de expurgo é o resíduo plausível de uma transferência interrompida.
+        // Duplicidade precisa cair dentro do mesmo nível para ser observável — daí as duas cópias no expurgo.
         UUID id = ReversibleUUIDv7.generate(PARTICAO_DO_ID);
         inserir(id, PARTICAO_EXPURGO, 6, "REJEITADA_SISTEMA_TIMEOUT_J1");
         inserir(id, OUTRA_PARTICAO_EXPURGO, 5, "CANCELADA_PELO_PAGADOR");
@@ -211,10 +200,7 @@ class ConsultaCascataIntegrationTest {
         return id;
     }
 
-    /**
-     * Insere via JDBC puro, e não pelo repositório: é o único jeito de colocar a linha numa
-     * partição diferente da embutida no id — que é exatamente o cenário sob teste.
-     */
+    /** Insere via JDBC puro — único jeito de colocar a linha numa partição diferente da embutida no id. */
     private void inserir(UUID id, int particao, int status, String motivoStatus) {
         Autorizacao a = new Autorizacao();
         a.setIdAutorizacao(new IdAutorizacao(id, particao));

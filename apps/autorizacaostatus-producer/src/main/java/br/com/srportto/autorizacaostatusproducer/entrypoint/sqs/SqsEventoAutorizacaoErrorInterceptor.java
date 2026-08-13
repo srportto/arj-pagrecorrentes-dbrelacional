@@ -12,19 +12,9 @@ import java.util.IdentityHashMap;
 import java.util.Set;
 
 /**
- * Ponto único de classificação de falha do consumo da fila — equivalente ao
- * {@code ApiExceptionHandler} do lado REST, mas para o escopo de mensageria: registrado
- * como error handler central do container (nunca duplicado em {@code catch} dentro do
- * método {@code @SqsListener}).
- *
- * <p>O contrato inverte em relação ao listener manual anterior: engolir a exceção
- * (retornar normalmente) faz o container tratar a mensagem como recuperada e confirmar
- * o ack; relançar mantém a mensagem sem ack, retornando à fila após o visibility
- * timeout. Não há retorno booleano interpretado por outra classe.
- *
- * <p>Nenhum log daqui carrega o body da mensagem: o payload contém dado pessoal. A
- * mensagem é identificada pelo {@code messageId} do SQS — preservado como o
- * {@code MessageHeaders.ID} da mensagem pelo conversor do Spring Cloud AWS.
+ * Ponto único de classificação de falha do consumo — equivalente ao {@code ApiExceptionHandler}
+ * do lado REST. Engolir a exceção confirma o ack; relançar mantém a mensagem na fila até o
+ * visibility timeout. Nenhum log carrega o body (dado pessoal) — só o {@code messageId}.
  */
 @Component
 public class SqsEventoAutorizacaoErrorInterceptor implements ErrorHandler<String> {
@@ -45,17 +35,12 @@ public class SqsEventoAutorizacaoErrorInterceptor implements ErrorHandler<String
         throw relancavel(t);
     }
 
-    /**
-     * O framework espera que exceções relançadas por um {@code ErrorHandler} sejam
-     * {@code RuntimeException} — encapsula qualquer checked exception sem perder a causa.
-     */
+    /** ErrorHandler só relança RuntimeException — encapsula checked exception sem perder a causa. */
     private RuntimeException relancavel(Throwable t) {
         return t instanceof RuntimeException runtimeException ? runtimeException : new IllegalStateException(t);
     }
 
-    /**
-     * Percorre a cadeia protegendo contra ciclo — o JDK só impede {@code cause == this}.
-     */
+    /** Protege contra ciclo na cadeia de causas — o JDK só impede {@code cause == this}. */
     private boolean contemEventoInvalido(Throwable t) {
         Set<Throwable> visitados = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Throwable atual = t; atual != null && visitados.add(atual); atual = atual.getCause()) {

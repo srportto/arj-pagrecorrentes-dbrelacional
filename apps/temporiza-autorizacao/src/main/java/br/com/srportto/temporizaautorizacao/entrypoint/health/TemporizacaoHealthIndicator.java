@@ -9,14 +9,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Reflete no /actuator/health o estado do consumo da fila SQS (via
- * {@link MessageListenerContainerRegistry}, mesmo padrão do autorizacaostatus-producer), a
- * conexão com o Valkey (via {@code PING}) e a contagem de consumidores do consumer group do
- * stream de expirações (sinal operacional — ver change limpar-consumidores-orfaos-stream).
- * Listener parado durante shutdown intencional não é falha; falha de PING no Valkey é — sem ele,
- * nem o agendamento nem a varredura funcionam. Divergência entre consumidores e instâncias vivas
- * NÃO derruba o health-check: o número correto acompanha o autoscaling e não é conhecido de
- * antemão pela aplicação.
+ * Reflete o consumo SQS, a conexão Valkey (PING) e a contagem de consumidores do stream de
+ * expirações. Shutdown intencional do listener não é falha; PING falho é. Divergência entre
+ * consumidores e instâncias vivas não derruba o health-check (número esperado é desconhecido).
  */
 @Component("temporizacao")
 public class TemporizacaoHealthIndicator implements HealthIndicator {
@@ -55,7 +50,7 @@ public class TemporizacaoHealthIndicator implements HealthIndicator {
         return (saudavel ? builder.up() : builder.down()).build();
     }
 
-    /** Sinal, não alarme: consumer group ainda inexistente (nenhuma expiração disparou) não é falha. */
+    /** Consumer group ainda inexistente não é falha, só ausência de sinal. */
     private void contarConsumidores(Health.Builder builder) {
         try {
             int total = redisTemplate.opsForStream()

@@ -33,9 +33,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * A publicação na DLT (eventos-autorizacao.DLT) é roteada por tipo de valor do record:
- * bytes crus (falha de desserialização) vão pelo template de bytes; o record já
- * desserializado (falha de negócio) vai pelo template Avro. Ver design.md D2.
+ * Publicação na DLT é roteada por tipo do valor do record: bytes crus (falha de
+ * desserialização) pelo template de bytes; record já desserializado (falha de negócio) pelo Avro.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes da DLT (DeadLetterPublishingRecoverer) do KafkaConsumerConfig")

@@ -18,16 +18,11 @@ import br.com.srportto.contratoquery.shared.exceptions.ApplicationException;
 import br.com.srportto.contratoquery.shared.exceptions.ResourceNotFoundException;
 
 /**
- * Localiza uma autorização por id percorrendo uma cascata de até três níveis, cujos conjuntos de
- * partições são disjuntos entre si e, juntos, cobrem a tabela inteira.
- *
- * <p>A cascata existe porque a partição em que a linha reside <strong>deixou de ser derivável do
- * id</strong>: o {@code ReversibleUUIDv7} carrega a partição de criação, imutável, mas o
- * {@code ExpurgoAutorizacaoService} do {@code arj-contratocommand} transfere toda autorização em
- * estado terminal para a faixa de expurgo (900–999, balde semanal). Sem a cascata, o
- * {@code GET /{id}} devolve 404 para toda autorização cancelada, rejeitada ou expirada.
- *
- * <p>Quem mexer no particionamento precisa saber que é isto que quebra.
+ * Localiza uma autorização por id numa cascata de até três níveis (partições disjuntas, cobrindo
+ * a tabela inteira). Necessária porque a partição da linha deixa de ser derivável do id: o
+ * {@code ReversibleUUIDv7} carrega a partição de criação, imutável, mas o expurgo transfere
+ * autorizações em estado terminal para a faixa 900–999. Sem a cascata, {@code GET /{id}} devolve
+ * 404 para toda autorização cancelada, rejeitada ou expirada.
  */
 @Service
 public class ConsultarAutorizacaoService {
@@ -42,11 +37,7 @@ public class ConsultarAutorizacaoService {
 
     private final AutorizacaoRepository repository;
 
-    /**
-     * Habilita o nível 3 da cascata. Desligá-lo reduz o custo do caminho de "não encontrado" —
-     * o pior caso da cascata é o id inexistente, que percorre todos os níveis habilitados antes
-     * do 404 — ao preço de perder a deteção de anomalia de localização.
-     */
+    /** Habilita o nível 3 da cascata; desligar reduz o custo do "não encontrado" ao preço de perder a deteção de anomalia. */
     private final boolean buscaEmParticoesInesperadasHabilitada;
 
     public ConsultarAutorizacaoService(
@@ -100,11 +91,7 @@ public class ConsultarAutorizacaoService {
         throw autorizacaoNaoEncontrada(autorizacaoId);
     }
 
-    /**
-     * Mais de uma linha para o mesmo id significa a mesma autorização existindo em duas partições
-     * — corrupção, provável resíduo de transferência de partição interrompida. É condição de
-     * investigação, não de desempate automático: nenhuma das linhas é escolhida.
-     */
+    /** Mais de uma linha para o mesmo id é corrupção (resíduo de transferência interrompida) — não desempata, lança erro. */
     private Optional<Autorizacao> umaUnica(List<Autorizacao> encontradas, UUID autorizacaoId) {
         if (encontradas.size() > 1) {
             var particoes = encontradas.stream()
@@ -118,12 +105,7 @@ public class ConsultarAutorizacaoService {
         return encontradas.stream().findFirst();
     }
 
-    /**
-     * Deriva a particao a partir do proprio UUID (ReversibleUUIDv7). Um id que nao
-     * tenha sido gerado pelo ReversibleUUIDv7, ou cuja particao esteja fora da faixa
-     * de particoes quentes, nao pode corresponder a nenhuma autorizacao persistida -> 404
-     * sem tocar no banco.
-     */
+    /** Deriva a partição do UUID; id inválido ou fora da faixa quente -> 404 sem tocar no banco. */
     private int extrairParticao(UUID autorizacaoId) {
         int idParticaoConta;
         try {

@@ -7,22 +7,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.sql.DriverManager;
 
 /**
- * Desabilita a classe de teste anotada, de forma visível no relatório do Surefire ("Skipped"),
- * quando o PostgreSQL local exigido pelo build não está acessível — em vez de
- * {@code Assumptions.assumeTrue} num {@code @BeforeAll} de {@code @SpringBootTest}, que aborta a
- * classe inteira e é reportado como "Tests run: 0", indistinguível de uma classe sem testes.
+ * Desabilita a classe de teste anotada de forma visível no Surefire ("Skipped") quando o
+ * PostgreSQL local não está acessível — diferente de {@code Assumptions.assumeTrue} num
+ * {@code @BeforeAll}, que reporta "Tests run: 0", indistinguível de classe sem testes.
  *
- * Por que a instância local e não Testcontainers: o Testcontainers 1.19.8 usado por este projeto
- * não consegue falar com builds recentes do Docker Desktop (a API Java falha com HTTP 400 em
- * {@code /info}, mesmo com o CLI funcionando), e as classes de teste de integração eram sempre
- * puladas. Um teste que nunca executa não protege nada — foi sob essa cobertura ausente que o
- * defeito corrigido por {@code corrigir-expurgo-merge-version} sobreviveu. O PostgreSQL 18 local
- * já é pré-requisito declarado do build ("sem fallback H2"), então usá-lo torna estes testes
- * efetivamente executáveis.
+ * Usa instância local em vez de Testcontainers porque a versão usada aqui não fala com builds
+ * recentes do Docker Desktop (HTTP 400 em {@code /info}), pulando sempre a classe — foi sob essa
+ * cobertura ausente que o defeito de {@code corrigir-expurgo-merge-version} sobreviveu.
  *
- * A senha vem exclusivamente de {@code DB_PASSWORD}, sem valor padrão — mesma postura de
- * {@code apps/docker-compose.yml} e {@code infra/local/postgres/.env.example}, que se recusam a
- * embutir credencial.
+ * Senha vem só de {@code DB_PASSWORD}, sem default, como em {@code docker-compose.yml}.
  */
 public class PostgresLocalDisponivelCondition implements ExecutionCondition {
 

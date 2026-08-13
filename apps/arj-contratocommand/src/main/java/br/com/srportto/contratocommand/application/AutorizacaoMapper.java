@@ -23,12 +23,9 @@ public interface AutorizacaoMapper {
     @Mapping(source = "dados.indicadorUsoLimiteConta", target = "indicadorUsoLimiteConta")
     @Mapping(source = "dados.descricao", target = "descricao")
     @Mapping(target = "idAutorizacao", ignore = true)
-    // Ignorado para nao deixar o MapStruct gerar um Enum.valueOf implicito (case-sensitive, lanca
-    // IllegalArgumentException nao mapeada); a resolucao real e feita via obterTipoProdutoEnumPorNome
-    // no afterMapping abaixo.
+    // Evita Enum.valueOf implícito do MapStruct (case-sensitive); resolvido no afterMapping.
     @Mapping(target = "tipoProduto", ignore = true)
-    // Ignorado pelo mesmo motivo de tipoProduto acima: setado explicitamente no afterMapping,
-    // não via matching implícito de parâmetro por nome/tipo.
+    // Setado explicitamente no afterMapping, mesmo motivo de tipoProduto.
     @Mapping(target = "tipoJornada", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "motivoStatus", ignore = true)

@@ -140,7 +140,6 @@ class DecidirAutorizacaoUseCaseTest {
         ApplicationException ex = assertThrows(ApplicationException.class,
                 () -> useCase.execute(contexto(uuid, "APROVAR")));
 
-        // Verifica que a exceção original foi preservada como causa
         assertNotNull(ex.getCause());
         assertSame(causaOriginal, ex.getCause());
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));

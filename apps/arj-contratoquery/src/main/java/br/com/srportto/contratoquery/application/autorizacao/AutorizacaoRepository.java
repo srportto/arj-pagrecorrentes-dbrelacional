@@ -14,10 +14,9 @@ import br.com.srportto.contratoquery.domain.entities.IdAutorizacao;
 
 public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {
 
-    // Sem poda de partição (id_unico_conta_contratante não é a chave de particionamento):
-    // varre as 889 partições quentes. plan_cache_mode=force_generic_plan (application.yaml)
-    // amortiza o CUSTO DE PLANEJAMENTO a quase zero, mas não muda o custo de EXECUÇÃO da
-    // varredura — ver openspec/changes/reduzir-custo-planejamento-consultas/design.md.
+    // Varre as 889 partições quentes (idUnicoContaContratante não é a chave de particionamento).
+    // plan_cache_mode=force_generic_plan amortiza o planejamento, não a execução — ver design.md
+    // de reduzir-custo-planejamento-consultas.
     @Query("SELECT a FROM Autorizacao a WHERE a.idUnicoContaContratante = :idUnicoContaContratante AND a.status IN :statuses")
     Page<Autorizacao> findByIdUnicoContaContratanteAndStatusIn(
             @Param("idUnicoContaContratante") UUID idUnicoContaContratante,
@@ -30,16 +29,10 @@ public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAuto
             Pageable pageable);
 
     /**
-     * Nível 2 da cascata de localização: procura na faixa de partições de expurgo, para onde toda
-     * autorização em estado terminal é transferida.
-     *
-     * <p>A busca é por faixa, e não por partição exata, porque a partição de expurgo deriva da
-     * <strong>data da transição terminal</strong> — informação que não existe no id. O
-     * {@code >=} permite ao PostgreSQL podar as partições quentes no planejamento (medido: 100
-     * subplanos em vez de 989).
-     *
-     * <p>Devolve lista, e não {@code Optional}, para que a presença de mais de uma linha com o
-     * mesmo id seja detectável pelo chamador em vez de silenciosamente desempatada.
+     * Nível 2 da cascata: faixa de expurgo, para onde toda autorização em estado terminal é
+     * transferida. Busca por faixa (não partição exata) porque a partição de expurgo deriva da
+     * data da transição, que não existe no id; {@code >=} permite ao PostgreSQL podar as
+     * partições quentes. Devolve lista, não {@code Optional}, para o chamador detectar duplicidade.
      */
     @Query("""
             SELECT a FROM Autorizacao a
@@ -51,13 +44,8 @@ public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAuto
             @Param("primeiraParticaoExpurgo") int primeiraParticaoExpurgo);
 
     /**
-     * Nível 3 da cascata: procura nas demais partições quentes, excluindo a derivada do próprio
-     * id (já consultada no nível 1) e a faixa de expurgo (já consultada no nível 2).
-     *
-     * <p>Encontrar algo aqui significa que a linha violou o invariante "ou está na partição do
-     * seu id, ou está no expurgo" — é rede de segurança, não caminho normal. A exclusão explícita
-     * do que já foi consultado mantém os três níveis disjuntos, de modo que um acerto neste nível
-     * seja, por definição, anomalia.
+     * Nível 3 da cascata: demais partições quentes, excluindo as já cobertas pelos níveis 1 e 2.
+     * Achar algo aqui é anomalia — viola o invariante "ou está na partição do id, ou no expurgo".
      */
     @Query("""
             SELECT a FROM Autorizacao a

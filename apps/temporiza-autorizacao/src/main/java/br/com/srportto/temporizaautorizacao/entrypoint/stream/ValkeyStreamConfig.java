@@ -21,28 +21,20 @@ import org.springframework.data.redis.stream.Subscription;
 import java.time.Duration;
 
 /**
- * Cria o consumer group do stream de expirações (idempotente — ignora "já existe") e registra a
- * subscription com ACK MANUAL: o container só confirma quando {@link ExpiracaoStreamListener}
- * chama {@code acknowledge} explicitamente, nunca automaticamente após o retorno do listener.
+ * Cria o consumer group do stream de expirações (idempotente) e registra a subscription com ACK
+ * MANUAL — só confirma via {@link ExpiracaoStreamListener#processarEConfirmarSeConcluido}, nunca
+ * automaticamente. No encerramento gracioso remove o consumidor desta instância (camada 1 da
+ * higiene de órfãos; camada 2 é {@link ConsumidoresOrfaosLimpezaScheduler}).
  *
- * <p>Também remove, no encerramento gracioso, o consumidor desta instância — camada 1 da higiene
- * de consumidores órfãos (camada 2 é a varredura periódica de
- * {@link ConsumidoresOrfaosLimpezaScheduler}). Ver {@code openspec/changes/limpar-consumidores-orfaos-stream}.
- *
- * <p><b>Por que {@link SmartLifecycle} e não {@code @PreDestroy}:</b> confirmado empiricamente
- * (verificação manual com 2 réplicas) que {@code @PreDestroy} roda tarde demais — o
- * {@code LettuceConnectionFactory} já implementa {@code SmartLifecycle} com fase padrão (0) e é
- * parado (fase de {@code Lifecycle.stop()}) **antes** da fase de destruição de beans
- * ({@code @PreDestroy}/{@code DisposableBean}) no fechamento do contexto Spring — a remoção
- * falhava com {@code IllegalStateException} porque a conexão já estava parada. Implementar
- * {@link SmartLifecycle} com fase maior que a do connection factory garante que {@link #stop()}
- * rode **antes**, com a conexão ainda viva.
+ * <p>Usa {@link SmartLifecycle} (não {@code @PreDestroy}): o {@code LettuceConnectionFactory} para
+ * sua conexão antes da fase de destruição de beans, e {@code @PreDestroy} rodaria tarde demais
+ * (confirmado empiricamente). Fase maior garante que {@link #stop()} rode antes, com conexão viva.
  */
 @Configuration
 @EnableConfigurationProperties(TemporizacaoProperties.class)
 public class ValkeyStreamConfig implements SmartLifecycle {
 
-    /** Maior que a fase padrão (0) do LettuceConnectionFactory: para primeiro, conexão ainda viva. */
+    /** Maior que a fase padrão (0) do LettuceConnectionFactory: garante conexão viva em {@link #stop()}. */
     private static final int FASE_PARADA_ANTES_DA_CONEXAO = 100;
 
     private volatile boolean running = false;
@@ -123,11 +115,7 @@ public class ValkeyStreamConfig implements SmartLifecycle {
         running = true;
     }
 
-    /**
-     * Camada 1 da higiene de consumidores órfãos: remove o consumidor desta instância no
-     * encerramento gracioso, se não tiver pendência. Falha aqui é higiene, não trabalho de
-     * negócio — nunca propaga exceção nem atrasa o shutdown.
-     */
+    /** Camada 1 da higiene de órfãos. Falha aqui é higiene, não negócio — nunca propaga nem atrasa o shutdown. */
     @Override
     public void stop() {
         try {
