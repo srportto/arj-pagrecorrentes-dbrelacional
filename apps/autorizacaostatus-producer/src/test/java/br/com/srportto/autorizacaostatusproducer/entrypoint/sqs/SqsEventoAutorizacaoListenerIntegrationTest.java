@@ -33,13 +33,10 @@ import static org.mockito.Mockito.verify;
 
 /**
  * Testes de integração do adaptador {@code @SqsListener} contra a fila real do Floci —
- * o {@code useCase} é mockado para isolar o teste do Kafka/Schema Registry e exercitar
- * só a ponte SQS: ack/retenção conforme a classificação do
- * {@link SqsEventoAutorizacaoErrorInterceptor}, através do pipeline real do Spring Cloud
- * AWS (não chamadas diretas de método).
+ * {@code useCase} é mockado para isolar do Kafka e exercitar só a ponte SQS (ack/retenção)
+ * pelo pipeline real do Spring Cloud AWS.
  *
- * <p>Requer o Floci no ar com a fila {@code SQS-eventos-autorizacao} provisionada (ver
- * {@code infra/envs/local-messaging}) — mesmo pré-requisito de {@code mvn spring-boot:run}.
+ * <p>Requer o Floci no ar com {@code SQS-eventos-autorizacao} provisionada.
  */
 @SpringBootTest
 @DisplayName("Testes de integração do SqsEventoAutorizacaoListener (Floci real)")
@@ -97,12 +94,9 @@ class SqsEventoAutorizacaoListenerIntegrationTest {
     }
 
     /**
-     * A contagem é feita por DELTA em relação à baseline capturada antes do envio — não
-     * por valor absoluto. Uma mensagem retryable de outro teste desta classe fica em voo
-     * (invisível) pelo visibility timeout inteiro da fila (60s, ver
-     * {@code infra/envs/local-messaging}), tempo maior que a duração deste teste, e por
-     * isso não é drenável pelo {@code @BeforeEach}. Um valor absoluto quebraria sob essa
-     * pré-existência; o delta é robusto à ordem de execução dos testes.
+     * Contagem por DELTA em relação à baseline, não valor absoluto: uma mensagem retryable
+     * de outro teste fica em voo pelo visibility timeout inteiro (60s) e não é drenável
+     * pelo {@code @BeforeEach}.
      */
     @Test
     @DisplayName("processamento bem-sucedido: mensagem é removida da fila (ack)")
@@ -153,8 +147,7 @@ class SqsEventoAutorizacaoListenerIntegrationTest {
             }
         });
 
-        // a mensagem segue contabilizada na fila (visível ou em voo) — nunca removida,
-        // mesmo após a tentativa de processamento
+        // segue contabilizada na fila (visível ou em voo) — nunca removida
         assertEquals(baseline + 1, mensagensNaFila());
     }
 

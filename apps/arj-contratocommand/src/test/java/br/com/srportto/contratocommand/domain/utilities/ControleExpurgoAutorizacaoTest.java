@@ -73,14 +73,12 @@ class ControleExpurgoAutorizacaoTest {
   void testTodosOsValoresNo900A999() {
     Set<Integer> particoesGeradas = new HashSet<>();
 
-    // Testa 1000 semanas diferentes para garantir cobertura completa do range 900-999
     for (int semanas = 0; semanas < 1000; semanas++) {
       LocalDate data = EPOCH_DAY.plusWeeks(semanas);
       int particao = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(data);
       particoesGeradas.add(particao);
     }
 
-    // Valida que todos os valores de 900 a 999 foram gerados
     assertEquals(100, particoesGeradas.size(), "Deveria gerar exatamente 100 valores diferentes");
     
     for (int i = 900; i <= 999; i++) {
@@ -92,7 +90,6 @@ class ControleExpurgoAutorizacaoTest {
   @Test
   @DisplayName("Deve estar sempre entre 900 e 999")
   void testResultadoSempreNoRange() {
-    // Testa datas em vários períodos
     LocalDate[] datas = {
         LocalDate.of(1970, 1, 1),    // Época
         LocalDate.of(2000, 1, 1),    // Ano 2000
@@ -111,7 +108,6 @@ class ControleExpurgoAutorizacaoTest {
   @Test
   @DisplayName("Deve respeitar a fórmula (semanas % 100) + 900")
   void testFórmulaExata() {
-    // Testa 300 semanas para validar a fórmula
     for (int semanas = 0; semanas < 300; semanas++) {
       LocalDate data = EPOCH_DAY.plusWeeks(semanas);
       int resultado = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(data);
@@ -143,14 +139,8 @@ class ControleExpurgoAutorizacaoTest {
 
     System.out.println("data-referencia,particao-write,particao-drop");
 
-
-    // Testa um intervalo grande de datas futuras para cobrir todas as partições
-    // A lógica é: particaoExpurgoDrop = (particaoExpurgoWrite(dataRef) + 2) % 100 + 900
-    // 
-    // Nota: Sempre há uma partição que conflita com a partição de escrita atual, 
-    // causando uma BusinessException. Por isso, em um teste sincronizado com data fixa,
-    // apenas 99 partições podem ser geradas. Para gerar todas as 100, seria necessário
-    // executar o teste em 100 momentos diferentes do tempo (100 semanas entre cada execução).
+    // Sempre há uma partição que conflita com a partição de escrita atual (BusinessException),
+    // então com data fixa só 99 das 100 partições podem ser geradas nesta execução.
     for (int semanas = 10; semanas < 1010; semanas++) {
       LocalDate dataReferencia = dataAtual.plusWeeks(semanas);  
       
@@ -162,23 +152,18 @@ class ControleExpurgoAutorizacaoTest {
 
         particoesGeradas.add(particaoDrop);
       } catch (Exception e) {
-        // Ignora exceções de validação de negócio
-        // (data de referência ou conflito com partição de escrita atual)
+        // Ignora conflito esperado com a partição de escrita atual
       }
     }
 
-    // Valida que foram geradas pelo menos 99 partições
-    // (a 100ª partição seria aquela que conflita com a partição de escrita atual)
-    assertTrue(particoesGeradas.size() >= 99, 
+    assertTrue(particoesGeradas.size() >= 99,
         "Deveria gerar no mínimo 99 valores diferentes. Gerados: " + particoesGeradas.size());
-    
-    // Valida que todas as partições geradas estão no range correto
+
     for (int particao : particoesGeradas) {
       assertTrue(particao >= 900 && particao <= 999,
           "Partição " + particao + " fora do range [900, 999]");
     }
-    
-    // Valida que há apenas uma partição faltante (máximo 1)
+
     Set<Integer> faltantes = new HashSet<>();
     for (int i = 900; i <= 999; i++) {
       if (!particoesGeradas.contains(i)) {

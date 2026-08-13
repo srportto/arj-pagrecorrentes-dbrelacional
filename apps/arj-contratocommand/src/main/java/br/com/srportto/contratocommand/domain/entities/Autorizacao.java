@@ -25,11 +25,9 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-// A unicidade de id_autorizacao_empresa NÃO é declarada aqui: desde a migration v1.0.4 ela é um
-// índice único PARCIAL (`WHERE id_particao_conta < 900`, só as partições quentes), forma que JPA
-// não sabe expressar. Declará-la como @UniqueConstraint prometeria uma garantia diferente da que o
-// banco impõe — e, com ddl-auto: none, seria só documentação errada. Ver
-// infra/local/postgres/migrations/v1.0.4 para o racional.
+// Unicidade de id_autorizacao_empresa NÃO é declarada aqui: é índice único PARCIAL desde a v1.0.4
+// (só partições quentes), forma que JPA não expressa. @UniqueConstraint prometeria garantia
+// diferente da real. Ver infra/local/postgres/migrations/v1.0.4.
 @Table(name = "autorizacoes") // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
 public class Autorizacao {
 
@@ -65,9 +63,8 @@ public class Autorizacao {
     @Column(name = "valor", nullable = false, precision = 17, scale = 2)
     private BigDecimal valorAutorizacao;
 
-    // Unicidade real: constraint composta (id_particao_conta, id_autorizacao_empresa), declarada
-    // em @Table acima — não `unique = true` aqui, que geraria constraint de coluna única sem a
-    // chave de particionamento, rejeitada pelo Postgres em tabela PARTITION BY.
+    // Unicidade real é a constraint composta declarada em @Table; `unique = true` aqui geraria
+    // constraint de coluna única sem a chave de particionamento, rejeitada em tabela PARTITION BY.
     @Column(name = "id_autorizacao_empresa", nullable = false)
     private String idAutorizacaoEmpresa;
 
@@ -91,8 +88,7 @@ public class Autorizacao {
     private short indicadorTipoMensageria; // 0 - nao utiliza mensageria, 1 - utiliza mensageria SPI , 2 ...
 
     @Column(name = "codigo_canal_contratacao", nullable = false)
-    private String codigoCanalContratacao; // C1 - canal presencial, C2 - canal digital, C3 - canal central de
-                                           // atendimento
+    private String codigoCanalContratacao; // C1 - presencial, C2 - digital, C3 - central de atendimento
 
     @Column(name = "descricao", nullable = true)
     private String descricao;
@@ -125,10 +121,8 @@ public class Autorizacao {
     }
 
     /**
-     * Inicializa esta autorização para criação: gera a chave composta (UUID + partição embutida),
-     * marca o status inicial conforme o produto (fonte da verdade: {@link #STATUS_INICIAL_POR_PRODUTO})
-     * e aplica os defaults de datas/indicadores. O {@code motivoStatus} é responsabilidade do mapper
-     * (derivado de {@code MotivoStatusAutorizacao} conforme a jornada), não deste método.
+     * Gera a chave composta, marca o status inicial por produto ({@link #STATUS_INICIAL_POR_PRODUTO})
+     * e aplica defaults. {@code motivoStatus} é responsabilidade do mapper, não deste método.
      */
     public Autorizacao inicializaCriacao() {
 

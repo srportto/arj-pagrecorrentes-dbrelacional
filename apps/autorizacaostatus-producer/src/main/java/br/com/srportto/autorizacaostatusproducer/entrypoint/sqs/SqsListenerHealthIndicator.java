@@ -6,16 +6,10 @@ import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
 
 /**
- * Reflete no /actuator/health o estado real do consumo da fila, via
- * {@link MessageListenerContainerRegistry} do Spring Cloud AWS.
+ * Reflete no /actuator/health o estado real do consumo da fila.
  *
- * <p>{@code registry.isRunning()} equivale à antiga flag {@code SmartLifecycle} do
- * listener manual: falso durante shutdown intencional. Já o {@code isRunning()} de cada
- * container individual equivale à antiga liveness da thread de polling — um container
- * parado enquanto o registry ainda está ativo é um outage que não deve passar
- * despercebido, assim como a thread morta era antes.
- *
- * <p>Listener parado NÃO é falha: durante o shutdown a parada é intencional.
+ * <p>Registry parado = shutdown intencional → UP. Container parado com registry ativo =
+ * outage que não deve passar despercebido → DOWN.
  */
 @Component("sqsListener")
 public class SqsListenerHealthIndicator implements HealthIndicator {

@@ -4,9 +4,8 @@ import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
 
 /**
- * Contexto imutável da contratação, montado a partir do header ({@code tipoJornada}, já
- * resolvido para enum) e do corpo ({@code dados}). Não há enriquecimento pré-validação na
- * contratação (ao contrário do cancelamento), por isso não há wither.
+ * Contexto imutável da contratação (header + corpo). Sem enriquecimento pré-validação (ao
+ * contrário do cancelamento), por isso não há wither.
  */
 public record ContratacaoContext(
         TipoJornadaAutorizacao tipoJornada,

@@ -39,8 +39,7 @@ public class ProcessarEventoAutorizacaoUseCase {
     public void processar(String mensagemJson) {
         AutorizacaoEventoPayload payload = desserializar(mensagemJson);
 
-        // valida antes de converter/gerar key/produzir: campo obrigatorio nulo passa pelo
-        // builder Avro em silencio e so falharia adiante, fora da classificacao
+        // valida antes: campo obrigatório nulo passa em silêncio pelo builder Avro
         validator.validar(payload);
 
         TipoEventoAutorizacao tipoEvento = derivarTipoEvento(payload);
@@ -54,11 +53,9 @@ public class ProcessarEventoAutorizacaoUseCase {
     }
 
     /**
-     * Nunca propaga a exceção do Jackson como {@code cause}: a mensagem de erro de coerção
-     * de tipo embute o <em>valor</em> do campo, e {@code id_pessoa_*} (UUID) e
-     * {@code valor}/{@code valor_limite} (BigDecimal) são justamente os campos com PII. O
-     * {@code getPathReference()} dá o caminho do campo sem o valor — diagnóstico suficiente,
-     * sem vazamento no log de descarte (que imprime a stack trace inteira).
+     * Não propaga a exceção do Jackson como {@code cause}: a mensagem de erro de coerção
+     * embute o <em>valor</em> do campo (PII em id_pessoa_* e valor). {@code getPathReference()}
+     * dá o caminho sem o valor.
      */
     private AutorizacaoEventoPayload desserializar(String mensagemJson) {
         try {
@@ -87,7 +84,7 @@ public class ProcessarEventoAutorizacaoUseCase {
         try {
             return converter.converter(payload);
         } catch (RuntimeException e) {
-            // sem cause: a excecao do Avro pode embutir o valor do campo rejeitado
+            // sem cause: exceção do Avro pode embutir o valor do campo rejeitado
             throw new EventoAutorizacaoInvalidoException(
                     "Falha ao converter o payload para o schema Avro ("
                             + e.getClass().getSimpleName() + ")");

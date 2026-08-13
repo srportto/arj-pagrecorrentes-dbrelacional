@@ -105,8 +105,7 @@ class CancelarAutorizacaoUseCaseTest {
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
                 .thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
 
-        // A exceção propaga para fora do execute() (anotado com @Transactional), o container
-        // faz rollback de qualquer alteração já aplicada na transação.
+        // execute() é @Transactional: exceção propagada faz o container fazer rollback.
         assertThrows(RuntimeException.class, () -> useCase.execute(request));
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
@@ -122,7 +121,6 @@ class CancelarAutorizacaoUseCaseTest {
 
         ApplicationException ex = assertThrows(ApplicationException.class, () -> useCase.execute(request));
 
-        // Verifica que a exceção original foi preservada como causa
         assertNotNull(ex.getCause());
         assertSame(causaOriginal, ex.getCause());
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));

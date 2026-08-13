@@ -10,11 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Testes unitários da rule TransicaoStatusValida.
- * Valida que apenas autorizações em estado ATIVA podem ser canceladas (único status com aresta
- * para CANCELADA no grafo de StatusAutorizacao).
- */
+/** Só ATIVA tem aresta para CANCELADA no grafo de StatusAutorizacao; demais status devem falhar. */
 @DisplayName("Testes da regra TransicaoStatusValida")
 class TransicaoStatusValidaTest {
 

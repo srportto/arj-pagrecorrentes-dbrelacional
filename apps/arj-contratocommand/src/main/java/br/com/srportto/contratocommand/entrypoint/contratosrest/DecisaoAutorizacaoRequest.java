@@ -5,9 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 /**
- * Corpo da requisição de decisão sobre autorização em RECEBIDA. O valor de {@code acao} é
- * validado contra o enum {@code AcaoDecisao} pela rule {@code AcaoDecisaoValida} (BusinessException,
- * não Enum.valueOf implícito) — mesmo padrão já usado para {@code tipoProduto} na criação.
+ * Corpo da decisão sobre autorização em RECEBIDA. {@code acao} é validado contra o enum
+ * {@code AcaoDecisao} pela rule {@code AcaoDecisaoValida} (BusinessException, não Enum.valueOf).
  */
 public record DecisaoAutorizacaoRequest(
 

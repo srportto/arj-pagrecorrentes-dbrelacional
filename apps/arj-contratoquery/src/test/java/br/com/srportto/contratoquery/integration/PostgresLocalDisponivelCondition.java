@@ -7,18 +7,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.sql.DriverManager;
 
 /**
- * Desabilita a classe de teste anotada, de forma visível no relatório do Surefire ("Skipped"),
- * quando o PostgreSQL local exigido pelo build não está acessível — em vez de
- * {@code Assumptions.assumeTrue} num {@code @BeforeAll} de {@code @SpringBootTest}, que aborta a
- * classe inteira e é reportado como "Tests run: 0", indistinguível de uma classe sem testes.
- *
- * Gêmeo do mesmo arquivo em `arj-contratocommand`. Duplicado de propósito: as duas apps não
- * compartilham módulo de teste, e um módulo comum só para esta classe custaria mais do que
- * resolve.
- *
- * A senha vem exclusivamente de {@code DB_PASSWORD}, sem valor padrão — mesma postura de
- * {@code apps/docker-compose.yml} e {@code infra/local/postgres/.env.example}, que se recusam a
- * embutir credencial.
+ * Desabilita a classe anotada de forma visível no Surefire ("Skipped") quando o PostgreSQL local
+ * não está acessível — diferente de {@code Assumptions.assumeTrue}, que reporta "Tests run: 0".
+ * Gêmeo (duplicado de propósito) do mesmo arquivo em `arj-contratocommand`. Senha vem só de
+ * {@code DB_PASSWORD}, sem default, mesma postura do resto do repo contra credencial embutida.
  */
 public class PostgresLocalDisponivelCondition implements ExecutionCondition {
 

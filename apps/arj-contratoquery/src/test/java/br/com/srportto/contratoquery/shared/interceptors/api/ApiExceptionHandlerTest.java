@@ -51,7 +51,7 @@ class ApiExceptionHandlerTest {
                 handler.erroAplicacao(new ApplicationException("falha"), req());
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
-        // Resposta não contém o getMessage() da exceção original (proteção contra vazamento de detalhe técnico)
+        // Não vaza o getMessage() da exceção original
         assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
     }
 
@@ -89,7 +89,7 @@ class ApiExceptionHandlerTest {
                 handler.erroInesperado(new NullPointerException("npe inesperada"), req());
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
-        // Resposta não contém o getMessage() da exceção original (proteção contra vazamento de detalhe técnico)
+        // Não vaza o getMessage() da exceção original
         assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
         assertEquals("/api/autorizacoes", resp.getBody().getPath());
         assertNotNull(resp.getBody().getTimestamp());

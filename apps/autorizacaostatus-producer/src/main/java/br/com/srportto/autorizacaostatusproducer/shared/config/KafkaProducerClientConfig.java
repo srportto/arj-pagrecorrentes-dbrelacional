@@ -16,10 +16,9 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 
 /**
- * Producer Kafka via cliente puro (kafka-clients + KafkaAvroSerializer), sem
- * spring-kafka. enable.idempotence + acks=all cobrem a idempotencia de transporte; os
- * timeouts ficam abaixo do visibility timeout da fila SQS (60s) para que uma falha de
- * producao se resolva (sucesso ou excecao) antes de o SQS reentregar a mensagem.
+ * Producer Kafka via cliente puro (kafka-clients + KafkaAvroSerializer), sem spring-kafka.
+ * Timeouts ficam abaixo do visibility timeout da fila SQS (60s) para a falha se resolver
+ * antes de o SQS reentregar a mensagem.
  */
 @Configuration
 @EnableConfigurationProperties(KafkaProperties.class)
@@ -32,18 +31,15 @@ public class KafkaProducerClientConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaProperties.schemaRegistryUrl());
-        // habilitado so no profile local (application-local.yaml); fora dele, schema novo
-        // ou alterado precisa de registro explicito antes do primeiro produce (ver design.md
-        // de openspec/changes/rede-seguranca-contrato-evento, decisao D5)
+        // true só no profile local; em prod exige registro explícito do schema antes do
+        // primeiro produce (design.md de rede-seguranca-contrato-evento, decisão D5)
         props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, kafkaProperties.autoRegisterSchemas());
 
-        // serializacao Avro + round-trip ao Schema Registry ocorrem dentro de
-        // Producer.send(), antes do Future: nem max.block.ms nem o Future.get() cobrem
-        // esse caminho, que sem teto explicito fica sem limite de tempo
+        // round-trip ao Schema Registry ocorre dentro de send(), antes do Future — nem
+        // max.block.ms nem Future.get() cobrem esse caminho sem teto explícito aqui
         props.put(SchemaRegistryClientConfig.HTTP_CONNECT_TIMEOUT_MS, 3_000);
         props.put(SchemaRegistryClientConfig.HTTP_READ_TIMEOUT_MS, 3_000);
 
-        //produtor com idempotencia ativa
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 5_000);

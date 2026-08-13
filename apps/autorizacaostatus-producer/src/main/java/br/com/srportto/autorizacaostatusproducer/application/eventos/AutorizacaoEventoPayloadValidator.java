@@ -9,18 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Valida os campos obrigatórios do schema Avro logo após a desserialização, antes de
- * qualquer conversão, geração de key ou produce.
+ * Valida campos obrigatórios do schema Avro antes de converter/gerar key/produzir.
  *
- * <p>Necessário porque o builder gerado pelo {@code avro-maven-plugin} valida apenas a
- * <em>ausência</em> de {@code set} ({@code fieldSetFlags()}), não o valor {@code null}
- * explícito. Como {@link EventoAutorizacaoConverter} sempre chama os setters, um campo
- * obrigatório nulo produz um SpecificRecord inválido em silêncio, cuja falha só aparece
- * adiante e fora da classificação: NullPointerException na geração da key, ou
- * SerializationException <em>síncrona</em> dentro de {@code Producer.send()} (que o
- * tratamento de ExecutionException/TimeoutException não alcança). Ambas cairiam no catch
- * genérico do listener, impedindo o ack e causando reentrega infinita — a fila não tem
- * redrive policy.
+ * <p>Necessário porque o builder do {@code avro-maven-plugin} só valida <em>ausência</em>
+ * de {@code set}, não {@code null} explícito — um campo nulo passaria em silêncio e só
+ * falharia adiante (fora da classificação de erro), causando reentrega infinita.
  */
 @Component
 public class AutorizacaoEventoPayloadValidator {
@@ -36,7 +29,7 @@ public class AutorizacaoEventoPayloadValidator {
         }
 
         List<String> ausentes = new ArrayList<>();
-        // campos sem union ["null", X] no EventoAutorizacao.avsc — obrigatorios no schema
+        // campos sem union ["null", X] no schema — obrigatórios
         exigir(ausentes, "id_autorizacao", payload.idAutorizacao());
         exigir(ausentes, "id_particao_conta", payload.idParticaoConta());
         exigir(ausentes, "data_fim_vigencia", payload.dataFimVigencia());
@@ -57,11 +50,9 @@ public class AutorizacaoEventoPayloadValidator {
     }
 
     /**
-     * O .avsc declara {@code decimal(precision=17, scale=2)} — no máximo
-     * {@value #MAX_DIGITOS_INTEIROS} dígitos inteiros. {@code EventoAutorizacaoConverter}
-     * normaliza a escala, mas não a precisão: um valor maior estoura na conversão decimal
-     * do Avro, que acontece <em>dentro</em> de {@code Producer.send()} e escaparia da
-     * classificação, travando a mensagem em reentrega infinita.
+     * Limite de {@value #MAX_DIGITOS_INTEIROS} dígitos inteiros (decimal 17,2 do .avsc).
+     * O converter normaliza escala, não precisão — estourar isso quebra dentro de
+     * {@code Producer.send()}, fora da classificação de erro, travando a mensagem.
      */
     private void exigirDecimalNaFaixa(String campo, BigDecimal valor) {
         if (valor == null) {

@@ -8,13 +8,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Valida a transição de cancelamento contra o grafo de {@link StatusAutorizacao}, a partir do
- * status atual lido do banco. Rejeita o cancelamento se o status atual não permite a transição
- * para CANCELADA — por exemplo, cancelar uma autorização já CANCELADA, REJEITADA, EXPIRADA ou
- * FINALIZADA é um erro de negócio, não uma operação silenciosa.
- *
- * Único caminho de {@link StatusAutorizacao} com aresta para CANCELADA é ATIVA
- * (ATIVA → CANCELADA/FINALIZADA/REJEITADA) — nenhum outro status permite cancelamento.
+ * Rejeita cancelamento se o status atual não tem aresta para CANCELADA no grafo de
+ * {@link StatusAutorizacao} — só ATIVA tem; CANCELADA/REJEITADA/EXPIRADA/FINALIZADA não.
  */
 @Component
 @Order(10) // Roda após TipoProdutoCancelamento (5): produto divergente é erro mais específico que status
@@ -29,8 +24,6 @@ public class TransicaoStatusValida implements CancelamentoRule {
     public void validar(CancelamentoContext context) {
         var statusAtual = context.statusAtual();
 
-        // Valida se o status atual permite transição para CANCELADA consultando o grafo
-        // de estados (máquina de estados de autorização).
         boolean transicaoPermitida = statusAtual.podeTransicionarPara(StatusAutorizacao.CANCELADA);
 
         if (!transicaoPermitida) {

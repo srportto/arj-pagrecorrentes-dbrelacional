@@ -23,10 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Exige o Valkey local no ar (ver infra/local/redis) — mesmo precedente dos testes de
- * integração que exigem o Floci no autorizacaostatus-producer.
- */
+/** Exige o Valkey local no ar (ver infra/local/redis). */
 @DisplayName("Testes de integração: agendamento + varredura contra o Valkey real")
 class VarreduraEAgendamentoIntegrationTest {
 

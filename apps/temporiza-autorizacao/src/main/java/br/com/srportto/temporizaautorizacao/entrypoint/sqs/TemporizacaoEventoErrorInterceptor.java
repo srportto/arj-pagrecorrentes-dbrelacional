@@ -11,12 +11,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 
-/**
- * Ponto único de classificação de falha do consumo — mesmo padrão do
- * {@code SqsEventoAutorizacaoErrorInterceptor} do autorizacaostatus-producer: engolir a
- * exceção confirma a mensagem (ack); relançar mantém a mensagem sem ack, retornando à fila
- * após o visibility timeout.
- */
+/** Ponto único de classificação de falha: engolir a exceção acka; relançar mantém sem ack (retorna após visibility timeout). */
 @Component
 public class TemporizacaoEventoErrorInterceptor implements ErrorHandler<String> {
 

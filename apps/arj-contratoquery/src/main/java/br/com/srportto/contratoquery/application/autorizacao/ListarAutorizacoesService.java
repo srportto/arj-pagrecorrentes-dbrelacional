@@ -45,7 +45,6 @@ public class ListarAutorizacoesService {
         Integer paginaFinal = pagina != null ? pagina : PAGINA_PADRAO;
         Integer tamanhoFinal = tamanho != null ? tamanho : TAMANHO_PADRAO;
 
-        // Validar paginação
         if (paginaFinal < 0) {
             throw new BusinessException("pagina deve ser maior ou igual a 0");
         }
@@ -107,7 +106,6 @@ public class ListarAutorizacoesService {
     }
 
     private String mapearCampoDTO(String campoDtoOuEntidade) {
-        // Mapeamento de DTO para entidade
         String mapeado = switch (campoDtoOuEntidade) {
             case "dataCriacao" -> "dataHoraInclusao";
             case "valor" -> "valorAutorizacao";
@@ -118,12 +116,11 @@ public class ListarAutorizacoesService {
             default -> null;
         };
 
-        // Se foi mapeado do DTO, retorna o campo de entidade
         if (mapeado != null) {
             return mapeado;
         }
 
-        // Whitelist de campos de entidade que podem ser usados diretamente
+        // Whitelist: só passam campos de entidade explicitamente permitidos
         if (campoDtoOuEntidade.equals("dataHoraInclusao") ||
             campoDtoOuEntidade.equals("status") ||
             campoDtoOuEntidade.equals("valorAutorizacao") ||
@@ -133,7 +130,6 @@ public class ListarAutorizacoesService {
             return campoDtoOuEntidade;
         }
 
-        // Campo desconhecido - rejeitar
         throw new BusinessException(
                 String.format("Campo de ordenação inválido: %s. Campos aceitos: " +
                         "dataCriacao, dataHoraInclusao, valor, valorAutorizacao, idAutorizacao, " +

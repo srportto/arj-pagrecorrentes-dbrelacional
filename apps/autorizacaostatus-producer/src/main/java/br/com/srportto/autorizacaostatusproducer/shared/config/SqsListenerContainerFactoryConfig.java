@@ -10,20 +10,15 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import java.time.Duration;
 
 /**
- * Configura o container do {@code @SqsListener}: concorrencia, encerramento gracioso e
- * o ponto unico de classificacao de falha (erro do use case OU falha sincrona do
- * produce Kafka dentro dele).
+ * Configura o container do {@code @SqsListener}: concorrência, shutdown gracioso e o
+ * error handler central.
  *
- * <p>maxConcurrentMessages=10 (default do framework): concorrencia real por instancia,
- * em vez do processamento serial do listener manual anterior. O container dimensiona
- * automaticamente um pool de platform threads proporcional a esse valor (nao virtual
- * threads — o pipeline de execucao do listener desta versao do Spring Cloud AWS exige
- * threads criadas pela sua propria factory interna). Ponto de partida para calibracao
- * por medicao de throughput, nao um teto definitivo.
+ * <p>maxConcurrentMessages=10 roda em platform threads, não virtual — o pipeline de
+ * execução do listener nesta versão do Spring Cloud AWS exige threads da sua própria
+ * factory interna. Ponto de partida para calibração, não teto definitivo.
  *
- * <p>listenerShutdownTimeout/acknowledgementShutdownTimeout substituem o join() manual
- * do listener anterior: o contexto Spring so destroi o SqsAsyncClient e o Producer
- * Kafka depois que as execucoes em voo terminam ou esse tempo se esgota.
+ * <p>Os timeouts de shutdown garantem que o contexto só destrói SqsAsyncClient/Producer
+ * Kafka depois que as execuções em voo terminam ou o tempo se esgota.
  */
 @Configuration
 public class SqsListenerContainerFactoryConfig {

@@ -73,11 +73,7 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(layoutError);
     }
 
-    /**
-     * Deixa o handler de "recurso estatico nao encontrado" passar direto como 404 nativo,
-     * sem interceptar com o catch-all (que devolveria 500). Sem este handler, uma requisicao
-     * para um caminho desconhecido cairia no catch-all de Exception e responderia 500.
-     */
+    // Sem este handler, caminho desconhecido cairia no catch-all de Exception e responderia 500.
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<LayoutErrosApiResponse> recursoEstaticoNaoEncontrado(NoResourceFoundException exception,
             HttpServletRequest req) {
@@ -150,17 +146,9 @@ public class ApiExceptionHandler {
     }
 
     /**
-     * Mapeia as demais falhas de concorrencia do Spring para 409 Conflict.
-     *
-     * <p>Cobre em especial {@code CannotAcquireLockException}, a forma que o conflito assume quando
-     * a transacao vencedora move a linha para a particao de expurgo: o PostgreSQL nao consegue
-     * seguir a cadeia de atualizacao entre particoes e devolve "tuple to be locked was already
-     * moved to another partition due to concurrent update" (SQLSTATE 40001), que nao e um conflito
-     * de versao e portanto nao casa com os handlers de lock otimista acima. Sem este handler, um
-     * conflito real entre chamadores cairia no catch-all e viraria 500.
-     *
-     * <p>Os handlers de {@code OptimisticLockException} e {@code ObjectOptimisticLockingFailureException}
-     * permanecem: o Spring escolhe sempre o mais especifico.
+     * Cobre em especial {@code CannotAcquireLockException}: ao mover a linha para a particao de
+     * expurgo, o Postgres devolve SQLSTATE 40001 (nao e conflito de versao, nao casa com os
+     * handlers de lock otimista acima). Sem este handler, viraria 500 no catch-all.
      */
     @ExceptionHandler(ConcurrencyFailureException.class)
     public ResponseEntity<LayoutErrosApiResponse> conflitoConcorrencia(ConcurrencyFailureException exception,

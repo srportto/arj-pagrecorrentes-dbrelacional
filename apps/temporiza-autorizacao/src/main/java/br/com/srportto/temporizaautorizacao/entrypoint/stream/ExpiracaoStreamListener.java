@@ -12,10 +12,9 @@ import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Consome as entradas do stream de expirações (via {@link ValkeyStreamConfig}, consumer group
- * com ack manual). A entrada só é confirmada (XACK) após {@link ProcessarExpiracaoUseCase}
- * concluir sem exceção — falha retryable deixa a entrada pendente, elegível a
- * {@link PendenciasSchedulerReivindicador}.
+ * Consome o stream de expirações (ack manual via {@link ValkeyStreamConfig}). Só confirma (XACK)
+ * após {@link ProcessarExpiracaoUseCase} concluir sem exceção; falha retryable deixa a entrada
+ * pendente, elegível a {@link PendenciasSchedulerReivindicador}.
  */
 @Component
 public class ExpiracaoStreamListener implements StreamListener<String, MapRecord<String, String, String>> {
@@ -39,7 +38,7 @@ public class ExpiracaoStreamListener implements StreamListener<String, MapRecord
         processarEConfirmarSeConcluido(message.getId(), message.getValue().get(CAMPO_ID_AUTORIZACAO));
     }
 
-    /** Exposto para reprocessar entradas reivindicadas de PEL ocioso (mesmo caminho do consumo normal). */
+    /** Reusado por {@link PendenciasSchedulerReivindicador} p/ reprocessar entradas reivindicadas. */
     public void processarEConfirmarSeConcluido(RecordId streamId, String idAutorizacao) {
         try {
             processarExpiracaoUseCase.processar(idAutorizacao);

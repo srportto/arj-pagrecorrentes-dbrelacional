@@ -151,12 +151,8 @@ class ApiExceptionHandlerTest {
     @Test
     @DisplayName("CannotAcquireLockException → 409 Conflict (linha movida de partição por transação concorrente)")
     void cannotAcquireLock_Retorna409() {
-        // Forma que o conflito assume quando a transação vencedora move a linha para a partição de
-        // expurgo: o PostgreSQL não consegue seguir a cadeia de atualização entre partições e
-        // devolve "tuple to be locked was already moved to another partition due to concurrent
-        // update" (SQLSTATE 40001), traduzido pelo Spring para CannotAcquireLockException. Sem
-        // tratamento explícito, cairia no catch-all e viraria 500 — um conflito real de
-        // concorrência disfarçado de erro interno.
+        // Forma que o conflito assume ao mover linha entre partições (SQLSTATE 40001); sem
+        // tratamento explícito cairia no catch-all e viraria 500.
         CannotAcquireLockException ex = new CannotAcquireLockException(
                 "tuple to be locked was already moved to another partition due to concurrent update");
 

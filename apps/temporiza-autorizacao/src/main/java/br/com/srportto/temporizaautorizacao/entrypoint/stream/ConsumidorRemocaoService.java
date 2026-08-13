@@ -15,11 +15,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Remoção segura de um consumidor do consumer group do stream de expirações — compartilhada
- * entre o encerramento gracioso ({@link ValkeyStreamConfig}) e a varredura periódica por
- * ociosidade ({@link ConsumidoresOrfaosLimpezaScheduler}). "Segura" significa: nunca remove
- * consumidor com PEL não vazio — {@code XGROUP DELCONSUMER} descarta as entradas pendentes do
- * consumidor removido, e elas não voltam ao grupo nem são reivindicáveis depois.
+ * Remoção segura de consumidor, compartilhada entre {@link ValkeyStreamConfig} e
+ * {@link ConsumidoresOrfaosLimpezaScheduler}. "Segura": nunca remove com PEL não vazio —
+ * {@code XGROUP DELCONSUMER} descarta as pendências do consumidor removido para sempre.
  */
 @Component
 public class ConsumidorRemocaoService {
@@ -35,11 +33,8 @@ public class ConsumidorRemocaoService {
     }
 
     /**
-     * Remove {@code consumidorId} do grupo se {@code pendingCount} for zero. O chamador SHALL ler
-     * {@code pendingCount} imediatamente antes desta chamada — nunca reaproveitar leitura de um
-     * ciclo anterior.
-     *
-     * @return {@code true} se o consumidor foi removido; {@code false} se foi mantido por ter pendência.
+     * Remove {@code consumidorId} se {@code pendingCount} for zero. O chamador deve ler
+     * {@code pendingCount} imediatamente antes — nunca reaproveitar leitura de ciclo anterior.
      */
     public boolean removerSeSemPendencia(String consumidorId, long pendingCount) {
         if (pendingCount > 0) {
@@ -58,13 +53,10 @@ public class ConsumidorRemocaoService {
     }
 
     /**
-     * {@code XGROUP DELCONSUMER} via API nativa do driver Lettuce: a API tipada do Spring Data
-     * Redis ({@code StreamOperations#deleteConsumer}) devolve apenas {@code Boolean} de sucesso,
-     * e {@code RedisConnection#execute(String, byte[]...)} genérico decodifica a resposta como
-     * bulk string (não decodifica o inteiro que o comando real devolve — falha em runtime com
-     * {@code UnsupportedOperationException}, confirmado empiricamente). O comando real devolve a
-     * contagem de entradas pendentes descartadas, que é exatamente o que
-     * {@link #removerSeSemPendencia} precisa conferir — só a API nativa expõe esse valor tipado.
+     * Usa a API nativa do Lettuce: a API tipada do Spring Data Redis não expõe a contagem de
+     * pendências descartadas ({@code StreamOperations#deleteConsumer} devolve só {@code Boolean};
+     * {@code execute} genérico decodifica como bulk string e lança em runtime) — valor que
+     * {@link #removerSeSemPendencia} precisa conferir.
      */
     private Long removerConsumidor(String consumidorId) {
         return redisTemplate.execute((RedisCallback<Long>) connection -> {

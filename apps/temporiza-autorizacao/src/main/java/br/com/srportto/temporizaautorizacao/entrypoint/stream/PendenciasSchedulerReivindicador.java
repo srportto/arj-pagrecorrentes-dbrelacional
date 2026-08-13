@@ -16,11 +16,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.List;
 
-/**
- * Reivindica (XCLAIM) entradas do stream que ficaram pendentes além de
- * {@code stream-min-idle-time-ms} — instância morta entre a leitura e o ACK, ou processamento
- * travado. As reivindicadas são processadas pelo mesmo caminho do listener normal.
- */
+/** Reivindica (XCLAIM) entradas pendentes além de {@code stream-min-idle-time-ms}, reprocessando pelo caminho normal. */
 @Component
 public class PendenciasSchedulerReivindicador {
 
@@ -48,7 +44,7 @@ public class PendenciasSchedulerReivindicador {
             pendentes = streamOps.pending(properties.chaveStream(), properties.grupoConsumidor(),
                     Range.unbounded(), LOTE_PENDENTES);
         } catch (RuntimeException e) {
-            // grupo/stream ainda nao existe (nenhuma expiracao disparou ate agora) — nada a reivindicar.
+            // grupo/stream ainda nao existe — nada a reivindicar.
             return;
         }
 
@@ -94,11 +90,7 @@ public class PendenciasSchedulerReivindicador {
         }
     }
 
-    /**
-     * Entradas que já esgotaram {@link #MAX_TENTATIVAS_EXPIRACAO} entregas param de recircular
-     * entre o PEL e este reivindicador: são confirmadas diretamente (sem novo acionamento do
-     * command) e logadas como erro para investigação manual.
-     */
+    /** Entradas esgotadas param de recircular: confirmadas direto (sem novo acionamento) e logadas p/ investigação manual. */
     private void desistirDeEntradasEsgotadas(StreamOperations<String, Object, Object> streamOps,
             Duration minIdle, List<PendingMessage> esgotadas) {
         var ids = esgotadas.stream().map(PendingMessage::getIdAsString).toList();

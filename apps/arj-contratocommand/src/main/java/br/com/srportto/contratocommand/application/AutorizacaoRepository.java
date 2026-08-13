@@ -35,14 +35,10 @@ public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAuto
             Integer idParticaoConta, String idAutorizacaoEmpresa);
 
     /**
-     * Move fisicamente a linha para outra partição, alterando a chave de particionamento. O
-     * PostgreSQL (≥ 11) faz o <em>row movement</em> entre partições sozinho e de forma atômica.
-     *
-     * <p>É SQL nativo por necessidade, não por atalho: JPA não altera chave primária de entidade
-     * gerenciada, e a alternativa anterior (delete + flush + detach + save) dependia de o Hibernate
-     * inferir que uma instância detached sem linha correspondente era nova — inferência que a
-     * introdução de {@code @Version} inverteu, quebrando toda transferência de partição com
-     * {@code StaleObjectStateException}. Ver a mudança {@code corrigir-expurgo-merge-version}.
+     * SQL nativo por necessidade: JPA não altera a PK de entidade gerenciada. O PostgreSQL (≥ 11)
+     * faz o row movement entre partições sozinho e atomicamente. Ver {@code
+     * corrigir-expurgo-merge-version} (a alternativa via delete+flush+detach+save quebrava com
+     * {@code @Version}).
      *
      * @return quantidade de linhas afetadas; o chamador SHALL tratar valor diferente de 1
      */

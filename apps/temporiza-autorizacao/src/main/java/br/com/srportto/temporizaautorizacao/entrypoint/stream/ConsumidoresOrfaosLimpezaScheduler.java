@@ -8,16 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * Rede de segurança para consumidores de instâncias que morreram sem encerramento gracioso
- * (SIGKILL, OOM, nó perdido) — cenário em que o {@code @PreDestroy} de {@link ValkeyStreamConfig}
- * não tem chance de rodar. Remove periodicamente quem está ocioso além do limiar configurado e
- * sem pendência.
- *
- * <p>Uma instância viva não se aproxima do limiar: o container do listener faz polling bloqueante
- * contínuo, que reseta o {@code idle} do consumidor a cada {@code XREADGROUP} — mesmo quando não
- * há dado novo. Só um consumidor cujo processo parou de existir acumula {@code idle} de verdade.
- */
+/** Rede de segurança p/ SIGKILL/OOM (@PreDestroy não roda) — remove consumidor ocioso e sem pendência. */
 @Component
 public class ConsumidoresOrfaosLimpezaScheduler {
 
@@ -40,7 +31,7 @@ public class ConsumidoresOrfaosLimpezaScheduler {
         try {
             consumidores = redisTemplate.opsForStream().consumers(properties.chaveStream(), properties.grupoConsumidor());
         } catch (RuntimeException e) {
-            // grupo/stream ainda nao existe (nenhuma expiracao disparou ate agora) — nada a limpar.
+            // grupo/stream ainda nao existe — nada a limpar.
             return;
         }
 

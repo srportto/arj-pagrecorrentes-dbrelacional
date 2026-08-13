@@ -138,8 +138,7 @@ class KafkaEventoAutorizacaoProducerTest {
     @DisplayName("Registry respondendo HTTP 500 (RestClientException, sem IOException) é RETRYABLE")
     void restClientExceptionDoRegistryEhRetryable() {
         inicializar();
-        // toKafkaException do AbstractKafkaSchemaSerDe: status fora de 408/429/502/503/504
-        // vira SerializationException com cause RestClientException — que NÃO é IOException
+        // status fora de 408/429/502/503/504 vira SerializationException com cause RestClientException (não IOException)
         when(producer.send(any())).thenThrow(new SerializationException(
                 "Error retrieving Avro schema",
                 new RestClientException("Internal Server Error", 500, 50001)));
@@ -163,9 +162,7 @@ class KafkaEventoAutorizacaoProducerTest {
     @DisplayName("SocketTimeoutException do cliente HTTP do Registry (http.connect/read.timeout.ms) é RETRYABLE")
     void socketTimeoutDoClienteHttpDoRegistryEhRetryable() {
         inicializar();
-        // SocketTimeoutException e IOException: e o que http.connect.timeout.ms e
-        // http.read.timeout.ms (SchemaRegistryClientConfig) produzem quando o Registry
-        // nao responde dentro do teto configurado em KafkaProducerClientConfig
+        // é IOException: o que http.connect/read.timeout.ms produzem quando o Registry não responde
         when(producer.send(any())).thenThrow(new SerializationException(
                 "Error retrieving Avro schema",
                 new java.net.SocketTimeoutException("Read timed out")));

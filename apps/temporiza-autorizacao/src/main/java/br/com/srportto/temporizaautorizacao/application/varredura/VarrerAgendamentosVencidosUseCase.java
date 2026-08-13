@@ -13,12 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * Executa a varredura atômica (script Lua) que move vencidos do sorted set (agenda) para o
- * stream (fila de trabalho). Seguro para rodar concorrentemente em todas as instâncias, sem
- * lock distribuído externo — ver {@code varredura.lua} e a capacidade
- * {@code agendamento-expiracao-valkey}.
- */
+/** Varredura atômica (script Lua) que move vencidos do sorted set para o stream — segura sem lock distribuído. */
 @Service
 public class VarrerAgendamentosVencidosUseCase {
 

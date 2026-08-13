@@ -31,14 +31,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Consumer Kafka via spring-kafka (quebra deliberada da jurisprudencia "cliente puro"
- * do listener SQS): menos codigo, error handling e retry prontos via
- * DefaultErrorHandler. AckMode.RECORD definido em ContainerProperties (nao via
- * spring.kafka.listener.ack-mode — ver design.md D1 da mudanca refactor-eventos-consumer,
- * o configurer do Boot so aceita factory <Object, Object>): o offset so avanca apos o
- * listener retornar sem excecao, sem Acknowledgment manual. Mensagem que esgota as
- * tentativas (falha de negocio ou de desserializacao) vai para eventos-autorizacao.DLT
- * via DeadLetterPublishingRecoverer.
+ * Spring-kafka (quebra deliberada do padrão "cliente puro" do listener SQS): error handling/retry prontos.
+ * AckMode.RECORD é setado em código, não via application.yaml — o configurer do Boot só aceita
+ * factory {@code <Object, Object>}, incompatível com o tipo forte usado aqui (design.md D1).
  */
 @Configuration
 @EnableKafka
@@ -68,7 +63,7 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, EventoAutorizacao> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(eventoAutorizacaoConsumerFactory);
-        // offset avanca automaticamente apos o listener retornar sem excecao, sem Acknowledgment manual
+        // offset avança ao retornar sem exceção — sem Acknowledgment manual
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
         factory.setCommonErrorHandler(eventoAutorizacaoErrorHandler);
         return factory;
@@ -82,14 +77,10 @@ public class KafkaConsumerConfig {
     }
 
     /**
-     * Falha de desserialização (bytes crus, via ErrorHandlingDeserializer) e falha de
-     * negócio após desserialização com sucesso (EventoAutorizacao típado) são publicadas
-     * na DLT por templates diferentes, roteados pelo tipo do valor do record.
-     *
-     * <p>O destino é resolvido explicitamente para {@code <topico>.DLT} (ponto, nao
-     * o sufixo default do spring-kafka nesta versao, que e {@code -dlt} em minusculo —
-     * divergiria do topico provisionado em infra/local/kafka/compose.yaml e da
-     * documentacao do app, e a DLT nunca receberia mensagem).
+     * Falha de desserialização (bytes crus) e falha de negócio (record típado) vão por
+     * templates diferentes, roteados pelo tipo do valor do record. Destino fixado em
+     * {@code <tópico>.DLT} — o default do spring-kafka nesta versão é {@code -dlt}
+     * (hífen, minúsculo), que não bate com o tópico provisionado em compose.yaml.
      */
     @Bean
     public DeadLetterPublishingRecoverer eventoAutorizacaoDeadLetterRecoverer(
@@ -118,9 +109,7 @@ public class KafkaConsumerConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaProperties.schemaRegistryUrl());
-        // habilitado so no profile local; fora dele, schema novo ou alterado precisa de
-        // registro explicito antes do primeiro produce (ver design.md de
-        // openspec/changes/rede-seguranca-contrato-evento, decisao D5)
+        // true só em local; fora dele, schema novo/alterado exige registro manual antes do 1º produce (design.md D5)
         props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, kafkaProperties.autoRegisterSchemas());
         ProducerFactory<String, EventoAutorizacao> producerFactory = new DefaultKafkaProducerFactory<>(props);
         return new KafkaTemplate<>(producerFactory);

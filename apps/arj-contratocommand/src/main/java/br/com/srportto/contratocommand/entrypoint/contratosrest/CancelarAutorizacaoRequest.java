@@ -5,9 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 /**
- * Corpo da requisição de cancelamento. Record imutável contendo apenas os dados enviados pelo
- * cliente. O id da autorização (path) e o produto (header) são parâmetros do fluxo, não campos
- * deste DTO — ver {@code CancelamentoContext}.
+ * Corpo da requisição de cancelamento. Id (path) e produto (header) são parâmetros do fluxo,
+ * não campos deste DTO — ver {@code CancelamentoContext}.
  */
 public record CancelarAutorizacaoRequest(
 

@@ -56,21 +56,11 @@ public class KafkaEventoAutorizacaoProducer implements PublicadorEventoAutorizac
     }
 
     /**
-     * Classifica a falha síncrona de {@code send()} — a serialização Avro e o round-trip
-     * HTTP ao Schema Registry acontecem dentro dele, antes do Future.
-     *
-     * <p>O default é <strong>retryable</strong>, deliberadamente. O
-     * {@code AbstractKafkaSchemaSerDe#toKafkaException} despacha erro do Registry por status
-     * HTTP em várias exceções distintas ({@code TimeoutException}, {@code DisconnectException},
-     * {@code ThrottlingQuotaExceededException} e {@code SerializationException} com causa
-     * {@code RestClientException}) — indisponibilidade não chega por um tipo só, nem sempre
-     * por {@code IOException}. Enumerar os casos de indisponibilidade é frágil: qualquer um
-     * esquecido vira ack e perda definitiva de mensagem legítima.
-     *
-     * <p>Por isso a direção se inverte: só é não-retryable o que for comprovadamente problema
-     * do dado — as exceções que o {@code catch (IOException | RuntimeException)} do
-     * {@code AbstractKafkaAvroSerializer} produz ao converter um record incompatível com o
-     * schema. Tudo o mais volta à fila.
+     * Classifica a falha síncrona de {@code send()} (serialização Avro + round-trip ao Schema
+     * Registry, antes do Future). Default é <strong>retryable</strong>: o Registry despacha
+     * indisponibilidade em vários tipos de exceção distintos, difíceis de enumerar sem risco de
+     * esquecer um caso e perder a mensagem. Só é não-retryable o que for comprovadamente dado
+     * incompatível com o schema (Avro/ClassCastException); todo o resto volta à fila.
      */
     private RuntimeException classificarFalhaDoProduce(KafkaException e) {
         if (e instanceof SerializationException && causaEhDadoIncompativel(e)) {

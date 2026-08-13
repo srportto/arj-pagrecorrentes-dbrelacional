@@ -31,12 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Exige o Valkey local no ar (ver infra/local/redis). Limiares de ociosidade das
- * {@link TemporizacaoProperties} de teste são artificialmente pequenos (dezenas de ms) para não
- * exigir esperas reais de minutos — o comportamento verificado (idle acima do limiar + pending
- * == 0) é o mesmo, só a escala de tempo muda.
- */
+/** Exige o Valkey local no ar (ver infra/local/redis). Limiares de ociosidade artificialmente pequenos (ms, não min). */
 @DisplayName("Testes de integração: remoção de consumidores órfãos contra o Valkey real")
 class ConsumidorRemocaoIntegrationTest {
 
@@ -221,7 +216,7 @@ class ConsumidorRemocaoIntegrationTest {
     @DisplayName("divergência entre consumidores e instâncias vivas não derruba o /actuator/health")
     void divergenciaNaoDerrubaHealth() {
         publicarECriarGrupo(UUID.randomUUID().toString());
-        // 3 consumidores registrados, nenhum vivo de verdade além do processo de teste — simula órfãos
+        // simula órfãos: 3 consumidores registrados, nenhum vivo de verdade
         lerComo("residuo-1", true);
         lerComo("residuo-2", true);
         lerComo("residuo-3", true);

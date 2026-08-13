@@ -7,11 +7,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Subconjunto do payload publicado pelo arj-contratocommand (espelho parcial de
- * {@code AutorizacaoEventoPayload} lá) — esta aplicação só precisa do id e do instante de
- * inclusão para calcular o vencimento; os demais campos do evento são ignorados
- * (a filter policy da subscription já garante que só chegam eventos de recepção de
- * PIX_AUTO em SPI_J1).
+ * Subconjunto do payload do arj-contratocommand — só id e instante de inclusão, necessários ao
+ * vencimento. Demais campos ignorados (filter policy da subscription já filtra o evento).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AutorizacaoEventoPayload(
