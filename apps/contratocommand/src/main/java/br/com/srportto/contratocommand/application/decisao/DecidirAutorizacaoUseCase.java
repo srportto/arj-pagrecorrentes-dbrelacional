@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.application.decisao;
 
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
+import br.com.srportto.contratocommand.domain.service.decisao.DecisaoValidator;
 import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;

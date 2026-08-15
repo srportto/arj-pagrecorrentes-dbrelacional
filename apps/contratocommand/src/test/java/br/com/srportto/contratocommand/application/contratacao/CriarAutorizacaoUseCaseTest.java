@@ -3,6 +3,7 @@ package br.com.srportto.contratocommand.application.contratacao;
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoValidator;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;

@@ -2,9 +2,10 @@ package br.com.srportto.contratocommand.application.decisao;
 
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
-import br.com.srportto.contratocommand.application.decisao.rules.AcaoDecisaoValida;
-import br.com.srportto.contratocommand.application.decisao.rules.TipoProdutoDecisao;
-import br.com.srportto.contratocommand.application.decisao.rules.TransicaoValidaDecisao;
+import br.com.srportto.contratocommand.domain.service.decisao.DecisaoValidator;
+import br.com.srportto.contratocommand.domain.service.decisao.rules.AcaoDecisaoValida;
+import br.com.srportto.contratocommand.domain.service.decisao.rules.TipoProdutoDecisao;
+import br.com.srportto.contratocommand.domain.service.decisao.rules.TransicaoValidaDecisao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
