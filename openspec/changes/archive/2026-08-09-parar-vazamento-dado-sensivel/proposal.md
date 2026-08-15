@@ -14,11 +14,11 @@ apontaram este mesmo ponto.
 O que torna o achado inequívoco é que **o padrão correto já existe no monorepo e foi seguido no app
 irmão**: o `CLAUDE.md` do `autorizacaostatus-producer` determina explicitamente que "nenhum log nem
 mensagem de exceção carrega o body da mensagem", e o `AutorizacaoEventoPublisher` do
-`arj-contratocommand` loga apenas `tipoEvento` e `idAutorizacao` em caso de falha. Não é ausência
+`contratocommand` loga apenas `tipoEvento` e `idAutorizacao` em caso de falha. Não é ausência
 de convenção — é uma convenção existente que um app não seguiu.
 
-**Para a resposta HTTP.** Os `ApiExceptionHandler` do `arj-contratocommand` e do
-`arj-contratoquery` devolvem `exception.getMessage()` diretamente no corpo das respostas 500 de
+**Para a resposta HTTP.** Os `ApiExceptionHandler` do `contratocommand` e do
+`contratoquery` devolvem `exception.getMessage()` diretamente no corpo das respostas 500 de
 `ApplicationException`. Uma falha de acesso a dados pode assim expor nome de tabela, coluna,
 constraint ou detalhe de infraestrutura a quem chama a API — que, sem camada de autenticação, é
 qualquer cliente com acesso de rede.
@@ -55,7 +55,7 @@ escopo de código a corrigir cresceu de um use case para dois.
   filtro de log (`logback` com conversor customizado). É a solução estrutural e vale a pena, mas é
   mudança de plataforma de observabilidade com raio próprio; esta proposta corrige os vazamentos
   conhecidos e fixa a regra.
-- **Fora de escopo:** `@ExceptionHandler(Exception.class)` catch-all no `arj-contratoquery` e a
+- **Fora de escopo:** `@ExceptionHandler(Exception.class)` catch-all no `contratoquery` e a
   sanitização da resposta de exceção **não mapeada**. Ambos pertencem a `blindar-superficie-leitura`,
   que trata o handler do query de forma abrangente. Esta proposta cobre especificamente o handler
   de `ApplicationException`, que existe nos dois serviços e hoje vaza `getMessage()`.
@@ -83,11 +83,11 @@ acusasse.
 
 - **`eventos-consumer`:** `application/eventos/ProcessarEventoAutorizacaoUseCase.java` e o teste
   correspondente.
-- **`arj-contratocommand`:** `shared/interceptors/api/ApiExceptionHandler.java`,
+- **`contratocommand`:** `shared/interceptors/api/ApiExceptionHandler.java`,
   `shared/exceptions/ApplicationException.java`, `application/cancelamento/CancelarAutorizacaoUseCase.java`,
   `application/decisao/DecidirAutorizacaoUseCase.java` (mesmo padrão de descarte de causa,
   introduzido depois da auditoria original pela mudança `temporizacao-jornada-01-pix-auto`).
-- **`arj-contratoquery`:** `shared/interceptors/api/ApiExceptionHandler.java`,
+- **`contratoquery`:** `shared/interceptors/api/ApiExceptionHandler.java`,
   `shared/exceptions/{ApplicationException,BusinessException,ResourceNotFoundException}.java`.
 - **Todos os apps:** varredura por ocorrências adicionais do padrão de log.
 - **Documentação:** `CLAUDE.md`/`AGENTS.md` dos apps afetados, mantidos como espelhos idênticos.

@@ -27,7 +27,7 @@ public class VerificarContratoEventos {
     private static final Path AVSC_CONSUMER = Path.of(
             "apps/eventos-consumer/src/main/resources/avro/EventoAutorizacao.avsc");
     private static final Path PAYLOAD_COMMAND = Path.of(
-            "apps/arj-contratocommand/src/main/java/br/com/srportto/contratocommand"
+            "apps/contratocommand/src/main/java/br/com/srportto/contratocommand"
                     + "/application/eventos/AutorizacaoEventoPayload.java");
     private static final Path PAYLOAD_PRODUCER = Path.of(
             "apps/autorizacaostatus-producer/src/main/java/br/com/srportto"

@@ -5,7 +5,7 @@
 
 Temporizador da jornada 1 do PIX Automático, em **arquitetura hexagonal**. Consome os
 eventos de recepção de autorizações `PIX_AUTO`/`SPI_J1` publicados pelo
-`arj-contratocommand` (via `sns-estados-autorizacao` → SQS `SQS-temporizacao-autorizacao`,
+`contratocommand` (via `sns-estados-autorizacao` → SQS `SQS-temporizacao-autorizacao`,
 filtrada por filter policy), agenda a expiração em 10 minutos no Valkey e, no vencimento,
 aciona `PATCH /api/autorizacoes/{id}/decisao` com `acao: EXPIRAR` — rejeitando
 sistemicamente a autorização caso o cliente pagador não tenha decidido a tempo.
@@ -21,7 +21,7 @@ Leia nesta ordem:
 6. [ValkeyStreamConfig.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/stream/ValkeyStreamConfig.java) — cria o consumer group (idempotente) e registra a subscription com ACK MANUAL
 7. [ExpiracaoStreamListener.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/stream/ExpiracaoStreamListener.java) — worker: só confirma (XACK) após desfecho conclusivo
 8. [PendenciasSchedulerReivindicador.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/stream/PendenciasSchedulerReivindicador.java) — reivindica (XCLAIM) pendências ociosas do grupo
-9. [CommandDecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/application/expiracao/CommandDecisaoAutorizacaoClient.java) — PATCH síncrono no `arj-contratocommand`, classifica 2xx/4xx (conclusivo) vs. 5xx/timeout (retryable)
+9. [CommandDecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/application/expiracao/CommandDecisaoAutorizacaoClient.java) — PATCH síncrono no `contratocommand`, classifica 2xx/4xx (conclusivo) vs. 5xx/timeout (retryable)
 10. [TemporizacaoHealthIndicator.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/health/TemporizacaoHealthIndicator.java) — `/actuator/health` reflete o consumo SQS e a conexão Valkey
 
 ## Build & Testes
@@ -42,7 +42,7 @@ mvn test                                     # Todos os testes
   aplicadas (`infra/envs/local-messaging/`)
 - **Valkey local no ar** (`infra/local/redis/`) — sem ele, `/actuator/health` reporta DOWN
   e nada é agendado nem processado
-- **`arj-contratocommand` no ar** para o worker conseguir acionar `PATCH /decisao` — sem
+- **`contratocommand` no ar** para o worker conseguir acionar `PATCH /decisao` — sem
   ele, expirações ficam retidas no PEL do stream até ele voltar (nada se perde)
 - Variáveis de ambiente obrigatórias em `prod`: `AWS_REGION`, `AWS_SQS_QUEUE_URL`,
   `VALKEY_HOST`, `COMMAND_BASE_URL` (no profile `local` há defaults apontando para o
@@ -129,7 +129,7 @@ PendenciasSchedulerReivindicador (@Scheduled, intervalo = stream-min-idle-time-m
 
 ### Contrato de conclusão com o command
 
-A rota `/decisao` do `arj-contratocommand` é o único ponto que decide se a expiração se
+A rota `/decisao` do `contratocommand` é o único ponto que decide se a expiração se
 aplica — este app **não lê o banco**, nunca. O contrato de status HTTP é o que decide
 ack/retenção:
 
@@ -162,7 +162,7 @@ ack/retenção:
 1. **Porta 8084** — diferente de 8080/8081/8082/8083.
 2. **Sem banco de dados** — não adicione JPA/Postgres aqui. Se algo parecer exigir
    persistência relacional, é mudança de escopo.
-3. **`AutorizacaoEventoPayload` aqui é um subconjunto** do payload do `arj-contratocommand`
+3. **`AutorizacaoEventoPayload` aqui é um subconjunto** do payload do `contratocommand`
    (só `id_autorizacao` e `data_hora_inclusao`) — não um espelho completo. Isso é
    intencional: a filter policy da subscription já garante o filtro por produto/jornada/
    tipo de evento, então este app não precisa dos demais campos.

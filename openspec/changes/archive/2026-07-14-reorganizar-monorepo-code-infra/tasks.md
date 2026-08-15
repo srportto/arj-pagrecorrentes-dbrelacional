@@ -1,7 +1,7 @@
 ## 1. Reorganização de pastas de topo
 
 - [x] 1.1 `git mv aplicacoes code` preservando o histórico das duas aplicações
-- [x] 1.2 Rodar `mvn clean test` em `code/arj-contratocommand` e `code/arj-contratoquery` para confirmar que o move não quebrou nada
+- [x] 1.2 Rodar `mvn clean test` em `code/contratocommand` e `code/contratoquery` para confirmar que o move não quebrou nada
 - [x] 1.3 Buscar globalmente por `aplicacoes/` no repositório (README raiz, READMEs das apps, CLAUDE.md/AGENTS.md, docs, `.vscode`) e listar as referências a atualizar
       Resultado: `README.md` (raiz), `.claude/skills/create-based-aplication-java/SKILL.md`, e 4 specs ativas em `openspec/specs/` (`readme-raiz`, `higiene-codigo-morto`, `documentacao-contratoquery`, `higiene-comentarios-codigo`) — ver tasks 6.5/6.6. Arquivos sob `openspec/changes/archive/**` e desta própria proposta NÃO são tocados (registro histórico). `.vscode/`, `code/**` e `docs/**` já estão limpos.
 
@@ -22,18 +22,18 @@
 
 ## 4. Configuração Spring por profiles (por aplicação)
 
-- [x] 4.1 Em `arj-contratocommand`: extrair o comum para `application.yml` (base) e criar `application-local.yml` + `application-prod.yml`
-- [x] 4.2 Em `arj-contratocommand`: remover `spring.profiles.active: dev` e fixar `spring.profiles.default: local` no `application.yml` base
-- [x] 4.3 Em `arj-contratoquery`: repetir a extração base + `local` + `prod` e remover o profile `dev` fixo
+- [x] 4.1 Em `contratocommand`: extrair o comum para `application.yml` (base) e criar `application-local.yml` + `application-prod.yml`
+- [x] 4.2 Em `contratocommand`: remover `spring.profiles.active: dev` e fixar `spring.profiles.default: local` no `application.yml` base
+- [x] 4.3 Em `contratoquery`: repetir a extração base + `local` + `prod` e remover o profile `dev` fixo
 - [x] 4.4 Confirmar que configs comuns (datasource `${…}`, actuator, JPA) ficam só na base, sem duplicação nos profiles
 - [x] 4.5 Rodar cada app com `SPRING_PROFILES_ACTIVE=local` e depois `=prod` para validar a resolução de profile
       Resultado: validado nos 4 casos (command/query × local/prod) via `mvn spring-boot:run` contra o Postgres de dev — log confirma "The following 1 profile is active" e `/actuator/health` reflete `show-details` correto por perfil (always em local, never em prod). Decisões tomadas durante a implementação (fora do texto original das tasks, documentadas para revisão): (1) datasource url passou a usar `${DB_HOST:localhost}:${DB_PORT:5432}` em vez do host fixo `localhost:5432` — default idêntico ao comportamento anterior, necessário para o app alcançar o Postgres por nome de serviço no futuro `docker-compose.yml` (task 5.6); (2) `management.endpoint.health.show-details` virou o diferencial real entre perfis (`always` em local, `never` em prod) — antes era `always` fixo em ambas; endurece produção sem afetar nenhum comportamento hoje em uso (nada roda em prod ainda).
 
 ## 5. Dockerfile por aplicação (Fargate-ready)
 
-- [x] 5.1 Criar `code/arj-contratocommand/Dockerfile` multi-stage (build Maven+JDK 25 → runtime JRE 25 enxuto), usuário não-root, `EXPOSE 8080`
+- [x] 5.1 Criar `code/contratocommand/Dockerfile` multi-stage (build Maven+JDK 25 → runtime JRE 25 enxuto), usuário não-root, `EXPOSE 8080`
       Multi-stage `maven:3.9-eclipse-temurin-25` (build, `-DskipTests` — testes já são gate separado via `mvn test`) → `eclipse-temurin:25-jre-alpine` (runtime), usuário `app` não-root, `HEALTHCHECK` via `/actuator/health`. `.dockerignore` adicionado.
-- [x] 5.2 Criar `code/arj-contratoquery/Dockerfile` análogo com `EXPOSE 8081`
+- [x] 5.2 Criar `code/contratoquery/Dockerfile` análogo com `EXPOSE 8081`
 - [x] 5.3 Adicionar `server.shutdown=graceful` na config base de cada app (encerramento gracioso para SIGTERM no Fargate)
 - [x] 5.4 Build + run de cada imagem localmente apontando para o Postgres local; validar `/actuator/health` = 200 (UP)
       Build OK nas duas imagens; `docker run` isolado (nome/porta temporários) contra o Postgres de dev via `host.docker.internal` — `status: UP`, `HEALTHCHECK: healthy`, processo rodando como `app` (não-root). Containers e imagens de teste removidos por nome explícito ao final.

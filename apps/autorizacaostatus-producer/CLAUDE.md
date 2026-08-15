@@ -4,7 +4,7 @@
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
 Ponte SQS → Kafka, em **arquitetura hexagonal**. Consome os eventos de estado de
-autorização publicados pelo `arj-contratocommand` (via `sns-estados-autorizacao` →
+autorização publicados pelo `contratocommand` (via `sns-estados-autorizacao` →
 SQS `SQS-eventos-autorizacao`), converte cada evento para Avro e produz no tópico Kafka
 `eventos-autorizacao` (Schema Registry), de forma idempotente. O ack no SQS só ocorre
 após a confirmação do broker Kafka.
@@ -21,7 +21,7 @@ Leia nesta ordem:
 7. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
 8. [PublicadorEventoAutorizacao.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/PublicadorEventoAutorizacao.java) — porta de SAÍDA da ponte
 9. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/KafkaEventoAutorizacaoProducer.java) — adapter de SAÍDA que implementa a porta (produce síncrono)
-10. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `arj-contratocommand`
+10. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `contratocommand`
 11. [SqsListenerHealthIndicator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsListenerHealthIndicator.java) — estado do consumo no `/actuator/health`, via `MessageListenerContainerRegistry`
 12. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
 
@@ -34,7 +34,7 @@ mvn test                                     # Todos os testes
 ```
 
 > **Maven Wrapper**: este app não possui `mvnw`/`mvnw.cmd` — use `mvn` diretamente
-> (mesma orientação do `arj-contratocommand` no Windows).
+> (mesma orientação do `contratocommand` no Windows).
 
 ## Pré-requisitos
 
@@ -193,12 +193,12 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 
 ## Armadilhas críticas
 
-1. **Porta 8082** — diferente de `arj-contratocommand` (8080), `arj-contratoquery`
+1. **Porta 8082** — diferente de `contratocommand` (8080), `contratoquery`
    (8081) e `eventos-consumer` (8083).
 2. **Sem banco de dados** — não adicione JPA/Postgres aqui; se precisar persistir algo,
    isso é uma mudança de escopo desta app.
 3. **`AutorizacaoEventoPayload` é um espelho manual** do payload equivalente em
-   `arj-contratocommand` (`application/eventos/AutorizacaoEventoPayload.java`) — os dois
+   `contratocommand` (`application/eventos/AutorizacaoEventoPayload.java`) — os dois
    não compartilham código; se o schema do evento mudar lá, replique aqui. Inclui
    `tipo_jornada` (nullable) desde a mudança `temporizacao-jornada-01-pix-auto`.
 4. **`EventoAutorizacao.avsc` também é um espelho manual**, replicado em
@@ -229,7 +229,7 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
    deriva o header Kafka `tipoEvento` do campo `status` do payload
    (`TipoEventoAutorizacao.porStatus`), sempre presente. `StatusAutorizacao` e
    `TipoEventoAutorizacao` (`domain/enums/`) são espelhos manuais dos mesmos enums do
-   `arj-contratocommand`.
+   `contratocommand`.
 10. **O builder Avro NÃO valida `null` explícito** — ele só valida a *ausência* de `set`
     (`fieldSetFlags()`). Como o converter sempre chama os setters, um campo obrigatório
     nulo produziria um `SpecificRecord` inválido em silêncio, que só falharia adiante e
@@ -273,7 +273,7 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 - [ ] `mvn test` passa (Floci no ar — exigido pelo teste de integração do listener)
 - [ ] `mvn verify` passa (gate de cobertura JaCoCo, mínimo 80%)
 - [ ] `mvn clean compile` sem erros (gera as classes Avro em `generate-sources`)
-- [ ] Se mudou o payload JSON, conferir consistência com `arj-contratocommand`
+- [ ] Se mudou o payload JSON, conferir consistência com `contratocommand`
 - [ ] Se mudou `EventoAutorizacao.avsc`, replicar em `apps/eventos-consumer`
 - [ ] Falha retryable continua sendo relançada (sem ack); falha não-retryable continua
       sendo engolida (ack) após o log de erro (não confundir as duas classificações)

@@ -19,7 +19,7 @@ Atualmente as aplicações `contratocommand` e `contratoquery` não definem limi
 
 ## Impact
 
-- **Arquivos alterados**: `aplicacoes/arj-contratocommand/src/main/resources/application.yaml`, `aplicacoes/arj-contratoquery/src/main/resources/application.yaml`
+- **Arquivos alterados**: `aplicacoes/contratocommand/src/main/resources/application.yaml`, `aplicacoes/contratoquery/src/main/resources/application.yaml`
 - **Sem impacto em API**: Mudança puramente de configuração de datasource/pool.
 - **Variáveis de ambiente novas**: `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT`, `DB_POOL_IDLE_TIMEOUT`, `DB_POOL_MAX_LIFETIME` (opcionais, com defaults definidos no yaml).
 - **Dependência**: HikariCP já é o pool padrão do Spring Boot — nenhuma nova dependência necessária.

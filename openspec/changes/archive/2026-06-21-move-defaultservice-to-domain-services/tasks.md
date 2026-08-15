@@ -31,6 +31,6 @@
 
 ## 6. Validação
 
-- [x] 6.1 Rodar `mvn clean test` na app `arj-contratocommand` e confirmar build verde com todos os testes passando (94 testes, 0 falhas)
+- [x] 6.1 Rodar `mvn clean test` na app `contratocommand` e confirmar build verde com todos os testes passando (94 testes, 0 falhas)
 - [x] 6.2 Buscar por `application\.defaultservice` em `src/` e confirmar zero ocorrências
 - [x] 6.3 Confirmar que `application/defaultservice` não existe mais em `main` nem em `test`

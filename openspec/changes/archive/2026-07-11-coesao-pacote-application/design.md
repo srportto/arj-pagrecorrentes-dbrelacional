@@ -1,6 +1,6 @@
 ## Context
 
-O `arj-contratocommand` organiza `application/` em subpacotes desde o refactor de coesão anterior (change `melhoria-coesao-contratocommand`, arquivada): `contratacao/` e `cancelamento/` são verticais por operação (cada uma com Rule interface, Validator, UseCase e `rules/`), enquanto `autorizacao/` guarda `AutorizacaoRepository` e `AutorizacaoMapper`, componentes compartilhados pelas duas verticais. Essa exploração (`/opsx:explore`) mapeou o pacote inteiro e identificou dois pontos de melhoria de coesão: (1) `autorizacao/` ocupa o mesmo nível hierárquico das verticais de feature sem ser uma, e colide de nome com `Autorizacao` (entidade), `AutorizacaoController` e `AutorizacaoCompletaResponseDto`; (2) todos os 10 beans Spring-gerenciados de `application/` usam `@Component`, sem diferenciar os 4 orquestradores (Validators/UseCases) das 6 rules (estratégias).
+O `contratocommand` organiza `application/` em subpacotes desde o refactor de coesão anterior (change `melhoria-coesao-contratocommand`, arquivada): `contratacao/` e `cancelamento/` são verticais por operação (cada uma com Rule interface, Validator, UseCase e `rules/`), enquanto `autorizacao/` guarda `AutorizacaoRepository` e `AutorizacaoMapper`, componentes compartilhados pelas duas verticais. Essa exploração (`/opsx:explore`) mapeou o pacote inteiro e identificou dois pontos de melhoria de coesão: (1) `autorizacao/` ocupa o mesmo nível hierárquico das verticais de feature sem ser uma, e colide de nome com `Autorizacao` (entidade), `AutorizacaoController` e `AutorizacaoCompletaResponseDto`; (2) todos os 10 beans Spring-gerenciados de `application/` usam `@Component`, sem diferenciar os 4 orquestradores (Validators/UseCases) das 6 rules (estratégias).
 
 Um precedente já existe no próprio módulo: `TestFixtures.java` (em `src/test/.../application/`) já vive solto na raiz de `application/` nos testes, sem pacote próprio — o mesmo padrão que esta change aplica ao código de produção.
 
@@ -16,7 +16,7 @@ Um precedente já existe no próprio módulo: `TestFixtures.java` (em `src/test/
 - Não mexe em `contratacao/` nem `cancelamento/` além dos imports afetados pelo movimento de `autorizacao/` — a organização interna dessas verticais já está coesa.
 - Não introduz `@Service` em nenhuma Rule — rules continuam `@Component` deliberadamente (ver Decisão 2).
 - Não altera contratos REST, DTOs, exceções ou qualquer comportamento de negócio.
-- Não propaga a convenção para `arj-contratoquery` — escopo restrito a `arj-contratocommand`.
+- Não propaga a convenção para `contratoquery` — escopo restrito a `contratocommand`.
 
 ## Decisions
 

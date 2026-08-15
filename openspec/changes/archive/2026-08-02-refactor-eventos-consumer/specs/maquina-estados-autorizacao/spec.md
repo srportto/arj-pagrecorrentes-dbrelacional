@@ -2,7 +2,7 @@
 
 ### Requirement: Enum StatusAutorizacao com grafo de transições nas 4 aplicações
 
-As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, `autorizacaostatus-producer`, `eventos-consumer`) SHALL conter um enum `StatusAutorizacao` com os 8 estados do ciclo de vida da autorização e seus códigos (`RECEBIDA=1`, `PENDENTE_ACEITE=2`, `EM_PROCESSO_ATIVACAO=3`, `ATIVA=4`, `CANCELADA=5`, `REJEITADA=6`, `EXPIRADA=7`, `FINALIZADA=8`), lookup por código (`obterStatusEnumPorIdStatus`) e o grafo de transições embutido, exposto pelo método `podeTransicionarPara(StatusAutorizacao destino)`. As transições permitidas SHALL ser exatamente:
+As quatro aplicações do monorepo (`contratocommand`, `contratoquery`, `autorizacaostatus-producer`, `eventos-consumer`) SHALL conter um enum `StatusAutorizacao` com os 8 estados do ciclo de vida da autorização e seus códigos (`RECEBIDA=1`, `PENDENTE_ACEITE=2`, `EM_PROCESSO_ATIVACAO=3`, `ATIVA=4`, `CANCELADA=5`, `REJEITADA=6`, `EXPIRADA=7`, `FINALIZADA=8`), lookup por código (`obterStatusEnumPorIdStatus`) e o grafo de transições embutido, exposto pelo método `podeTransicionarPara(StatusAutorizacao destino)`. As transições permitidas SHALL ser exatamente:
 
 - `RECEBIDA` → `PENDENTE_ACEITE`, `EM_PROCESSO_ATIVACAO`, `REJEITADA`
 - `PENDENTE_ACEITE` → `EM_PROCESSO_ATIVACAO`, `REJEITADA`, `EXPIRADA`
@@ -10,7 +10,7 @@ As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, 
 - `ATIVA` → `CANCELADA`, `FINALIZADA`, `REJEITADA`
 - `CANCELADA`, `REJEITADA`, `EXPIRADA`, `FINALIZADA` → nenhuma (estados terminais)
 
-O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em `arj-contratocommand`, `arj-contratoquery` e `autorizacaostatus-producer` o enum SHALL residir em `domain/enums/` (ou `application/eventos/` no caso do producer, que ainda não tem camada `domain/`); em `eventos-consumer` — que passa a ter camada `domain/` — ele SHALL residir em `domain/enums/`, junto de `TipoEventoAutorizacao`.
+O enum SHALL ser um espelho manual idêntico entre as aplicações (pacotes próprios, sem módulo compartilhado). Em `contratocommand`, `contratoquery` e `autorizacaostatus-producer` o enum SHALL residir em `domain/enums/` (ou `application/eventos/` no caso do producer, que ainda não tem camada `domain/`); em `eventos-consumer` — que passa a ter camada `domain/` — ele SHALL residir em `domain/enums/`, junto de `TipoEventoAutorizacao`.
 
 #### Scenario: Transição válida é aceita
 - **WHEN** `StatusAutorizacao.ATIVA.podeTransicionarPara(CANCELADA)` é consultado

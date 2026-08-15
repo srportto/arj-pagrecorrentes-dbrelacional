@@ -42,7 +42,7 @@ vazar sem que ninguém reavaliasse a linha de log.
 ### Requirement: Resposta de erro interno não expõe detalhe de implementação
 
 As respostas HTTP 500 de `ApplicationException` SHALL conter mensagem genérica nos serviços
-`arj-contratocommand` e `arj-contratoquery`, sem nome de tabela, coluna, constraint, classe de
+`contratocommand` e `contratoquery`, sem nome de tabela, coluna, constraint, classe de
 exceção, stack trace ou detalhe de infraestrutura. A mensagem da exceção NÃO SHALL ser
 repassada diretamente ao cliente.
 
@@ -61,8 +61,8 @@ repassada diretamente ao cliente.
 ### Requirement: Causa original preservada para diagnóstico
 
 As exceções da aplicação SHALL oferecer construtor que aceite a causa (`Throwable`) — em
-`arj-contratocommand`: `ApplicationException` e `BusinessException` (não há
-`ResourceNotFoundException` neste serviço); em `arj-contratoquery`: `ApplicationException`,
+`contratocommand`: `ApplicationException` e `BusinessException` (não há
+`ResourceNotFoundException` neste serviço); em `contratoquery`: `ApplicationException`,
 `BusinessException` e `ResourceNotFoundException`. Todo ponto que encapsula uma exceção técnica
 SHALL propagar a exceção original como causa, e o tratador SHALL registrar em log a cadeia
 completa de causas com stack trace.

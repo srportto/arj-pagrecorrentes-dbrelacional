@@ -1,17 +1,17 @@
 # Tasks: add-maquina-estados-autorizacao
 
-## 1. arj-contratocommand — máquina de estados e publicação derivada
+## 1. contratocommand — máquina de estados e publicação derivada
 
 - [x] 1.1 Evoluir `StatusAutorizacao` (`domain/enums/`) com o grafo de transições e `podeTransicionarPara(destino)`; adicionar/atualizar testes cobrindo transições válidas, inválidas e estados terminais
 - [x] 1.2 Reescrever `TipoEventoAutorizacao` com os 8 valores (`RECEPCAO`, `PENDENCIA_ACEITE`, `INICIO_ATIVACAO`, `ATIVACAO`, `CANCELAMENTO`, `REJEICAO`, `EXPIRACAO`, `FINALIZACAO`) e a fábrica `porStatus(status)` (exceção para código desconhecido); testes da bijeção completa
 - [x] 1.3 Remover o campo `tipo` de `AutorizacaoPersistidaEvent` e simplificar `CriarAutorizacaoUseCase`/`CancelarAutorizacaoUseCase` (publicam só a entidade); atualizar `CriarAutorizacaoUseCaseTest`/`CancelarAutorizacaoUseCaseTest`
 - [x] 1.4 `AutorizacaoEventoPublisher`: derivar o attribute `tipoEvento` via `TipoEventoAutorizacao.porStatus(autorizacao.getStatus())`; atualizar `AutorizacaoEventoPublisherTest` (criação → `ATIVACAO`, cancelamento → `CANCELAMENTO`)
-- [x] 1.5 Rodar `mvn test` em `apps/arj-contratocommand`
+- [x] 1.5 Rodar `mvn test` em `apps/contratocommand`
 
-## 2. arj-contratoquery — espelho do enum
+## 2. contratoquery — espelho do enum
 
 - [x] 2.1 Evoluir `StatusAutorizacao` (`domain/enums/`) com o mesmo grafo e método do item 1.1; criar `TipoEventoAutorizacao` espelho em `domain/enums/`; atualizar `StatusAutorizacaoTest`
-- [x] 2.2 Rodar `mvn test` em `apps/arj-contratoquery`
+- [x] 2.2 Rodar `mvn test` em `apps/contratoquery`
 
 ## 3. autorizacaostatus-producer — ponte deriva do status + avro em resources
 
@@ -31,7 +31,7 @@
 
 ## 5. Comentários enxutos (código Java, docs intocadas)
 
-- [x] 5.1 Resumir comentários de `ReversibleUUIDv7` e `AutorizacaoRepository` (`arj-contratocommand`) para 1–3 linhas, preservando porquês sem outro lar
+- [x] 5.1 Resumir comentários de `ReversibleUUIDv7` e `AutorizacaoRepository` (`contratocommand`) para 1–3 linhas, preservando porquês sem outro lar
 - [x] 5.2 Resumir javadocs densos das classes de eventos nas 4 apps (publisher, use cases, listeners, converter, producer Kafka)
 - [x] 5.3 Rodar `mvn test` nas apps tocadas para garantir que nada quebrou
 

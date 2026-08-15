@@ -27,7 +27,7 @@ ele precisa para diagnosticar (a exceção original).
 
 O padrão correto já existe e está documentado no `CLAUDE.md` do `autorizacaostatus-producer`
 ("nenhum log nem mensagem de exceção carrega o body da mensagem"), e é praticado pelo
-`AutorizacaoEventoPublisher` do `arj-contratocommand`. O `eventos-consumer` diverge. Como a regra
+`AutorizacaoEventoPublisher` do `contratocommand`. O `eventos-consumer` diverge. Como a regra
 vivia apenas em documentação de um app, nada acusou a divergência — nem revisão, nem teste, nem
 spec.
 
@@ -65,7 +65,7 @@ A linha divisória adotada:
 
 O critério não é o nome do campo, e sim **a categoria**: identificador técnico de agregado é
 rastreamento; identificador de pessoa e valor monetário são dado do titular. É a mesma linha que o
-`arj-contratocommand` já pratica.
+`contratocommand` já pratica.
 
 Regra operacional derivada, mais fácil de revisar do que a lista: **nunca interpolar um objeto de
 domínio, record ou payload em log** — sempre citar campos nominalmente. Um objeto interpolado hoje
@@ -91,11 +91,11 @@ Concretamente:
   achado em 2026-08-09), passam a propagar `e` como causa.
 - O handler loga a exceção completa (com a cadeia de causas) e devolve mensagem fixa ao cliente.
 
-**Achado adicional (auditoria 2026-08-09):** o `ApiExceptionHandler` do `arj-contratoquery` não
+**Achado adicional (auditoria 2026-08-09):** o `ApiExceptionHandler` do `contratoquery` não
 tem `Logger` algum — nenhum dos métodos loga. Ou seja, hoje o query não só devolve
 `getMessage()` ao cliente como **não registra nada no servidor**: 100% do detalhe vai para o
 cliente, 0% para o operador. A implementação deste change precisa **criar** o logger no query,
-não apenas ajustar a resposta — o `arj-contratocommand`, ao menos, já loga (linha 39 do seu
+não apenas ajustar a resposta — o `contratocommand`, ao menos, já loga (linha 39 do seu
 handler).
 
 Nota deliberada: `BusinessException` continua devolvendo sua mensagem ao cliente. Ela é escrita

@@ -5,7 +5,7 @@
 - [x] 1.1 Confirmar que o `validar()` default de `shared/validationsetup/Validator` itera as rules na ordem da lista injetada pelo Spring (senão, ajustar a estratégia de ordenação antes de prosseguir)
 - [x] 1.2 Criar `ProdutoSuportado implements ContratacaoRule` (no pacote atual das rules de contratação): resolve `TipoProduto` a partir de `request.tipoProduto()` case-insensitive e lança `BusinessException` com a mesma mensagem do orquestrador ("Produto nao suportado ou invalido (tipoProduto: ...)"); anotar com `@Order(Ordered.HIGHEST_PRECEDENCE)` para executar antes das demais rules
 - [x] 1.3 Testes unitários da rule: produto válido em caixa variada (`pix_auto`, `PIX_AUTO`, `DdA_aUtO`), produto desconhecido, produto nulo
-- [x] 1.4 `mvn test` verde no módulo `arj-contratocommand`
+- [x] 1.4 `mvn test` verde no módulo `contratocommand`
 
 ## 2. Controller chama use cases direto; deletar camada de strategy
 
@@ -26,5 +26,5 @@
 
 ## 4. Documentação e verificação final
 
-- [x] 4.1 Atualizar `CLAUDE.md` e `AGENTS.md` do `arj-contratocommand` (mantê-los espelhados): novo fluxo `Controller → UseCase → Validator/Rules`, remoção das seções de orquestrador/strategy, "adicionar produto novo" passa a ser via enum + rules (`aceita()`)
+- [x] 4.1 Atualizar `CLAUDE.md` e `AGENTS.md` do `contratocommand` (mantê-los espelhados): novo fluxo `Controller → UseCase → Validator/Rules`, remoção das seções de orquestrador/strategy, "adicionar produto novo" passa a ser via enum + rules (`aceita()`)
 - [x] 4.2 `mvn clean package` verde; smoke test dos contratos REST com os payloads de `docs/post-autorizacoes.txt` (criação 201, cancelamento 200, produto desconhecido 422 com mensagem preservada) se houver ambiente com PostgreSQL disponível

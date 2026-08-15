@@ -2,7 +2,7 @@
 
 ## Context
 
-O ciclo de vida da autorização tem 8 estados (códigos 1–8) com transições definidas em diagrama, mas o código não conhece o grafo. `StatusAutorizacao` existe como cópia idêntica em `arj-contratocommand` e `arj-contratoquery` (só valores + lookup por id); nas apps de eventos o status trafega como `int` no JSON/Avro. O `tipoEvento` é fixado no ponto de chamada (`CRIACAO`/`CANCELAMENTO`) e repassado como etiqueta opaca (attribute SNS/SQS → header Kafka → log), duplicando informação que já existe no campo `status` do dado.
+O ciclo de vida da autorização tem 8 estados (códigos 1–8) com transições definidas em diagrama, mas o código não conhece o grafo. `StatusAutorizacao` existe como cópia idêntica em `contratocommand` e `contratoquery` (só valores + lookup por id); nas apps de eventos o status trafega como `int` no JSON/Avro. O `tipoEvento` é fixado no ponto de chamada (`CRIACAO`/`CANCELAMENTO`) e repassado como etiqueta opaca (attribute SNS/SQS → header Kafka → log), duplicando informação que já existe no campo `status` do dado.
 
 Jurisprudência do monorepo relevante: contratos entre apps são **espelhos manuais** (payload JSON e `.avsc` — sem módulo compartilhado); decisão registrada em `openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md`.
 

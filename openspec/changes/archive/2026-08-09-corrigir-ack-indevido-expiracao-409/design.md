@@ -1,12 +1,12 @@
 ## Context
 
 `temporiza-autorizacao` aciona `PATCH /api/autorizacoes/{id}/decisao` (`acao: EXPIRAR`) no
-`arj-contratocommand` a partir de `ExpiracaoStreamListener`/`PendenciasSchedulerReivindicador`,
+`contratocommand` a partir de `ExpiracaoStreamListener`/`PendenciasSchedulerReivindicador`,
 via `ProcessarExpiracaoUseCase` → `CommandDecisaoAutorizacaoClient`. O consumo é feito com
 ack manual sobre um stream Valkey com consumer group: a entrada só é confirmada (XACK) se
 `CommandDecisaoAutorizacaoClient.expirar()` retornar sem lançar exceção.
 
-O `arj-contratocommand` mapeia quatro exceções distintas (`ObjectOptimisticLockingFailureException`,
+O `contratocommand` mapeia quatro exceções distintas (`ObjectOptimisticLockingFailureException`,
 `OptimisticLockException`, `DataIntegrityViolationException`, `StaleStateException`) para
 HTTP 409, todas com a mensagem "Tente novamente" — sinal explícito de que a operação **não**
 foi aplicada e pode ser repetida com segurança (a rota é idempotente por natureza: só age se
@@ -22,7 +22,7 @@ classificação, causando XACK indevido: a entrada do stream é confirmada mesmo
 tendo sido revertida. Sem a entrada no PEL, `PendenciasSchedulerReivindicador` nunca reclama
 nada, e não há nova tentativa. Reproduzido em ambiente local: autorização
 `019fe814-09e1-7091-beaf-67814cc70006` presa em `RECEBIDA` após o prazo vencido, com 409 nos
-logs do `arj-contratocommand`.
+logs do `contratocommand`.
 
 ## Goals / Non-Goals
 
@@ -35,7 +35,7 @@ logs do `arj-contratocommand`.
 - Cobrir os dois comportamentos com teste automatizado.
 
 **Non-Goals:**
-- Alterar o `arj-contratocommand` (ex.: self-heal de conflito de lock otimista dentro da
+- Alterar o `contratocommand` (ex.: self-heal de conflito de lock otimista dentro da
   própria transação de decisão) — avaliado e descartado nesta mudança; fica como possível
   mudança futura independente, que reduziria a exposição a 409 para **todo** chamador de
   `/decisao` e `/cancelar`, não só o temporizador.
@@ -88,8 +88,8 @@ sinal automático de recuperação, apenas o log — investigação e correção
   unitário do `CommandDecisaoAutorizacaoClient` com `RestClient` mockado devolvendo 409 é
   suficiente para travar o contrato; não é necessário teste de integração com concorrência
   real de banco para esta mudança (já existe `ConcorrenciaOptimisticaIntegrationTest` do lado
-  do `arj-contratocommand` cobrindo a geração do 409 em si).
-- **[Trade-off] Não fechar a lacuna no `arj-contratocommand`** (D-não-goal) significa que
+  do `contratocommand` cobrindo a geração do 409 em si).
+- **[Trade-off] Não fechar a lacuna no `contratocommand`** (D-não-goal) significa que
   qualquer outro chamador futuro de `/decisao`/`/cancelar` que também trate 4xx
   genericamente terá o mesmo bug. Aceito nesta mudança por decisão explícita de escopo; deixar
   registrado aqui para uma eventual mudança futura de self-heal no command.

@@ -5,7 +5,7 @@
 ## Propósito futuro
 
 Módulo reutilizável para provisionar o PostgreSQL gerenciado (RDS) usado pelas
-duas aplicações (`arj-contratocommand`, `arj-contratoquery`).
+duas aplicações (`contratocommand`, `contratoquery`).
 
 Pontos que este módulo precisará resolver (herdados do ambiente local em
 [`../../local/postgres/`](../../local/postgres/)):

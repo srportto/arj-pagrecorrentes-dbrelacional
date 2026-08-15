@@ -123,7 +123,7 @@ volume de teste é insuficiente** (21 linhas, 5 partições com dados). Para val
 **Lacunas e próximos passos sugeridos:**
 
 - **Popular dados sintéticos** via `INSERT … SELECT generate_series(…)` em uma sessão
-  controlada, ou via carga real do `arj-contratocommand` em loop, e re-executar a captura.
+  controlada, ou via carga real do `contratocommand` em loop, e re-executar a captura.
 - **Considerar `enable_indexscan = off` e `enable_seqscan = off` em uma sessão de teste**
   apenas para confirmar que o índice **é capaz** de ser usado (sanity check de viabilidade,
   não de produção) — se mesmo assim o planejador escolher outra rota, há problema mais

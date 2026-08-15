@@ -9,7 +9,7 @@ do monorepo.
 ## Requirements
 ### Requirement: Enum StatusAutorizacao com grafo de transições nas 4 aplicações
 
-As quatro aplicações do monorepo (`arj-contratocommand`, `arj-contratoquery`, `autorizacaostatus-producer`, `eventos-consumer`) SHALL conter um enum `StatusAutorizacao` com os 8 estados do ciclo de vida da autorização e seus códigos (`RECEBIDA=1`, `PENDENTE_ACEITE=2`, `EM_PROCESSO_ATIVACAO=3`, `ATIVA=4`, `CANCELADA=5`, `REJEITADA=6`, `EXPIRADA=7`, `FINALIZADA=8`), lookup por código (`obterStatusEnumPorIdStatus`) e o grafo de transições embutido, exposto pelo método `podeTransicionarPara(StatusAutorizacao destino)`. As transições permitidas SHALL ser exatamente:
+As quatro aplicações do monorepo (`contratocommand`, `contratoquery`, `autorizacaostatus-producer`, `eventos-consumer`) SHALL conter um enum `StatusAutorizacao` com os 8 estados do ciclo de vida da autorização e seus códigos (`RECEBIDA=1`, `PENDENTE_ACEITE=2`, `EM_PROCESSO_ATIVACAO=3`, `ATIVA=4`, `CANCELADA=5`, `REJEITADA=6`, `EXPIRADA=7`, `FINALIZADA=8`), lookup por código (`obterStatusEnumPorIdStatus`) e o grafo de transições embutido, exposto pelo método `podeTransicionarPara(StatusAutorizacao destino)`. As transições permitidas SHALL ser exatamente:
 
 - `RECEBIDA` → `PENDENTE_ACEITE`, `EM_PROCESSO_ATIVACAO`, `REJEITADA`
 - `PENDENTE_ACEITE` → `EM_PROCESSO_ATIVACAO`, `REJEITADA`, `EXPIRADA`
@@ -63,7 +63,7 @@ As quatro aplicações SHALL conter um enum `TipoEventoAutorizacao` com 8 valore
 ### Requirement: Grafo de transições aplicado no fluxo de escrita
 
 O grafo de transições exposto por `StatusAutorizacao.podeTransicionarPara` SHALL ser consultado
-pelo `arj-contratocommand` antes de persistir qualquer mudança de status de autorização. Uma
+pelo `contratocommand` antes de persistir qualquer mudança de status de autorização. Uma
 transição não permitida pelo grafo SHALL ser rejeitada, e a mudança de status NÃO SHALL ser
 persistida nem gerar evento.
 
@@ -93,12 +93,12 @@ aplicado. O grafo passa a ser normativo em runtime.
 
 #### Scenario: Validação de transição roda como rule do validador
 
-- **WHEN** o `CancelamentoValidator` do `arj-contratocommand` é inspecionado
+- **WHEN** o `CancelamentoValidator` do `contratocommand` é inspecionado
 - **THEN** ele SHALL incluir uma rule que consulta `podeTransicionarPara`, seguindo o mesmo padrão
   das demais rules de cancelamento
 
 #### Scenario: Método deixa de ser código sem uso em produção
 
-- **WHEN** as referências a `podeTransicionarPara` no `arj-contratocommand` são inspecionadas
+- **WHEN** as referências a `podeTransicionarPara` no `contratocommand` são inspecionadas
 - **THEN** SHALL existir ao menos uma chamada em código de produção, além das chamadas em teste
 

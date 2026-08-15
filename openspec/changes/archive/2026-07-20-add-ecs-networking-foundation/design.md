@@ -14,7 +14,7 @@ Insumos concretos:
 - **Floci** (`docs/floci-aws-local/floci-aws-local.md`): emulador AWS local em
   `http://localhost:4566`, drop-in do LocalStack Community. Emula ECS via **Docker real**,
   ELB v2/ALB in-process, EC2/VPC e SSM Parameter Store. Suporta Terraform `>= 1.10`.
-- **Apps**: `arj-contratocommand` (`:8080`) e `arj-contratoquery` (`:8081`), Spring Boot
+- **Apps**: `contratocommand` (`:8080`) e `contratoquery` (`:8081`), Spring Boot
   REST com `Dockerfile`, hoje rodando via `apps/docker-compose.yml` + Postgres local.
 
 ## Goals / Non-Goals

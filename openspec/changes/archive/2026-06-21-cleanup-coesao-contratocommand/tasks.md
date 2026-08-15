@@ -25,7 +25,7 @@
 
 ## 2. Fase 2 — Eliminar duplicação Pix/DDA (decisão B1)
 
-- [x] 2.1 Verificar que `arj-contratoquery` não importa classes de `enabledproduct` do contratocommand antes de fundir (grep cross-app); registrar achado. _(achado: `arj-contratoquery` não existe neste repo — sem acoplamento cross-app)._
+- [x] 2.1 Verificar que `contratoquery` não importa classes de `enabledproduct` do contratocommand antes de fundir (grep cross-app); registrar achado. _(achado: `contratoquery` não existe neste repo — sem acoplamento cross-app)._
 - [x] 2.2 Criar `AutorizacaoMapper` compartilhado (unifica `PixAutoMapper` + `DdaAutoMapper` idênticos) e remover os dois mappers por produto. _(em `application/autorizacao/`)._
 - [x] 2.3 Criar `AutorizacaoRepository` compartilhado (unifica `PixAutoRepository` + `DdaAutoRepository`) e atualizar referências.
 - [x] 2.4 Criar `CriarAutorizacaoUseCase` e `CancelarAutorizacaoUseCase` compartilhados (unificam os use cases por produto, parametrizando log por produto se necessário). _(log usa `request.tipoProduto()`; `@Transactional` no `execute`)._

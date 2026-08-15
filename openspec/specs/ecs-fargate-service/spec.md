@@ -3,7 +3,7 @@
 ## Purpose
 
 Módulo Terraform parametrizável (`modules/ecs-service`) de ECS Service em Fargate,
-instanciado para `arj-contratocommand` e `arj-contratoquery`, com tasks nas subnets
+instanciado para `contratocommand` e `contratoquery`, com tasks nas subnets
 privadas, registro no ALB do módulo `ecs-cluster`, health check em
 `/actuator/health` e injeção de configuração via variáveis de ambiente.
 
@@ -58,16 +58,16 @@ fixadas em código do módulo, sendo recebidas como parâmetros de entrada.
 ### Requirement: Serviços contratocommand e contratoquery
 
 O ambiente SHALL instanciar o módulo `ecs-service` duas vezes: uma para
-`arj-contratocommand` expondo a porta `8080`, e outra para `arj-contratoquery` expondo a
+`contratocommand` expondo a porta `8080`, e outra para `contratoquery` expondo a
 porta `8081`, cada uma consumindo a imagem construída a partir do respectivo `Dockerfile`
 em `apps/`.
 
 #### Scenario: contratocommand na porta 8080
 - **WHEN** a composição do ambiente é aplicada
-- **THEN** existe um ECS Service para `arj-contratocommand` cujo container escuta na
+- **THEN** existe um ECS Service para `contratocommand` cujo container escuta na
   porta `8080`
 
 #### Scenario: contratoquery na porta 8081
 - **WHEN** a composição do ambiente é aplicada
-- **THEN** existe um ECS Service para `arj-contratoquery` cujo container escuta na
+- **THEN** existe um ECS Service para `contratoquery` cujo container escuta na
   porta `8081`

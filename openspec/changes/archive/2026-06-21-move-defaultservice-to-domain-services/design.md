@@ -1,6 +1,6 @@
 ## Context
 
-A aplicação `arj-contratocommand` segue arquitetura hexagonal. Hoje os serviços de regra de contratação e cancelamento estão em `application/defaultservice`:
+A aplicação `contratocommand` segue arquitetura hexagonal. Hoje os serviços de regra de contratação e cancelamento estão em `application/defaultservice`:
 
 ```
 application/defaultservice/

@@ -1217,9 +1217,9 @@ VALIDAÇÃO: Dupla (passado + conflito)
 - [pg_cron Extension](https://github.com/citusdata/pg_cron)
 
 ### Codebase do Projeto
-- [IdContaUUIDPartitionDistributor.java](../../apps/arj-contratocommand/src/main/java/br/com/srportto/contratocommand/domain/utilities/IdContaUUIDPartitionDistributor.java) - Distribuição
-- [ControleExpurgoAutorizacao.java](../../apps/arj-contratocommand/src/main/java/br/com/srportto/contratocommand/domain/utilities/ControleExpurgoAutorizacao.java) - Algoritmos de expurgo
-- [ReversibleUUIDv7.java](../../apps/arj-contratocommand/src/main/java/br/com/srportto/contratocommand/domain/utilities/ReversibleUUIDv7.java) - UUID reversível
+- [IdContaUUIDPartitionDistributor.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/domain/utilities/IdContaUUIDPartitionDistributor.java) - Distribuição
+- [ControleExpurgoAutorizacao.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/domain/utilities/ControleExpurgoAutorizacao.java) - Algoritmos de expurgo
+- [ReversibleUUIDv7.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/domain/utilities/ReversibleUUIDv7.java) - UUID reversível
 
 ### Arquivos de Dados da POC
 - [sql-comandos.txt](sql-comandos.txt) - Scripts SQL

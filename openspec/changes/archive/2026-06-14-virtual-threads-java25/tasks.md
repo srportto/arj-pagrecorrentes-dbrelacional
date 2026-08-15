@@ -1,17 +1,17 @@
-## 1. Habilitar Virtual Threads no arj-contratocommand
+## 1. Habilitar Virtual Threads no contratocommand
 
-- [x] 1.1 Adicionar `spring.threads.virtual.enabled: true` em `aplicacoes/arj-contratocommand/src/main/resources/application.yaml`
+- [x] 1.1 Adicionar `spring.threads.virtual.enabled: true` em `aplicacoes/contratocommand/src/main/resources/application.yaml`
 - [x] 1.2 Ajustar `maximum-pool-size` do Hikari de `5` para `10` (padrão `${DB_POOL_MAX_SIZE:10}`) no mesmo arquivo
 
-## 2. Habilitar Virtual Threads no arj-contratoquery
+## 2. Habilitar Virtual Threads no contratoquery
 
-- [x] 2.1 Adicionar `spring.threads.virtual.enabled: true` em `aplicacoes/arj-contratoquery/src/main/resources/application.yaml`
+- [x] 2.1 Adicionar `spring.threads.virtual.enabled: true` em `aplicacoes/contratoquery/src/main/resources/application.yaml`
 - [x] 2.2 Ajustar `maximum-pool-size` do Hikari de `5` para `10` (padrão `${DB_POOL_MAX_SIZE:10}`) no mesmo arquivo
 
 ## 3. Verificar build e testes
 
-- [x] 3.1 Executar `mvn verify` em `arj-contratocommand` e confirmar que todos os testes passam sem falhas
-- [x] 3.2 Executar `mvn verify` em `arj-contratoquery` e confirmar que todos os testes passam sem falhas
+- [x] 3.1 Executar `mvn verify` em `contratocommand` e confirmar que todos os testes passam sem falhas
+- [x] 3.2 Executar `mvn verify` em `contratoquery` e confirmar que todos os testes passam sem falhas
 
 ## 4. Benchmark de performance
 

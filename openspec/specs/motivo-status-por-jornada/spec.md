@@ -56,7 +56,7 @@ preserva a jornada ao longo do ciclo de vida.
 
 A coluna SHALL aceitar valor de "jornada desconhecida" para linhas criadas antes desta
 mudança, sem exigir backfill. As duas aplicações que mapeiam a tabela
-(`arj-contratocommand` e `arj-contratoquery`) SHALL declarar a coluna em suas entidades.
+(`contratocommand` e `contratoquery`) SHALL declarar a coluna em suas entidades.
 
 #### Scenario: Criação persiste a jornada recebida
 - **WHEN** o sistema processa `POST /api/autorizacoes` com `tipoJornada: SPI_J1`

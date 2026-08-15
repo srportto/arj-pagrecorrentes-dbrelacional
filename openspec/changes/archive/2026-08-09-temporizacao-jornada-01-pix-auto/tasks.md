@@ -1,8 +1,8 @@
 ## 1. Schema: coluna tipo_jornada
 
-- [x] 1.1 Adicionar a coluna `tipo_jornada` ao DDL de `autorizacoes` (aceitando valor de jornada desconhecida para linhas legadas) e registrar o script em `apps/arj-contratocommand/docs/comandos-sql.txt`
-- [x] 1.2 Declarar o campo `tipoJornada` na entidade `Autorizacao` do `arj-contratocommand`, com o converter adequado ao tipo da coluna
-- [x] 1.3 Espelhar o campo na entidade equivalente do `arj-contratoquery`
+- [x] 1.1 Adicionar a coluna `tipo_jornada` ao DDL de `autorizacoes` (aceitando valor de jornada desconhecida para linhas legadas) e registrar o script em `apps/contratocommand/docs/comandos-sql.txt`
+- [x] 1.2 Declarar o campo `tipoJornada` na entidade `Autorizacao` do `contratocommand`, com o converter adequado ao tipo da coluna
+- [x] 1.3 Espelhar o campo na entidade equivalente do `contratoquery`
 - [x] 1.4 Passar `AutorizacaoMapper` a gravar a jornada na entidade, além de continuar derivando `motivo_status` dela
 - [x] 1.5 Testes: criação por cada jornada persiste `tipo_jornada` coerente e mantém o `motivo_status` atual
 
@@ -12,7 +12,7 @@
 - [x] 2.2 Teste: o novo valor é resolvível por código e não colide com nenhum existente
 - [x] 2.3 Confirmar por teste que o grafo de `StatusAutorizacao` permanece inalterado (`RECEBIDA → REJEITADA` e `RECEBIDA → EM_PROCESSO_ATIVACAO → ATIVA` já cobrem os caminhos da decisão)
 
-## 3. Rota de decisão no arj-contratocommand
+## 3. Rota de decisão no contratocommand
 
 - [x] 3.1 Criar `DecisaoAutorizacaoRequest` (record imutável) com `acao` validada contra `APROVAR`/`REJEITAR`/`EXPIRAR` e demais campos do canal
 - [x] 3.2 Criar `DecisaoContext` (record imutável) com id do path, `tipoProduto` do header e dados do corpo
@@ -26,7 +26,7 @@
 
 ## 4. Enriquecimento do evento publicado
 
-- [x] 4.1 Adicionar `tipo_jornada` a `AutorizacaoEventoPayload` no `arj-contratocommand`
+- [x] 4.1 Adicionar `tipo_jornada` a `AutorizacaoEventoPayload` no `contratocommand`
 - [x] 4.2 Publicar os message attributes `tipoProduto` e `tipoJornada` em `AutorizacaoEventoPublisher`, derivados da linha
 - [x] 4.3 Testes do publisher: os três attributes acompanham cada evento e são coerentes com o body; aprovação publica `ATIVACAO`; rejeição e expiração publicam `REJEICAO`
 - [x] 4.4 Espelhar `tipo_jornada` em `AutorizacaoEventoPayload` do `autorizacaostatus-producer`
@@ -67,14 +67,14 @@
 - [x] 7.3 Confirmar que `DDA_AUTO` e `PIX_AUTO` em `QRC_J2` não chegam à fila de temporização
 - [x] 7.4 Com prazo reduzido por configuração, confirmar a expiração automática: status vira `REJEITADA` com `REJEITADA_SISTEMA_TIMEOUT_J1` e o evento `REJEICAO` percorre SNS → SQS → Kafka
 - [x] 7.5 Aprovar uma autorização antes do vencimento e confirmar que o disparo posterior recebe 422, confirma a entrada e não altera a linha
-- [x] 7.6 Derrubar o `arj-contratocommand`, forçar um vencimento e confirmar que a entrada permanece pendente e é processada quando o serviço volta
+- [x] 7.6 Derrubar o `contratocommand`, forçar um vencimento e confirmar que a entrada permanece pendente e é processada quando o serviço volta
 - [x] 7.7 Reiniciar o Valkey com agendamentos e pendências em aberto e confirmar que sobrevivem
 
 ## 8. Documentação
 
 - [x] 8.1 Criar `CLAUDE.md` e `AGENTS.md` (espelhos idênticos) de `apps/temporiza-autorizacao`
-- [x] 8.2 Atualizar `CLAUDE.md` e `AGENTS.md` do `arj-contratocommand`: rota de decisão, coluna `tipo_jornada`, motivo novo e attributes novos
-- [x] 8.3 Atualizar `CLAUDE.md`/`AGENTS.md` de `arj-contratoquery`, `autorizacaostatus-producer` e `eventos-consumer` quanto aos espelhos de schema
+- [x] 8.2 Atualizar `CLAUDE.md` e `AGENTS.md` do `contratocommand`: rota de decisão, coluna `tipo_jornada`, motivo novo e attributes novos
+- [x] 8.3 Atualizar `CLAUDE.md`/`AGENTS.md` de `contratoquery`, `autorizacaostatus-producer` e `eventos-consumer` quanto aos espelhos de schema
 - [x] 8.4 Atualizar o `CLAUDE.md` raiz e o `README.md` raiz: quinta aplicação, porta 8084, diagrama de fluxo e nova fila
 - [x] 8.5 Atualizar `infra/README.md` e os READMEs dos roots/módulos tocados
 - [x] 8.6 Registrar a dívida de expurgo de estados terminais como proposta própria (`expurgo-estados-terminais`)

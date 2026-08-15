@@ -2,7 +2,7 @@
 
 ## Context
 
-`arj-contratoquery` nasceu como cópia de `arj-contratocommand` e reteve classes do fluxo de escrita que nunca foram usadas no serviço de leitura. A análise de referências (grep por nome de classe/método, excluindo o próprio arquivo) mapeou exatamente quem usa o quê:
+`contratoquery` nasceu como cópia de `contratocommand` e reteve classes do fluxo de escrita que nunca foram usadas no serviço de leitura. A análise de referências (grep por nome de classe/método, excluindo o próprio arquivo) mapeou exatamente quem usa o quê:
 
 **Query — classes main sem nenhuma referência de produção:**
 

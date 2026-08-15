@@ -12,7 +12,7 @@ O monorepo SHALL organizar-se em duas pastas de topo em inglês: `apps/` para c�
 
 #### Scenario: Aplicações vivem sob apps/
 - **WHEN** um desenvolvedor inspeciona a raiz do repositório
-- **THEN** existe uma pasta `apps/` contendo `arj-contratocommand/`, `arj-contratoquery/`, `autorizacaostatus-producer/`, `eventos-consumer/` e `temporiza-autorizacao/`
+- **THEN** existe uma pasta `apps/` contendo `contratocommand/`, `contratoquery/`, `autorizacaostatus-producer/`, `eventos-consumer/` e `temporiza-autorizacao/`
 - **AND** não existe mais a pasta `code/`
 
 #### Scenario: Infraestrutura tem pasta dedicada
@@ -24,7 +24,7 @@ O monorepo SHALL organizar-se em duas pastas de topo em inglês: `apps/` para c�
 
 #### Scenario: Comportamento das aplicações preservado
 - **WHEN** a suíte de testes de cada aplicação é executada após a reorganização
-- **THEN** `mvn test` passa em `apps/arj-contratocommand`, `apps/arj-contratoquery`, `apps/autorizacaostatus-producer`, `apps/eventos-consumer` e `apps/temporiza-autorizacao`
+- **THEN** `mvn test` passa em `apps/contratocommand`, `apps/contratoquery`, `apps/autorizacaostatus-producer`, `apps/eventos-consumer` e `apps/temporiza-autorizacao`
 - **AND** os endpoints, portas (8080/8081/8082/8083/8084) e contratos REST permanecem inalterados
 
 ### Requirement: Esqueleto de infraestrutura preparado para Terraform

@@ -5,7 +5,7 @@ TBD - created by archiving change reconciliar-contrato-spec-doc. Update Purpose 
 ## Requirements
 ### Requirement: Nomenclatura idêntica para o mesmo dado entre serviços
 
-Os contratos REST do `arj-contratocommand` e do `arj-contratoquery` SHALL usar o mesmo nome de
+Os contratos REST do `contratocommand` e do `contratoquery` SHALL usar o mesmo nome de
 campo para o mesmo dado da autorização. Um cliente que crie pelo command e consulte pelo query NÃO
 SHALL precisar de mapeamentos distintos para a mesma entidade.
 
@@ -51,7 +51,7 @@ documentação SHALL descrever exatamente o que o código faz:
 > cliente — tanto falha de formato quanto violação de regra de negócio — retorna 422. Esta spec
 > chegou a documentar 400 para falha de formato; corrigido em 2026-08-11 (`enxugar-documentacao-repo`)
 > após verificar por código e teste que os dois `ApiExceptionHandler`
-> (`arj-contratocommand`/`arj-contratoquery`) mapeiam `MethodArgumentNotValidException` para
+> (`contratocommand`/`contratoquery`) mapeiam `MethodArgumentNotValidException` para
 > `HttpStatus.UNPROCESSABLE_CONTENT` — `BAD_REQUEST` não aparece em nenhum dos dois arquivos.
 
 #### Scenario: Violação de Bean Validation retorna 422

@@ -1,7 +1,7 @@
 ## Why
 
 A auditoria multi-agente de 2026-08-04 encontrou três lacunas no fluxo de escrita do
-`arj-contratocommand` que, isoladas, parecem administráveis — mas combinadas produzem dois
+`contratocommand` que, isoladas, parecem administráveis — mas combinadas produzem dois
 cenários concretos de dano financeiro em autorizações de pagamento recorrente:
 
 - **Cancelamento duplicado.** `Autorizacao` não tem `@Version`, o `CancelarAutorizacaoUseCase`
@@ -46,7 +46,7 @@ sobrescrita silenciosa original, sem nem o 500 acidental como sinal.
 
 ## What Changes
 
-- Adicionar `@Version` em `Autorizacao` (`arj-contratocommand`), habilitando lock otimista — duas
+- Adicionar `@Version` em `Autorizacao` (`contratocommand`), habilitando lock otimista — duas
   escritas concorrentes sobre a mesma linha passam a resultar em `OptimisticLockException` para a
   segunda, em vez de sobrescrita silenciosa.
 - Criar a rule `TransicaoStatusValida` no `CancelamentoValidator`, que consulta
@@ -92,12 +92,12 @@ sobrescrita silenciosa original, sem nem o 500 acidental como sinal.
 
 - `maquina-estados-autorizacao`: a capacidade hoje especifica que o grafo de transições SHALL
   existir nas 4 aplicações, mas nada exige que ele seja **aplicado**. Passa a exigir que o fluxo
-  de escrita do `arj-contratocommand` consulte `podeTransicionarPara` antes de persistir mudança
+  de escrita do `contratocommand` consulte `podeTransicionarPara` antes de persistir mudança
   de status, tornando o grafo normativo em runtime e não apenas declarativo.
 
 ## Impact
 
-- **Código afetado (`arj-contratocommand`):**
+- **Código afetado (`contratocommand`):**
   `domain/entities/Autorizacao.java` (campo `@Version`, `unique = true`),
   `application/cancelamento/CancelarAutorizacaoUseCase.java`,
   `application/cancelamento/CancelamentoContext.java` (precisa passar a carregar o status atual,
@@ -113,7 +113,7 @@ sobrescrita silenciosa original, sem nem o 500 acidental como sinal.
   partição, hoje caindo em 500 genérico).
 - **Banco:** nova migration adicionando coluna de versão e constraint `UNIQUE` em
   `id_autorizacao_empresa`. Requer verificação prévia de duplicatas existentes.
-- **`arj-contratoquery`:** a coluna de versão passa a existir na tabela compartilhada. A entidade
+- **`contratoquery`:** a coluna de versão passa a existir na tabela compartilhada. A entidade
   de leitura precisa mapeá-la ou ignorá-la explicitamente — verificar que a leitura não quebra.
 - **Contrato de API:** dois novos caminhos de erro (conflito de concorrência e criação duplicada)
   precisam de código de status e corpo definidos, e de documentação no `README.md`.

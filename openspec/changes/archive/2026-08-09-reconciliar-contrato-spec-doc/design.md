@@ -82,7 +82,7 @@ Os items 2 e 3 (formato de `status`, nomes de campo) ficam **documentados** como
 A convenção que o código pratica é 422 para qualquer entrada inválida do cliente (seja de formato
 via `@Valid`, seja de regra de negócio via `BusinessException`). Esta é a convenção assumida por
 `integridade-fluxo-escrita` e `blindar-superficie-leitura`. A documentação que prometia 400 (no
-`arj-contratocommand/README.md`, `CLAUDE.md`, `AGENTS.md`) precisa ser alinhada ao código.
+`contratocommand/README.md`, `CLAUDE.md`, `AGENTS.md`) precisa ser alinhada ao código.
 **Não há mudança de código** — apenas atualização de docs.
 
 A opção por 422 como padrão único (em vez de 400 para formato + 422 para regra) é justificada
@@ -93,7 +93,7 @@ por três pontos:
    exigiria **mexer em código e em testes** (`ApiExceptionHandlerTest` do command e do query já
    afirmam o 422 para `MethodArgumentNotValidException`).
 2. **Princípio do menor esforço**: a dívida é puramente documental, e o conflito está confinado
-   ao `arj-contratocommand` (o `arj-contratoquery` já documenta 422 corretamente na narrativa,
+   ao `contratocommand` (o `contratoquery` já documenta 422 corretamente na narrativa,
    embora ainda cite 400 na tabela de status — inconsistência residual, também resolvida aqui).
 3. **Distinção entre "formato" e "regra" é marginal para o consumidor**: o cliente recebe um 422
    com `LayoutErrosApiValidationsResponse` (com `occurrences` por campo) ou `LayoutErrosApiResponse`

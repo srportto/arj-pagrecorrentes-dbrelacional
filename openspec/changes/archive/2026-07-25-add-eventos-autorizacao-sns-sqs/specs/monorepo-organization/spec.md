@@ -8,7 +8,7 @@ O monorepo SHALL organizar-se em duas pastas de topo em inglês: `apps/` para c�
 
 #### Scenario: Aplicações vivem sob apps/
 - **WHEN** um desenvolvedor inspeciona a raiz do repositório
-- **THEN** existe uma pasta `apps/` contendo `arj-contratocommand/`, `arj-contratoquery/` e `autorizacaostatus-producer/`
+- **THEN** existe uma pasta `apps/` contendo `contratocommand/`, `contratoquery/` e `autorizacaostatus-producer/`
 - **AND** não existe mais a pasta `code/`
 
 #### Scenario: Infraestrutura tem pasta dedicada
@@ -18,7 +18,7 @@ O monorepo SHALL organizar-se em duas pastas de topo em inglês: `apps/` para c�
 
 #### Scenario: Comportamento das aplicações preservado
 - **WHEN** a suíte de testes de cada aplicação é executada após a reorganização
-- **THEN** `mvn test` passa em `apps/arj-contratocommand`, `apps/arj-contratoquery` e `apps/autorizacaostatus-producer`
+- **THEN** `mvn test` passa em `apps/contratocommand`, `apps/contratoquery` e `apps/autorizacaostatus-producer`
 - **AND** os endpoints, portas (8080/8081/8082) e contratos REST permanecem inalterados
 
 ### Requirement: Contêiner por aplicação compatível com ECS/Fargate

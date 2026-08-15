@@ -6,7 +6,7 @@
 `mensageria-sqs-kafka` deste monorepo e achou quatro desvios da convenção do catálogo:
 `AckMode.MANUAL` sem necessidade de negócio, ausência de DLT, listener fora de
 `entrypoint/`, e enum de negócio fora de `domain/enums/`. `StatusAutorizacao` e
-`TipoEventoAutorizacao` são espelhos manuais de `arj-contratocommand`, com o grafo de
+`TipoEventoAutorizacao` são espelhos manuais de `contratocommand`, com o grafo de
 transições exigido pela capability `maquina-estados-autorizacao` — essa capability
 explicitamente fixa a localização atual (`application/eventos/`) para as "aplicações de
 eventos", então mover de camada aqui é uma mudança de requisito, não só de código.
@@ -81,7 +81,7 @@ padrão do spring-kafka — outro erro comum listado na skill. Adiciona-se:
 ### D3. Listener em `entrypoint/kafka/`, enums em `domain/enums/`
 
 Alinha com a tabela de `arquitetura-limpa-java` (`Listener SQS, consumer Kafka →
-entrypoint/`; `Enum de negócio → domain/enums/`) e com o próprio `arj-contratocommand`,
+entrypoint/`; `Enum de negócio → domain/enums/`) e com o próprio `contratocommand`,
 que já segue essa convenção. Introduz a camada `domain/` em `eventos-consumer` pela
 primeira vez — hoje o app não tem `domain/` porque não tinha regra de negócio própria;
 `StatusAutorizacao`/`TipoEventoAutorizacao` sempre foram regra de negócio (grafo de

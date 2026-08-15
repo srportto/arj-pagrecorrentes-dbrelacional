@@ -73,7 +73,7 @@ no momento do consumo SHALL ser agendada para disparo imediato, e não descartad
 ### Requirement: Expiração aciona a rota de decisão do command
 
 No vencimento, a aplicação SHALL acionar
-`PATCH /api/autorizacoes/{idAutorizacao}/decisao` no `arj-contratocommand` com
+`PATCH /api/autorizacoes/{idAutorizacao}/decisao` no `contratocommand` com
 `acao: EXPIRAR`. A aplicação NÃO SHALL consultar a base de autorizações para decidir se
 aciona: a revalidação de status é responsabilidade transacional do command. A resposta SHALL
 classificar o desfecho do trabalho:

@@ -1,6 +1,6 @@
 ## Why
 
-O repositório `arj-pagrecorrentes-dbrelacional` não possui README.md na raiz, o que impede que desenvolvedores e agentes tenham uma visão geral do sistema — o que é, como está organizado e por onde começar. Cada app (`arj-contratocommand` e `arj-contratoquery`) já tem seu próprio README, mas falta o documento de entrada do monorepo.
+O repositório `arj-pagrecorrentes-dbrelacional` não possui README.md na raiz, o que impede que desenvolvedores e agentes tenham uma visão geral do sistema — o que é, como está organizado e por onde começar. Cada app (`contratocommand` e `contratoquery`) já tem seu próprio README, mas falta o documento de entrada do monorepo.
 
 ## What Changes
 

@@ -6,7 +6,7 @@ O monorepo cresceu como um conjunto de aplicações (`aplicacoes/`) sem separaç
 
 - **BREAKING** (estrutura de pastas): renomear `aplicacoes/` → `code/` (nomes em inglês). Todos os caminhos em READMEs, docs e configs passam a apontar para `code/`.
 - Criar a pasta de topo `infra/` como **esqueleto** preparado para Terraform (módulos, ambientes `local`/`prod`, bootstrap de state), com READMEs e placeholders — **sem** recursos AWS reais nesta fase.
-- Adicionar um `Dockerfile` por aplicação (`arj-contratocommand`, `arj-contratoquery`), multi-stage e compatível com ECS/Fargate (JRE + JAR, imagem enxuta, health via `/actuator/health`, shutdown gracioso).
+- Adicionar um `Dockerfile` por aplicação (`contratocommand`, `contratoquery`), multi-stage e compatível com ECS/Fargate (JRE + JAR, imagem enxuta, health via `/actuator/health`, shutdown gracioso).
 - Reorganizar a configuração Spring em profiles: `application.yml` (base, comum) + `application-local.yml` + `application-prod.yml`, **removendo** o `spring.profiles.active: dev` fixo. O profile ativo passa a vir do ambiente (`SPRING_PROFILES_ACTIVE`), com `local` como default de desenvolvimento.
 - Mover o Dockerfile do Postgres (partman/cron) de `docs/` para `infra/local/` como artefato de infraestrutura **de desenvolvimento local**.
 - Atualizar READMEs e a documentação de estrutura para refletir `code/` + `infra/`.
@@ -24,7 +24,7 @@ Fora de escopo (fases seguintes): Terraform funcional, provisionamento AWS, cons
 ## Impact
 
 - **Estrutura de diretórios**: `aplicacoes/` → `code/`; nova pasta `infra/`; Dockerfile do Postgres migra de `docs/run_postgres16_ja_com_cron_partman/` para `infra/local/`.
-- **Novos arquivos**: `code/arj-contratocommand/Dockerfile`, `code/arj-contratoquery/Dockerfile`, `code/docker-compose.yml` (opcional, ambiente local), esqueleto `infra/**` (READMEs/placeholders).
+- **Novos arquivos**: `code/contratocommand/Dockerfile`, `code/contratoquery/Dockerfile`, `code/docker-compose.yml` (opcional, ambiente local), esqueleto `infra/**` (READMEs/placeholders).
 - **Configuração**: cada app ganha `application-local.yml` e `application-prod.yml`; `application.yml` deixa de fixar o profile `dev`.
 - **Documentação**: `README.md` raiz e READMEs das apps atualizados; caminhos em CLAUDE.md/AGENTS.md revisados.
 - **Comportamento das aplicações**: inalterado — endpoints, portas (8080/8081), dependência de PostgreSQL 16 com partman/cron e a suíte de testes continuam idênticos.

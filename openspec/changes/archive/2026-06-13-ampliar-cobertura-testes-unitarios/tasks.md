@@ -1,6 +1,6 @@
 ## 1. Setup de medição (ambas as apps)
 
-- [x] 1.1 Adicionar `lombok.config` na raiz de `arj-contratoquery` e `arj-contratocommand` com `lombok.addLombokGeneratedAnnotation = true`
+- [x] 1.1 Adicionar `lombok.config` na raiz de `contratoquery` e `contratocommand` com `lombok.addLombokGeneratedAnnotation = true`
 - [x] 1.2 Adicionar `jacoco-maven-plugin` (0.8.15, com goals `prepare-agent` e `report`) ao `pom.xml` de ambas as apps
 - [x] 1.3 Confirmado: JaCoCo 0.8.15 instrumenta o bytecode Java 25 e gera `target/site/jacoco/index.html` (contratoquery rodou verde com agent)
 - [x] 1.4 Baseline contratoquery: 41% linhas (133/324, antes dos testes novos)
@@ -41,6 +41,6 @@
 ## 6. Gate e validação final
 
 - [x] 6.1 Adicionar o goal `jacoco:check` (regra BUNDLE, LINE, mínimo 0.80, com exclusões `**/*Application.class` e `**/*Repository.class`) ao `pom.xml` de ambas as apps
-- [x] 6.2 Rodar `mvn verify` em `arj-contratoquery`: testes verdes + cobertura ≥ 0.80 (alvo ≥ 0.90) nas classes não-excluídas
-- [x] 6.3 Rodar `mvn verify` em `arj-contratocommand`: testes verdes + cobertura ≥ 0.80 (alvo ≥ 0.90) nas classes não-excluídas
+- [x] 6.2 Rodar `mvn verify` em `contratoquery`: testes verdes + cobertura ≥ 0.80 (alvo ≥ 0.90) nas classes não-excluídas
+- [x] 6.3 Rodar `mvn verify` em `contratocommand`: testes verdes + cobertura ≥ 0.80 (alvo ≥ 0.90) nas classes não-excluídas
 - [x] 6.4 Registrar a cobertura final de cada app e ajustar o gate se necessário

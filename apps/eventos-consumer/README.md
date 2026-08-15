@@ -42,7 +42,7 @@ java -jar target/eventos-consumer-0.0.1-SNAPSHOT.jar
 ```bash
 # 1. Suba o Kafka local (infra/local/kafka) e a autorizacaostatus-producer
 # 2. Suba esta app (mvn spring-boot:run)
-# 3. Crie ou cancele uma autorização via arj-contratocommand (POST/PATCH /api/autorizacoes)
+# 3. Crie ou cancele uma autorização via contratocommand (POST/PATCH /api/autorizacoes)
 # 4. Confira o log desta app: deve aparecer a confirmação de consumo
 # 5. Confira o Kafbat UI (http://localhost:8090): o consumer group eventos-consumer
 #    deve aparecer com lag zerando

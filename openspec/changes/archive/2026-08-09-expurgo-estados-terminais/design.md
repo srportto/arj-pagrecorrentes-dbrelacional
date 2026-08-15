@@ -1,7 +1,7 @@
 ## Context
 
 `CancelarAutorizacaoUseCase.transferirParaNovaParticao` é hoje o único lugar do
-`arj-contratocommand` que move uma `Autorizacao` da partição de vigência (calculada a
+`contratocommand` que move uma `Autorizacao` da partição de vigência (calculada a
 partir de `dataFimVigencia`, default `9999-12-31`) para a partição de expurgo
 (`ControleExpurgoAutorizacao.obterParticaoExpurgoWrite`, delete+insert na mesma
 `@Transactional`). A lógica está acoplada ao use case de cancelamento: usa

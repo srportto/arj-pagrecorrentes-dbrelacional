@@ -1,6 +1,6 @@
 ## Context
 
-`Autorizacao.inicializaCriacao()` (`apps/arj-contratocommand/.../domain/entities/Autorizacao.java`) grava `status = StatusAutorizacao.ATIVA.getStatusAutorizacao()` de forma incondicional para qualquer produto. É chamado a partir de `AutorizacaoMapper.afterMapping()`, na seguinte ordem:
+`Autorizacao.inicializaCriacao()` (`apps/contratocommand/.../domain/entities/Autorizacao.java`) grava `status = StatusAutorizacao.ATIVA.getStatusAutorizacao()` de forma incondicional para qualquer produto. É chamado a partir de `AutorizacaoMapper.afterMapping()`, na seguinte ordem:
 
 ```
 afterMapping(dados, tipoJornada, autorizacao):
@@ -61,7 +61,7 @@ Confirmado com o usuário: `motivoStatus` continua vindo só de `tipoJornada` (`
 
 Sem migração de schema ou de dados — `status` já é uma coluna `Integer` existente, e `RECEBIDA` (código 1) já é um valor válido nela. Nenhuma autorização `PIX_AUTO` existente é retroativamente alterada; a mudança afeta só criações novas a partir do deploy.
 
-Deploy padrão (sem passo especial de rollback): reverter o deploy do `arj-contratocommand` volta o comportamento anterior (toda criação grava `ATIVA`) sem qualquer efeito colateral em dados já persistidos.
+Deploy padrão (sem passo especial de rollback): reverter o deploy do `contratocommand` volta o comportamento anterior (toda criação grava `ATIVA`) sem qualquer efeito colateral em dados já persistidos.
 
 ## Open Questions
 

@@ -1,6 +1,6 @@
 ## Why
 
-A aplicação `arj-contratocommand` carrega duplicação estrutural e incoerências que dificultam manutenção, testes e seu uso como base para outras aplicações. O eixo "produto" (PIX_AUTO / DDA_AUTO) está duplicado em vez de abstraído: `Mapper`, `Repository`, `UseCases` e `Service` de cada produto são cópia-carbono, embora ambos os produtos escrevam na mesma entidade/tabela e a única variação real (valor-limite) já viva nas `Rules`. Soma-se a isso um conjunto de defeitos latentes (transação ineficaz no cancelamento, exceção de framework vazada, status semanticamente ambíguo) e inconsistências de contrato (DTO mutável usado como "carteiro" de estado, record vs classe, sufixos de nome). Esta change é uma **limpeza e organização** que precede a futura funcionalidade de **alteração de contrato**, deixando a base enxuta, coesa e simétrica para receber essa nova operação.
+A aplicação `contratocommand` carrega duplicação estrutural e incoerências que dificultam manutenção, testes e seu uso como base para outras aplicações. O eixo "produto" (PIX_AUTO / DDA_AUTO) está duplicado em vez de abstraído: `Mapper`, `Repository`, `UseCases` e `Service` de cada produto são cópia-carbono, embora ambos os produtos escrevam na mesma entidade/tabela e a única variação real (valor-limite) já viva nas `Rules`. Soma-se a isso um conjunto de defeitos latentes (transação ineficaz no cancelamento, exceção de framework vazada, status semanticamente ambíguo) e inconsistências de contrato (DTO mutável usado como "carteiro" de estado, record vs classe, sufixos de nome). Esta change é uma **limpeza e organização** que precede a futura funcionalidade de **alteração de contrato**, deixando a base enxuta, coesa e simétrica para receber essa nova operação.
 
 ## What Changes
 
@@ -26,7 +26,7 @@ A aplicação `arj-contratocommand` carrega duplicação estrutural e incoerênc
 
 ## Impact
 
-- **Módulo:** `aplicacoes/arj-contratocommand` (somente). Sem mudança no `arj-contratoquery` — a verificar que ele não importa classes de `enabledproduct` antes da fase de fusão.
+- **Módulo:** `aplicacoes/contratocommand` (somente). Sem mudança no `contratoquery` — a verificar que ele não importa classes de `enabledproduct` antes da fase de fusão.
 - **Camadas afetadas:** `entrypoint/contratosrest` (DTOs), `application/enabledproduct/{pixauto,ddaauto}` (fusão), `application/defaultservice/cancelamento` (validação por parâmetro), `domain/entities` e `domain/enums` (status/embeddables/inicialização).
 - **Testes:** consolidação dos testes duplicados de Pix/DDA em testes compartilhados + testes finos de strategy; cobertura preservada. Gate: `mvn test` verde ao fim de cada fase.
 - **Dependências externas:** nenhuma nova. Mantém Spring Boot, MapStruct, Lombok, PostgreSQL.

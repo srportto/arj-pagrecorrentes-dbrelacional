@@ -18,7 +18,7 @@ module "ecs_cluster" {
 module "ecs_service_contratocommand" {
   source = "../../modules/ecs-service"
 
-  name       = "arj-contratocommand"
+  name       = "contratocommand"
   region     = var.region
   cluster_id = module.ecs_cluster.cluster_id
 
@@ -44,7 +44,7 @@ module "ecs_service_contratocommand" {
 module "ecs_service_contratoquery" {
   source = "../../modules/ecs-service"
 
-  name       = "arj-contratoquery"
+  name       = "contratoquery"
   region     = var.region
   cluster_id = module.ecs_cluster.cluster_id
 

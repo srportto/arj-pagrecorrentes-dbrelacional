@@ -2,7 +2,7 @@
 
 ### Requirement: Lock otimista na entidade Autorizacao
 
-A entidade `Autorizacao` do `arj-contratocommand` SHALL possuir um campo de versão gerenciado
+A entidade `Autorizacao` do `contratocommand` SHALL possuir um campo de versão gerenciado
 pelo provedor JPA (`@Version`), persistido em coluna própria da tabela `autorizacoes`. Toda
 escrita sobre uma autorização existente SHALL verificar que a versão lida permanece inalterada no
 momento do commit.
@@ -51,11 +51,11 @@ JPA.
 
 ### Requirement: Leitura permanece compatível com a coluna de versão
 
-A adição da coluna de versão à tabela compartilhada NÃO SHALL quebrar o `arj-contratoquery`, que
+A adição da coluna de versão à tabela compartilhada NÃO SHALL quebrar o `contratoquery`, que
 lê a mesma tabela. A entidade de leitura SHALL mapear ou ignorar explicitamente a coluna.
 
 #### Scenario: Consulta funciona após a migration
 
-- **WHEN** a coluna de versão existe na tabela e o `arj-contratoquery` executa `GET /api/autorizacoes`
+- **WHEN** a coluna de versão existe na tabela e o `contratoquery` executa `GET /api/autorizacoes`
   e `GET /api/autorizacoes/{id}`
 - **THEN** as duas consultas SHALL retornar normalmente, sem erro de mapeamento

@@ -9,7 +9,7 @@ O cancelamento já resolveu o mesmo problema (path + header + body) com o record
 Restrições:
 - O framework genérico `shared/validationsetup` (`Rule<T>`, `Validator<R,T>`) não deve ser alterado — ele já suporta qualquer `T`.
 - Contrato REST público preservado (spec `coesao-contratocommand`, requirement "Contratos REST públicos preservados").
-- `CLAUDE.md` e `AGENTS.md` do `arj-contratocommand` são espelhos e devem permanecer idênticos.
+- `CLAUDE.md` e `AGENTS.md` do `contratocommand` são espelhos e devem permanecer idênticos.
 
 ## Goals / Non-Goals
 
@@ -86,7 +86,7 @@ Migração em passos compiláveis: criar o contexto → retipar `ContratacaoRule
 
 ## Migration Plan
 
-Refactor interno sem migração de dados, sem mudança de API e sem coordenação com consumidores. Deploy normal. Rollback = revert do commit. Verificação: `mvn test` no módulo `arj-contratocommand` verde e diff vazio entre `CLAUDE.md` e `AGENTS.md`.
+Refactor interno sem migração de dados, sem mudança de API e sem coordenação com consumidores. Deploy normal. Rollback = revert do commit. Verificação: `mvn test` no módulo `contratocommand` verde e diff vazio entre `CLAUDE.md` e `AGENTS.md`.
 
 ## Open Questions
 

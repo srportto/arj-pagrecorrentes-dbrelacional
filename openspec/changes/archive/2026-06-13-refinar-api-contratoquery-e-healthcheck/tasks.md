@@ -1,16 +1,16 @@
 ## 1. Health-check via Actuator (T3 — ambas as aplicações)
 
-- [x] 1.1 Adicionar `spring-boot-starter-actuator` ao `aplicacoes/arj-contratocommand/pom.xml`
-- [x] 1.2 Adicionar `spring-boot-starter-actuator` ao `aplicacoes/arj-contratoquery/pom.xml`
-- [x] 1.3 Em `arj-contratocommand/src/main/resources/application.yaml`, expor apenas `health` (`management.endpoints.web.exposure.include: health`) com `management.endpoint.health.show-details: always`
-- [x] 1.4 Em `arj-contratoquery/src/main/resources/application.yaml`, expor apenas `health` com `show-details: always`
+- [x] 1.1 Adicionar `spring-boot-starter-actuator` ao `aplicacoes/contratocommand/pom.xml`
+- [x] 1.2 Adicionar `spring-boot-starter-actuator` ao `aplicacoes/contratoquery/pom.xml`
+- [x] 1.3 Em `contratocommand/src/main/resources/application.yaml`, expor apenas `health` (`management.endpoints.web.exposure.include: health`) com `management.endpoint.health.show-details: always`
+- [x] 1.4 Em `contratoquery/src/main/resources/application.yaml`, expor apenas `health` com `show-details: always`
 - [x] 1.5 Validar que o indicador `db` está ativo (sem desabilitar `management.health.db.enabled`), tornando `/actuator/health` um readiness real
 
 ## 2. Remoção da rota /olamundo (T2 — contratoquery)
 
-- [x] 2.1 Remover `arj-contratoquery/.../entrypoint/OlamundoController.java`
-- [x] 2.2 Remover `arj-contratoquery/.../application/olamundo/OlamundoService.java`
-- [x] 2.3 Remover `arj-contratoquery/.../domain/model/SaudacaoOlamundo.java`
+- [x] 2.1 Remover `contratoquery/.../entrypoint/OlamundoController.java`
+- [x] 2.2 Remover `contratoquery/.../application/olamundo/OlamundoService.java`
+- [x] 2.3 Remover `contratoquery/.../domain/model/SaudacaoOlamundo.java`
 - [x] 2.4 Confirmar por grep que não restam referências a `olamundo`/`SaudacaoOlamundo` no `contratoquery`
 
 ## 3. Simplificação da rota de listagem (T4 — contratoquery)
@@ -33,6 +33,6 @@
 
 ## 6. Documentação e validação final
 
-- [x] 6.1 Atualizar `aplicacoes/arj-contratocommand/CLAUDE.md` e `AGENTS.md` removendo/ajustando menções a `GET /api/autorizacoes/listar` (rota agora é `GET /api/autorizacoes`); registrar a nova rota by-id e o `/actuator/health`
-- [x] 6.2 Rodar `mvn clean package` em `arj-contratoquery` e confirmar build verde
-- [x] 6.3 Rodar `mvn clean package` em `arj-contratocommand` e confirmar build verde
+- [x] 6.1 Atualizar `aplicacoes/contratocommand/CLAUDE.md` e `AGENTS.md` removendo/ajustando menções a `GET /api/autorizacoes/listar` (rota agora é `GET /api/autorizacoes`); registrar a nova rota by-id e o `/actuator/health`
+- [x] 6.2 Rodar `mvn clean package` em `contratoquery` e confirmar build verde
+- [x] 6.3 Rodar `mvn clean package` em `contratocommand` e confirmar build verde

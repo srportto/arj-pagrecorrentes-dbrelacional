@@ -18,8 +18,8 @@ Serviços:
 | Serviço | Porta | Uso |
 |---|---|---|
 | Kafka (broker) | `19092` | `bootstrap.servers=localhost:19092` (a `9092` colide com a faixa dinâmica reservada pelo Hyper-V/WSL2 no Windows) |
-| Schema Registry | `8085` | `http://localhost:8085` (evita colidir com o `8081` do `arj-contratoquery`) |
-| Kafbat UI | `8090` | `http://localhost:8090` (evita colidir com o `8080` do `arj-contratocommand`) |
+| Schema Registry | `8085` | `http://localhost:8085` (evita colidir com o `8081` do `contratoquery`) |
+| Kafbat UI | `8090` | `http://localhost:8090` (evita colidir com o `8080` do `contratocommand`) |
 
 ## Rodar
 
@@ -45,7 +45,7 @@ ver mensagens, consumer groups e lag por partição.
 ## Ambiente completo
 
 Este compose é independente, mas para o fluxo fim a fim funcionar (evento fluindo de
-`arj-contratocommand` até `eventos-consumer`), use o ponto de entrada único da raiz do
+`contratocommand` até `eventos-consumer`), use o ponto de entrada único da raiz do
 repositório (`compose.yaml`, `docker compose up -d`) — ele inclui este compose junto com
 Postgres, Floci, Valkey e as cinco aplicações, na ordem correta, sem exigir os passos manuais
 que existiam aqui antes. Ver o `README.md` da raiz, seção "Começando". O provisionamento do

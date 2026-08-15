@@ -1,13 +1,13 @@
 ﻿## 1. Drifts objetivos de documentação (independentes, sem impacto em contrato)
 
-  - [x] 1.1 Corrigir o `CLAUDE.md` da raiz: `AutorizacaoEventoPayload` existe em 2 apps (`arj-contratocommand` e `autorizacaostatus-producer`), não 3; `EventoAutorizacao.avsc` existe em 2 apps (`autorizacaostatus-producer` e `eventos-consumer`)
+  - [x] 1.1 Corrigir o `CLAUDE.md` da raiz: `AutorizacaoEventoPayload` existe em 2 apps (`contratocommand` e `autorizacaostatus-producer`), não 3; `EventoAutorizacao.avsc` existe em 2 apps (`autorizacaostatus-producer` e `eventos-consumer`)
   - [x] 1.2 Atualizar a tabela de versões do `CLAUDE.md`/`AGENTS.md` do `autorizacaostatus-producer` para bater com o `pom.xml` (Avro 1.11.4, kafka-clients 3.9.2 — confirmar os valores atuais antes de escrever)
   - [x] 1.3 Corrigir o comentário de proveniência em `KafkaProducerClientConfig` que cita visibility timeout de 30s; o valor real é 60s conforme `infra/envs/local-messaging/variables.tf`
-  - [x] 1.4 Adicionar `ProdutoSuportadoCancelamento` à seção de regras de cancelamento do `CLAUDE.md`/`AGENTS.md` do `arj-contratocommand`, indicando que roda antes de `TipoProdutoCancelamento`
+  - [x] 1.4 Adicionar `ProdutoSuportadoCancelamento` à seção de regras de cancelamento do `CLAUDE.md`/`AGENTS.md` do `contratocommand`, indicando que roda antes de `TipoProdutoCancelamento`
   - [x] 1.5 Verificar se cada par `CLAUDE.md`/`AGENTS.md` das quatro aplicações está idêntico; alinhar os que divergirem
   - [x] 1.6 Varrer os quatro `CLAUDE.md` por outras afirmações sobre infraestrutura, versões ou componentes e conferir cada uma contra a realidade
-  - [x] 1.7 Atualizar `apps/arj-contratocommand/README.md`: adicionar a rota `PATCH /{id}/decisao` (introduzida por `temporizacao-jornada-01-pix-auto`, ausente do README) e remover a menção ao endpoint inexistente `GET /api/autorizacoes/listar` — achado em auditoria de 2026-08-09
-  - [x] 1.8 Corrigir os nomes de status nos `README.md` do `arj-contratocommand` e do `arj-contratoquery`: campo `statusAutorizacao` → `status`; valores `ATIVO`/`CANCELADO` → `ATIVA`/`CANCELADA` (achado em auditoria de 2026-08-09)
+  - [x] 1.7 Atualizar `apps/contratocommand/README.md`: adicionar a rota `PATCH /{id}/decisao` (introduzida por `temporizacao-jornada-01-pix-auto`, ausente do README) e remover a menção ao endpoint inexistente `GET /api/autorizacoes/listar` — achado em auditoria de 2026-08-09
+  - [x] 1.8 Corrigir os nomes de status nos `README.md` do `contratocommand` e do `contratoquery`: campo `statusAutorizacao` → `status`; valores `ATIVO`/`CANCELADO` → `ATIVA`/`CANCELADA` (achado em auditoria de 2026-08-09)
 
 ## 2. Reconciliação de specs
 
@@ -19,10 +19,10 @@
 
 ## 3. Alinhamento de código à spec
 
-  - [x] 3.1 Mover `TipoEventoAutorizacao` de `application/eventos/` para `domain/enums/` no `arj-contratocommand`, alinhando às outras três aplicações e à spec `maquina-estados-autorizacao`
+  - [x] 3.1 Mover `TipoEventoAutorizacao` de `application/eventos/` para `domain/enums/` no `contratocommand`, alinhando às outras três aplicações e à spec `maquina-estados-autorizacao`
   - [x] 3.2 Atualizar imports e testes afetados pelo move
   - [x] 3.3 Confirmar que o enum permanece sem import de `org.springframework.*`, `jakarta.*` ou `lombok.*`, conforme a spec exige
-  - [x] 3.4 Atualizar o mapa de pacotes no `CLAUDE.md`/`AGENTS.md` do `arj-contratocommand`
+  - [x] 3.4 Atualizar o mapa de pacotes no `CLAUDE.md`/`AGENTS.md` do `contratocommand`
 
 ## 4. Decisões de contrato (registrar antes de codificar)
 
@@ -43,7 +43,7 @@
 
 ## 8. Validação e comunicação
 
-- [x] 8.1 Rodar a suíte completa dos quatro apps — `arj-contratocommand` 160 (0 falhas, 2 skips) e `arj-contratoquery` 59 (0 falhas, 1 skip), BUILD SUCCESS em ambos; apps não-REST não rodaram (sem mudança de código que os afete). Saída consolidada em `RESULTADO-VALIDACAO.md` §8.1
+- [x] 8.1 Rodar a suíte completa dos quatro apps — `contratocommand` 160 (0 falhas, 2 skips) e `contratoquery` 59 (0 falhas, 1 skip), BUILD SUCCESS em ambos; apps não-REST não rodaram (sem mudança de código que os afete). Saída consolidada em `RESULTADO-VALIDACAO.md` §8.1
 - [x] 8.2 Revisar os cenários dos 4 specs desta mudança e confirmar cobertura — `db-connection-pool-config` e `publicacao-eventos-kafka` são deltas documentais sem teste novo; `maquina-estados-autorizacao` coberta por `TipoEventoAutorizacaoTest` (3 testes verdes, já na suíte de 8.1); `listar-autorizacoes` é nota de dívida aceita sem teste novo. Tabela em `RESULTADO-VALIDACAO.md` §8.2
 - [x] 8.3 Comparar os DTOs dos dois serviços lado a lado e confirmar que nenhum dado equivalente usa nome ou formato distinto — divergência confirmada por grep: `command.status` é `Integer` (linha 28 do `AutorizacaoCompletaResponseDto`); `query.status` é `String` (linha 32 dos dois DTOs). Nomes divergentes (`valorAutorizacao`/`dataHoraInclusao`/`dataHoraUltimaAtualizacao` no command; `valor`/`dataCriacao`/`dataAtualizacao` no query). Tipos idênticos. Dívida aceita registrada no `AGENTS.md` da raiz (espelho do `CLAUDE.md`) desde 4.3, reproduzida em `RESULTADO-VALIDACAO.md` §8.3
 - [x] 8.4 Comunicar a quem integra: nova versão da API, mudanças de campo e prazo de descontinuação da anterior — **N/A com D1=C** (sem versionamento nesta change, não há breaking change de contrato para comunicar). Dívida command vs query documentada em `AGENTS.md` da raiz e na spec `listar-autorizacoes`. Task será reativada na change dedicada se algum gatilho da D1 ocorrer. Justificativa completa em `RESULTADO-VALIDACAO.md` §8.4

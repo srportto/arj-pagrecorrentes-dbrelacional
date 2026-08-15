@@ -3,7 +3,7 @@
 ### Requirement: Grafo de transições aplicado no fluxo de escrita
 
 O grafo de transições exposto por `StatusAutorizacao.podeTransicionarPara` SHALL ser consultado
-pelo `arj-contratocommand` antes de persistir qualquer mudança de status de autorização. Uma
+pelo `contratocommand` antes de persistir qualquer mudança de status de autorização. Uma
 transição não permitida pelo grafo SHALL ser rejeitada, e a mudança de status NÃO SHALL ser
 persistida nem gerar evento.
 
@@ -33,11 +33,11 @@ aplicado. O grafo passa a ser normativo em runtime.
 
 #### Scenario: Validação de transição roda como rule do validador
 
-- **WHEN** o `CancelamentoValidator` do `arj-contratocommand` é inspecionado
+- **WHEN** o `CancelamentoValidator` do `contratocommand` é inspecionado
 - **THEN** ele SHALL incluir uma rule que consulta `podeTransicionarPara`, seguindo o mesmo padrão
   das demais rules de cancelamento
 
 #### Scenario: Método deixa de ser código sem uso em produção
 
-- **WHEN** as referências a `podeTransicionarPara` no `arj-contratocommand` são inspecionadas
+- **WHEN** as referências a `podeTransicionarPara` no `contratocommand` são inspecionadas
 - **THEN** SHALL existir ao menos uma chamada em código de produção, além das chamadas em teste

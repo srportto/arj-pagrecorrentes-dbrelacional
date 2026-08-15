@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Subconjunto do payload do arj-contratocommand — só id e instante de inclusão, necessários ao
+ * Subconjunto do payload do contratocommand — só id e instante de inclusão, necessários ao
  * vencimento. Demais campos ignorados (filter policy da subscription já filtra o evento).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

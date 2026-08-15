@@ -2,7 +2,7 @@
 
 ### Requirement: Rota de decisão sobre autorização recebida
 
-O `arj-contratocommand` SHALL expor `PATCH /api/autorizacoes/{idAutorizacao}/decisao`,
+O `contratocommand` SHALL expor `PATCH /api/autorizacoes/{idAutorizacao}/decisao`,
 recebendo o header obrigatório `tipoProduto` e um corpo com o campo obrigatório `acao`,
 cujos valores válidos SHALL ser `APROVAR`, `REJEITAR` e `EXPIRAR`. A rota SHALL seguir o
 padrão estrutural já usado por criação e cancelamento: record de contexto imutável,

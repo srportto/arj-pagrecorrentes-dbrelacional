@@ -6,7 +6,7 @@ O monorepo SHALL organizar-se em duas pastas de topo em inglês: `code/` para c�
 
 #### Scenario: Aplicações vivem sob code/
 - **WHEN** um desenvolvedor inspeciona a raiz do repositório
-- **THEN** existe uma pasta `code/` contendo `arj-contratocommand/` e `arj-contratoquery/`
+- **THEN** existe uma pasta `code/` contendo `contratocommand/` e `contratoquery/`
 - **AND** não existe mais a pasta `aplicacoes/`
 
 #### Scenario: Infraestrutura tem pasta dedicada
@@ -16,7 +16,7 @@ O monorepo SHALL organizar-se em duas pastas de topo em inglês: `code/` para c�
 
 #### Scenario: Comportamento das aplicações preservado
 - **WHEN** a suíte de testes de cada aplicação é executada após a reorganização
-- **THEN** `mvn test` passa em `code/arj-contratocommand` e `code/arj-contratoquery`
+- **THEN** `mvn test` passa em `code/contratocommand` e `code/contratoquery`
 - **AND** os endpoints, portas (8080/8081) e contratos REST permanecem inalterados
 
 ### Requirement: Esqueleto de infraestrutura preparado para Terraform

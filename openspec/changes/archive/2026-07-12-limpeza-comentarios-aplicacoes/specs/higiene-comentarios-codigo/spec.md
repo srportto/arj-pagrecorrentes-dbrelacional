@@ -2,7 +2,7 @@
 
 ### Requirement: Comentários de código existem apenas para explicar um porquê não óbvio
 
-O código Java em `aplicacoes/arj-contratocommand` e `aplicacoes/arj-contratoquery` SHALL conter comentários apenas quando eles explicam uma decisão de design, uma restrição não óbvia ou decodificam um valor de negócio que o código sozinho não deixa claro (ex.: o significado de um indicador numérico, a aritmética de uma partição, um gotcha de biblioteca). Comentários que apenas reafirmam em português o que a linha de código seguinte já expressa (WHAT redundante) MUST NOT existir. Banners puramente decorativos MUST NOT existir.
+O código Java em `aplicacoes/contratocommand` e `aplicacoes/contratoquery` SHALL conter comentários apenas quando eles explicam uma decisão de design, uma restrição não óbvia ou decodificam um valor de negócio que o código sozinho não deixa claro (ex.: o significado de um indicador numérico, a aritmética de uma partição, um gotcha de biblioteca). Comentários que apenas reafirmam em português o que a linha de código seguinte já expressa (WHAT redundante) MUST NOT existir. Banners puramente decorativos MUST NOT existir.
 
 #### Scenario: Comentário decodificando valor de negócio é preservado
 
@@ -44,7 +44,7 @@ Blocos de código comentado (código Java inativo dentro de `//` ou `/* */`) MUS
 
 ### Requirement: Documentação de módulo não afirma comportamento do entrypoint divergente do código real
 
-Os arquivos `CLAUDE.md`/`AGENTS.md` de `arj-contratocommand` e `arj-contratoquery` SHALL descrever a forma real do método `main()` de cada aplicação. Caso o código utilize `public static void main(String[] args)` enquanto uma variante mais nova (`void main()`) está pendente de suporte de ferramentas externas, a documentação MUST afirmar a forma atualmente em uso e MAY mencionar a migração pendente, mas MUST NOT afirmar que a variante pendente já está em uso.
+Os arquivos `CLAUDE.md`/`AGENTS.md` de `contratocommand` e `contratoquery` SHALL descrever a forma real do método `main()` de cada aplicação. Caso o código utilize `public static void main(String[] args)` enquanto uma variante mais nova (`void main()`) está pendente de suporte de ferramentas externas, a documentação MUST afirmar a forma atualmente em uso e MAY mencionar a migração pendente, mas MUST NOT afirmar que a variante pendente já está em uso.
 
 #### Scenario: CLAUDE.md descreve a forma real do main()
 

@@ -4,7 +4,7 @@ O fluxo de eventos atravessa três serviços com deploy independente e quatro c�
 schema, sem módulo compartilhado:
 
 ```
-  arj-contratocommand          autorizacaostatus-producer        eventos-consumer
+  contratocommand          autorizacaostatus-producer        eventos-consumer
   ───────────────────          ──────────────────────────        ────────────────
   AutorizacaoEventoPayload ──► AutorizacaoEventoPayload
        (JSON, cópia 1)              (JSON, cópia 2)
@@ -18,7 +18,7 @@ Estado atual verificado na auditoria: **as quatro cópias estão sincronizadas**
 byte a byte idênticas; as duas do payload JSON têm os mesmos 26 campos com os mesmos
 `@JsonProperty`.
 
-A regra que mantém isso é uma linha de checklist em `apps/arj-contratocommand/CLAUDE.md:202`.
+A regra que mantém isso é uma linha de checklist em `apps/contratocommand/CLAUDE.md:202`.
 Nenhum teste, nenhuma verificação de CI, nenhuma falha de build. A sincronização depende de a
 pessoa que altera um app lembrar de alterar o outro — e de o revisor perceber se ela esquecer.
 

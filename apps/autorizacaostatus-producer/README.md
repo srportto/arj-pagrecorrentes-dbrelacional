@@ -1,7 +1,7 @@
 # autorizacaostatus-producer
 
 Ponte SQS → Kafka, em arquitetura hexagonal. Consome os eventos de estado de autorização
-publicados pelo `arj-contratocommand` (via SNS → SQS `SQS-eventos-autorizacao`), converte cada
+publicados pelo `contratocommand` (via SNS → SQS `SQS-eventos-autorizacao`), converte cada
 evento para Avro e produz no tópico Kafka `eventos-autorizacao` (Schema Registry), de forma
 idempotente. O ack no SQS só ocorre após a confirmação do broker Kafka.
 

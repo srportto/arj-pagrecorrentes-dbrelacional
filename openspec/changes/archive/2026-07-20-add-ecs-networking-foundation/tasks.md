@@ -40,8 +40,8 @@
 
 ## 5. Publicação de imagens no ECR do Floci
 
-- [x] 5.1 Criar o(s) repositório(s) ECR (via Terraform ou script) para `arj-contratocommand` e `arj-contratoquery`
-- [x] 5.2 `docker build` das imagens a partir de `apps/arj-contratocommand/Dockerfile` e `apps/arj-contratoquery/Dockerfile`
+- [x] 5.1 Criar o(s) repositório(s) ECR (via Terraform ou script) para `contratocommand` e `contratoquery`
+- [x] 5.2 `docker build` das imagens a partir de `apps/contratocommand/Dockerfile` e `apps/contratoquery/Dockerfile`
 - [x] 5.3 `docker tag` + `docker push` para a URI do ECR emulado; script reproduzível documentado
 
 ## 6. Ambiente envs/local (composição Floci)
@@ -50,8 +50,8 @@
 - [x] 6.2 Configurar backend de state local
 - [x] 6.3 Instanciar o módulo `networking`
 - [x] 6.4 Instanciar o módulo `ecs-cluster` consumindo os outputs de rede
-- [x] 6.5 Instanciar `ecs-service` para `arj-contratocommand` (porta `8080`, imagem do ECR)
-- [x] 6.6 Instanciar `ecs-service` para `arj-contratoquery` (porta `8081`, imagem do ECR)
+- [x] 6.5 Instanciar `ecs-service` para `contratocommand` (porta `8080`, imagem do ECR)
+- [x] 6.6 Instanciar `ecs-service` para `contratoquery` (porta `8081`, imagem do ECR)
 - [x] 6.7 Definir `terraform.tfvars` do ambiente local (nomes, CIDRs, perfil Spring, credenciais de banco)
 - [x] 6.8 Expor outputs úteis do ambiente (ex.: `alb_dns_name`)
 

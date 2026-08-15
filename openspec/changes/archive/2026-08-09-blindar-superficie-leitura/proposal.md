@@ -1,6 +1,6 @@
 ## Why
 
-A auditoria multi-agente de 2026-08-04 encontrou quatro lacunas no `arj-contratoquery` que,
+A auditoria multi-agente de 2026-08-04 encontrou quatro lacunas no `contratoquery` que,
 somadas, tornam a superfície de leitura derrubável por uma única requisição — e que foram
 apontadas de forma independente pelos agentes de contrato REST, de persistência e de revisão do
 próprio app:
@@ -40,7 +40,7 @@ nunca acontece.
   `IllegalArgumentException` do Spring Data escapar como 500.
 - Trocar o `default` permissivo de `mapearCampoDTO` por rejeição explícita: campo de ordenação
   fora da lista conhecida passa a gerar erro de negócio, nunca alcançando o `Sort.by`.
-- Adicionar `@ExceptionHandler(Exception.class)` ao `ApiExceptionHandler` do `arj-contratoquery`,
+- Adicionar `@ExceptionHandler(Exception.class)` ao `ApiExceptionHandler` do `contratoquery`,
   mapeando exceção não prevista para 500 com `LayoutErrosApiResponse` e sem expor detalhe interno.
 - Criar índice composto cobrindo o filtro e a ordenação padrão da listagem
   (`id_unico_conta_contratante`, `status`, `data_hora_inclusao`), aplicado de forma compatível com
@@ -82,7 +82,7 @@ nunca acontece.
 
 ## Impact
 
-- **Código afetado (`arj-contratoquery`):** `entrypoint/AutorizacaoController.java`,
+- **Código afetado (`contratoquery`):** `entrypoint/AutorizacaoController.java`,
   `application/autorizacao/ListarAutorizacoesService.java`,
   `application/autorizacao/ConsultarAutorizacaoService.java`,
   `entrypoint/contratosrest/AutorizacaoResumidaResponseDto.java`,
@@ -93,5 +93,5 @@ nunca acontece.
   no `README.md`.
 - **Desempenho:** ganho esperado na listagem; a validação exige comparação de plano de execução
   antes e depois, já que não há baseline registrada no repositório.
-- **`arj-contratocommand`:** apenas verificação de que seu `ApiExceptionHandler` já satisfaz o
+- **`contratocommand`:** apenas verificação de que seu `ApiExceptionHandler` já satisfaz o
   requisito de catch-all — não há mudança prevista.

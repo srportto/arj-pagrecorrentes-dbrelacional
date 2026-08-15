@@ -36,7 +36,7 @@ Esta é a segunda rename de pasta de topo do dia (antes: `aplicacoes/` → `code
 2. Atualizar `apps/docker-compose.yml` (nome do arquivo já migra junto; conteúdo interno não muda, pois os `build.context` são relativos ao próprio arquivo).
 3. Atualizar as referências textuais listadas na proposta (README raiz, READMEs/CLAUDE.md/AGENTS.md das aplicações, READMEs de `infra/`, doc do Postgres local, skill `create-based-aplication-java`).
 4. Atualizar `openspec/specs/monorepo-organization/spec.md` via delta desta change.
-5. Rodar `mvn test` em `apps/arj-contratocommand` e `apps/arj-contratoquery` para confirmar que nada quebrou funcionalmente.
+5. Rodar `mvn test` em `apps/contratocommand` e `apps/contratoquery` para confirmar que nada quebrou funcionalmente.
 6. Limpar o cache do Java Language Server do VS Code (`Java: Clean Java Language Server Workspace`) e confirmar que Run/Debug voltam a funcionar.
 
 Não há rollback especial: reverter é o `git mv` inverso (`apps` → `code`) mais reverter o commit da documentação/spec, seguido da mesma limpeza de cache do IDE.

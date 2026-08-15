@@ -1,7 +1,7 @@
 # temporiza-autorizacao
 
 Temporizador da jornada 1 do PIX Automático, em arquitetura hexagonal. Consome os eventos de
-recepção de autorizações `PIX_AUTO`/`SPI_J1` publicados pelo `arj-contratocommand`, agenda a
+recepção de autorizações `PIX_AUTO`/`SPI_J1` publicados pelo `contratocommand`, agenda a
 expiração em 10 minutos no Valkey e, no vencimento, aciona `PATCH /api/autorizacoes/{id}/decisao`
 com `acao: EXPIRAR` — rejeitando sistemicamente a autorização caso o cliente pagador não tenha
 decidido a tempo.
@@ -18,7 +18,7 @@ aplicação.
   via [`infra/envs/local-messaging/`](../../infra/envs/local-messaging/)
 - **Valkey local no ar** via [`infra/local/redis/`](../../infra/local/redis/) — sem ele,
   `/actuator/health` reporta DOWN e nada é agendado nem processado
-- **`arj-contratocommand` no ar** para o worker conseguir acionar `PATCH /decisao` — sem ele,
+- **`contratocommand` no ar** para o worker conseguir acionar `PATCH /decisao` — sem ele,
   expirações ficam retidas no PEL do stream até ele voltar (nada se perde)
 
 ## Variáveis de ambiente
@@ -28,7 +28,7 @@ aplicação.
 AWS_REGION=us-east-1
 AWS_SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/<conta>/SQS-temporizacao-autorizacao
 VALKEY_HOST=valkey.exemplo
-COMMAND_BASE_URL=https://arj-contratocommand.exemplo
+COMMAND_BASE_URL=https://contratocommand.exemplo
 
 # opcional; default "local" quando omitido — produção deve setar "prod" explicitamente
 SPRING_PROFILES_ACTIVE=local
