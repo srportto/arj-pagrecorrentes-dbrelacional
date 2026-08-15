@@ -76,7 +76,7 @@ Nenhuma. Todos os requisitos afetados pertencem a capacidades já existentes.
 
 ## Impact
 
-**Código (`arj-contratocommand`)**
+**Código (`contratocommand`)**
 - `application/ExpurgoAutorizacaoService.java` — coração da mudança
 - `application/AutorizacaoRepository.java` — nova operação de movimentação de partição
 - `application/decisao/DecidirAutorizacaoUseCase.java` e
@@ -97,7 +97,7 @@ Nenhuma. Todos os requisitos afetados pertencem a capacidades já existentes.
   (`CommandDecisaoAutorizacaoClient`) estão corretos e se comportaram como especificado —
   foram eles que transformaram um bug silencioso em sinal operacional. Após a correção, a
   primeira tentativa passa a concluir.
-- `arj-contratoquery`: lê a mesma tabela; a linha muda de partição, não de conteúdo.
+- `contratoquery`: lê a mesma tabela; a linha muda de partição, não de conteúdo.
 - Entradas já esgotadas no PEL do stream Valkey (`XACK` dado sem sucesso) **não voltam
   sozinhas** — as autorizações presas em `RECEBIDA` exigem reprocessamento manual.
 

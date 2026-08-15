@@ -1,6 +1,6 @@
 ## Context
 
-O repositório é um monorepo com dois microserviços Java que formam um par (command/query): `arj-contratocommand` (escrita, porta 8080) e `arj-contratoquery` (leitura, porta 8081). Ambos compartilham o mesmo banco PostgreSQL com particionamento temporal via `pg_partman` + `pg_cron`.
+O repositório é um monorepo com dois microserviços Java que formam um par (command/query): `contratocommand` (escrita, porta 8080) e `contratoquery` (leitura, porta 8081). Ambos compartilham o mesmo banco PostgreSQL com particionamento temporal via `pg_partman` + `pg_cron`.
 
 Cada app já tem seu próprio README.md detalhado. O README de raiz deve ser leve — visão de 10 mil pés — e referenciar os READMEs individuais em vez de duplicar conteúdo técnico.
 

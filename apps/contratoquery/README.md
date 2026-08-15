@@ -1,8 +1,8 @@
-# arj-contratoquery
+# contratoquery
 
 API REST de **leitura** de autorizações de produtos financeiros (PIX Automático e DDA Automático),
 em arquitetura hexagonal, com particionamento temporal em PostgreSQL. Serviço somente leitura —
-as escritas ficam no `arj-contratocommand` (porta 8080), com quem compartilha o mesmo banco.
+as escritas ficam no `contratocommand` (porta 8080), com quem compartilha o mesmo banco.
 
 Para arquitetura, a cascata de localização por id, armadilhas e checklist de commit, veja
 [CLAUDE.md](CLAUDE.md) — este README cobre apenas como subir e testar a aplicação.
@@ -83,7 +83,7 @@ PostgreSQL local no ar.
 | GET | `/api/autorizacoes/{autorizacaoId}` | Consulta por id | 200 / 404 |
 | GET | `/actuator/health` | Health-check (Actuator) | 200 / 503 |
 
-> Não existem POST, PATCH ou DELETE nesta app — toda escrita fica no `arj-contratocommand`.
+> Não existem POST, PATCH ou DELETE nesta app — toda escrita fica no `contratocommand`.
 
 Contrato completo (parâmetros de borda, schema de resposta, códigos de erro): ver
 [CLAUDE.md](CLAUDE.md#validações-e-códigos-de-erro) e

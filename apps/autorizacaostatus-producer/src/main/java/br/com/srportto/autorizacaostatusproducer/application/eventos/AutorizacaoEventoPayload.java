@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Espelho do payload publicado pelo arj-contratocommand: linha da tabela
+ * Espelho do payload publicado pelo contratocommand: linha da tabela
  * {@code autorizacoes}, chaves iguais aos nomes das colunas.
  *
  * <p>{@code ignoreUnknown = true}: propriedade nova ainda não replicada aqui é ignorada,

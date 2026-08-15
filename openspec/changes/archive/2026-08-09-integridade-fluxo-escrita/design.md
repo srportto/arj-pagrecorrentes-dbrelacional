@@ -1,7 +1,7 @@
 ## Context
 
-O `arj-contratocommand` grava autorizações de pagamento recorrente numa tabela particionada
-compartilhada com o `arj-contratoquery`. Dois caminhos de escrita existem: criação (POST) e
+O `contratocommand` grava autorizações de pagamento recorrente numa tabela particionada
+compartilhada com o `contratoquery`. Dois caminhos de escrita existem: criação (POST) e
 cancelamento (PATCH). A auditoria de 2026-08-04 mapeou o estado atual de cada um:
 
 ```

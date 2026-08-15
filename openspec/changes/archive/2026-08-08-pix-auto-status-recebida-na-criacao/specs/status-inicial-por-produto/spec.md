@@ -2,7 +2,7 @@
 
 ### Requirement: Status inicial na criação depende do produto
 
-Ao criar uma autorização (`POST /api/autorizacoes`) no `arj-contratocommand`, o status inicial persistido na coluna `status` SHALL depender do `tipoProduto` da requisição: `PIX_AUTO` SHALL nascer com status `RECEBIDA`; `DDA_AUTO` SHALL nascer com status `ATIVA`. A decisão SHALL ser tomada dentro de `Autorizacao.inicializaCriacao()` (ou método de domínio por ele chamado), consultando o `tipoProduto` já setado na própria entidade — não SHALL ser implementada como uma `ContratacaoRule` nova, já que rules rodam antes da entidade existir e servem apenas para validar/rejeitar, não para inicializar estado.
+Ao criar uma autorização (`POST /api/autorizacoes`) no `contratocommand`, o status inicial persistido na coluna `status` SHALL depender do `tipoProduto` da requisição: `PIX_AUTO` SHALL nascer com status `RECEBIDA`; `DDA_AUTO` SHALL nascer com status `ATIVA`. A decisão SHALL ser tomada dentro de `Autorizacao.inicializaCriacao()` (ou método de domínio por ele chamado), consultando o `tipoProduto` já setado na própria entidade — não SHALL ser implementada como uma `ContratacaoRule` nova, já que rules rodam antes da entidade existir e servem apenas para validar/rejeitar, não para inicializar estado.
 
 #### Scenario: Criação de PIX_AUTO nasce como RECEBIDA
 - **WHEN** o sistema processa `POST /api/autorizacoes` com `tipoProduto: PIX_AUTO` e os demais dados válidos

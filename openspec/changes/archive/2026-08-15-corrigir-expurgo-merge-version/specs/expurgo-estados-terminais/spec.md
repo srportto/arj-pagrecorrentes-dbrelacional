@@ -2,7 +2,7 @@
 
 ### Requirement: Serviço compartilhado de transferência para partição de expurgo
 
-O `arj-contratocommand` SHALL expor um serviço compartilhado em `application/`
+O `contratocommand` SHALL expor um serviço compartilhado em `application/`
 (`ExpurgoAutorizacaoService` ou nome equivalente), independente de qualquer feature
 específica, responsável por transferir uma `Autorizacao` da sua partição atual para a
 partição de expurgo calculada via `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite`

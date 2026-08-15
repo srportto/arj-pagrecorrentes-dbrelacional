@@ -5,7 +5,7 @@
 ### Requirement: Aplicação listener enxuta baseada no modelo do monorepo
 
 O monorepo SHALL conter a aplicação `apps/autorizacaostatus-producer`, criada a partir
-da `arj-contratocommand` e do modelo arquitetural hexagonal de
+da `contratocommand` e do modelo arquitetural hexagonal de
 `docs/arquitetura/based-java-aplication.md`, com Spring Boot 4.0.7, Java 25, pacote
 raiz `br.com.srportto.autorizacaostatusproducer` e porta `8082`. A aplicação NÃO SHALL
 depender de JPA/PostgreSQL nem expor endpoints REST de negócio — apenas o Actuator

@@ -4,7 +4,7 @@
 
 ### Requirement: Evento publicado após commit de cada persistência
 
-O `arj-contratocommand` SHALL publicar um evento no tópico SNS
+O `contratocommand` SHALL publicar um evento no tópico SNS
 `sns-estados-autorizacao` a cada persistência confirmada na tabela `autorizacoes` —
 criação (`CriarAutorizacaoUseCase`) e cancelamento (`CancelarAutorizacaoUseCase`). A
 publicação SHALL ocorrer somente após o commit da transação, via evento de domínio

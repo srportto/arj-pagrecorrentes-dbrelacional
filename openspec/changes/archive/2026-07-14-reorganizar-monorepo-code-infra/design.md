@@ -1,6 +1,6 @@
 ## Context
 
-O monorepo hoje tem uma única pasta de aplicações (`aplicacoes/`) com dois microserviços Spring Boot 4 / Java 25 (`arj-contratocommand` :8080 escrita, `arj-contratoquery` :8081 leitura), ambos sobre um PostgreSQL 16 com `pg_partman` + `pg_cron`. Não há Dockerfile das aplicações (só do banco, em `docs/`), não há nenhuma linha de Terraform e o profile Spring está fixo em `dev`. As apps consomem apenas JDBC — nenhuma API AWS ainda.
+O monorepo hoje tem uma única pasta de aplicações (`aplicacoes/`) com dois microserviços Spring Boot 4 / Java 25 (`contratocommand` :8080 escrita, `contratoquery` :8081 leitura), ambos sobre um PostgreSQL 16 com `pg_partman` + `pg_cron`. Não há Dockerfile das aplicações (só do banco, em `docs/`), não há nenhuma linha de Terraform e o profile Spring está fixo em `dev`. As apps consomem apenas JDBC — nenhuma API AWS ainda.
 
 Esta mudança é a primeira de uma sequência rumo a cloud-native (ECS+Fargate, Terraform, Floci local). Seu papel é **pavimentar a estrutura** sem alterar comportamento e sem tocar na cloud. Decisões de escopo vieram do dono do projeto: pastas em inglês, profiles `local`/`prod` (sem `dev`), um Dockerfile por app já nesta fase, esqueleto de `infra/` sem provisionamento real, e o código deve continuar funcionando exatamente como está.
 

@@ -1,6 +1,6 @@
 ## Context
 
-`arj-contratocommand` é uma API REST de autorizações de produtos financeiros (PIX_AUTO, DDA_AUTO) em arquitetura hexagonal, com Strategy para multi-produto, particionamento temporal e framework próprio de regras (`Rule`/`Validator`). A análise de coesão revelou que o eixo **operação** (contratacao / cancelamento) está saudável, mas o eixo **produto** está duplicado: `Mapper`, `Repository`, `UseCases` e `Service` de PIX e DDA são cópia-carbono, apesar de ambos operarem sobre a mesma entidade `Autorizacao` e tabela `autorizacoes`. A única variação de negócio entre produtos (valor-limite) já vive nas `Rules`. Há ainda defeitos latentes (transação ineficaz no cancelamento, `ApplicationContextException` vazada, status mágico que conflita com `StatusAutorizacao`) e incoerências de contrato (DTO mutável usado como carteiro de estado, record vs classe).
+`contratocommand` é uma API REST de autorizações de produtos financeiros (PIX_AUTO, DDA_AUTO) em arquitetura hexagonal, com Strategy para multi-produto, particionamento temporal e framework próprio de regras (`Rule`/`Validator`). A análise de coesão revelou que o eixo **operação** (contratacao / cancelamento) está saudável, mas o eixo **produto** está duplicado: `Mapper`, `Repository`, `UseCases` e `Service` de PIX e DDA são cópia-carbono, apesar de ambos operarem sobre a mesma entidade `Autorizacao` e tabela `autorizacoes`. A única variação de negócio entre produtos (valor-limite) já vive nas `Rules`. Há ainda defeitos latentes (transação ineficaz no cancelamento, `ApplicationContextException` vazada, status mágico que conflita com `StatusAutorizacao`) e incoerências de contrato (DTO mutável usado como carteiro de estado, record vs classe).
 
 Esta change é preparatória para a futura operação de **alteração de contrato**, que entrará como terceira operação simétrica a contratacao/cancelamento. Restrições: manter `mvn clean compile` e `mvn test` verdes ao fim de cada fase; preservar os contratos REST; PostgreSQL obrigatório (sem fallback H2); Java 25 + Spring Boot 4.
 
@@ -17,7 +17,7 @@ Esta change é preparatória para a futura operação de **alteração de contra
 - Implementar a funcionalidade de alteração de contrato (é trabalho posterior).
 - Redesenhar o particionamento temporal, os UUIDs reversíveis ou o schema do banco.
 - Alterar os contratos REST públicos (corpo, headers, status), exceto o valor de `status` passar a refletir o enum.
-- Migrar o `arj-contratoquery` (app irmã de leitura).
+- Migrar o `contratoquery` (app irmã de leitura).
 
 ## Decisions
 
@@ -52,7 +52,7 @@ Sequência: **(0)** bugs de correção isolados → **(1)** normalização de DT
 
 ## Risks / Trade-offs
 
-- **[Acoplamento entre apps]** `arj-contratoquery` pode importar classes de `enabledproduct` do contratocommand → Mitigação: verificar imports cross-app antes da Fase 2; se houver, ajustar ou preservar nomes públicos.
+- **[Acoplamento entre apps]** `contratoquery` pode importar classes de `enabledproduct` do contratocommand → Mitigação: verificar imports cross-app antes da Fase 2; se houver, ajustar ou preservar nomes públicos.
 - **[Mudança observável de `status`]** corrigir o status para refletir o enum pode quebrar consumidores que dependiam do valor antigo → Mitigação: documentar explicitamente; decidir com o time se "ativa" deve ser `4` (enum) ou se o enum deve ser ajustado para `1`. Registrado em Open Questions.
 - **[Consolidação de testes]** fundir `{Pix,Dda}MapperTest` e `Criar/Cancelar{Pix,Dda}UseCaseTest` pode reduzir a contagem de testes → Mitigação: garantir que cada cenário coberto antes continue coberto nos testes compartilhados + testes finos de strategy; rodar `mvn test` e comparar.
 - **[Transação em método único]** mover `@Transactional` para `execute()` muda o limite transacional do cancelamento → Mitigação: é exatamente o comportamento desejado (atomicidade do delete+insert); coberto por teste de rollback.

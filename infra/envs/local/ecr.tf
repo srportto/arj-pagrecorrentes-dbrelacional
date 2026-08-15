@@ -3,11 +3,11 @@
 ## ECS Services (o ECS precisa da imagem ja publicada para conseguir puxa-la).
 
 resource "aws_ecr_repository" "contratocommand" {
-  name = "arj-contratocommand"
+  name = "contratocommand"
 }
 
 resource "aws_ecr_repository" "contratoquery" {
-  name = "arj-contratoquery"
+  name = "contratoquery"
 }
 
 ## O Floci retorna repository_url com um host baseado em DNS

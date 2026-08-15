@@ -2,7 +2,7 @@
 
 ### Requirement: Lock otimista na entidade Autorizacao
 
-A entidade `Autorizacao` do `arj-contratocommand` SHALL possuir um campo de versão gerenciado
+A entidade `Autorizacao` do `contratocommand` SHALL possuir um campo de versão gerenciado
 pelo provedor JPA (`@Version`), persistido em coluna própria da tabela `autorizacoes`. Toda
 escrita sobre uma autorização existente SHALL verificar que a versão lida permanece inalterada no
 momento do commit.
@@ -81,7 +81,7 @@ que jamais poderá ter sucesso.
 
 ### Requirement: Leitura permanece compatível com a coluna de versão
 
-A adição da coluna de versão à tabela compartilhada NÃO SHALL quebrar o `arj-contratoquery`, que
+A adição da coluna de versão à tabela compartilhada NÃO SHALL quebrar o `contratoquery`, que
 lê a mesma tabela. A entidade de leitura SHALL mapear ou ignorar explicitamente a coluna.
 
 Além da leitura, a adição do campo de versão NÃO SHALL alterar o comportamento de nenhum
@@ -90,13 +90,13 @@ campo de versão SHALL ser identificado e corrigido junto com a introdução do 
 
 #### Scenario: Consulta funciona após a migration
 
-- **WHEN** a coluna de versão existe na tabela e o `arj-contratoquery` executa `GET /api/autorizacoes`
+- **WHEN** a coluna de versão existe na tabela e o `contratoquery` executa `GET /api/autorizacoes`
   e `GET /api/autorizacoes/{id}`
 - **THEN** as duas consultas SHALL retornar normalmente, sem erro de mapeamento
 
 #### Scenario: Nenhum caminho de escrita depende da ausência de versão
 
-- **WHEN** o código de escrita do `arj-contratocommand` é inspecionado
+- **WHEN** o código de escrita do `contratocommand` é inspecionado
 - **THEN** NÃO SHALL haver caminho que submeta ao provedor JPA uma instância detached cuja
   linha tenha sido removida na mesma transação, contando com a inferência de estado do
   provedor para produzir um `INSERT`

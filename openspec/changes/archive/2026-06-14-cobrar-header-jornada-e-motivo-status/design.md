@@ -1,6 +1,6 @@
 ## Context
 
-O sistema possui dois microserviços: `arj-contratocommand` (escrita, porta 8080) e `arj-contratoquery` (leitura, porta 8081). Ambos acessam a mesma tabela particionada `autorizacoes` em PostgreSQL.
+O sistema possui dois microserviços: `contratocommand` (escrita, porta 8080) e `contratoquery` (leitura, porta 8081). Ambos acessam a mesma tabela particionada `autorizacoes` em PostgreSQL.
 
 O endpoint `POST /api/autorizacoes` aceita contratações para PIX Automático e DDA Automático, mas não recebe nem persiste a jornada de origem da autorização. O campo `motivo_status` é preenchido com texto literal genérico (`"Autorizacao criada com sucesso"`), sem valor de negócio. A query app não expõe `motivoStatus` em nenhum DTO de resposta.
 

@@ -58,7 +58,7 @@ tratado por ela, então entra como capacidade nova em vez de delta.
 - `entrypoint/health/TemporizacaoHealthIndicator.java` — eventual exposição da contagem
 
 **Operação**
-- Nenhuma mudança de contrato com o `arj-contratocommand` nem com o SQS.
+- Nenhuma mudança de contrato com o `contratocommand` nem com o SQS.
 - A limpeza dos órfãos já existentes em cada ambiente é manual e pontual (o comando está em
   `design.md`); esta mudança evita que voltem a acumular.
 

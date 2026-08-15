@@ -43,7 +43,7 @@ SHALL ser mantido, por adicionar custo de escrita sem contrapartida de leitura.
 
 ### Requirement: Consultas de leitura declaradas como somente leitura
 
-Os serviços de consulta do `arj-contratoquery` SHALL declarar suas operações como transações
+Os serviços de consulta do `contratoquery` SHALL declarar suas operações como transações
 somente leitura (`@Transactional(readOnly = true)`), tornando a intenção explícita na camada de
 aplicação em vez de depender exclusivamente da configuração `read-only` do pool de conexões.
 

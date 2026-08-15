@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Definir a idempotência da criação de autorizações no `arj-contratocommand` a partir da chave de
+Definir a idempotência da criação de autorizações no `contratocommand` a partir da chave de
 negócio `id_autorizacao_empresa` — escopo e forma da garantia de unicidade no banco, rejeição de
 chave já utilizada com `409` e tratamento de corrida entre criações concorrentes.
 
@@ -13,7 +13,7 @@ A coluna `id_autorizacao_empresa` da tabela `autorizacoes` SHALL ter unicidade g
 de dados **para autorizações ativas**, de modo que duas autorizações ativas da mesma conta
 contratante com o mesmo valor NÃO possam coexistir. A garantia SHALL residir no banco, não
 apenas na aplicação — a unicidade deve valer também para escritas que não passem pelo
-`arj-contratocommand`.
+`contratocommand`.
 
 O escopo da garantia é deliberadamente limitado às **partições quentes** (`0..888`), onde
 `id_particao_conta` é o hash da conta contratante e portanto a unicidade por partição equivale

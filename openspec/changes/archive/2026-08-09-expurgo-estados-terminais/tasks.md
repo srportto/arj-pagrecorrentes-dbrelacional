@@ -42,8 +42,8 @@
 
 ## 5. Validação final
 
-- [x] 5.1 `mvn clean compile` sem erros em `arj-contratocommand`.
-- [x] 5.2 `mvn test` completo em `arj-contratocommand`.
+- [x] 5.1 `mvn clean compile` sem erros em `contratocommand`.
+- [x] 5.2 `mvn test` completo em `contratocommand`.
 - [x] 5.3 Revisar se `AutorizacaoEventoPayload`, o `.avsc` espelhado e o contrato do endpoint
       `/decisao` permanecem inalterados (nenhuma mudança de schema é esperada nesta
       entrega).

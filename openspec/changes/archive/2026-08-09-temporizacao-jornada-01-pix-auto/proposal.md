@@ -5,7 +5,7 @@ estado para sempre** — não existe endpoint para o cliente pagador aprovar ou 
 mecanismo que encerre a espera. A regra de negócio dá ao cliente **10 minutos** para
 decidir; passado o prazo sem resposta, a autorização deve ser rejeitada sistemicamente.
 
-Faltam as três peças: a rota de decisão no `arj-contratocommand`, um temporizador
+Faltam as três peças: a rota de decisão no `contratocommand`, um temporizador
 distribuído que dispare a expiração no vencimento, e o dado que permite ao temporizador
 selecionar **só** as autorizações da jornada 1 — a jornada não é persistida hoje, ela é
 descartada após derivar o `motivo_status`, e some da base assim que a autorização muda de
@@ -13,7 +13,7 @@ status.
 
 ## What Changes
 
-- **Rota nova no `arj-contratocommand`**: `PATCH /api/autorizacoes/{idAutorizacao}/decisao`
+- **Rota nova no `contratocommand`**: `PATCH /api/autorizacoes/{idAutorizacao}/decisao`
   com ação `APROVAR` (→ `ATIVA`), `REJEITAR` (→ `REJEITADA`, motivo `REJEITADA_PAGADOR`) ou
   `EXPIRAR` (→ `REJEITADA`, motivo novo `REJEITADA_SISTEMA_TIMEOUT_J1`). Toda transição é
   validada contra o grafo existente de `StatusAutorizacao` — **o grafo não muda**, porque
@@ -45,7 +45,7 @@ nenhuma subscription ou consumidor existente muda de comportamento.
 
 ### New Capabilities
 
-- `decisao-autorizacao`: rota de decisão no `arj-contratocommand` (aprovar/rejeitar/expirar),
+- `decisao-autorizacao`: rota de decisão no `contratocommand` (aprovar/rejeitar/expirar),
   transições resultantes, motivos gravados, idempotência e contrato de erro que o chamador
   automatizado usa para decidir entre confirmar e reprocessar.
 - `temporizacao-jornada-01`: a aplicação `temporiza-autorizacao` — consumo da fila filtrada,
@@ -73,8 +73,8 @@ nenhuma subscription ou consumidor existente muda de comportamento.
 
 ## Impact
 
-**Código**: `arj-contratocommand` (controller, use case + rules de decisão, entidade,
-mapper, enums de motivo, payload e publisher de evento); `arj-contratoquery` (espelho da
+**Código**: `contratocommand` (controller, use case + rules de decisão, entidade,
+mapper, enums de motivo, payload e publisher de evento); `contratoquery` (espelho da
 coluna); `autorizacaostatus-producer` e `eventos-consumer` (espelho do payload e do
 `.avsc`); aplicação nova `apps/temporiza-autorizacao`.
 
@@ -89,7 +89,7 @@ legadas), replicada nas entidades JPA das duas apps que mapeiam a tabela.
 cliente HTTP na aplicação nova. Porta 8084 passa a ser ocupada.
 
 **Operação**: novo ponto de falha entre o vencimento e a expiração efetiva — a fila SQS
-tem DLQ e o stream tem PEL, mas uma indisponibilidade prolongada do `arj-contratocommand`
+tem DLQ e o stream tem PEL, mas uma indisponibilidade prolongada do `contratocommand`
 atrasa expirações sem perdê-las.
 
 **Dívida conhecida, fora deste escopo**: estados terminais `REJEITADA`, `EXPIRADA` e

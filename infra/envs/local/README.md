@@ -6,8 +6,8 @@ permitindo validar o Terraform (`plan`/`apply`) sem custo e sem conta AWS real,
 antes de aplicar em `envs/prod` (fase futura).
 
 Provisiona: VPC `vpc-arj` (6 subnets, 3 NAT), cluster ECS Fargate + ALB
-internet-facing, e os dois ECS Services (`arj-contratocommand` :8080,
-`arj-contratoquery` :8081).
+internet-facing, e os dois ECS Services (`contratocommand` :8080,
+`contratoquery` :8081).
 
 ## Pré-requisitos
 
@@ -57,12 +57,12 @@ terraform apply
 ```bash
 export FE="--endpoint-url http://localhost:4566 --region us-east-1"
 
-aws $FE ecs describe-services --cluster arj-cluster --services arj-contratocommand arj-contratoquery \
+aws $FE ecs describe-services --cluster arj-cluster --services contratocommand contratoquery \
   --query 'services[].{Name:serviceName,Desired:desiredCount,Running:runningCount}'
 
 # target health
 aws $FE elbv2 describe-target-health --target-group-arn "$(aws $FE elbv2 describe-target-groups \
-  --names arj-contratocommand-tg --query 'TargetGroups[0].TargetGroupArn' --output text)"
+  --names contratocommand-tg --query 'TargetGroups[0].TargetGroupArn' --output text)"
 ```
 
 No Git Bash (Windows), use `MSYS_NO_PATHCONV=1` antes de comandos `aws` cujo

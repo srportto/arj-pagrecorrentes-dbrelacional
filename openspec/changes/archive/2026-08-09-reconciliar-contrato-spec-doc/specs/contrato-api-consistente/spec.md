@@ -2,7 +2,7 @@
 
 ### Requirement: Nomenclatura idêntica para o mesmo dado entre serviços
 
-Os contratos REST do `arj-contratocommand` e do `arj-contratoquery` SHALL usar o mesmo nome de
+Os contratos REST do `contratocommand` e do `contratoquery` SHALL usar o mesmo nome de
 campo para o mesmo dado da autorização. Um cliente que crie pelo command e consulte pelo query NÃO
 SHALL precisar de mapeamentos distintos para a mesma entidade.
 

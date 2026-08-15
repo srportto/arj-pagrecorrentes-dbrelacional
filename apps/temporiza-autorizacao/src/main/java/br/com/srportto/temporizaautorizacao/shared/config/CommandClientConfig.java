@@ -9,7 +9,7 @@ import org.springframework.web.client.RestClient;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
-/** Cliente HTTP síncrono usado para acionar {@code PATCH /api/autorizacoes/{id}/decisao} no arj-contratocommand. */
+/** Cliente HTTP síncrono usado para acionar {@code PATCH /api/autorizacoes/{id}/decisao} no contratocommand. */
 @Configuration
 @EnableConfigurationProperties(TemporizacaoProperties.class)
 public class CommandClientConfig {

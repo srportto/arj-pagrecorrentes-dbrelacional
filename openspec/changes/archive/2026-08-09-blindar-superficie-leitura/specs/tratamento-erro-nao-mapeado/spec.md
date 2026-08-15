@@ -10,13 +10,13 @@ do container.
 #### Scenario: Exceção não prevista devolve corpo estruturado
 
 - **WHEN** uma exceção não mapeada explicitamente ocorre durante o processamento de uma requisição
-  no `arj-contratoquery`
+  no `contratoquery`
 - **THEN** a resposta SHALL ter status 500 e corpo no formato `LayoutErrosApiResponse`
 - **AND** NÃO SHALL ser a página de erro default do container
 
 #### Scenario: Cobertura presente nos dois serviços REST
 
-- **WHEN** os `ApiExceptionHandler` do `arj-contratocommand` e do `arj-contratoquery` são
+- **WHEN** os `ApiExceptionHandler` do `contratocommand` e do `contratoquery` são
   inspecionados
 - **THEN** ambos SHALL declarar tratador para exceção não prevista
 

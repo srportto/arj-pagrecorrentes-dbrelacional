@@ -1,6 +1,6 @@
 ## 1. Capacidades no enum TipoProduto
 
-- [x] 1.1 Adicionar ao `TipoProduto` (arj-contratocommand) os atributos booleanos de capacidade no construtor (`PIX_AUTO(1L, true, true)`, `DDA_AUTO(2L, true, true)`) e os métodos `habilitadoParaContratar()` / `habilitadoParaCancelar()`, mantendo os lookups estáticos existentes
+- [x] 1.1 Adicionar ao `TipoProduto` (contratocommand) os atributos booleanos de capacidade no construtor (`PIX_AUTO(1L, true, true)`, `DDA_AUTO(2L, true, true)`) e os métodos `habilitadoParaContratar()` / `habilitadoParaCancelar()`, mantendo os lookups estáticos existentes
 - [x] 1.2 Atualizar `TipoProdutoTest` cobrindo as respostas de capacidade de cada constante (ambas `true` para os produtos atuais)
 
 ## 2. Rule de cancelamento ProdutoSuportadoCancelamento
@@ -16,5 +16,5 @@
 
 ## 4. Verificação final
 
-- [x] 4.1 Rodar `mvn test` em `aplicacoes/arj-contratocommand` — suíte completa verde
-- [x] 4.2 Conferir que nenhum contrato REST mudou (endpoints, headers e códigos HTTP intactos; apenas novo cenário 422 no cancelamento) e que o `TipoProduto` do `arj-contratoquery` não foi tocado
+- [x] 4.1 Rodar `mvn test` em `aplicacoes/contratocommand` — suíte completa verde
+- [x] 4.2 Conferir que nenhum contrato REST mudou (endpoints, headers e códigos HTTP intactos; apenas novo cenário 422 no cancelamento) e que o `TipoProduto` do `contratoquery` não foi tocado

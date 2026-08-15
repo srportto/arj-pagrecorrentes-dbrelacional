@@ -14,8 +14,8 @@
 ```mermaid
 flowchart TD
     subgraph Escrita["Java 25 · Spring Boot 4.0.7"]
-        Command["arj-contratocommand<br/>Web MVC · JPA · MapStruct<br/>AWS SDK v2 (SNS)"]
-        Query["arj-contratoquery<br/>Web MVC (Jetty) · JPA<br/>somente leitura"]
+        Command["contratocommand<br/>Web MVC · JPA · MapStruct<br/>AWS SDK v2 (SNS)"]
+        Query["contratoquery<br/>Web MVC (Jetty) · JPA<br/>somente leitura"]
     end
 
     Postgres[("PostgreSQL 18<br/>pg_partman · pg_cron · pgvector<br/>HikariCP · Hibernate")]
@@ -46,13 +46,13 @@ flowchart TD
 | Java | 25 | `public static void main()` — a forma `void main()` está pendente de suporte do maven plugin |
 | Maven | 3.9+ | Cinco projetos independentes, **sem POM pai agregador** — monorepo por convenção, não por reactor |
 | Lombok | 1.18.40 | Uso variável por app (mínimo no consumer/temporizador; declarado e não usado no producer) |
-| MapStruct | 1.5.5.Final | Só no `arj-contratocommand`, com `@AfterMapping` |
+| MapStruct | 1.5.5.Final | Só no `contratocommand`, com `@AfterMapping` |
 | JaCoCo | 0.8.15 | Gate de **80% de cobertura de linha** na fase `verify`, nos cinco apps |
 
 ### Framework e runtime
 
 - **Spring Boot 4.0.7** em todos os apps: Web MVC, Validation, Actuator.
-- **Jetty embutido** no `arj-contratoquery` (Tomcat excluído no `pom.xml`); Tomcat nos demais.
+- **Jetty embutido** no `contratoquery` (Tomcat excluído no `pom.xml`); Tomcat nos demais.
   Undertow não existe mais no Boot 4.0.
 - Virtual threads habilitadas — exceto no pipeline do `@SqsListener`, que exige platform
   threads da factory interna do Spring Cloud AWS.
@@ -64,14 +64,14 @@ flowchart TD
 - Spring Data JPA / Hibernate, driver 42.7.12, pool **HikariCP** com
   `connection-init-sql` fixando `plan_cache_mode = force_generic_plan`.
 - Serialização JSON: **Jackson 3** (`tools.jackson.databind`) e **Yasson 3.0.3** (JSON-B).
-- Apenas `arj-contratocommand` e `arj-contratoquery` tocam o banco; os outros três não
+- Apenas `contratocommand` e `contratoquery` tocam o banco; os outros três não
   conhecem o schema.
 
 ### Mensageria
 
 | Tecnologia | Onde | Escolha |
 |---|---|---|
-| SNS | `arj-contratocommand` | **AWS SDK v2 puro** (`software.amazon.awssdk:sns` 2.49.0), sem Spring Cloud AWS |
+| SNS | `contratocommand` | **AWS SDK v2 puro** (`software.amazon.awssdk:sns` 2.49.0), sem Spring Cloud AWS |
 | SQS | `autorizacaostatus-producer`, `temporiza-autorizacao` | **Spring Cloud AWS 4.0.0** (`@SqsListener`) |
 | Kafka (produção) | `autorizacaostatus-producer` | **`kafka-clients` 3.9.2 puro**, produce síncrono |
 | Kafka (consumo) | `eventos-consumer` | **spring-kafka** (`@KafkaListener`, `AckMode.RECORD`) |
@@ -94,7 +94,7 @@ flowchart TD
 
 | Padrão | Como aparece aqui |
 |---|---|
-| **CQRS** (sem event sourcing) | `arj-contratocommand` (escrita) e `arj-contratoquery` (leitura, `DB_READ_ONLY=true`) sobre **a mesma base e a mesma tabela** — separação de responsabilidade e de escala, não de storage |
+| **CQRS** (sem event sourcing) | `contratocommand` (escrita) e `contratoquery` (leitura, `DB_READ_ONLY=true`) sobre **a mesma base e a mesma tabela** — separação de responsabilidade e de escala, não de storage |
 | **Arquitetura hexagonal** | As cinco apps usam `entrypoint` / `application` / `domain` / `shared`. **Não existe pacote `infrastructure`**: adapters de saída vivem em `application/`, atrás de portas |
 | **EDA com fan-out e filtro no broker** | SNS publica um evento por transição de estado; duas filas SQS assinam, uma delas com **filter policy** por message attributes (`tipoEvento` + `tipoProduto` + `tipoJornada`) — o consumidor não precisa de lógica de filtro |
 | **Publicação pós-commit (outbox ausente por decisão)** | `@TransactionalEventListener(AFTER_COMMIT)`: rollback nunca publica; falha no `publish` só loga e não afeta a resposta HTTP já commitada. Trade-off documentado em `add-eventos-autorizacao-sns-sqs` |

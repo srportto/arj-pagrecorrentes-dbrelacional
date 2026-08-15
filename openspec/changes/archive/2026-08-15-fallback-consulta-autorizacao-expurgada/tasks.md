@@ -25,7 +25,7 @@
 - [x] 2.6 Teste: duas linhas com o mesmo `id_autorizacao` em partições distintas resultam em
       500, sem escolher uma delas.
 
-> O `arj-contratoquery` ainda não tem teste de integração contra banco real. Reaproveitar o
+> O `contratoquery` ainda não tem teste de integração contra banco real. Reaproveitar o
 > padrão `PostgresLocalDisponivelCondition` + schema isolado criado em
 > `corrigir-expurgo-merge-version`, em vez de inventar um segundo mecanismo.
 
@@ -52,7 +52,7 @@
 
 ## 5. Verificação
 
-- [x] 5.1 `mvn test` no `arj-contratoquery`.
+- [x] 5.1 `mvn test` no `contratoquery`.
 - [x] 5.2 Verificação manual contra o banco local: `GET` da autorização `019fe8ef-…0006`
       (expirada, partição 953) passa a devolver 200; hoje devolve 404.
 - [x] 5.3 Medir o tempo real de resposta dos três caminhos (ativa, expurgada, inexistente) e
@@ -60,7 +60,7 @@
 
 ## 6. Documentação
 
-- [x] 6.1 Atualizar `apps/arj-contratoquery/CLAUDE.md` e `AGENTS.md` (espelhos — manter
+- [x] 6.1 Atualizar `apps/contratoquery/CLAUDE.md` e `AGENTS.md` (espelhos — manter
       idênticos): descrever a cascata e, sobretudo, **por que ela existe** — o expurgo move a
       linha para uma partição que não é derivável do id. Quem mexer no particionamento precisa
       saber o que quebra.

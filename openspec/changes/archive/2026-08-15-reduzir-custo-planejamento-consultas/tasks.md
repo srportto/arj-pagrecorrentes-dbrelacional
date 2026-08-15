@@ -19,14 +19,14 @@
 - [x] 2.1 Determinar a forma de aplicar `plan_cache_mode` que valha para **todas** as conexões
       do pool HikariCP (parâmetro de conexão, `connection-init-sql` ou `ALTER ROLE`) — e provar
       que vale, não supor. **`hikari.connection-init-sql`**, provado por
-      `PlanCacheModeHikariIntegrationTest` (`arj-contratoquery`) — 4 conexões físicas
+      `PlanCacheModeHikariIntegrationTest` (`contratoquery`) — 4 conexões físicas
       simultâneas, todas com `SHOW plan_cache_mode = force_generic_plan`.
 - [x] 2.2 Medir a listagem paginada com ordenação sob plano genérico. É a consulta de maior
       tráfego e a que o spike **não** cobriu. Medido: economia de ~30 ms/chamada em regime
       (planejamento cai a ~0,2 ms); execução não muda (~77–79 ms, real I/O sobre 889 partições).
 - [x] 2.3 Medir os três níveis da cascata de `GET /{id}` sob plano genérico. N3 (pior caso):
       ~44 ms → ~6,9 ms (6,4×). N1/N2 medidos, ver `design.md`.
-- [x] 2.4 Medir as consultas de escrita do `arj-contratocommand` (`existsBy...` da idempotência,
+- [x] 2.4 Medir as consultas de escrita do `contratocommand` (`existsBy...` da idempotência,
       busca por chave composta, movimentação de partição). `findByIdAutorizacao` (sem poda):
       ~38,5 ms → ~6,8 ms (5,6×). `existsBy...`/`moverParaParticao` (já podadas): ver 2.5.
 - [x] 2.5 Procurar ativamente consulta que **piore** com plano genérico. Uma medição que só
@@ -34,7 +34,7 @@
       (já podavam para 1 partição sozinhas) pagam planejamento cacheado maior sob genérico
       (~0,03–0,16 ms contra ~0,04–0,08 ms) — regressão real, porém sempre sub-milissegundo.
 - [x] 2.6 Decidir adoção com base nas medições, e registrar a decisão no `design.md`. **Adotado**
-      em `arj-contratoquery` e `arj-contratocommand` (`application.yaml`, 2026-08-11). Validado
+      em `contratoquery` e `contratocommand` (`application.yaml`, 2026-08-11). Validado
       pós-rebuild: containers `healthy`, `mvn test` verde nas duas apps (68 e 167 testes, 0
       falhas), listagem HTTP ~180–200 ms (dentro do ruído do `auto`), N1 feliz ~43 ms ponta a
       ponta, sem erro nos logs.

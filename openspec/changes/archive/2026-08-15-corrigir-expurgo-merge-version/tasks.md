@@ -33,12 +33,12 @@
       unitário (cálculo da partição de destino, atalho quando destino == origem).
 - [x] 3.2 Ajustar `CancelarAutorizacaoUseCaseTest` e `DecidirAutorizacaoUseCaseTest` aos
       novos contratos do serviço.
-- [x] 3.3 Rodar `mvn test` em `arj-contratocommand` e em `arj-contratoquery` (lê a mesma
+- [x] 3.3 Rodar `mvn test` em `contratocommand` e em `contratoquery` (lê a mesma
       tabela).
 
 ## 4. Varredura por defeitos irmãos
 
-- [x] 4.1 Buscar no `arj-contratocommand` outros pontos que combinem remoção e re-persistência
+- [x] 4.1 Buscar no `contratocommand` outros pontos que combinem remoção e re-persistência
       da mesma instância na mesma transação (`detach(`, `deleteById(` seguidos de `save(`).
       Registrar o resultado, mesmo que vazio.
 - [x] 4.2 Confirmar que nenhum outro caminho de escrita depende da ausência de `@Version`
@@ -68,7 +68,7 @@
 
 ## 6. Documentação
 
-- [x] 6.1 Atualizar `apps/arj-contratocommand/CLAUDE.md` e `AGENTS.md` (espelhos — manter
+- [x] 6.1 Atualizar `apps/contratocommand/CLAUDE.md` e `AGENTS.md` (espelhos — manter
       idênticos): descrever a nova mecânica de movimentação de partição e registrar a
       armadilha do `merge` de instância detached com `@Version` na seção "Armadilhas críticas".
 - [x] 6.2 Se o escopo da constraint mudar (D3), atualizar a linha correspondente na tabela de

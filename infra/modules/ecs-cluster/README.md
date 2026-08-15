@@ -5,7 +5,7 @@ Balancer compartilhado que roteia para os serviços definidos em
 [`../ecs-service/`](../ecs-service/).
 
 Um único cluster comporta os dois serviços deste monorepo
-(`arj-contratocommand` :8080, `arj-contratoquery` :8081) como ECS Services
+(`contratocommand` :8080, `contratoquery` :8081) como ECS Services
 independentes.
 
 ## O que cria

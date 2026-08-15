@@ -8,7 +8,7 @@ TBD - created by archiving change rede-seguranca-contrato-evento. Update Purpose
 O monorepo SHALL possuir verificação automatizada que compara as cópias manuais espelhadas dos
 contratos de evento e falha quando divergem:
 
-- `AutorizacaoEventoPayload` em `arj-contratocommand` e em `autorizacaostatus-producer`
+- `AutorizacaoEventoPayload` em `contratocommand` e em `autorizacaostatus-producer`
 - `EventoAutorizacao.avsc` em `autorizacaostatus-producer` e em `eventos-consumer`
 
 A comparação SHALL considerar conjunto de campos, tipos, nulabilidade e nomes de serialização
@@ -22,7 +22,7 @@ comentário NÃO SHALL causar falha.
 
 #### Scenario: Campo adicionado em apenas um lado falha
 
-- **WHEN** um campo é adicionado ao `AutorizacaoEventoPayload` do `arj-contratocommand` sem ser
+- **WHEN** um campo é adicionado ao `AutorizacaoEventoPayload` do `contratocommand` sem ser
   replicado no `autorizacaostatus-producer`
 - **THEN** a verificação SHALL falhar, identificando o campo e os dois arquivos comparados
 
@@ -44,7 +44,7 @@ diff NÃO SHALL permitir que a divergência passe sem verificação.
 
 #### Scenario: Alteração em um único app aciona a verificação
 
-- **WHEN** um pull request altera exclusivamente arquivos de `arj-contratocommand`, incluindo o
+- **WHEN** um pull request altera exclusivamente arquivos de `contratocommand`, incluindo o
   `AutorizacaoEventoPayload`, sem tocar o `autorizacaostatus-producer`
 - **THEN** o CI SHALL executar a verificação de contrato e falhar se as cópias divergirem
 

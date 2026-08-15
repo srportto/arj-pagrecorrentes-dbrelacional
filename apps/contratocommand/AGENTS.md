@@ -66,7 +66,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes de use ca
 | PATCH | `/api/autorizacoes/{idAutorizacao}/decisao` | Decisão sobre autorização em `RECEBIDA` (jornada 1 do PIX_AUTO): `acao` = `APROVAR`\|`REJEITAR`\|`EXPIRAR`. **Header obrigatório `tipoProduto`**. → 200 (aplicada) / 422 (status não permite — inclui já resolvida) |
 | GET | `/actuator/health` | Health-check (Actuator) com readiness de banco (indicador `db`). → 200 (UP) / 503 (DOWN) |
 
-> A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `arj-contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
+> A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
 
 ## Códigos de erro (handler global)
 
@@ -281,5 +281,5 @@ temporizador.
 - [ ] Se mexeu em particionamento, rodar `ControleExpurgoAutorizacaoTest`
 - [ ] DTOs (records) recriados, não mutados
 - [ ] Se mexeu no schema de `autorizacoes`, atualizar `AutorizacaoEventoPayload` aqui, em `apps/autorizacaostatus-producer` **e** o `.avsc` em `apps/autorizacaostatus-producer`/`apps/eventos-consumer`
-- [ ] Se mexeu na entidade `Autorizacao`, conferir se `apps/arj-contratoquery` precisa do mesmo campo
+- [ ] Se mexeu na entidade `Autorizacao`, conferir se `apps/contratoquery` precisa do mesmo campo
 - [ ] Se mexeu na rota `/decisao` ou no cálculo de `data_hora_inclusao`, conferir `apps/temporiza-autorizacao` (consumidor do evento de recepção)

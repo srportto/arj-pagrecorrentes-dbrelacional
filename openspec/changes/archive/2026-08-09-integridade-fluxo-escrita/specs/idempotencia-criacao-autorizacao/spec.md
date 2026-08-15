@@ -5,7 +5,7 @@
 A coluna `id_autorizacao_empresa` da tabela `autorizacoes` SHALL ter unicidade garantida no banco
 de dados, de modo que duas autorizações com o mesmo valor NÃO possam coexistir. A garantia SHALL
 residir no banco, não apenas na aplicação — a unicidade deve valer também para escritas que não
-passem pelo `arj-contratocommand`.
+passem pelo `contratocommand`.
 
 #### Scenario: Segunda inserção com a mesma chave é rejeitada pelo banco
 

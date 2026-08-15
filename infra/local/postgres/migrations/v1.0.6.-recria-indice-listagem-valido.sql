@@ -12,7 +12,7 @@
 --- construcao concorrente de indice particionado: ele cria apenas o indice-pai,
 --- nao recursa para as particoes, e o pai fica marcado INVALID -- inutil para o
 --- planejador. O indice existe no catalogo e nunca foi usado por consulta
---- nenhuma; a listagem do arj-contratoquery vinha varrendo sequencialmente as
+--- nenhuma; a listagem do contratoquery vinha varrendo sequencialmente as
 --- 989 particoes desde entao.
 ---
 --- Conferir antes e depois:

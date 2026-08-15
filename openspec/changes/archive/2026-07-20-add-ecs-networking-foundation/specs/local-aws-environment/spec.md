@@ -42,7 +42,7 @@ backend remoto (S3/DynamoDB) nesta fase.
 ### Requirement: Publicação de imagens no ECR do Floci
 
 O ambiente `envs/local` SHALL prever a publicação das imagens de
-`arj-contratocommand` e `arj-contratoquery` em um repositório ECR emulado pelo Floci
+`contratocommand` e `contratoquery` em um repositório ECR emulado pelo Floci
 antes do deploy dos serviços, de modo que o ECS consiga puxá-las.
 
 #### Scenario: Imagens disponíveis para o ECS

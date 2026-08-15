@@ -112,7 +112,7 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
 
 ## Armadilhas críticas
 
-1. **Porta 8083** — diferente de `arj-contratocommand` (8080), `arj-contratoquery`
+1. **Porta 8083** — diferente de `contratocommand` (8080), `contratoquery`
    (8081) e `autorizacaostatus-producer` (8082).
 2. **Sem banco de dados** — não adicione JPA/Postgres aqui; se precisar persistir algo,
    isso é uma mudança de escopo desta app.
@@ -132,7 +132,7 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
    campo `status` do próprio `EventoAutorizacao` recebido (`TipoEventoAutorizacao.porStatus`)
    — decisão deliberada: o body Avro é a fonte única da verdade, não um header que
    poderia divergir dele. `StatusAutorizacao` e `TipoEventoAutorizacao` (`domain/enums/`)
-   são espelhos manuais dos mesmos enums do `arj-contratocommand`.
+   são espelhos manuais dos mesmos enums do `contratocommand`.
 7. **`AckMode.RECORD` é definido em código, não em `application.yaml`** —
    `factory.getContainerProperties().setAckMode(...)` em `KafkaConsumerConfig`. Não dá
    para usar `spring.kafka.listener.ack-mode` + `ConcurrentKafkaListenerContainerFactoryConfigurer`

@@ -1,6 +1,6 @@
 ## Context
 
-O `arj-contratoquery` expõe dois endpoints de leitura sobre a tabela `autorizacoes`, particionada
+O `contratoquery` expõe dois endpoints de leitura sobre a tabela `autorizacoes`, particionada
 por `id_particao_conta`. A listagem é o endpoint mais exercitado, e o desalinhamento entre como a
 tabela é particionada e como ela é consultada é a raiz do problema de desempenho:
 
@@ -25,7 +25,7 @@ Sobre isso, quatro ausências de validação de borda:
 | `ordenarPor` | `default` repassa string crua | campo inexistente → `PropertyReferenceException` → 500 |
 | exceção não prevista | sem catch-all | escapa do `LayoutErrosApiResponse` |
 
-O `arj-contratocommand` **tem** o catch-all. O query não. Mesma equipe, mesmo padrão, um lado só.
+O `contratocommand` **tem** o catch-all. O query não. Mesma equipe, mesmo padrão, um lado só.
 
 Há também um bug de contrato de origem oposta: a spec `listar-autorizacoes` especifica 422 para
 `idUnicoContaContratante` ausente, o service implementa essa validação, e ela nunca roda — porque
@@ -124,7 +124,7 @@ escrita sem devolver leitura.
 ### D6 — `readOnly = true` é correção de intenção, não de desempenho
 
 O ganho de desligar dirty-checking em consulta é real mas modesto. O valor maior é declarativo: o
-`arj-contratoquery` é contratualmente somente-leitura, e hoje essa intenção vive apenas no
+`contratoquery` é contratualmente somente-leitura, e hoje essa intenção vive apenas no
 `read-only=true` do HikariCP, uma camada abaixo e sobrescrevível por variável de ambiente.
 
 Não resolve a ausência de barreira estrutural — o repositório continua estendendo `JpaRepository`

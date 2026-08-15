@@ -6,7 +6,7 @@ A documentação SHALL descrever o **build** de uma aplicação — flags de com
 features, módulos adicionados (`--add-modules`), plugins Maven, ferramentas de cobertura — em
 correspondência com o que o `pom.xml` da app efetivamente declara.
 
-Esta é a lacuna que permitiu o caso concreto: o `README.md` de `arj-contratocommand` mantinha uma
+Esta é a lacuna que permitiu o caso concreto: o `README.md` de `contratocommand` mantinha uma
 seção instruindo a compilar com `--enable-preview` e `--add-modules=jdk.incubator.vector`, quando
 nenhum `pom.xml` do monorepo declara preview features — e o comando ensinado
 (`javac ... -jar target/app.jar`) nem era sintaxe válida. A capacidade já cobria infraestrutura,

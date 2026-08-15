@@ -12,7 +12,7 @@ A documentação do repositório cresceu por acréscimo e nunca foi podada. O es
 
 Três defeitos concretos, não questão de gosto:
 
-**1. Documentação que descreve o que não existe.** O `README.md` do `arj-contratocommand` termina
+**1. Documentação que descreve o que não existe.** O `README.md` do `contratocommand` termina
 com uma seção de 20 linhas — "⚠️ Notas Importantes Sobre Java 25 Preview Features" — ensinando a
 compilar com `--add-modules=jdk.incubator.vector` e `--enable-preview`. **Nenhum `pom.xml` do
 monorepo declara preview features**, e o comando que ela ensina
@@ -31,7 +31,7 @@ arquivadas. Não é descuido pontual: é uma classe de defeito que **reincide a 
 archive`**, porque os `CLAUDE.md` das apps linkam design de change pelo caminho `changes/`, que
 deixa de existir.
 
-E há duplicação bruta: `apps/arj-contratocommand/docs/info_build-my-image-and-execute.md` é um
+E há duplicação bruta: `apps/contratocommand/docs/info_build-my-image-and-execute.md` é um
 arquivo de **0 bytes** cujo conteúdo real (85 linhas sobre build da imagem PostgreSQL 18) vive em
 `docs/info_build-my-image-and-execute.md`. O `README.md` do command repete a seção de testes duas
 vezes (linhas 228-246 e 624-700) e a de padrões de design duas vezes (134-144 e 741-751).
@@ -41,7 +41,7 @@ vezes (linhas 228-246 e 624-700) e a de padrões de design duas vezes (134-144 e
 **Esta change não pode começar antes da fase 1 de `limpar-codigo-das-apps`.**
 
 Descoberto em 2026-08-10: as seções de API que esta change apaga —
-`apps/arj-contratocommand/README.md` linhas 268-380 e `apps/arj-contratoquery/README.md` linhas
+`apps/contratocommand/README.md` linhas 268-380 e `apps/contratoquery/README.md` linhas
 181-264 — são **duas das três fontes do contrato de API** do repositório, e o gateway ainda não o
 tem. A fase 1 daquela change consolida as três em `docs/contrato-api-para-gateway.md`; só depois
 disso as seções podem ser removidas com segurança.
@@ -51,7 +51,7 @@ A dependência é estreita: só a fase 1 precede esta change, não a change inte
 
 ## What Changes
 
-**Podar o `README.md` do `arj-contratocommand`** — de 885 para ~150 linhas, cortando:
+**Podar o `README.md` do `contratocommand`** — de 885 para ~150 linhas, cortando:
 - a seção de Java 25 preview features (fictícia);
 - o changelog "Alterações Recentes v0.0.1 (maio 2026)" (~135 linhas), que é `git log`;
 - a documentação de request/response da API (~110 linhas), que vai para o gateway;
@@ -97,15 +97,15 @@ D3 já implementada.
 ## Impact
 
 **Documentação de apps**
-- `apps/arj-contratocommand/README.md` — 885 → ~150 linhas
-- `apps/arj-contratoquery/README.md` — 356 linhas, revisão de sobreposição com `CLAUDE.md`
+- `apps/contratocommand/README.md` — 885 → ~150 linhas
+- `apps/contratoquery/README.md` — 356 linhas, revisão de sobreposição com `CLAUDE.md`
 - `apps/temporiza-autorizacao/README.md` — **criar**
 - Os 5 pares `CLAUDE.md`/`AGENTS.md` — hoje idênticos (verificado); qualquer edição SHALL ser
   replicada nos dois
 
 **Remoções**
-- `apps/arj-contratocommand/HELP.md`
-- `apps/arj-contratocommand/docs/info_build-my-image-and-execute.md` (0 bytes) e o diretório
+- `apps/contratocommand/HELP.md`
+- `apps/contratocommand/docs/info_build-my-image-and-execute.md` (0 bytes) e o diretório
   `docs/` da app, se ficar vazio
 
 **Raiz, docs/ e infra/**

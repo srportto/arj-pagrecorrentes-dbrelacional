@@ -3,7 +3,7 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
-API REST de **leitura de autorizações de produtos financeiros** (PIX Automático e DDA Automático), em **arquitetura hexagonal**, com **particionamento temporal** em PostgreSQL. Este serviço é **somente leitura** — as operações de escrita ficam no `arj-contratocommand` (porta 8080).
+API REST de **leitura de autorizações de produtos financeiros** (PIX Automático e DDA Automático), em **arquitetura hexagonal**, com **particionamento temporal** em PostgreSQL. Este serviço é **somente leitura** — as operações de escrita ficam no `contratocommand` (porta 8080).
 
 ## Comece por aqui
 
@@ -61,7 +61,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`, `ListarAutorizacoe
 | GET | `/api/autorizacoes/{autorizacaoId}` | Consulta por id. Extrai partição do UUID automaticamente. → 200 / 404 |
 | GET | `/actuator/health` | Health-check (Actuator) com readiness de banco. → 200 (UP) / 503 (DOWN) |
 
-> **Não existem** POST, PATCH ou DELETE nesta app — toda escrita fica no `arj-contratocommand` (porta 8080).
+> **Não existem** POST, PATCH ou DELETE nesta app — toda escrita fica no `contratocommand` (porta 8080).
 
 ## Validações e códigos de erro
 
@@ -130,7 +130,7 @@ AutorizacaoController.consultarPorId()
 
 **Por que existe a cascata** — e não é otimização prematura nem paranoia: a partição em que a
 linha reside **deixou de ser derivável do id**. O `ReversibleUUIDv7` carrega a partição de
-*criação*, imutável; mas o `ExpurgoAutorizacaoService` do `arj-contratocommand` transfere toda
+*criação*, imutável; mas o `ExpurgoAutorizacaoService` do `contratocommand` transfere toda
 autorização em estado terminal (`CANCELADA`, `REJEITADA`, `EXPIRADA`, `FINALIZADA`) para a faixa
 de expurgo (900–999, balde da semana da transição). Sem a cascata, o `GET /{id}` devolve **404
 para toda autorização em estado terminal** — foi o que aconteceu entre 2026-08-09 e a mudança
@@ -154,7 +154,7 @@ Tabela `autorizacoes` particionada por `id_particao_conta` (range **900–999** 
 
 ### Enums de domínio
 
-`domain/enums/StatusAutorizacao` (espelho do `arj-contratocommand`) carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado por esta app (somente leitura), disponível para eventual validação futura. `domain/enums/TipoEventoAutorizacao` (8 valores, `porStatus(status)`) também é um espelho, sem uso atual nesta app. `domain/enums/TipoJornadaAutorizacao` (espelho parcial: só resolve código→enum, sem `obterJornadaAutorizacaoEnumPorNome` — esta app não recebe o header `tipoJornada`) existe apenas para o converter da coluna `tipo_jornada` funcionar; inclui `DESCONHECIDA(0)` para linhas anteriores à coluna existir.
+`domain/enums/StatusAutorizacao` (espelho do `contratocommand`) carrega o grafo de transições da máquina de estados via `podeTransicionarPara(destino)` — não usado por esta app (somente leitura), disponível para eventual validação futura. `domain/enums/TipoEventoAutorizacao` (8 valores, `porStatus(status)`) também é um espelho, sem uso atual nesta app. `domain/enums/TipoJornadaAutorizacao` (espelho parcial: só resolve código→enum, sem `obterJornadaAutorizacaoEnumPorNome` — esta app não recebe o header `tipoJornada`) existe apenas para o converter da coluna `tipo_jornada` funcionar; inclui `DESCONHECIDA(0)` para linhas anteriores à coluna existir.
 
 ### Coluna tipo_jornada
 
@@ -167,7 +167,7 @@ Open Questions), não bloqueante para esta app funcionar.
 ## Armadilhas críticas
 
 1. **Esta app é somente leitura** — `DB_READ_ONLY=true` por padrão. Não tente usar `@Transactional` para escrita aqui.
-2. **Porta 8081**, não 8080 (que é do `arj-contratocommand`).
+2. **Porta 8081**, não 8080 (que é do `contratocommand`).
 3. **Não há Strategy Pattern** — sem orquestradores de contratação/cancelamento, sem use cases `Criar*` ou `Cancelar*`.
 4. **Sem MapStruct** — conversão feita via `from()` estático nos DTOs (ex.: `AutorizacaoResumidaResponseDto.from(autorizacao)`).
 5. **Container é Jetty**, não Tomcat — o `pom.xml` exclui o Tomcat explicitamente.

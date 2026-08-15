@@ -63,8 +63,8 @@ configuração e desempenho, não de contrato de API.
 ## Impact
 
 **Aplicações**
-- `arj-contratoquery` — maior beneficiado; a listagem é o endpoint mais afetado
-- `arj-contratocommand` — as consultas por chave composta já são baratas (1 partição), mas o
+- `contratoquery` — maior beneficiado; a listagem é o endpoint mais afetado
+- `contratocommand` — as consultas por chave composta já são baratas (1 partição), mas o
   `existsBy...` da idempotência e a cascata de expurgo também pagam planejamento
 
 **Configuração**

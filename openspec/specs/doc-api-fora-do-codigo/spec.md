@@ -83,5 +83,5 @@ documentação de API (`openapi.json`, `/v3/api-docs`).
 
 #### Scenario: Testes de geração de OpenAPI removidos
 
-- **WHEN** o `src/test` de `arj-contratocommand` e `arj-contratoquery` é inspecionado
+- **WHEN** o `src/test` de `contratocommand` e `contratoquery` é inspecionado
 - **THEN** a classe `OpenApiGenerationTest` não existe em nenhum dos dois

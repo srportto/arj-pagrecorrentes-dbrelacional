@@ -19,7 +19,7 @@
 - [x] 3.2 Alterar `AutorizacaoMapper` para `toDomain(CriarAutorizacaoRequest dados, TipoJornadaAutorizacao tipoJornada)`: qualificar todos os `@Mapping(source = "dados.*")` e ajustar o `@AfterMapping` para receber os dois parâmetros de origem, trocando `request.tipoJornada().getCodigoJornada()` por `tipoJornada.getCodigoJornada()` (mapper não importa `ContratacaoContext`)
 - [x] 3.3 Remover o componente `tipoJornada` de `CriarAutorizacaoRequest` (record fica com os 15 campos do body)
 - [x] 3.4 Simplificar `AutorizacaoController.insert`: resolver o enum do header, montar `ContratacaoContext.doRequest(jornada, request)` e chamar o use case — eliminar a reconstrução de 16 argumentos
-- [x] 3.5 Compilar o módulo (`mvn clean compile` em `aplicacoes/arj-contratocommand`) e corrigir qualquer erro residual da retipagem
+- [x] 3.5 Compilar o módulo (`mvn clean compile` em `aplicacoes/contratocommand`) e corrigir qualquer erro residual da retipagem
 
 ## 4. Testes
 
@@ -28,13 +28,13 @@
 - [x] 4.3 Migrar `CriarAutorizacaoUseCaseTest` para `execute(context)` e ajustar stubs/verificações do mapper para a nova assinatura
 - [x] 4.4 Ajustar `AutorizacaoMapperTest` para `toDomain(dados, tipoJornada)`, cobrindo a derivação do `motivoStatus` a partir do parâmetro de jornada
 - [x] 4.5 Ajustar `AutorizacaoControllerTest` (o body JSON não muda; conferir cenário de header `tipoJornada` obrigatório/inválido intacto)
-- [x] 4.6 Rodar `mvn test` no módulo `arj-contratocommand` e garantir suíte verde
+- [x] 4.6 Rodar `mvn test` no módulo `contratocommand` e garantir suíte verde
 
 ## 5. Documentação
 
-- [x] 5.1 Atualizar `aplicacoes/arj-contratocommand/CLAUDE.md`: diagrama do fluxo POST (controller monta `ContratacaoContext`), seção do framework de validação (`ContratacaoRule → extends Rule<ContratacaoContext>`), instruções de "adicionar regra" (`aceita(contexto)`), convenções (contexto imutável em ambas as features; request só com dados do body) e lista de componentes de `application/contratacao`
-- [x] 5.2 Replicar as mesmas edições em `aplicacoes/arj-contratocommand/AGENTS.md` e verificar com diff que os dois arquivos permanecem idênticos
-- [x] 5.3 Atualizar `aplicacoes/arj-contratocommand/README.md` onde descreve o fluxo de criação/`CriarAutorizacaoRequest` — nenhuma menção a `tipoJornada` ou à reconstrução do record existia no arquivo (drift pré-existente e não relacionado documentado na armadilha #1 do CLAUDE.md); nada a alterar dentro do escopo desta change
+- [x] 5.1 Atualizar `aplicacoes/contratocommand/CLAUDE.md`: diagrama do fluxo POST (controller monta `ContratacaoContext`), seção do framework de validação (`ContratacaoRule → extends Rule<ContratacaoContext>`), instruções de "adicionar regra" (`aceita(contexto)`), convenções (contexto imutável em ambas as features; request só com dados do body) e lista de componentes de `application/contratacao`
+- [x] 5.2 Replicar as mesmas edições em `aplicacoes/contratocommand/AGENTS.md` e verificar com diff que os dois arquivos permanecem idênticos
+- [x] 5.3 Atualizar `aplicacoes/contratocommand/README.md` onde descreve o fluxo de criação/`CriarAutorizacaoRequest` — nenhuma menção a `tipoJornada` ou à reconstrução do record existia no arquivo (drift pré-existente e não relacionado documentado na armadilha #1 do CLAUDE.md); nada a alterar dentro do escopo desta change
 
 ## 6. Verificação final
 

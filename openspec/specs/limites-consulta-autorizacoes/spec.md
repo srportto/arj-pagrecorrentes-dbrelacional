@@ -5,7 +5,7 @@ TBD - created by archiving change blindar-superficie-leitura. Update Purpose aft
 ## Requirements
 ### Requirement: Teto máximo de tamanho de página
 
-O `arj-contratoquery` SHALL impor limite máximo ao parâmetro `tamanho` da listagem. Requisição com
+O `contratoquery` SHALL impor limite máximo ao parâmetro `tamanho` da listagem. Requisição com
 `tamanho` acima do teto SHALL ser rejeitada com erro de contrato antes de qualquer consulta ao
 banco, e a mensagem SHALL informar o valor máximo aceito. O sistema NÃO SHALL truncar
 silenciosamente o valor solicitado.

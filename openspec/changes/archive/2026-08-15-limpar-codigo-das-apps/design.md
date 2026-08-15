@@ -138,7 +138,7 @@ parâmetro sem uso, remover os confirmados.
 **Refutada na execução, mesmo dia.** O javac padrão **não tem categoria de lint para parâmetro de
 método sem uso** — as categorias de `-Xlint:all` são `cast`, `deprecation`, `unchecked`,
 `serial`, `overloads`, `rawtypes` etc.; nenhuma cobre parâmetro não referenciado no corpo. Testado
-em `arj-contratocommand`: `-Xlint:all` produziu só avisos de MapStruct (`Unmapped target
+em `contratocommand`: `-Xlint:all` produziu só avisos de MapStruct (`Unmapped target
 property`), processamento de anotação e `serialVersionUID` ausente — nada sobre parâmetros. O
 flag foi revertido do `pom.xml` assim que confirmado, para não deixar ruído de build sem
 propósito.
@@ -177,7 +177,7 @@ Oportunidades encontradas durante a execução que não atendem o critério de D
 externo nomeado, ou change aberta) para virar `// TODO`, e que não foram corrigidas nesta change
 por exigirem escopo maior que "remover código sem uso". Registradas aqui, não no código.
 
-- **`ApiExceptionHandler.conflitoLockOtimista` (arj-contratocommand) tem dois overloads com
+- **`ApiExceptionHandler.conflitoLockOtimista` (contratocommand) tem dois overloads com
   parâmetro de exceção sem uso, mas não podem perder o parâmetro sem colidir.** Um trata
   `OptimisticLockException`, o outro `ObjectOptimisticLockingFailureException`; nenhum dos dois
   lê o parâmetro `exception` no corpo (só constroem uma mensagem genérica "Tente novamente"). Sem

@@ -21,7 +21,7 @@
       (confirmado nos runs da change `limpar-codigo-das-apps`: 12/12 command, 6/6 query). D4
       confirmado — a spec está errada, o código está certo. Tarefa 5.1 segue como planejada.
 
-## 2. Podar o README do arj-contratocommand
+## 2. Podar o README do contratocommand
 
 - [x] 2.1 Inventário feito antes de cortar: nada de único ficou fora. O que saiu era fictício
       (Strategy Pattern, `ContratacaoOrquestradorService`, `PixAutoService`/`PixAutoRepository`/
@@ -43,7 +43,7 @@
       Licença virou um link de uma linha para o `LICENSE` da raiz.
 - [x] 2.7 Stack, arquitetura hexagonal, estrutura de pastas e diagrama de fluxo removidos —
       todos fictícios ou duplicados do `CLAUDE.md`. Ponteiro adicionado no topo do arquivo.
-- [x] 2.8 Título corrigido: `# arj-contratocommand` (o nome real do módulo, não "Contrato
+- [x] 2.8 Título corrigido: `# contratocommand` (o nome real do módulo, não "Contrato
       Command" nem o typo "Projetox").
 - [x] 2.9 Resultado: 885 → **95 linhas**. Cobre pré-requisitos, variáveis de ambiente, build,
       execução (Maven/JAR/Docker), testes e a tabela de endpoints — nada além disso, com
@@ -51,7 +51,7 @@
 
 ## 3. Aplicar D1 nos demais arquivos de documentação de app
 
-- [x] 3.1 `apps/arj-contratoquery/README.md`: 356 → 93 linhas. Achado extra: o fluxo de "consulta
+- [x] 3.1 `apps/contratoquery/README.md`: 356 → 93 linhas. Achado extra: o fluxo de "consulta
       por id" mostrava um `findById` único, sem a cascata de 3 níveis que o `CLAUDE.md` documenta
       (pós-`fallback-consulta-autorizacao-expurgada`); e a árvore de pacotes citava
       `domain/model/ContratoBase`, `CanaisConhecidosEnum`, `TipoConta`,
@@ -70,8 +70,8 @@
 - [x] 3.3 Criado `apps/temporiza-autorizacao/README.md` (62 linhas, D5) — pré-requisitos,
       variáveis de ambiente, build/execução, testes, endpoint único (`/actuator/health`), ponteiro
       para `CLAUDE.md`. Era a única das 5 apps sem README.
-- [x] 3.4 `apps/arj-contratocommand/HELP.md` removido.
-- [x] 3.5 `apps/arj-contratocommand/docs/info_build-my-image-and-execute.md` (0 bytes) removido,
+- [x] 3.4 `apps/contratocommand/HELP.md` removido.
+- [x] 3.5 `apps/contratocommand/docs/info_build-my-image-and-execute.md` (0 bytes) removido,
       junto do diretório `docs/` da app (ficou vazio). O conteúdo real segue em
       `docs/info_build-my-image-and-execute.md` (raiz).
 - [x] 3.6 Confirmado por `grep -rln run_postgres16 --include=*.md .`: só changes **arquivadas**
@@ -109,13 +109,13 @@
       apontavam para classes que **não existem** — mesma fauna fictícia do Strategy Pattern
       encontrada no README do command; removidos sem substituto. Os outros 3
       (`IdContaUUIDPartitionDistributor`, `ControleExpurgoAutorizacao`, `ReversibleUUIDv7`) existem
-      de verdade; caminho corrigido para `../../apps/arj-contratocommand/src/...`. Dos 3 links de
+      de verdade; caminho corrigido para `../../apps/contratocommand/src/...`. Dos 3 links de
       `docs/resultado-poc/*.txt` (tarefa 4.2c): `sql-comandos.txt` existe **no mesmo diretório**
       (`docs/arquitetura/sql-comandos.txt`, 143 linhas de DDL real) — link corrigido para
       `sql-comandos.txt`; `jornada-tecnica.txt` e `tradeoff-estrategias-particionamento-postgres.txt`
       nunca existiram em commit algum (confirmado por `git log --all`) — removidos sem
       substituto.
-- [x] 4.4 `./LICENSE` corrigido: `apps/arj-contratocommand/README.md` já resolvido na reescrita
+- [x] 4.4 `./LICENSE` corrigido: `apps/contratocommand/README.md` já resolvido na reescrita
       da fase 2 (`../../LICENSE`); `docs/arquitetura/based-java-aplication.md` corrigido agora
       para `../../LICENSE`.
 - [x] 4.5 `./compatibility-tests/` em `docs/floci-aws-local/floci-aws-local.md`: nunca existiu

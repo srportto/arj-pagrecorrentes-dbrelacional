@@ -49,10 +49,10 @@
 
 ## 3. Remover a documentação de API do código
 
-- [x] 3.1 `arj-contratoquery`: anotações removidas de `entrypoint/AutorizacaoController.java`,
+- [x] 3.1 `contratoquery`: anotações removidas de `entrypoint/AutorizacaoController.java`,
       junto dos 7 `import io.swagger.v3.oas.*`. `@GetMapping`, `@RequestParam` (com
       `required`/`defaultValue`) e `@PathVariable` preservados intactos.
-- [x] 3.2 `arj-contratocommand`: mesma remoção em `entrypoint/AutorizacaoController.java`.
+- [x] 3.2 `contratocommand`: mesma remoção em `entrypoint/AutorizacaoController.java`.
 - [x] 3.3 `springdoc-openapi-starter-webmvc-ui` e `<springdoc.version>` removidos dos dois
       `pom.xml`, junto do comentário que citava `reconciliar-contrato-spec-doc`.
 - [x] 3.4 `entrypoint/OpenApiGenerationTest.java` removido das duas apps.
@@ -107,7 +107,7 @@
       correção necessária.
 - [x] 5.2 Dois candidatos novos identificados e marcados, ambos com medição **e** change aberta
       citada (gatilhos 1 e 3):
-      - `AutorizacaoRepository.java` (arj-contratoquery), sobre `findByIdUnicoContaContratanteAndStatusIn`:
+      - `AutorizacaoRepository.java` (contratoquery), sobre `findByIdUnicoContaContratanteAndStatusIn`:
         `// TODO: 148ms de planejamento por chamada, sem podar partição — ver change reduzir-custo-planejamento-consultas`
       - `ValkeyStreamConfig.java` (temporiza-autorizacao), sobre `expiracaoStreamSubscription`:
         `// TODO: consumidor nunca é removido do grupo (7 órfãos p/ 2 pods em 2026-08-09) — ver change limpar-consumidores-orfaos-stream`
@@ -130,11 +130,11 @@
 - [x] 6.2 Confirmado: `grep -rl "io\.swagger\|springdoc" --include=*.java apps/` e
       `grep -rl springdoc apps/*/pom.xml` retornam vazio nas cinco apps.
 - [x] 6.3 Divergência real encontrada e corrigida (a mesma da tarefa 2.2): a tabela de códigos de
-      erro do `CLAUDE.md`/`AGENTS.md` do `arj-contratocommand` afirmava
+      erro do `CLAUDE.md`/`AGENTS.md` do `contratocommand` afirmava
       `404 | ResourceNotFoundException | Autorização inexistente` — classe inexistente no código.
       Linha removida; a entrada de `BusinessException` (422) passou a citar explicitamente que
       cobre "autorização inexistente" em `cancelar`/`decidir`, com a nota de que não existe 404
-      nessas rotas. `arj-contratoquery` não teve divergência equivalente — o
+      nessas rotas. `contratoquery` não teve divergência equivalente — o
       `ResourceNotFoundException` de lá é real (usado em `consultarPorId`) e a documentação já
       estava correta.
 - [x] 6.4 `CLAUDE.md` e `AGENTS.md` do command confirmados idênticos (`diff` vazio) após a

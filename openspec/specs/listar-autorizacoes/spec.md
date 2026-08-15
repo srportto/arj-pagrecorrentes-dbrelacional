@@ -4,7 +4,7 @@
 
 Definir a listagem paginada de autorizações resumidas por conta contratante no `contratoquery` via `GET /api/autorizacoes`, com filtro por status, paginação e ordenação, e a estrutura do DTO de resposta. A listagem pertence exclusivamente ao `contratoquery` (lado de leitura do CQRS).
 
-> **Nota (2026-08-09):** esta spec é o que o `arj-contratoquery` expõe. O `arj-contratocommand` representa a mesma autorização com nomes de campo e formato de `status` diferentes (`status` como `Integer`, nomes longos como `valorAutorizacao` / `dataHoraInclusao` / `dataHoraUltimaAtualizacao`). Não há migração planejada — ver change `reconciliar-contrato-spec-doc` D1/D2.
+> **Nota (2026-08-09):** esta spec é o que o `contratoquery` expõe. O `contratocommand` representa a mesma autorização com nomes de campo e formato de `status` diferentes (`status` como `Integer`, nomes longos como `valorAutorizacao` / `dataHoraInclusao` / `dataHoraUltimaAtualizacao`). Não há migração planejada — ver change `reconciliar-contrato-spec-doc` D1/D2.
 
 ## Requirements
 ### Requirement: Listar autorizações paginadas por conta contratante

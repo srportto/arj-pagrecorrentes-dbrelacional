@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Definir como o desempenho das consultas do `arj-contratoquery` sobre a tabela particionada
+Definir como o desempenho das consultas do `contratoquery` sobre a tabela particionada
 `autorizacoes` é projetado e avaliado — cobertura de índice, comparação de plano antes/depois,
 declaração de transação somente leitura, e a exigência de medir o custo de **planejamento**
 separadamente do de execução, em volume representativo.
@@ -51,7 +51,7 @@ SHALL ser mantido, por adicionar custo de escrita sem contrapartida de leitura.
 
 ### Requirement: Consultas de leitura declaradas como somente leitura
 
-Os serviços de consulta do `arj-contratoquery` SHALL declarar suas operações como transações
+Os serviços de consulta do `contratoquery` SHALL declarar suas operações como transações
 somente leitura (`@Transactional(readOnly = true)`), tornando a intenção explícita na camada de
 aplicação em vez de depender exclusivamente da configuração `read-only` do pool de conexões.
 

@@ -1,8 +1,8 @@
 # modules/ecs-service
 
 Módulo reutilizável e **parametrizável** para uma ECS Service em Fargate — usado
-duas vezes (uma instância por aplicação: `arj-contratocommand` e
-`arj-contratoquery`), variando imagem, porta, variáveis de ambiente e
+duas vezes (uma instância por aplicação: `contratocommand` e
+`contratoquery`), variando imagem, porta, variáveis de ambiente e
 requisitos de CPU/memória.
 
 Consome a imagem gerada pelo `Dockerfile` de cada aplicação em

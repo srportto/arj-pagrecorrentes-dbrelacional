@@ -4,8 +4,8 @@
 raiz/
 ├── apps/docker-compose.yml ──────── 6 serviços, 4 redes EXTERNAS
 │     ├── postgres          (build ../infra/local/postgres)  ◄── DUPLICATA
-│     ├── arj-contratocommand  8080:8080
-│     ├── arj-contratoquery    8081:8081
+│     ├── contratocommand  8080:8080
+│     ├── contratoquery    8081:8081
 │     ├── autorizacaostatus-producer 8082:8082
 │     ├── eventos-consumer     8083:8083
 │     └── temporiza-autorizacao  "8084"  ◄── porta aleatória no host

@@ -1,4 +1,4 @@
-# arj-contratocommand
+# contratocommand
 
 API REST de **escrita** de autorizações de produtos financeiros (PIX Automático e DDA Automático),
 em arquitetura hexagonal, com particionamento temporal em PostgreSQL. Cria, cancela e decide

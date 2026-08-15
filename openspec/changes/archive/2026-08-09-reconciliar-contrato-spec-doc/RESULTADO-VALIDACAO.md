@@ -19,8 +19,8 @@ consolidada, sem re-execução:
 
 | App | Testes | Falhas | Skips | Resultado |
 |---|---|---|---|---|
-| `arj-contratocommand` | 160 | 0 | 2 | BUILD SUCCESS |
-| `arj-contratoquery`   |  59 | 0 | 1 | BUILD SUCCESS |
+| `contratocommand` | 160 | 0 | 2 | BUILD SUCCESS |
+| `contratoquery`   |  59 | 0 | 1 | BUILD SUCCESS |
 | `autorizacaostatus-producer` | — | — | — | **NÃO RODE** — sem mudança de código que afete esse app (mudança foi majoritariamente em docs + 3.1/3.2 no command) |
 | `eventos-consumer` | — | — | — | **NÃO RODE** — idem |
 | `temporiza-autorizacao` | — | — | — | **NÃO RODE** — idem |
@@ -31,10 +31,10 @@ consolidada, sem re-execução:
 
 Justificativa para não rodar a suíte dos três apps não-REST:
 
-- **Mudança de código existente:** apenas `arj-contratocommand` (move do
+- **Mudança de código existente:** apenas `contratocommand` (move do
   enum `TipoEventoAutorizacao` em 3.1-3.2 — tests do command em 3.x cobrem
   isso).
-- **Mudança puramente documental:** `arj-contratoquery` (alinhamento de
+- **Mudança puramente documental:** `contratoquery` (alinhamento de
   status HTTP 422 na narrativa da spec) e quatro arquivos `CLAUDE.md` /
   `AGENTS.md` (1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8).
 - **Os três apps não-REST** não foram tocados por nenhuma task da change.
@@ -50,8 +50,8 @@ cobertura (ou documenta por que não há teste novo).
 |---|---|---|---|
 | `db-connection-pool-config` | Correção do padrão 5 → 10, em `specs/db-connection-pool-config/spec.md` | N/A — **delta documental, sem teste novo necessário** | O delta é apenas no texto da spec (alinhamento à realidade do `application.yaml` + precedência de `virtual-threads-config`). Nenhum teste de unidade verifica um valor numérico de `maximum-pool-size` no `application.yaml` (e tampouco faria sentido: isso é config, não comportamento). |
 | `publicacao-eventos-kafka` | Reescrita do requisito de dedup (D5): o aviso de "consumidor deduplica por key" foi transferido para a spec do fluxo, explicitando que a garantia só se materializa quando o consumidor implementa a dedup | N/A — **delta documental, comportamento inalterado** | Nenhuma mudança de código. O `eventos-consumer` continua logando e dando ack como antes (verificado em 8.1, já que ele não roda nesta change mas o code path não foi tocado). |
-| `maquina-estados-autorizacao` | Move de `TipoEventoAutorizacao` de `application/eventos/` para `domain/enums/` (alinhando com as outras três aplicações e com a spec) | `TipoEventoAutorizacaoTest.java` em `apps/arj-contratocommand/src/test/java/br/com/srportto/contratocommand/domain/enums/` — 3 testes verdes (cobertura: `porStatus` para os 8 status, exceção para status desconhecido, bijeção completa dos 8 valores) | O teste foi movido junto com o enum (mesmo pacote) e está coberto pelo `mvn test` do `arj-contratocommand` em 8.1 (160 testes inclui esses 3). |
-| `listar-autorizacoes` | Adicionada nota de dívida aceita (2026-08-09) referenciando `reconciliar-contrato-spec-doc` D1/D2 | N/A — **delta documental, sem teste novo** | A nota é apenas um parágrafo explicativo no topo da spec. Comportamento de `GET /api/autorizacoes` inalterado e já coberto pela suíte existente do `arj-contratoquery` (59 testes em 8.1). |
+| `maquina-estados-autorizacao` | Move de `TipoEventoAutorizacao` de `application/eventos/` para `domain/enums/` (alinhando com as outras três aplicações e com a spec) | `TipoEventoAutorizacaoTest.java` em `apps/contratocommand/src/test/java/br/com/srportto/contratocommand/domain/enums/` — 3 testes verdes (cobertura: `porStatus` para os 8 status, exceção para status desconhecido, bijeção completa dos 8 valores) | O teste foi movido junto com o enum (mesmo pacote) e está coberto pelo `mvn test` do `contratocommand` em 8.1 (160 testes inclui esses 3). |
+| `listar-autorizacoes` | Adicionada nota de dívida aceita (2026-08-09) referenciando `reconciliar-contrato-spec-doc` D1/D2 | N/A — **delta documental, sem teste novo** | A nota é apenas um parágrafo explicativo no topo da spec. Comportamento de `GET /api/autorizacoes` inalterado e já coberto pela suíte existente do `contratoquery` (59 testes em 8.1). |
 
 Conclusão: **cobertura confirmada**. Cada spec com mudança de comportamento
 tem teste verde; cada spec com delta puramente documental está marcada como
@@ -72,9 +72,9 @@ Confirmado por inspeção dos três DTOs (campo e tipo):
 
 | App | DTO | Tipo de `status` |
 |---|---|---|
-| `arj-contratocommand` | `AutorizacaoCompletaResponseDto` | `Integer` (linha 28) |
-| `arj-contratoquery`   | `AutorizacaoResumidaResponseDto` | `String` (linha 32) — nome do enum via `StatusAutorizacao.obterStatusEnumPorIdStatus(...)` |
-| `arj-contratoquery`   | `AutorizacaoDetalheResponseDto`  | `String` (linha 32) — mesmo mapeamento |
+| `contratocommand` | `AutorizacaoCompletaResponseDto` | `Integer` (linha 28) |
+| `contratoquery`   | `AutorizacaoResumidaResponseDto` | `String` (linha 32) — nome do enum via `StatusAutorizacao.obterStatusEnumPorIdStatus(...)` |
+| `contratoquery`   | `AutorizacaoDetalheResponseDto`  | `String` (linha 32) — mesmo mapeamento |
 
 - Command: `status` é o código numérico do enum (ex.: `4` para `ATIVA`).
 - Query: `status` é o nome textual do enum (ex.: `"ATIVA"`).
@@ -161,7 +161,7 @@ e esta task 8.4 será reativada na change dedicada, com:
 - Adicionar um módulo `build-tools/` (ou usar o `pom.xml` da raiz) com um
   plugin que execute o diff em `mvn verify`.
 - Lista canônica de pares: `AGENTS.md`/`CLAUDE.md` da raiz, e de cada um
-  dos 4 apps (`arj-contratocommand`, `arj-contratoquery`,
+  dos 4 apps (`contratocommand`, `contratoquery`,
   `autorizacaostatus-producer`, `eventos-consumer`, `temporiza-autorizacao`).
 - Falha de `diff` SHALL falhar o build (exit code != 0).
 - Documentar a invariante no `AGENTS.md` da raiz (próximo do bullet "Em

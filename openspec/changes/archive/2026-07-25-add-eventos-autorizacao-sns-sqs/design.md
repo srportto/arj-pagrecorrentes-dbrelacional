@@ -2,7 +2,7 @@
 
 ## Context
 
-O `arj-contratocommand` persiste autorizações na tabela particionada `autorizacoes` em
+O `contratocommand` persiste autorizações na tabela particionada `autorizacoes` em
 dois casos de uso: `CriarAutorizacaoUseCase` (um `save`) e `CancelarAutorizacaoUseCase`
 (um `save` de update ou, quando muda a partição de expurgo, `deleteById` + `flush` +
 `save` dentro da mesma transação). O monorepo já tem um emulador AWS local (Floci em
@@ -114,7 +114,7 @@ representação da entidade) → `DeleteMessage` (ack). Erros de processamento n
 
 ### D7 — Estrutura da nova app `apps/autorizacaostatus-producer`
 
-Baseada na `arj-contratocommand` e no modelo de
+Baseada na `contratocommand` e no modelo de
 `docs/arquitetura/based-java-aplication.md`, enxuta:
 
 ```
@@ -165,7 +165,7 @@ Propriedades próprias (`aws.endpoint`, `aws.region`, `aws.sns.topic-arn` /
 1. `docker compose -f infra/local/floci/compose.yaml up -d` (pré-requisito).
 2. `terraform init && terraform apply` em `infra/envs/local-messaging/` (cria tópico,
    fila, subscription).
-3. Subir `arj-contratocommand` (`mvn spring-boot:run`, profile `local`) — publica
+3. Subir `contratocommand` (`mvn spring-boot:run`, profile `local`) — publica
    eventos; sem o passo 2, publish falha com erro logado, API continua funcionando.
 4. Subir `autorizacaostatus-producer` (`mvn spring-boot:run`, porta 8082) — consome e
    loga.

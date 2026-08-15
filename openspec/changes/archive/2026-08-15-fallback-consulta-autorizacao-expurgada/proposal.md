@@ -67,14 +67,14 @@ Nenhuma.
 
 ## Impact
 
-**Código (`arj-contratoquery`)**
+**Código (`contratoquery`)**
 - `application/autorizacao/ConsultarAutorizacaoService.java` — a cascata
 - `application/autorizacao/AutorizacaoRepository.java` — duas consultas JPQL novas
 - `shared/config/` — propriedade para habilitar/desabilitar o nível 3
 
 **Não afetados**
 - `GET /api/autorizacoes` (listagem) — filtra por conta, já varre todas as partições hoje.
-- `arj-contratocommand` — **deliberadamente fora de escopo**, ver `design.md` › D4. O
+- `contratocommand` — **deliberadamente fora de escopo**, ver `design.md` › D4. O
   `findByIdAutorizacaoAndParticao` que falha lá produz o 422 "não encontrada", sinal conclusivo
   que o `temporiza-autorizacao` usa para dar `XACK` em expiração repetida. Adicionar cascata
   ali pagaria 16–126 ms no caminho de escrita para chegar à mesma resposta.

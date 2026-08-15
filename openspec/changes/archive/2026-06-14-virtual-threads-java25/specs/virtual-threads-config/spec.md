@@ -1,14 +1,14 @@
 ## ADDED Requirements
 
 ### Requirement: Virtual Threads habilitadas via propriedade Spring Boot
-Ambas as aplicações (`arj-contratocommand` e `arj-contratoquery`) SHALL ter `spring.threads.virtual.enabled: true` configurado em seus respectivos `application.yaml`, ativando Virtual Threads do Java 25 para o container web e para execução de tarefas I/O-bound.
+Ambas as aplicações (`contratocommand` e `contratoquery`) SHALL ter `spring.threads.virtual.enabled: true` configurado em seus respectivos `application.yaml`, ativando Virtual Threads do Java 25 para o container web e para execução de tarefas I/O-bound.
 
 #### Scenario: Propriedade presente no command app
-- **WHEN** a aplicação `arj-contratocommand` é inicializada
+- **WHEN** a aplicação `contratocommand` é inicializada
 - **THEN** o log de startup SHALL indicar uso de Virtual Threads no Tomcat (executor substituído)
 
 #### Scenario: Propriedade presente no query app
-- **WHEN** a aplicação `arj-contratoquery` é inicializada
+- **WHEN** a aplicação `contratoquery` é inicializada
 - **THEN** o log de startup SHALL indicar uso de Virtual Threads no Jetty
 
 ### Requirement: Hikari pool ajustado para Virtual Threads
@@ -26,9 +26,9 @@ O `maximum-pool-size` do Hikari SHALL ser ajustado para `10` (padrão via `${DB_
 Ambas as aplicações SHALL continuar buildando com `mvn verify` e todos os testes unitários SHALL continuar passando após a habilitação de Virtual Threads. A cobertura mínima de 80% SHALL ser mantida.
 
 #### Scenario: Build bem-sucedido no command app após mudança
-- **WHEN** `mvn verify` é executado em `arj-contratocommand` com Virtual Threads habilitadas
+- **WHEN** `mvn verify` é executado em `contratocommand` com Virtual Threads habilitadas
 - **THEN** o build SHALL completar sem erros e todos os testes SHALL passar
 
 #### Scenario: Build bem-sucedido no query app após mudança
-- **WHEN** `mvn verify` é executado em `arj-contratoquery` com Virtual Threads habilitadas
+- **WHEN** `mvn verify` é executado em `contratoquery` com Virtual Threads habilitadas
 - **THEN** o build SHALL completar sem erros e todos os testes SHALL passar

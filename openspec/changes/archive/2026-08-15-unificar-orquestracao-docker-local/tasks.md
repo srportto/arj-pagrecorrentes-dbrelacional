@@ -99,7 +99,7 @@
 ## 5. Verificar que nada regrediu
 
 - [x] 5.1 Subida ponta a ponta pelo caminho unificado, com volumes limpos: cinco apps no ar, banco
-      com schema, evento fluindo de `arj-contratocommand` → SNS → SQS → Kafka → `eventos-consumer`.
+      com schema, evento fluindo de `contratocommand` → SNS → SQS → Kafka → `eventos-consumer`.
       **Confirmado em 2026-08-11**: `docker compose up -d` na raiz sobe os ~11 containers
       (Postgres, Floci, Kafka+Schema Registry+UI, Valkey, cinco apps) num único comando, todos
       `healthy`. O fluxo de eventos fim-a-fim já havia sido validado horas antes nesta mesma
@@ -139,11 +139,11 @@
       change elimina — substituída por um ponteiro ao `compose.yaml` da raiz. `infra/local/postgres/`
       não tinha `README.md` (única das quatro sem um) — criado, seguindo o padrão dos demais.
 - [x] 6.3 Atualizar as menções a `apps/docker-compose.yml` nos `CLAUDE.md`/`AGENTS.md` das apps
-      (o do `arj-contratoquery`, por exemplo, afirma que ele "sobe as 2 aplicações + Postgres de
+      (o do `contratoquery`, por exemplo, afirma que ele "sobe as 2 aplicações + Postgres de
       uma vez" — deixa de ser verdade após 3.3). Replicar em ambos os espelhos. Corrigido nos
-      dois pares (`arj-contratocommand` e `arj-contratoquery`) — só essas duas apps
+      dois pares (`contratocommand` e `contratoquery`) — só essas duas apps
       mencionavam `apps/docker-compose.yml`; as outras três não tinham a referência. READMEs de
-      `arj-contratocommand`/`arj-contratoquery` também atualizados (apontavam para o Postgres
+      `contratocommand`/`contratoquery` também atualizados (apontavam para o Postgres
       "dentro" do compose de apps).
 - [x] 6.4 Registrar em `design.md` o resultado das evidências de 2.2 (extensões carregadas), 2.3
       (migrations ausentes) e 2.5 (nome da rede do Floci) — **inclusive se alguma hipótese cair**.

@@ -1,6 +1,6 @@
 ## Why
 
-O pacote `application/` do `arj-contratocommand` tem hoje três subpacotes irmãos — `autorizacao/`, `contratacao/`, `cancelamento/` — mas apenas dois deles são verticais de feature (contratar, cancelar). `autorizacao/` contém só `AutorizacaoRepository` e `AutorizacaoMapper`, infraestrutura compartilhada pela entidade `Autorizacao`, não uma operação de negócio; ficar como pacote irmão sugere (erroneamente) que é "mais uma feature" e ainda colide de nome com `Autorizacao` (entidade), `AutorizacaoController` e `AutorizacaoCompletaResponseDto`. Além disso, todos os beans de `application/` usam `@Component` uniformemente, sem distinguir os orquestradores de regra de negócio (Validators, UseCases) das estratégias individuais (Rules), perdendo a semântica que o próprio Spring oferece para isso.
+O pacote `application/` do `contratocommand` tem hoje três subpacotes irmãos — `autorizacao/`, `contratacao/`, `cancelamento/` — mas apenas dois deles são verticais de feature (contratar, cancelar). `autorizacao/` contém só `AutorizacaoRepository` e `AutorizacaoMapper`, infraestrutura compartilhada pela entidade `Autorizacao`, não uma operação de negócio; ficar como pacote irmão sugere (erroneamente) que é "mais uma feature" e ainda colide de nome com `Autorizacao` (entidade), `AutorizacaoController` e `AutorizacaoCompletaResponseDto`. Além disso, todos os beans de `application/` usam `@Component` uniformemente, sem distinguir os orquestradores de regra de negócio (Validators, UseCases) das estratégias individuais (Rules), perdendo a semântica que o próprio Spring oferece para isso.
 
 ## What Changes
 
@@ -23,5 +23,5 @@ O pacote `application/` do `arj-contratocommand` tem hoje três subpacotes irmã
 - **Código**: 6 arquivos movidos/renomeados de pacote (`AutorizacaoRepository`, `AutorizacaoMapper`, `AutorizacaoMapperTest` + imports em `CriarAutorizacaoUseCase`, `CancelarAutorizacaoUseCase` e seus testes); 4 arquivos com troca de anotação (`@Component` → `@Service`).
 - **Testes**: nenhum teste muda de comportamento; apenas pacote/imports são atualizados onde necessário. `mvn test` deve permanecer 100% verde.
 - **APIs**: nenhuma — endpoints, contratos REST e mensagens de erro são inalterados.
-- **Documentação**: `CLAUDE.md`/`AGENTS.md` do módulo `arj-contratocommand` descrevem a estrutura de pacotes e a convenção de anotações atuais; precisam ser atualizados para refletir a nova organização.
-- **Escopo**: somente `arj-contratocommand`; nenhum outro módulo é afetado.
+- **Documentação**: `CLAUDE.md`/`AGENTS.md` do módulo `contratocommand` descrevem a estrutura de pacotes e a convenção de anotações atuais; precisam ser atualizados para refletir a nova organização.
+- **Escopo**: somente `contratocommand`; nenhum outro módulo é afetado.

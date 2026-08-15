@@ -12,7 +12,7 @@ docs/**               3098   material de apoio      1 vazio, 1 stub
 infra/**/README.md     624   por módulo/ambiente    granularidade desigual
 ```
 
-O `README.md` do `arj-contratocommand` sozinho é 55% de todo o volume de README das apps.
+O `README.md` do `contratocommand` sozinho é 55% de todo o volume de README das apps.
 
 ## Os 26 links quebrados, por causa raiz
 
@@ -127,8 +127,8 @@ e cada um dos três caminhos tem uma história diferente:**
 **Decisão por caso:**
 
 1. **`post-autorizacoes.txt` (2 links)** — corrigir o caminho. Os `CLAUDE.md`/`AGENTS.md` do
-   `arj-contratocommand` escrevem `docs/post-autorizacoes.txt`, que resolve para
-   `apps/arj-contratocommand/docs/post-autorizacoes.txt`. O correto é `../../docs/`. Não há nada
+   `contratocommand` escrevem `docs/post-autorizacoes.txt`, que resolve para
+   `apps/contratocommand/docs/post-autorizacoes.txt`. O correto é `../../docs/`. Não há nada
    a restaurar nem a remover.
 
 2. **`comandos-sql.txt` e `resultado-poc/` (9 links)** — **repontar para onde o material está de

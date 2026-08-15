@@ -7,7 +7,7 @@
 ## 2. Teste de contrato de schema
 
 - [x] 2.1 Implementar a comparação das duas cópias de `EventoAutorizacao.avsc` (`autorizacaostatus-producer` e `eventos-consumer`) — `ci/contrato-eventos/VerificarContratoEventos.java`
-- [x] 2.2 Implementar a comparação das duas cópias de `AutorizacaoEventoPayload` (`arj-contratocommand` e `autorizacaostatus-producer`), incluindo os nomes `@JsonProperty`
+- [x] 2.2 Implementar a comparação das duas cópias de `AutorizacaoEventoPayload` (`contratocommand` e `autorizacaostatus-producer`), incluindo os nomes `@JsonProperty`
 - [x] 2.3 Garantir que a mensagem de falha identifique o campo divergente e os dois arquivos comparados — o valor do teste está no diagnóstico, não só no vermelho
 - [x] 2.4 Validar com divergência proposital: adicionar um campo em apenas um lado e confirmar que o build falha — confirmado, exit code 1, diagnóstico identificou `campo_novo_proposital` e os dois arquivos
 - [x] 2.5 Validar o falso positivo: reindentar um `.avsc` sem mudar conteúdo e confirmar que o build passa — confirmado, `OK`
@@ -16,7 +16,7 @@
 ## 3. Verificação no CI
 
 - [x] 3.1 Integrar a verificação ao CI conforme a decisão de 1.2 — `.github/workflows/contrato-eventos.yml`, roda em push/PR sob `apps/**`
-- [x] 3.2 Validar o cenário crítico: pull request que altera **apenas** `arj-contratocommand` com divergência de schema SHALL falhar o CI — confirmado (exit 1) e revertido
+- [x] 3.2 Validar o cenário crítico: pull request que altera **apenas** `contratocommand` com divergência de schema SHALL falhar o CI — confirmado (exit 1) e revertido
 - [x] 3.3 Confirmar que a verificação roda em tempo aceitável e não vira gargalo da pipeline — ~0,5s local, sem build Maven
 
 ## 4. Tolerância a campo desconhecido (declarativa, não corretiva — ver D3 revisado)
@@ -45,7 +45,7 @@
 
 ## 7. Validação final
 
-- [x] 7.1 Rodar a suíte completa dos três apps do fluxo de eventos — `arj-contratocommand` 160/160, `autorizacaostatus-producer` 64/64, `eventos-consumer` 14/14, todos `BUILD SUCCESS`
+- [x] 7.1 Rodar a suíte completa dos três apps do fluxo de eventos — `contratocommand` 160/160, `autorizacaostatus-producer` 64/64, `eventos-consumer` 14/14, todos `BUILD SUCCESS`
 - [x] 7.2 Revisar os cenários dos 3 specs desta mudança e confirmar teste correspondente para cada um — `contrato-evento-verificado`: coberto por `VerificarContratoEventos.java` + validação manual (2.4/2.5/3.2) e pelos testes de `ProcessarEventoAutorizacaoUseCaseTest`; `local-kafka-environment`: coberto pela subida real do compose (5.2) e pelo teste ponta a ponta da DLT (5.3); `publicacao-eventos-kafka`: coberto pela parametrização de `auto.register.schemas` (6.2/6.2b/6.3) e pela validação e2e (6.5)
 - [x] 7.3 Confirmar que o comentário de proveniência em `KafkaProducerClientConfig` que cita "visibility timeout de 30s" foi corrigido para 60s, ou registrar que fica para `reconciliar-contrato-spec-doc` — já estava correto (60s), nenhuma ocorrência de "30s" encontrada
 - [x] 7.4 Auditoria `java-revisor` (2026-08-09): **APROVADO**. Achado Importante corrigido: `KafkaConsumerConfigTest` não capturava o `ProducerRecord` para verificar o tópico real de destino — adicionado `ArgumentCaptor` nos dois testes de DLT, com `assertEquals("eventos-autorizacao.DLT", ...)`; validado por regressão manual (removendo temporariamente o `BiFunction` explícito, os dois testes falham com o diagnóstico correto; restaurado, voltam a passar). Achados menores corrigidos: import não usado em `VerificarContratoEventos.java`; comentário de escopo adicionado esclarecendo que a comparação do `.avsc` é por conjunto de campos (ordem da lista não importa) mas por ordem de união de tipos (importa) e que `namespace`/`name` de nível raiz não entram na comparação.

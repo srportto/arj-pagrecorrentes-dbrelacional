@@ -4,7 +4,7 @@ Hoje só a contratação verifica se o produto é suportado (rule `ProdutoSuport
 
 ## What Changes
 
-- O enum `TipoProduto` (arj-contratocommand) passa a declarar, por elemento, as capacidades habilitadas (contratar, cancelar) e a responder via métodos de instância — ex.: `habilitadoParaContratar()` e `habilitadoParaCancelar()` — tornando-se a fonte da verdade de capacidades por produto, consultável por qualquer trecho da aplicação.
+- O enum `TipoProduto` (contratocommand) passa a declarar, por elemento, as capacidades habilitadas (contratar, cancelar) e a responder via métodos de instância — ex.: `habilitadoParaContratar()` e `habilitadoParaCancelar()` — tornando-se a fonte da verdade de capacidades por produto, consultável por qualquer trecho da aplicação.
 - Nova rule `ProdutoSuportadoCancelamento` em `application/cancelamento/rules/`, espelhando a `ProdutoSuportado` da contratação: roda antes das demais `CancelamentoRule` (`@Order(HIGHEST_PRECEDENCE)`) e rejeita com `BusinessException` (HTTP 422) o cancelamento de produto não habilitado para cancelar.
 - A rule `ProdutoSuportado` (contratação) passa a delegar a decisão ao enum: além de rejeitar produto desconhecido, rejeita produto conhecido porém não habilitado para contratar.
 - `PIX_AUTO` e `DDA_AUTO` permanecem habilitados para ambas as capacidades — nenhum comportamento observável dos fluxos atuais muda.
@@ -22,4 +22,4 @@ Hoje só a contratação verifica se o produto é suportado (rule `ProdutoSuport
 - **Código**: `domain/enums/TipoProduto.java` (novos atributos/métodos de capacidade), `application/contratacao/rules/ProdutoSuportado.java` (delegar ao enum), novo `application/cancelamento/rules/ProdutoSuportadoCancelamento.java`.
 - **Testes**: `TipoProdutoTest`, `ProdutoSuportadoTest`, novo `ProdutoSuportadoCancelamentoTest`; `CancelamentoValidator` passa a ter duas rules (verificar ordem).
 - **APIs**: nenhum contrato REST muda; apenas um novo cenário de 422 no PATCH de cancelamento quando o produto não estiver habilitado para cancelar (hoje inalcançável, pois todos os produtos cancelam).
-- **Escopo**: somente `arj-contratocommand`; o `TipoProduto` do `arj-contratoquery` não é alterado (leitura não tem capacidades de operação).
+- **Escopo**: somente `contratocommand`; o `TipoProduto` do `contratoquery` não é alterado (leitura não tem capacidades de operação).

@@ -1,8 +1,8 @@
 ## Context
 
-`arj-contratoquery` (porta 8081) é o serviço de leitura do par de microserviços. Ele compartilha o mesmo banco de dados particionado com `arj-contratocommand` mas só realiza queries (DB_READ_ONLY=true). Possui uma arquitetura hexagonal mais simples — sem Strategy Pattern, sem orquestradores de contratação/cancelamento, sem mappers — apenas `ListarAutorizacoesService`, `ConsultarAutorizacaoService`, `AutorizacaoQueryRepository` e `AutorizacaoController`.
+`contratoquery` (porta 8081) é o serviço de leitura do par de microserviços. Ele compartilha o mesmo banco de dados particionado com `contratocommand` mas só realiza queries (DB_READ_ONLY=true). Possui uma arquitetura hexagonal mais simples — sem Strategy Pattern, sem orquestradores de contratação/cancelamento, sem mappers — apenas `ListarAutorizacoesService`, `ConsultarAutorizacaoService`, `AutorizacaoQueryRepository` e `AutorizacaoController`.
 
-`arj-contratocommand` já possui os três arquivos (`AGENTS.md`, `CLAUDE.md`, `README.md`) bem estruturados. O objetivo é replicar essa estrutura no query, adaptando o conteúdo para refletir com precisão o que existe nele, evitando que agentes ou desenvolvedores apliquem incorretamente detalhes do command na query.
+`contratocommand` já possui os três arquivos (`AGENTS.md`, `CLAUDE.md`, `README.md`) bem estruturados. O objetivo é replicar essa estrutura no query, adaptando o conteúdo para refletir com precisão o que existe nele, evitando que agentes ou desenvolvedores apliquem incorretamente detalhes do command na query.
 
 ## Goals / Non-Goals
 

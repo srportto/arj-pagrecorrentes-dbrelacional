@@ -9,7 +9,7 @@ import java.sql.DriverManager;
 /**
  * Desabilita a classe anotada de forma visível no Surefire ("Skipped") quando o PostgreSQL local
  * não está acessível — diferente de {@code Assumptions.assumeTrue}, que reporta "Tests run: 0".
- * Gêmeo (duplicado de propósito) do mesmo arquivo em `arj-contratocommand`. Senha vem só de
+ * Gêmeo (duplicado de propósito) do mesmo arquivo em `contratocommand`. Senha vem só de
  * {@code DB_PASSWORD}, sem default, mesma postura do resto do repo contra credencial embutida.
  */
 public class PostgresLocalDisponivelCondition implements ExecutionCondition {

@@ -3,8 +3,8 @@
 **Estado atual:**
 - Java 25 já configurado em ambos os `pom.xml` (`<java.version>25</java.version>`)
 - Spring Boot 4.0.4 — suporte nativo a Virtual Threads via `spring.threads.virtual.enabled`
-- `arj-contratocommand`: servidor Tomcat (padrão Spring MVC)
-- `arj-contratoquery`: servidor Jetty (Tomcat excluído explicitamente no `pom.xml`)
+- `contratocommand`: servidor Tomcat (padrão Spring MVC)
+- `contratoquery`: servidor Jetty (Tomcat excluído explicitamente no `pom.xml`)
 - Hikari pool: `maximum-pool-size: 5`, `minimum-idle: 2` em ambas as apps
 - Nenhuma thread pool customizada (`@Async`, `ThreadPoolTaskExecutor`) existe no código-fonte
 

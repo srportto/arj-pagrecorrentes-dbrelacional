@@ -30,7 +30,7 @@ temporização.
 
 ## Impact
 
-**Código**: `arj-contratocommand` (`application/cancelamento/CancelarAutorizacaoUseCase`,
+**Código**: `contratocommand` (`application/cancelamento/CancelarAutorizacaoUseCase`,
 `application/decisao/DecidirAutorizacaoUseCase`, possível novo serviço de domínio
 compartilhado em `domain/utilities/` ou `application/`).
 

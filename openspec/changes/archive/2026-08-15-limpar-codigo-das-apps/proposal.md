@@ -47,8 +47,8 @@ que duas changes diferentes apagariam:
 | # | Fonte | Quem apaga | O que só ela tem |
 |---|---|---|---|
 | 1 | 69 anotações springdoc nos 2 controllers | **esta change** | `description`, `example`, o `oneOf` do 422 do query |
-| 2 | `apps/arj-contratocommand/README.md` 268-380 | `enxugar-documentacao-repo` | corpo de request POST e PATCH, com valores reais |
-| 3 | `apps/arj-contratoquery/README.md` 181-264 | `enxugar-documentacao-repo` | exemplos de resposta do GET listagem e GET por id |
+| 2 | `apps/contratocommand/README.md` 268-380 | `enxugar-documentacao-repo` | corpo de request POST e PATCH, com valores reais |
+| 3 | `apps/contratoquery/README.md` 181-264 | `enxugar-documentacao-repo` | exemplos de resposta do GET listagem e GET por id |
 
 **Mitigação adotada:** antes de qualquer remoção, o conteúdo das **três** fontes é consolidado em
 `docs/contrato-api-para-gateway.md` — um rascunho legível, organizado por endpoint, que serve de
@@ -74,18 +74,18 @@ fiéis, e que a change `enxugar-documentacao-repo` preserva.
 
 ### Modified Capabilities
 
-- `higiene-codigo-morto`: hoje escopada a `arj-contratocommand` e `arj-contratoquery`. Ganha
+- `higiene-codigo-morto`: hoje escopada a `contratocommand` e `contratoquery`. Ganha
   requisito de ausência de `import` e de parâmetro sem uso, válido para as **cinco** apps.
 
 ## Impact
 
 **Código**
-- `apps/arj-contratocommand/src/main/java/.../entrypoint/AutorizacaoController.java` (177 linhas,
+- `apps/contratocommand/src/main/java/.../entrypoint/AutorizacaoController.java` (177 linhas,
   41 ocorrências de anotação de doc)
-- `apps/arj-contratoquery/src/main/java/.../entrypoint/AutorizacaoController.java` (110 linhas)
+- `apps/contratoquery/src/main/java/.../entrypoint/AutorizacaoController.java` (110 linhas)
 - Os dois `shared/interceptors/api/ApiExceptionHandler.java` — só o javadoc
-- `apps/arj-contratocommand/pom.xml` (linhas ~35 e ~123-130)
-- `apps/arj-contratoquery/pom.xml` (linhas ~21 e ~86-93)
+- `apps/contratocommand/pom.xml` (linhas ~35 e ~123-130)
+- `apps/contratoquery/pom.xml` (linhas ~21 e ~86-93)
 - Remoção: `entrypoint/OpenApiGenerationTest.java` nas duas apps
 - `apps/autorizacaostatus-producer/src/test/.../ProcessarEventoAutorizacaoUseCaseTest.java:4`
 - `apps/temporiza-autorizacao/src/test/.../VarreduraEAgendamentoIntegrationTest.java:19`

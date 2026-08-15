@@ -2,7 +2,7 @@
 
 ## Context
 
-O fluxo de eventos hoje é: `arj-contratocommand` publica no SNS
+O fluxo de eventos hoje é: `contratocommand` publica no SNS
 `sns-estados-autorizacao` após cada commit (criação/cancelamento), o SNS entrega cru na
 fila `SQS-eventos-autorizacao`, e a `autorizacaostatus-producer` consome a fila em long
 polling (SDK v2 puro, `SmartLifecycle` + virtual thread), loga e dá ack. O message

@@ -16,11 +16,11 @@
 
 ## 3. Atualizar documentação do módulo
 
-- [x] 3.1 Atualizar `CLAUDE.md` (arj-contratocommand) refletindo: `AutorizacaoRepository`/`AutorizacaoMapper` na raiz de `application/`; convenção `@Service` para Validators/UseCases e `@Component` para Rules
-- [x] 3.2 Replicar a mesma atualização em `AGENTS.md` (arj-contratocommand), mantendo os dois arquivos espelhados
+- [x] 3.1 Atualizar `CLAUDE.md` (contratocommand) refletindo: `AutorizacaoRepository`/`AutorizacaoMapper` na raiz de `application/`; convenção `@Service` para Validators/UseCases e `@Component` para Rules
+- [x] 3.2 Replicar a mesma atualização em `AGENTS.md` (contratocommand), mantendo os dois arquivos espelhados
 
 ## 4. Verificação final
 
-- [x] 4.1 Rodar `mvn clean compile` em `aplicacoes/arj-contratocommand` — sem erros de import
-- [x] 4.2 Rodar `mvn test` em `aplicacoes/arj-contratocommand` — suíte completa verde, sem mudança de comportamento
+- [x] 4.1 Rodar `mvn clean compile` em `aplicacoes/contratocommand` — sem erros de import
+- [x] 4.2 Rodar `mvn test` em `aplicacoes/contratocommand` — suíte completa verde, sem mudança de comportamento
 - [x] 4.3 Conferir que nenhum contrato REST mudou (endpoints, headers, códigos HTTP e mensagens intactos)

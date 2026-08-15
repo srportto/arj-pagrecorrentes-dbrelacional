@@ -20,7 +20,7 @@ provando a topologia antes de qualquer `envs/prod`.
   group). Comporta os dois serviços do monorepo como ECS Services independentes.
 - **Novo módulo `modules/ecs-service`**: módulo parametrizável de ECS Service em Fargate
   (imagem, porta, env, CPU/memória, health check), instanciado duas vezes —
-  `arj-contratocommand` (`:8080`) e `arj-contratoquery` (`:8081`) — com tasks nas subnets
+  `contratocommand` (`:8080`) e `contratoquery` (`:8081`) — com tasks nas subnets
   privadas e health check em `/actuator/health`.
 - **Novo ambiente `envs/local`**: composição dos três módulos apontando para o Floci
   (`http://localhost:4566`), com provider AWS configurado para emulador (credenciais fake,
@@ -37,7 +37,7 @@ provando a topologia antes de qualquer `envs/prod`.
 - `ecs-fargate-cluster`: módulo Terraform do cluster ECS Fargate e do Application Load
   Balancer internet-facing que roteia o tráfego público para os serviços.
 - `ecs-fargate-service`: módulo Terraform parametrizável de ECS Service em Fargate,
-  instanciado para `arj-contratocommand` e `arj-contratoquery`.
+  instanciado para `contratocommand` e `contratoquery`.
 - `local-aws-environment`: ambiente `envs/local` que compõe os módulos contra o emulador
   Floci, com o provider AWS apontado para `localhost:4566` e state local, permitindo
   `terraform plan`/`apply` sem conta AWS.
@@ -50,8 +50,8 @@ provando a topologia antes de qualquer `envs/prod`.
 - **Código de infra**: preenche `infra/modules/networking`, `infra/modules/ecs-cluster`,
   `infra/modules/ecs-service` e `infra/envs/local` (hoje só READMEs). `infra/README.md`
   pode ser atualizado para refletir que estes deixaram de ser placeholders.
-- **Aplicações**: consome as imagens de `apps/arj-contratocommand/Dockerfile` e
-  `apps/arj-contratoquery/Dockerfile`; exige publicá-las no ECR do Floci antes do deploy.
+- **Aplicações**: consome as imagens de `apps/contratocommand/Dockerfile` e
+  `apps/contratoquery/Dockerfile`; exige publicá-las no ECR do Floci antes do deploy.
   Nenhuma alteração no código das apps.
 - **Dependências / ferramentas**: Terraform `>= 1.10`, provider AWS `~> 5.x`, Docker (para o
   Floci e para o ECS via Docker real), e o Floci rodando localmente (`floci start` ou

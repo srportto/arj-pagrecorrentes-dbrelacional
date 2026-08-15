@@ -20,7 +20,7 @@ Ambas as aplicações já rodam Java 25 e Spring Boot 4.0.4, mas nenhuma habilit
 
 ## Impact
 
-- `aplicacoes/arj-contratocommand/src/main/resources/application.yaml` — adicionar propriedade virtual threads + ajuste de pool
-- `aplicacoes/arj-contratoquery/src/main/resources/application.yaml` — idem
+- `aplicacoes/contratocommand/src/main/resources/application.yaml` — adicionar propriedade virtual threads + ajuste de pool
+- `aplicacoes/contratoquery/src/main/resources/application.yaml` — idem
 - Nenhum código Java precisa ser alterado; não há mudança de contrato de API
 - Hikari: comportamento de aquisição de conexão muda; virtual threads "estacionam" ao aguardar conexão (ao invés de bloquear platform thread), mas Hikari ainda pode causar pinning em versões antigas — documentado em design.md

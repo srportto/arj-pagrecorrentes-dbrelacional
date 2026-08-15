@@ -2,7 +2,7 @@
 
 ## Why
 
-Após o refactor que centralizou criação e cancelamento nos use cases compartilhados, a camada de strategy do `arj-contratocommand` ficou vestigial: `PixAutoService` e `DdaAutoService` são idênticos exceto pela constante do enum, e o par orquestrador + strategy (6 classes em 3 pacotes) hoje só verifica se `tipoProduto` é conhecido. Além disso, `domain/services` viola a direção de dependência do hexagonal — importa DTOs de `entrypoint` e usa anotações Spring — e o fluxo de cada operação está espalhado por 4 pacotes, dificultando leitura e manutenção.
+Após o refactor que centralizou criação e cancelamento nos use cases compartilhados, a camada de strategy do `contratocommand` ficou vestigial: `PixAutoService` e `DdaAutoService` são idênticos exceto pela constante do enum, e o par orquestrador + strategy (6 classes em 3 pacotes) hoje só verifica se `tipoProduto` é conhecido. Além disso, `domain/services` viola a direção de dependência do hexagonal — importa DTOs de `entrypoint` e usa anotações Spring — e o fluxo de cada operação está espalhado por 4 pacotes, dificultando leitura e manutenção.
 
 ## What Changes
 
@@ -28,11 +28,11 @@ _(nenhuma)_
 
 ## Impact
 
-- **Código afetado** (tudo em `aplicacoes/arj-contratocommand`):
+- **Código afetado** (tudo em `aplicacoes/contratocommand`):
   - Deletados: `application/services/**` (2 classes), `application/enabledproduct/**` (2 classes), `domain/services/contratacao/ContratacaoService`, `domain/services/cancelamento/CancelamentoService` — e seus testes correspondentes.
   - Movidos: `domain/services/contratacao/{ContratacaoValidator,ContratacaoRule,rules/*}` → `application/contratacao/**`; `domain/services/cancelamento/{CancelamentoValidator,CancelamentoRule,CancelamentoContext,rules/*}` → `application/cancelamento/**`; `application/autorizacao/usecases/*UseCase` → `application/{contratacao,cancelamento}`.
   - Novos: `application/contratacao/rules/ProdutoSuportado` (rule de produto suportado).
   - Alterados: `AutorizacaoController` (injeção direta dos use cases), imports em testes.
 - **API/contratos**: nenhum — endpoints, headers, códigos HTTP e corpos preservados.
-- **Documentação**: `CLAUDE.md`/`AGENTS.md` do `arj-contratocommand` descrevem a arquitetura antiga (fluxo com orquestrador/strategy) e precisam ser atualizados.
-- **Dependências/sistemas**: nenhum impacto em `arj-contratoquery`, banco ou infraestrutura.
+- **Documentação**: `CLAUDE.md`/`AGENTS.md` do `contratocommand` descrevem a arquitetura antiga (fluxo com orquestrador/strategy) e precisam ser atualizados.
+- **Dependências/sistemas**: nenhum impacto em `contratoquery`, banco ou infraestrutura.

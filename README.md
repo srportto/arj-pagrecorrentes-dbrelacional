@@ -4,8 +4,8 @@ Sistema de **autorizações de pagamentos recorrentes** (PIX Automático e DDA A
 
 ```mermaid
 flowchart TD
-    ClienteEscrita["Cliente (escrita)"] --> Command["arj-contratocommand<br/>porta 8080 · DB_READ_ONLY=false"]
-    ClienteLeitura["Cliente (leitura)"] --> Query["arj-contratoquery<br/>porta 8081 · DB_READ_ONLY=true"]
+    ClienteEscrita["Cliente (escrita)"] --> Command["contratocommand<br/>porta 8080 · DB_READ_ONLY=false"]
+    ClienteLeitura["Cliente (leitura)"] --> Query["contratoquery<br/>porta 8081 · DB_READ_ONLY=true"]
 
     Command --> Postgres[("PostgreSQL 18<br/>pg_partman + pg_cron + pgvector")]
     Query --> Postgres
@@ -27,13 +27,13 @@ flowchart TD
 
 | Serviço | Porta | Responsabilidade | Read-Only |
 |---------|-------|-----------------|-----------|
-| [arj-contratocommand](apps/arj-contratocommand/README.md) | 8080 | Criar, cancelar e decidir autorizações (POST, PATCH); publica eventos de estado no SNS | Não |
-| [arj-contratoquery](apps/arj-contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
+| [contratocommand](apps/contratocommand/README.md) | 8080 | Criar, cancelar e decidir autorizações (POST, PATCH); publica eventos de estado no SNS | Não |
+| [contratoquery](apps/contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
 | [autorizacaostatus-producer](apps/autorizacaostatus-producer/README.md) | 8082 | Ponte SQS → Kafka: consome a fila de eventos, converte para Avro e produz no tópico `eventos-autorizacao` de forma idempotente | N/A |
 | [eventos-consumer](apps/eventos-consumer/README.md) | 8083 | Consome o tópico Kafka `eventos-autorizacao`, loga e confirma (ack) | N/A |
 | [temporiza-autorizacao](apps/temporiza-autorizacao/README.md) | 8084 | Temporiza a jornada 1 do PIX_AUTO: agenda a expiração no Valkey e aciona `PATCH /decisao` no vencimento | N/A |
 
-`arj-contratocommand` e `arj-contratoquery` compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura. `autorizacaostatus-producer`, `eventos-consumer` e `temporiza-autorizacao` não acessam o banco: os dois primeiros formam a ponte SQS → Kafka (a primeira consome a fila SQS alimentada pelos eventos publicados pelo `arj-contratocommand` — ver [`infra/envs/local-messaging/`](infra/envs/local-messaging/) para provisionar tópico/filas no Floci — e produz no Kafka local, ver [`infra/local/kafka/`](infra/local/kafka/README.md); a segunda apenas consome esse tópico); `temporiza-autorizacao` consome uma fila **filtrada** do mesmo tópico SNS (só recepção de `PIX_AUTO` em `SPI_J1`), agenda no [Valkey local](infra/local/redis/README.md) e aciona de volta o `arj-contratocommand` no vencimento de 10 minutos, sem nunca ler a tabela `autorizacoes`.
+`contratocommand` e `contratoquery` compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura. `autorizacaostatus-producer`, `eventos-consumer` e `temporiza-autorizacao` não acessam o banco: os dois primeiros formam a ponte SQS → Kafka (a primeira consome a fila SQS alimentada pelos eventos publicados pelo `contratocommand` — ver [`infra/envs/local-messaging/`](infra/envs/local-messaging/) para provisionar tópico/filas no Floci — e produz no Kafka local, ver [`infra/local/kafka/`](infra/local/kafka/README.md); a segunda apenas consome esse tópico); `temporiza-autorizacao` consome uma fila **filtrada** do mesmo tópico SNS (só recepção de `PIX_AUTO` em `SPI_J1`), agenda no [Valkey local](infra/local/redis/README.md) e aciona de volta o `contratocommand` no vencimento de 10 minutos, sem nunca ler a tabela `autorizacoes`.
 
 ## Estrutura do Repositório
 
@@ -41,8 +41,8 @@ flowchart TD
 arj-pagrecorrentes-dbrelacional/
 ├── compose.yaml                # Ponto de entrada único do ambiente local (include: dos 5 abaixo)
 ├── apps/                       # Código de aplicação
-│   ├── arj-contratocommand/         # Microserviço de escrita (Java 25 + Spring Boot 4.0.7)
-│   ├── arj-contratoquery/           # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
+│   ├── contratocommand/         # Microserviço de escrita (Java 25 + Spring Boot 4.0.7)
+│   ├── contratoquery/           # Microserviço de leitura (Java 25 + Spring Boot 4.0.7)
 │   ├── autorizacaostatus-producer/  # Ponte SQS -> Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── eventos-consumer/            # Consumidora do tópico Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── temporiza-autorizacao/       # Temporizador da jornada 1 do PIX_AUTO, sem banco (Java 25 + Spring Boot 4.0.7)
@@ -94,8 +94,8 @@ cinco aplicações — a ordem de subida está declarada no compose, não é con
 docker compose up -d --build
 ```
 
-- `arj-contratocommand` → http://localhost:8080
-- `arj-contratoquery` → http://localhost:8081
+- `contratocommand` → http://localhost:8080
+- `contratoquery` → http://localhost:8081
 - `autorizacaostatus-producer` → http://localhost:8082 — ponte SQS → Kafka
 - `eventos-consumer` → http://localhost:8083 — loga cada evento consumido do Kafka
 - `temporiza-autorizacao` → http://localhost:8084 — agenda e expira autorizações PIX_AUTO/SPI_J1
@@ -109,7 +109,7 @@ deste compose (ver `infra/envs/local-messaging/`):
 cd infra/envs/local-messaging && terraform init && terraform apply
 ```
 
-Crie uma autorização `PIX_AUTO` com `tipoJornada: SPI_J1` no `arj-contratocommand` e, sem uma
+Crie uma autorização `PIX_AUTO` com `tipoJornada: SPI_J1` no `contratocommand` e, sem uma
 aprovação via `PATCH /api/autorizacoes/{id}/decisao`, ela é rejeitada automaticamente
 (`REJEITADA_SISTEMA_TIMEOUT_J1`) 10 minutos depois.
 
@@ -140,15 +140,15 @@ docker compose --env-file ../.env up -d --build
 Para depurar uma app fora do container, com a infra correspondente no ar:
 
 ```bash
-cd apps/arj-contratocommand
+cd apps/contratocommand
 DB_NAME=db-csp-postgres DB_USER_NAME=docker DB_PASSWORD=sua_senha \
   mvn spring-boot:run
 # Disponível em http://localhost:8080
 ```
 
-Mesmo padrão para as outras quatro apps — `arj-contratoquery` (8081, exige Postgres),
+Mesmo padrão para as outras quatro apps — `contratoquery` (8081, exige Postgres),
 `autorizacaostatus-producer` (8082, exige Floci + Kafka), `eventos-consumer` (8083, exige Kafka)
-e `temporiza-autorizacao` (8084, exige Floci + Valkey, e o `arj-contratocommand` no ar para
+e `temporiza-autorizacao` (8084, exige Floci + Valkey, e o `contratocommand` no ar para
 acionar a decisão no vencimento).
 
 > Consulte o README de cada app para a lista completa de variáveis de ambiente e comandos de build.
@@ -164,8 +164,8 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 
 | Arquivo | Descrição |
 |---------|-----------|
-| [apps/arj-contratocommand/README.md](apps/arj-contratocommand/README.md) | Documentação completa do serviço de escrita |
-| [apps/arj-contratoquery/README.md](apps/arj-contratoquery/README.md) | Documentação completa do serviço de leitura |
+| [apps/contratocommand/README.md](apps/contratocommand/README.md) | Documentação completa do serviço de escrita |
+| [apps/contratoquery/README.md](apps/contratoquery/README.md) | Documentação completa do serviço de leitura |
 | [apps/autorizacaostatus-producer/README.md](apps/autorizacaostatus-producer/README.md) | Documentação completa da ponte SQS -> Kafka |
 | [apps/eventos-consumer/README.md](apps/eventos-consumer/README.md) | Documentação completa da consumidora do tópico Kafka |
 | [apps/temporiza-autorizacao/README.md](apps/temporiza-autorizacao/README.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |

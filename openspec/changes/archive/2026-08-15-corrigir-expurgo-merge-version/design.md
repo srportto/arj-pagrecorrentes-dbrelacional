@@ -269,8 +269,8 @@ operação a linha existe na partição de destino, não existe na de origem, e 
 ## Migration Plan
 
 1. Corrigir D1 + D2 e verificar contra o Postgres local (a movimentação passa a concluir).
-2. Rodar a suíte completa das duas apps que leem a tabela (`arj-contratocommand`,
-   `arj-contratoquery`).
+2. Rodar a suíte completa das duas apps que leem a tabela (`contratocommand`,
+   `contratoquery`).
 3. Aplicar D3a com migration própria, em passo separado e reversível.
 4. Validar fim-a-fim com autorização nova (as presas não serão reprocessadas — ver Open
    Questions).

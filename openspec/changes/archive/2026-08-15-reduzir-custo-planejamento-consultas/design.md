@@ -81,7 +81,7 @@ Docker, não banco.
 **2.1 — Mecanismo comprovado para todas as conexões do pool.** `spring.datasource.hikari.
 connection-init-sql: SET plan_cache_mode = 'force_generic_plan'` roda uma vez por **conexão
 física** (não por chamada, não só a primeira) — comprovado, não suposto, por
-`PlanCacheModeHikariIntegrationTest` (`arj-contratoquery`): abre 4 conexões físicas
+`PlanCacheModeHikariIntegrationTest` (`contratoquery`): abre 4 conexões físicas
 simultâneas de um pool com `minimumIdle == maximumPoolSize == 4` e confirma `SHOW
 plan_cache_mode = force_generic_plan` em cada uma via `SHOW`. `ALTER ROLE` foi descartado
 por afetar também sessões `psql` manuais de diagnóstico, fora do controle desta change.
@@ -111,10 +111,10 @@ real (dezenas de **mili**segundos, ver medida ponta a ponta abaixo). Nenhuma con
 piorou de forma perceptível pelo chamador.
 
 **2.6 — Decisão: adotar `force_generic_plan` nas duas apps de leitura E escrita**
-(`arj-contratoquery` e `arj-contratocommand`, via `hikari.connection-init-sql`). Aplicado em
+(`contratoquery` e `contratocommand`, via `hikari.connection-init-sql`). Aplicado em
 `application.yaml` de ambas em 2026-08-11. Racional: ganhos de 5–6× nas consultas sem poda
 (N3, `findByIdAutorizacao`) e ~30 ms/chamada na listagem superam, em várias ordens de grandeza,
-a perda sub-milissegundo nas consultas já podadas. `arj-contratocommand` foi incluída apesar de
+a perda sub-milissegundo nas consultas já podadas. `contratocommand` foi incluída apesar de
 suas escritas mais comuns já podarem sozinhas — o ganho aparece em `findByIdAutorizacao` (sem
 filtro de partição) e em qualquer consulta futura que não pode.
 
@@ -162,8 +162,8 @@ função determinística de `id_unico_conta_contratante` (mesmo hash usado na es
 listagem também por `id_particao_conta` (calculado em Java a partir do parâmetro já recebido)
 podaria para 1 partição sem mudar o contrato de API nem o filtro de negócio — mas o `proposal.md`
 declara "reescrever consultas para incluir a chave de particionamento" como **Non-Goal** desta
-change, e a duplicação da lógica de hash (hoje só em `arj-contratocommand`) para o
-`arj-contratoquery` é decisão de arquitetura própria. Não implementado aqui; candidato forte a
+change, e a duplicação da lógica de hash (hoje só em `contratocommand`) para o
+`contratoquery` é decisão de arquitetura própria. Não implementado aqui; candidato forte a
 change própria, com potencial de eliminar os ~78 ms de execução da listagem sem esperar por H2.
 
 **3.3 — Decisão: não abrir change de migração de partições agora.** H2 permanece uma alavanca
@@ -200,7 +200,7 @@ que **as duas fatias** (planejamento e execução) sejam avaliadas, não só uma
 
 - ~~Qual o volume real esperado por conta e por partição?~~ **Continua em aberto** — não é mais
   bloqueio de H1 (resolvida com massa sintética), mas segue bloqueando H2 (ver seção 3.1/3.3).
-- ~~O `arj-contratocommand` também deve adotar plano genérico?~~ **Resolvido: sim** — ver 2.6.
+- ~~O `contratocommand` também deve adotar plano genérico?~~ **Resolvido: sim** — ver 2.6.
 - ~~Existe ambiente com volume representativo, ou é preciso gerar massa sintética?~~ **Resolvido:
   massa sintética local**, script em `infra/local/postgres/gerar-massa-sintetica-representativa.sql`.
 - Vale abrir change própria para filtrar a listagem também por `id_particao_conta` derivado (achado

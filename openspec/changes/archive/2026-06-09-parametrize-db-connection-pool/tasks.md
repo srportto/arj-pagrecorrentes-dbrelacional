@@ -1,12 +1,12 @@
 ## 1. contratocommand — Configuração do pool HikariCP
 
-- [x] 1.1 Adicionar bloco `spring.datasource.hikari` no `application.yaml` do `arj-contratocommand` com os cinco parâmetros parametrizáveis via variáveis de ambiente e valores padrão conservadores
+- [x] 1.1 Adicionar bloco `spring.datasource.hikari` no `application.yaml` do `contratocommand` com os cinco parâmetros parametrizáveis via variáveis de ambiente e valores padrão conservadores
 - [x] 1.2 Verificar que a aplicação `contratocommand` inicializa sem nenhuma das novas variáveis de ambiente definidas (usa defaults do yaml)
 - [x] 1.3 Verificar nos logs de inicialização do HikariCP que `maximumPoolSize` exibe o valor padrão 5
 
 ## 2. contratoquery — Configuração do pool HikariCP
 
-- [x] 2.1 Adicionar bloco `spring.datasource.hikari` no `application.yaml` do `arj-contratoquery` com os cinco parâmetros parametrizáveis via variáveis de ambiente e valores padrão conservadores
+- [x] 2.1 Adicionar bloco `spring.datasource.hikari` no `application.yaml` do `contratoquery` com os cinco parâmetros parametrizáveis via variáveis de ambiente e valores padrão conservadores
 - [x] 2.2 Verificar que a aplicação `contratoquery` inicializa sem nenhuma das novas variáveis de ambiente definidas (usa defaults do yaml)
 - [x] 2.3 Verificar nos logs de inicialização do HikariCP que `maximumPoolSize` exibe o valor padrão 5
 

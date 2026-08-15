@@ -1,7 +1,7 @@
 # Contrato de API — insumo para o gateway
 
 > **Este arquivo tem prazo de validade.** Ele existe porque as anotações springdoc/OpenAPI foram
-> removidas do código de produção (`arj-contratocommand`, `arj-contratoquery`) sem que o gateway
+> removidas do código de produção (`contratocommand`, `contratoquery`) sem que o gateway
 > ainda tivesse absorvido o contrato — decisão registrada em
 > `openspec/changes/limpar-codigo-das-apps/design.md` (D1, D1b). Ele consolida as três fontes que
 > carregavam esse contrato no repositório, para servir de insumo a quem montar o gateway.
@@ -9,13 +9,13 @@
 >
 > Gerado em 2026-08-11, a partir de:
 > 1. anotações `io.swagger.v3.oas.annotations.*` dos dois `AutorizacaoController` (antes da remoção);
-> 2. `apps/arj-contratocommand/README.md`, seção "API REST Endpoints" (linhas 268-380, antes da remoção);
-> 3. `apps/arj-contratoquery/README.md`, seção "API REST Endpoints" (linhas 181-264, antes da remoção).
+> 2. `apps/contratocommand/README.md`, seção "API REST Endpoints" (linhas 268-380, antes da remoção);
+> 3. `apps/contratoquery/README.md`, seção "API REST Endpoints" (linhas 181-264, antes da remoção).
 >
 > Onde as fontes 2 e 3 divergiam do código real, este documento segue o código — ver
 > "Divergências encontradas" ao final.
 
-## arj-contratocommand (porta 8080)
+## contratocommand (porta 8080)
 
 Base: `/api/autorizacoes`. API de escrita — cria, cancela e decide autorizações.
 
@@ -110,7 +110,7 @@ Exemplo de corpo:
 ```
 
 **Importante para quem for montar o gateway:** `status` é o **código inteiro** do enum
-`StatusAutorizacao` nesta API (não o nome). O `arj-contratoquery` expõe `status` como string —
+`StatusAutorizacao` nesta API (não o nome). O `contratoquery` expõe `status` como string —
 divergência de design aceita e documentada em `CLAUDE.md` da raiz ("Command e query têm
 representações distintas por design").
 
@@ -214,7 +214,7 @@ pelo **shape** da resposta (`LayoutErrosApiValidationsResponse` com `occurrences
 
 ---
 
-## arj-contratoquery (porta 8081)
+## contratoquery (porta 8081)
 
 Base: `/api/autorizacoes`. API de leitura de autorizações — somente `GET`.
 
@@ -343,7 +343,7 @@ para que quem monte o gateway não herde exemplos errados.
 
 7. **Não existe 404 em `cancelar`/`decidir` do command — nem a classe existe.** As anotações
    springdoc dos dois endpoints documentavam `@ApiResponse(responseCode = "404", description =
-   "Autorizacao inexistente", ...)`, e o `CLAUDE.md`/`AGENTS.md` de `arj-contratocommand`
+   "Autorizacao inexistente", ...)`, e o `CLAUDE.md`/`AGENTS.md` de `contratocommand`
    listavam `404 | ResourceNotFoundException | Autorização inexistente` na tabela de códigos de
    erro. **`ResourceNotFoundException` não existe em nenhum lugar do código** — nem em
    `src/main`, nem em `src/test` (`grep -rl ResourceNotFoundException` no app inteiro não

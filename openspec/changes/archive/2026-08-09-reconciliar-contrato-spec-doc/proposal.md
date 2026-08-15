@@ -14,7 +14,7 @@ por quem leu o arquivo justamente para saber onde estavam as armadilhas.
 
 **Incoerências de contrato entre os dois serviços REST**, que representam a mesma autorização:
 
-| Campo | `arj-contratocommand` | `arj-contratoquery` |
+| Campo | `contratocommand` | `contratoquery` |
 |---|---|---|
 | `status` | `Integer` (código) | `String` (nome do enum) |
 | valor | `valorAutorizacao` | `valor` |
@@ -43,14 +43,14 @@ cita visibility timeout de 30s quando o valor real é 60s; o `CLAUDE.md` do comm
 `ProdutoSuportadoCancelamento`, que roda antes da que está documentada.
 
 **Código que desobedece a spec:** `TipoEventoAutorizacao` está em `application/eventos/` no
-`arj-contratocommand`, enquanto `maquina-estados-autorizacao` exige `domain/enums/` nas quatro
+`contratocommand`, enquanto `maquina-estados-autorizacao` exige `domain/enums/` nas quatro
 aplicações — e as outras três cumprem. Aqui a spec está correta e o código é que diverge.
 
 **Drifts novos, introduzidos após a auditoria original (validados em 2026-08-09):** a mudança
 `temporizacao-jornada-01-pix-auto` adicionou a rota `PATCH /decisao` e o status `RECEBIDA`, mas
-não atualizou `apps/arj-contratocommand/README.md` — a tabela de endpoints do README segue sem
+não atualizou `apps/contratocommand/README.md` — a tabela de endpoints do README segue sem
 `PATCH /{id}/decisao` e ainda anuncia `GET /api/autorizacoes/listar`, que **não existe** no
-controller (a listagem vive no `arj-contratoquery`). Os `CLAUDE.md`/`AGENTS.md` do command estão
+controller (a listagem vive no `contratoquery`). Os `CLAUDE.md`/`AGENTS.md` do command estão
 corretos; o drift ficou isolado no README. Adicionalmente, os `README.md` dos dois serviços REST
 usam nomes de status que não existem no enum: `statusAutorizacao` como nome de campo (o campo
 real é `status`) e valores `ATIVO`/`CANCELADO` (os valores reais do enum de 8 posições são
@@ -74,18 +74,18 @@ consumidor do tópico não deduplica por nada. A promessa não tem quem a cumpra
   contra o código.
 - Reconciliar `db-connection-pool-config` com `virtual-threads-config` e com o código
   (`maximum-pool-size = 10`), eliminando a contradição entre specs.
-- Mover `TipoEventoAutorizacao` para `domain/enums/` no `arj-contratocommand`, alinhando o código à
+- Mover `TipoEventoAutorizacao` para `domain/enums/` no `contratocommand`, alinhando o código à
   spec já existente e às outras três aplicações.
 - Decidir o destino do contrato de deduplicação declarado em `publicacao-eventos-kafka`:
   implementá-lo no consumidor ou reescrever a spec para não prometer garantia que ninguém cumpre.
 - Corrigir os drifts pontuais de documentação: cópias de `AutorizacaoEventoPayload` no `CLAUDE.md`
   da raiz, versões no `CLAUDE.md` do producer, comentário de visibility timeout, rule de
   cancelamento omitida no `CLAUDE.md` do command.
-- Atualizar `apps/arj-contratocommand/README.md` com a rota `PATCH /decisao` (ausente desde a
+- Atualizar `apps/contratocommand/README.md` com a rota `PATCH /decisao` (ausente desde a
   implementação de `temporizacao-jornada-01-pix-auto`) e remover a menção ao endpoint inexistente
   `GET /api/autorizacoes/listar`.
-- Corrigir os nomes de status inexistentes nos `README.md` do `arj-contratocommand` e do
-  `arj-contratoquery` (`statusAutorizacao`/`ATIVO`/`CANCELADO` → `status`/`ATIVA`/`CANCELADA`,
+- Corrigir os nomes de status inexistentes nos `README.md` do `contratocommand` e do
+  `contratoquery` (`statusAutorizacao`/`ATIVO`/`CANCELADO` → `status`/`ATIVA`/`CANCELADA`,
   conforme o enum real de 8 valores).
 - **Fora de escopo (deliberado):** migração da paginação offset para cursor e implementação de
   HATEOAS. São evoluções de contrato, não reconciliações.
@@ -120,16 +120,16 @@ consumidor do tópico não deduplica por nada. A promessa não tem quem a cumpra
   efeito colateral persistente.
 
 Não há delta para `maquina-estados-autorizacao`: a spec já exige `domain/enums/` nas quatro
-aplicações e está correta — quem diverge é o código do `arj-contratocommand`.
+aplicações e está correta — quem diverge é o código do `contratocommand`.
 
 ## Impact
 
 - **Contrato de API (BREAKING):** DTOs de resposta dos dois serviços; exige versionamento antes das
   renomeações e comunicação a quem integra.
-- **`arj-contratocommand`:** `AutorizacaoCompletaResponseDto`, `ApiExceptionHandler`,
+- **`contratocommand`:** `AutorizacaoCompletaResponseDto`, `ApiExceptionHandler`,
   `TipoEventoAutorizacao` (pacote), `README.md` (rota `/decisao` ausente, endpoint fantasma
   `/listar`, nomes de status incorretos), `CLAUDE.md`/`AGENTS.md`.
-- **`arj-contratoquery`:** `AutorizacaoDetalheResponseDto`, `AutorizacaoResumidaResponseDto`,
+- **`contratoquery`:** `AutorizacaoDetalheResponseDto`, `AutorizacaoResumidaResponseDto`,
   `ApiExceptionHandler`, `README.md` (nomes de status incorretos), `CLAUDE.md`/`AGENTS.md`.
 - **`autorizacaostatus-producer`:** `CLAUDE.md`/`AGENTS.md` (versões), comentário de proveniência em
   `KafkaProducerClientConfig`.

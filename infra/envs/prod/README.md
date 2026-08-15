@@ -7,7 +7,7 @@
 Composição dos módulos em [`../../modules/`](../../modules/) apontando para a
 AWS real, com backend de state remoto (provisionado em
 [`../../bootstrap/`](../../bootstrap/)). Provisiona a VPC, o RDS PostgreSQL e o
-cluster ECS/Fargate que hospedam `arj-contratocommand` e `arj-contratoquery`
+cluster ECS/Fargate que hospedam `contratocommand` e `contratoquery`
 em produção.
 
 Também compõe o módulo [`../../modules/elasticache-valkey/`](../../modules/elasticache-valkey/)

@@ -99,7 +99,7 @@ resource "aws_sqs_queue_policy" "temporizacao_autorizacao" {
 }
 
 # filter_policy restringe a entrega, por message attribute, a RECEPCAO + PIX_AUTO + SPI_J1
-# (ver AutorizacaoEventoPublisher no arj-contratocommand para os attributes publicados).
+# (ver AutorizacaoEventoPublisher no contratocommand para os attributes publicados).
 # Se o emulador local nao suportar filter policy por attribute, a subscription passa a
 # entregar todos os eventos do topico — a divergencia fica isolada aqui, nunca na
 # aplicacao consumidora (ver capacidade local-messaging-environment).

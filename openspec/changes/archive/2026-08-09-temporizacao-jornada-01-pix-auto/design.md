@@ -22,7 +22,7 @@ Três restrições do código existente moldam o desenho:
 2. **A jornada não é persistida.** Ela existe só como parâmetro do `AutorizacaoMapper`, que
    a usa para derivar `motivo_status` e a descarta. Como `motivo_status` é sobrescrito a
    cada transição, a jornada de origem é **destruída** na primeira mudança de status.
-3. **`MotivoStatusAutorizacao` existe apenas no `arj-contratocommand`** — não é espelhado.
+3. **`MotivoStatusAutorizacao` existe apenas no `contratocommand`** — não é espelhado.
    Acrescentar valores ali é local e barato, ao contrário de `StatusAutorizacao`.
 
 ## Goals / Non-Goals
@@ -189,7 +189,7 @@ Sem ela, `temporiza-autorizacao` fica sem JPA, sem pool, sem conhecer o schema p
 e sem espelhar `StatusAutorizacao` — o mesmo perfil de `autorizacaostatus-producer`.
 
 Se a leitura prévia for reintroduzida, o caminho é `GET /api/autorizacoes/{id}` no
-`arj-contratoquery` (8081), que já existe, e **não** uma segunda conexão JPA à tabela
+`contratoquery` (8081), que já existe, e **não** uma segunda conexão JPA à tabela
 particionada.
 
 ### 7. Filtro inteiramente declarativo no SNS
@@ -229,7 +229,7 @@ rule exige o status atual seja **exatamente** `RECEBIDA` antes de checar a trans
   por alarme sobre o tamanho do PEL.
 - **Aprovação antes do vencimento deixa lixo no agendamento** → o `ZADD` continua lá e
   dispara; o command responde 422 e o worker confirma. Optamos por isso em vez de fazer o
-  `arj-contratocommand` remover a entrada (`ZREM`), o que o acoplaria ao Valkey.
+  `contratocommand` remover a entrada (`ZREM`), o que o acoplaria ao Valkey.
 - **Perda total do Valkey perde agendamentos em voo** → AOF `everysec` limita a janela a ~1s
   de escritas; um replay a partir do Kafka reconstrói a agenda se necessário. Não há
   reconciliação automática nesta fase.
@@ -266,7 +266,7 @@ coluna, os attributes e a rota são aditivos e podem permanecer.
 
 - **Intervalo da varredura e tamanho do lote** (`~5s` / `N`) — a definir com o volume real
   esperado de J1; o spec fixa o comportamento, não os números.
-- **`arj-contratoquery` expõe `tipoJornada` nos DTOs de resposta?** A coluna passa a existir;
+- **`contratoquery` expõe `tipoJornada` nos DTOs de resposta?** A coluna passa a existir;
   expor ou não é decisão de contrato de API que não bloqueia esta mudança.
 - **Cluster mode no ElastiCache** — se habilitado, `agenda:*` e `stream:*` precisam de hash
   tag comum para caírem no mesmo slot. Definir junto com o dimensionamento do cluster.

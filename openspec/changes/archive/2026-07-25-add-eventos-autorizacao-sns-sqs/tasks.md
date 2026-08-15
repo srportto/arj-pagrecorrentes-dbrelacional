@@ -15,7 +15,7 @@
       tópico via `sns list-topics`, fila via `sqs list-queues`; publicar mensagem de
       teste no tópico via CLI e confirmar body cru na fila (`sqs receive-message`)
 
-## 2. Publicador — `arj-contratocommand`
+## 2. Publicador — `contratocommand`
 
 - [x] 2.1 Adicionar ao `pom.xml` o BOM `software.amazon.awssdk:bom` e a dependência
       `software.amazon.awssdk:sns`
@@ -39,11 +39,11 @@
       evento único na troca de partição), rollback não publica, falha de SNS não
       afeta a resposta; mapeamento entidade→payload com chaves das colunas
 - [x] 2.7 Validar: `mvn test` e `mvn clean compile` passam em
-      `apps/arj-contratocommand`
+      `apps/contratocommand`
 
 ## 3. Consumidor — nova app `apps/autorizacaostatus-producer`
 
-- [x] 3.1 Criar o esqueleto da app a partir da `arj-contratocommand` e do modelo
+- [x] 3.1 Criar o esqueleto da app a partir da `contratocommand` e do modelo
       `docs/arquitetura/based-java-aplication.md`: `pom.xml` (Boot 4.0.7, Java 25,
       **sem** data-jpa/postgresql; BOM AWS + `software.amazon.awssdk:sqs`), pacote
       `br.com.srportto.autorizacaostatusproducer`, porta 8082, actuator,
@@ -70,5 +70,5 @@
       command up → POST `/api/autorizacoes` → confirmar log de consumo com a entidade
       na `autorizacaostatus-producer`; repetir com PATCH cancelar
 - [x] 4.2 Atualizar documentação: README raiz (nova app e novo root de infra),
-      `apps/arj-contratocommand/CLAUDE.md`+`AGENTS.md` (publicação de eventos, novas
+      `apps/contratocommand/CLAUDE.md`+`AGENTS.md` (publicação de eventos, novas
       propriedades), `infra/README.md` (root `local-messaging`)

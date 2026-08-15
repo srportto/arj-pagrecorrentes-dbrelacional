@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Descreve o serviço compartilhado de transferência de partição usado pelo `arj-contratocommand`
+Descreve o serviço compartilhado de transferência de partição usado pelo `contratocommand`
 para mover autorizações em estados terminais (`CANCELADA`, `REJEITADA`, `EXPIRADA` ou
 `FINALIZADA`) para a partição de expurgo, e como os casos de uso de decisão (rejeição,
 expiração) e cancelamento o utilizam.
@@ -11,7 +11,7 @@ expiração) e cancelamento o utilizam.
 
 ### Requirement: Serviço compartilhado de transferência para partição de expurgo
 
-O `arj-contratocommand` SHALL expor um serviço compartilhado em `application/`
+O `contratocommand` SHALL expor um serviço compartilhado em `application/`
 (`ExpurgoAutorizacaoService` ou nome equivalente), independente de qualquer feature
 específica, responsável por transferir uma `Autorizacao` da sua partição atual para a
 partição de expurgo calculada via `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite`

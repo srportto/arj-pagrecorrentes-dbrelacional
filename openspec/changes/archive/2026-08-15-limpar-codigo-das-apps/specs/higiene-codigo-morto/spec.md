@@ -6,12 +6,12 @@ Nenhum arquivo `.java` das cinco aplicações de `apps/` — em `src/main` **ou*
 declarar um `import` cujo tipo não seja referenciado no arquivo.
 
 O escopo é deliberadamente maior que o de `higiene-codigo-morto` original (que cobre apenas
-`arj-contratocommand` e `arj-contratoquery`): import sem uso é defeito de mesma natureza nas cinco
+`contratocommand` e `contratoquery`): import sem uso é defeito de mesma natureza nas cinco
 apps, e o custo de verificar é o mesmo.
 
 #### Scenario: Import sem uso não existe em nenhuma app
 
-- **WHEN** os arquivos `.java` de `apps/arj-contratocommand`, `apps/arj-contratoquery`,
+- **WHEN** os arquivos `.java` de `apps/contratocommand`, `apps/contratoquery`,
   `apps/autorizacaostatus-producer`, `apps/eventos-consumer` e `apps/temporiza-autorizacao` são
   inspecionados
 - **THEN** todo `import` declarado tem ao menos uma referência ao tipo importado no corpo do
@@ -73,7 +73,7 @@ Cada `TODO` SHALL caber em uma linha e nomear a causa, não o sintoma.
 #### Scenario: TODO com medição é aceito
 
 - **WHEN** um trecho tem custo medido e registrado (ex.: 148 ms de planejamento por chamada na
-  listagem do `arj-contratoquery`)
+  listagem do `contratoquery`)
 - **THEN** um `// TODO` de uma linha nomeando a medição e a change que a endereça é aceito
 
 #### Scenario: TODO genérico é removido

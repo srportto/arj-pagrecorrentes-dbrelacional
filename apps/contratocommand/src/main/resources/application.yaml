@@ -18,7 +18,7 @@ spring:
             max-lifetime: ${DB_POOL_MAX_LIFETIME:1800000}
             transaction-isolation: ${DB_TRANSACTION_ISOLATION:TRANSACTION_READ_COMMITTED}
             read-only: ${DB_READ_ONLY:false}
-            # Mesma justificativa do arj-contratoquery: elimina o replanejamento por chamada em
+            # Mesma justificativa do contratoquery: elimina o replanejamento por chamada em
             # consultas sem poda de particao (ex.: findByIdAutorizacao). As consultas ja podadas
             # para 1 particao (existsBy..., moverParaParticao) pagam uma regressao irrelevante
             # (sempre sub-milissegundo) -- ver openspec/changes/reduzir-custo-planejamento-consultas/design.md.

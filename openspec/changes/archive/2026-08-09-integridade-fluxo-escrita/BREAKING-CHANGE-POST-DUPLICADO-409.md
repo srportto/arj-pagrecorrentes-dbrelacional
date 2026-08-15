@@ -1,6 +1,6 @@
 # Breaking change — POST `/api/autorizacoes` duplicado: duplicação silenciosa → 409
 
-**Aplicação**: `arj-contratocommand` (porta 8080)
+**Aplicação**: `contratocommand` (porta 8080)
 **Mudança**: o segundo POST com o mesmo `id_autorizacao_empresa` deixa de **criar silenciosamente uma segunda autorização ativa** e passa a retornar **409 Conflict** com a `idAutorizacao` da linha já persistida.
 **Quando**: a partir do merge desta change (`integridade-fluxo-escrita`).
 
@@ -68,4 +68,4 @@ Recomendações:
 - Spec: `openspec/changes/integridade-fluxo-escrita/specs/idempotencia-criacao-autorizacao/spec.md`
 - Decisão D3 do `design.md`: 409 vs 422 para chave duplicada
 - Implementação: `RecursoJaExisteException` em `shared/exceptions/` (mapeada no `ApiExceptionHandler`)
-- Documentação de apoio: seção **"Códigos de erro (handler global)"** no `apps/arj-contratocommand/README.md`, `CLAUDE.md` e `AGENTS.md`
+- Documentação de apoio: seção **"Códigos de erro (handler global)"** no `apps/contratocommand/README.md`, `CLAUDE.md` e `AGENTS.md`

@@ -52,7 +52,7 @@ Nenhuma app SHALL depender do `CLAUDE.md` para cumprir o papel do `README.md`.
 
 #### Scenario: As cinco apps têm os três arquivos
 
-- **WHEN** as raízes de `arj-contratocommand`, `arj-contratoquery`, `autorizacaostatus-producer`,
+- **WHEN** as raízes de `contratocommand`, `contratoquery`, `autorizacaostatus-producer`,
   `eventos-consumer` e `temporiza-autorizacao` são inspecionadas
 - **THEN** cada uma contém `README.md`, `CLAUDE.md` e `AGENTS.md`
 

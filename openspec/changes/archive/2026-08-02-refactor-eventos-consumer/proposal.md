@@ -6,7 +6,7 @@ deste próprio monorepo apontam como evitáveis: `AckMode.MANUAL` sem necessidad
 (item listado como erro comum na skill de mensageria), ausência de DLT para mensagens
 venenosas (outro erro comum da mesma skill), e um listener/enum de negócio posicionados fora
 da camada que a skill `arquitetura-limpa-java` prescreve — divergindo do próprio
-`arj-contratocommand`, que segue a convenção corretamente. Corrigir agora, enquanto o app
+`contratocommand`, que segue a convenção corretamente. Corrigir agora, enquanto o app
 ainda é pequeno (log + ack, sem processamento de negócio), evita que o padrão errado vire
 referência para os próximos consumers Kafka do monorepo.
 

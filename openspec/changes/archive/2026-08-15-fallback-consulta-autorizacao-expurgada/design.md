@@ -4,7 +4,7 @@ A tabela `autorizacoes` é particionada por `LIST (id_particao_conta)`, com 989 
 quentes (`0–888`, derivadas de `hash(id_unico_conta_contratante) % 889`) e 100 de expurgo
 (`900–999`, balde semanal).
 
-O `arj-contratoquery` localiza uma autorização pela chave composta, derivando a partição do
+O `contratoquery` localiza uma autorização pela chave composta, derivando a partição do
 próprio UUID via `ReversibleUUIDv7.extract` — sem query extra, o que era a virtude do desenho.
 A premissa implícita: **a partição em que a linha está é a mesma em que ela nasceu**. A mudança
 `expurgo-estados-terminais` quebrou essa premissa sem que o `contratoquery` fosse ajustado.
@@ -54,7 +54,7 @@ mudança, agora com evidência de que vale uma change própria e prioritária.
 
 ### Latência real, ponta a ponta pela API (medida em 2026-08-10, após a implementação)
 
-Média de 5 chamadas HTTP contra o `arj-contratoquery` em container, banco local:
+Média de 5 chamadas HTTP contra o `contratoquery` em container, banco local:
 
 | Caminho | Níveis percorridos | Latência |
 |---|---|---|
@@ -82,7 +82,7 @@ projetado.
 
 - Otimizar `GET /api/autorizacoes` (listagem). Problema maior, change própria.
 - Mudar a estratégia de particionamento ou o número de partições.
-- Levar a cascata ao `arj-contratocommand` (ver D4).
+- Levar a cascata ao `contratocommand` (ver D4).
 - Eliminar o custo de planejamento por replanejamento de prepared statement (`plan_cache_mode`)
   — spike separado, benefício muito além desta mudança.
 
@@ -170,7 +170,7 @@ incidente.
 **Não** se propõe cache negativo nem rate limiting aqui: são mecanismos de borda que
 pertencem à camada de API/gateway, não ao caso de uso.
 
-### D4 — A cascata NÃO vai para o `arj-contratocommand`
+### D4 — A cascata NÃO vai para o `contratocommand`
 
 `DecidirAutorizacaoUseCase` e `CancelarAutorizacaoUseCase` também localizam por
 `(uuid, partição do UUID)` e falham quando a linha já foi expurgada. Isso é **desejado**: o

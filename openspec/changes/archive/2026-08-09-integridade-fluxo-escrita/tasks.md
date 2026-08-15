@@ -13,9 +13,9 @@
 
 ## 3. Lock otimista
 
-- [x] 3.1 Adicionar campo `@Version` em `domain/entities/Autorizacao.java` do `arj-contratocommand`
-- [x] 3.2 Verificar a entidade `Autorizacao` do `arj-contratoquery`: mapear ou ignorar explicitamente a coluna de versão
-- [x] 3.3 Executar os dois endpoints de leitura do `arj-contratoquery` e confirmar que nada quebrou com a coluna nova
+- [x] 3.1 Adicionar campo `@Version` em `domain/entities/Autorizacao.java` do `contratocommand`
+- [x] 3.2 Verificar a entidade `Autorizacao` do `contratoquery`: mapear ou ignorar explicitamente a coluna de versão
+- [x] 3.3 Executar os dois endpoints de leitura do `contratoquery` e confirmar que nada quebrou com a coluna nova
 - [x] 3.4 Escrever teste de concorrência real (Testcontainers + duas threads em transações distintas) que dispara dois cancelamentos simultâneos na mesma autorização — `ConcorrenciaOptimisticaIntegrationTest`
   - **Correção pós-implementação**: a versão original entregue pelo `java-construtor` apontava para Postgres local via `application-test.properties`, que **reintroduzia a senha antiga vazada** (`JTMQ9YxDkHfRQbX2`, a mesma rotacionada em `rotacionar-segredo-versionado`) num arquivo novo versionado — corrigido: arquivo removido, teste reescrito para usar Testcontainers de verdade (`@Testcontainers`, `PostgreSQLContainer`, schema mínimo com partição `DEFAULT` criado em `@BeforeAll`, hermético e sem depender de Postgres local rodando).
   - Também havia um bug no fixture (`aut.setVersion(0L)` explícito) que fazia Spring Data JPA tratar a entidade nova como existente (`merge`/UPDATE em vez de `persist`/INSERT), quebrando o teste já no setup — corrigido (não setar `version`, deixar `null` para ser tratado como entidade nova).
@@ -59,11 +59,11 @@
 
 ## 7. Validação e documentação
 
-- [x] 7.1 Rodar a suíte completa do `arj-contratocommand` e do `arj-contratoquery`
-  - `arj-contratocommand`: 159 testes, 0 falhas, 2 skips (1 pré-existente + `ConcorrenciaOptimisticaIntegrationTest`, pulado via `DockerDisponivelCondition` — Docker inacessível pela API do Testcontainers neste sandbox, validado manualmente — ver tasks 3.5/3.7)
-  - `arj-contratoquery`: 51 testes, 0 falhas, 1 skip (pré-existente)
+- [x] 7.1 Rodar a suíte completa do `contratocommand` e do `contratoquery`
+  - `contratocommand`: 159 testes, 0 falhas, 2 skips (1 pré-existente + `ConcorrenciaOptimisticaIntegrationTest`, pulado via `DockerDisponivelCondition` — Docker inacessível pela API do Testcontainers neste sandbox, validado manualmente — ver tasks 3.5/3.7)
+  - `contratoquery`: 51 testes, 0 falhas, 1 skip (pré-existente)
   - Também removido `CREATE INDEX idx_autorizacao_empresa` da migration `v1.0.2` (achado em revisão): ficou órfão depois da correção I1, que passou a buscar por `(id_particao_conta, id_autorizacao_empresa)`, já coberto pela constraint UNIQUE — um índice extra por coluna isolada em tabela com ~989 partições custaria escrita em todo INSERT/UPDATE sem uso real.
 - [x] 7.2 Revisar os cenários dos 3 specs desta mudança (`concorrencia-otimista-autorizacao`, `idempotencia-criacao-autorizacao`, `maquina-estados-autorizacao`) e confirmar que cada um tem teste correspondente
 - [x] 7.3 Confirmar que `podeTransicionarPara` agora tem ao menos uma chamada em código de produção
-- [x] 7.4 Documentar os dois novos caminhos de erro (409 por concorrência, 409 por chave duplicada) no `README.md` e no `CLAUDE.md`/`AGENTS.md` do `arj-contratocommand`, mantendo os dois espelhos idênticos
+- [x] 7.4 Documentar os dois novos caminhos de erro (409 por concorrência, 409 por chave duplicada) no `README.md` e no `CLAUDE.md`/`AGENTS.md` do `contratocommand`, mantendo os dois espelhos idênticos
 - [x] 7.5 Comunicar a mudança de comportamento do POST duplicado a quem integra com a API antes do deploy

@@ -1,6 +1,6 @@
 ## Context
 
-O `arj-contratocommand` valida operações via framework de rules (`Rule<T>` / `Validator<R,T>` em `shared/validationsetup`). Na contratação, a rule `ProdutoSuportado` (`@Order(HIGHEST_PRECEDENCE)`) rejeita `tipoProduto` desconhecido comparando a `String` do request contra `TipoProduto.values()`. No cancelamento existe só a `TipoProdutoCancelamento`, que compara o produto do header com o produto lido do banco — não há verificação de "produto habilitado a cancelar", porque hoje habilitação é implícita: existir no enum basta.
+O `contratocommand` valida operações via framework de rules (`Rule<T>` / `Validator<R,T>` em `shared/validationsetup`). Na contratação, a rule `ProdutoSuportado` (`@Order(HIGHEST_PRECEDENCE)`) rejeita `tipoProduto` desconhecido comparando a `String` do request contra `TipoProduto.values()`. No cancelamento existe só a `TipoProdutoCancelamento`, que compara o produto do header com o produto lido do banco — não há verificação de "produto habilitado a cancelar", porque hoje habilitação é implícita: existir no enum basta.
 
 O enum `TipoProduto` (`domain/enums`) tem dois elementos (`PIX_AUTO`, `DDA_AUTO`) com um atributo `long` (id) e dois lookups estáticos que lançam `BusinessException`.
 
@@ -13,7 +13,7 @@ O enum `TipoProduto` (`domain/enums`) tem dois elementos (`PIX_AUTO`, `DDA_AUTO`
 - Comportamento atual preservado: `PIX_AUTO` e `DDA_AUTO` habilitados para ambas as capacidades.
 
 **Non-Goals:**
-- Não alterar o `TipoProduto` do `arj-contratoquery` (leitura não tem capacidades de operação).
+- Não alterar o `TipoProduto` do `contratoquery` (leitura não tem capacidades de operação).
 - Não externalizar capacidades em configuração/banco — declaração fica no código do enum.
 - Não criar capacidade "consultar" nem antecipar capacidades futuras além de contratar/cancelar.
 - Não mudar contratos REST, DTOs ou o framework de validação.
@@ -51,7 +51,7 @@ Mantém a responsabilidade de rejeitar produto desconhecido (o request de criaç
 ## Risks / Trade-offs
 
 - **[Capacidade hardcoded exige redeploy para mudar]** → Aceito deliberadamente: capacidade de produto é decisão de negócio estável, não toggle operacional. Se virar toggle, migrar para configuração será uma change própria.
-- **[Enum duplicado no `arj-contratoquery` pode divergir]** → Fora de escopo por decisão (query não contrata/cancela); risco documentado no proposal para não parecer omissão.
+- **[Enum duplicado no `contratoquery` pode divergir]** → Fora de escopo por decisão (query não contrata/cancela); risco documentado no proposal para não parecer omissão.
 - **[Nenhum produto hoje exercita o caminho "não habilitado" em produção]** → O caminho novo só é verificável por teste unitário; cobrir com testes parametrizados nas duas rules e no enum para o cenário desabilitado (via mock/constante de teste ou asserção direta dos métodos).
 - **[Duas rules de cancelamento sem `@Order` relativo até agora]** → `ProdutoSuportadoCancelamento` recebe `HIGHEST_PRECEDENCE`; `TipoProdutoCancelamento` fica sem ordem (roda depois). Verificar em teste do `CancelamentoValidator` que a ordem observada é a esperada.
 

@@ -2,7 +2,7 @@
 
 ### Requirement: TipoProduto é a fonte da verdade das capacidades por produto
 
-O enum `TipoProduto` do `arj-contratocommand` SHALL declarar, em cada constante, se o produto está habilitado para as capacidades **contratar** e **cancelar**, e SHALL responder a essas perguntas via métodos de instância (`habilitadoParaContratar()`, `habilitadoParaCancelar()`) consultáveis por qualquer trecho da aplicação, sem dependência de Spring. Adicionar uma nova constante MUST exigir a declaração explícita das duas capacidades. `PIX_AUTO` e `DDA_AUTO` MUST permanecer habilitados para ambas as capacidades.
+O enum `TipoProduto` do `contratocommand` SHALL declarar, em cada constante, se o produto está habilitado para as capacidades **contratar** e **cancelar**, e SHALL responder a essas perguntas via métodos de instância (`habilitadoParaContratar()`, `habilitadoParaCancelar()`) consultáveis por qualquer trecho da aplicação, sem dependência de Spring. Adicionar uma nova constante MUST exigir a declaração explícita das duas capacidades. `PIX_AUTO` e `DDA_AUTO` MUST permanecer habilitados para ambas as capacidades.
 
 #### Scenario: Consulta de capacidade de contratação
 

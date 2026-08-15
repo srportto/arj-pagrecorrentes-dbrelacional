@@ -1,8 +1,8 @@
 # infra/local/postgres
 
 PostgreSQL 18 local com `pg_partman`, `pg_cron` e `pgvector`, usado pelas duas aplicações que
-leem/escrevem a tabela particionada `autorizacoes` (`apps/arj-contratocommand`,
-`apps/arj-contratoquery`). É a **fonte única** do serviço Postgres do ambiente local — nenhum
+leem/escrevem a tabela particionada `autorizacoes` (`apps/contratocommand`,
+`apps/contratoquery`). É a **fonte única** do serviço Postgres do ambiente local — nenhum
 outro compose do repositório declara este serviço (ver a change `unificar-orquestracao-docker-local`).
 
 ## Subir

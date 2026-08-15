@@ -21,8 +21,8 @@ Hoje `Autorizacao.inicializaCriacao()` grava `status = ATIVA` para qualquer prod
 
 ## Impact
 
-- **Código afetado**: `apps/arj-contratocommand/src/main/java/br/com/srportto/contratocommand/domain/entities/Autorizacao.java` (`inicializaCriacao()`).
+- **Código afetado**: `apps/contratocommand/src/main/java/br/com/srportto/contratocommand/domain/entities/Autorizacao.java` (`inicializaCriacao()`).
 - **Nenhuma mudança** em `AutorizacaoMapper`, `CriarAutorizacaoUseCase`, `AutorizacaoEventoPublisher`, `StatusAutorizacao` (grafo de transições) ou nas outras 3 aplicações do monorepo — o efeito no evento SNS é automático, não requer alteração no publisher.
-- **Testes**: `AutorizacaoTest`, `AutorizacaoMapperTest`, `TipoEventoAutorizacaoTest`, `AutorizacaoEventoPublisherTest` (em `apps/arj-contratocommand/src/test/java/...`) precisam de casos cobrindo os dois produtos.
-- **Documentação**: `apps/arj-contratocommand/CLAUDE.md` (e seu espelho `AGENTS.md`), seção "Mapeamento de status" — hoje afirma que "criação grava `ATIVA` (= 4)" para toda criação; passa a ser condicional ao produto.
+- **Testes**: `AutorizacaoTest`, `AutorizacaoMapperTest`, `TipoEventoAutorizacaoTest`, `AutorizacaoEventoPublisherTest` (em `apps/contratocommand/src/test/java/...`) precisam de casos cobrindo os dois produtos.
+- **Documentação**: `apps/contratocommand/CLAUDE.md` (e seu espelho `AGENTS.md`), seção "Mapeamento de status" — hoje afirma que "criação grava `ATIVA` (= 4)" para toda criação; passa a ser condicional ao produto.
 - **Consumidores downstream** (`autorizacaostatus-producer`, `eventos-consumer`): nenhuma mudança de código exigida — já tratam o evento `RECEPCAO` desde que o enum `TipoEventoAutorizacao` foi criado — mas o comportamento observado muda (autorizações `PIX_AUTO` deixam de aparecer como "ativadas" no fluxo de eventos até a aprovação futura existir).

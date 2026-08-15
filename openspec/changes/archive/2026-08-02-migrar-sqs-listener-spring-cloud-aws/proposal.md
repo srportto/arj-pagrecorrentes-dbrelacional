@@ -126,4 +126,4 @@ seções "Comece por aqui", "Arquitetura", "Fluxo de consumo → produção" e a
 ordenação dos eventos é responsabilidade do consumidor a jusante, ordenando por esse
 timestamp, o campo passou a carregar responsabilidade para a qual seu tipo não foi
 escolhido. Migrar para `timestamp-micros` exige coordenação com os espelhos manuais do
-`.avsc` em `apps/eventos-consumer` e do payload em `arj-contratocommand` — change própria.
+`.avsc` em `apps/eventos-consumer` e do payload em `contratocommand` — change própria.

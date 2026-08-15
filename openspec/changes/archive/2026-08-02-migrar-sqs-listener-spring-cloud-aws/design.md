@@ -57,7 +57,7 @@ ordena por `data_hora_ultima_atlz`.
   avaliado e rejeitado (ver Decisão 2).
 - **Não** migrar `data_hora_ultima_atlz` de `local-timestamp-micros` para
   `timestamp-micros`. É um follow-up legítimo, mas exige coordenação com os espelhos
-  manuais do `.avsc` em `apps/eventos-consumer` e do payload em `arj-contratocommand`.
+  manuais do `.avsc` em `apps/eventos-consumer` e do payload em `contratocommand`.
 - **Não** adotar `spring-kafka`. O adaptador de saída continua sendo cliente Kafka puro.
 - **Não** introduzir dedup persistente na ponte. A deduplicação é contrato do consumidor,
   pela key.
@@ -352,7 +352,7 @@ a configuração.
 
 1. **Qual o volume de pico real da fila?** Decide se `maxConcurrentMessages = 10` sobra
    com folga ou precisa subir. É a única questão que pode alterar um número deste design.
-2. **Com que precisão o `arj-contratocommand` grava `data_hora_ultima_atlz`?** A key de
+2. **Com que precisão o `contratocommand` grava `data_hora_ultima_atlz`?** A key de
    idempotência é `SHA-256(id_autorizacao + data_hora_ultima_atlz)`. Se a origem gravar
    com precisão de milissegundo ou segundo, duas transições rápidas da mesma autorização
    colidem na key — e o consumidor, deduplicando por ela, descartaria um evento legítimo.

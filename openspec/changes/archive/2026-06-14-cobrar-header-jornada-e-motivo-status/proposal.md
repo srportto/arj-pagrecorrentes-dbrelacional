@@ -23,7 +23,7 @@ O endpoint `POST /api/autorizacoes` aceita autorizações sem identificar a jorn
 
 ## Impact
 
-- **arj-contratocommand**: `AutorizacaoController`, `CriarAutorizacaoRequest`, `TipoJornadaAutorizacao`, `PixAutoMapper`, `DdaAutoMapper`, `Autorizacao.inicializaCriacao()` e todos os testes que criam `CriarAutorizacaoRequest` (via `TestFixtures`).
-- **arj-contratoquery**: `AutorizacaoDetalheResponseDto`, `AutorizacaoResumidaResponseDto` e seus respectivos testes.
+- **contratocommand**: `AutorizacaoController`, `CriarAutorizacaoRequest`, `TipoJornadaAutorizacao`, `PixAutoMapper`, `DdaAutoMapper`, `Autorizacao.inicializaCriacao()` e todos os testes que criam `CriarAutorizacaoRequest` (via `TestFixtures`).
+- **contratoquery**: `AutorizacaoDetalheResponseDto`, `AutorizacaoResumidaResponseDto` e seus respectivos testes.
 - **API (contrato externo)**: O `POST /api/autorizacoes` passa a exigir o header `tipoJornada` — **breaking change** para clientes que não enviam o header.
 - **Banco de dados**: Dados existentes em `motivo_status` não são migrados; o novo formato vale apenas para registros criados após o deploy.

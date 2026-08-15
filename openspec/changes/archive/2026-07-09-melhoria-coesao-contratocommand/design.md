@@ -2,7 +2,7 @@
 
 ## Context
 
-O fluxo de criação/cancelamento do `arj-contratocommand` atravessa hoje 4 pacotes em 4 saltos:
+O fluxo de criação/cancelamento do `contratocommand` atravessa hoje 4 pacotes em 4 saltos:
 
 ```
 AutorizacaoController
@@ -31,7 +31,7 @@ Restrições:
 **Non-Goals:**
 - Não alterar o framework `shared/validationsetup`.
 - Não alterar lógica de particionamento, transações ou mapeamento (MapStruct).
-- Não mexer no `arj-contratoquery` nem em banco/infra.
+- Não mexer no `contratoquery` nem em banco/infra.
 - Não introduzir camada de command objects entre entrypoint e application (menos abstração, não mais).
 
 ## Decisions
