@@ -7,6 +7,7 @@ import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.exception.RecursoJaExisteException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -113,5 +114,19 @@ class CriarAutorizacaoServiceTest {
         verify(repository).existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(anyInt(), eq(idEmpresa));
         verify(repository).save(aut);
         verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
+    }
+
+    @Test
+    @DisplayName("regra de negócio violada aborta antes de salvar e não publica evento (proteção de D3: rollback não publica)")
+    void regraDeNegocioViolada_NaoPublicaEvento() {
+        CriarAutorizacaoCommand command = TestFixtures.criarContextPix();
+        doThrow(new BusinessException("valor acima do limite")).when(contratacaoValidator).validar(command);
+
+        assertThrows(BusinessException.class, () -> service.execute(command));
+
+        verify(repository, never())
+                .existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(anyInt(), any());
+        verify(repository, never()).save(any(Autorizacao.class));
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 }
