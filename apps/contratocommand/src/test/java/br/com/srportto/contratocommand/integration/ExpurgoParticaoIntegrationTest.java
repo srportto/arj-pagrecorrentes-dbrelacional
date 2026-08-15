@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.integration;
 
-import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.application.decisao.DecidirAutorizacaoUseCase;
@@ -307,7 +307,7 @@ class ExpurgoParticaoIntegrationTest {
         aut.setMetadados("{}");
         // version nulo de propósito: é o que faz o Spring Data escolher persist em vez de merge.
 
-        return repository.saveAndFlush(aut);
+        return repository.save(aut);
     }
 
     private UUID contaNaParticao(int particaoAlvo) {

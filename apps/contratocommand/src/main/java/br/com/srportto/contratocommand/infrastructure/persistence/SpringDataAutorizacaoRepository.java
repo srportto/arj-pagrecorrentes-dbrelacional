@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Repositório único de {@link Autorizacao}, compartilhado por todos os produtos — a variação por produto vive nas rules, não na persistência. */
-public interface AutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {
+/** Repositório único de {@link Autorizacao}, compartilhado por todos os produtos — a variação por produto vive nas rules, não na persistência. Package-private: só {@link AutorizacaoJpaAdapter} conhece Spring Data. */
+interface SpringDataAutorizacaoRepository extends JpaRepository<Autorizacao, IdAutorizacao> {
 
     List<Autorizacao> findByStatus(Integer status);
 

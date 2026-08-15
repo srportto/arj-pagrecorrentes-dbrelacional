@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.integration;
 
-import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
@@ -144,7 +144,7 @@ class ConcorrenciaOptimisticaIntegrationTest {
     @DisplayName("Dois cancelamentos concorrentes: exatamente um vence, o outro falha com OptimisticLockException")
     void doisCancelamentosConcorrentes_ExatamenteUmVence() throws InterruptedException {
         Autorizacao aut = criarAutorizacaoTeste();
-        repository.saveAndFlush(aut);
+        repository.save(aut);
         UUID idAutorizacao = aut.getIdAutorizacao().getIdAutorizacao();
 
         CountDownLatch podeComecar = new CountDownLatch(1);

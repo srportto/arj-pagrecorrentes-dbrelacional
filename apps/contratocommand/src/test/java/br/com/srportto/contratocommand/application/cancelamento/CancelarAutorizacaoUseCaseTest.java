@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.application.cancelamento;
 
-import br.com.srportto.contratocommand.application.AutorizacaoRepository;
+import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.cancelamento.rules.ProdutoSuportadoCancelamento;
