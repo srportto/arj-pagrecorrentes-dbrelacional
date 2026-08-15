@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 
-import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
+import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoRule;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
@@ -19,13 +19,13 @@ import java.util.Arrays;
 public class ProdutoSuportado implements ContratacaoRule {
 
     @Override
-    public boolean aceita(ContratacaoContext contexto) {
+    public boolean aceita(CriarAutorizacaoCommand contexto) {
         return true;
     }
 
     @Override
-    public void validar(ContratacaoContext contexto) {
-        var tipoProduto = contexto.dados().tipoProduto();
+    public void validar(CriarAutorizacaoCommand contexto) {
+        var tipoProduto = contexto.tipoProduto();
 
         boolean suportado = tipoProduto != null && Arrays.stream(TipoProduto.values())
                 .filter(produto -> produto.name().equalsIgnoreCase(tipoProduto))

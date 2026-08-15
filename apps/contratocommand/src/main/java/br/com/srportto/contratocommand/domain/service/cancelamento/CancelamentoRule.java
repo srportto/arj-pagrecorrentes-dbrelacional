@@ -1,9 +1,9 @@
 package br.com.srportto.contratocommand.domain.service.cancelamento;
 
-import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.Rule;
 
-public interface CancelamentoRule extends Rule<CancelamentoContext> {
+public interface CancelamentoRule extends Rule<CancelarAutorizacaoCommand> {
 
     @Override
     default String getLogCode() {

@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 
-import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
+import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoRule;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.stereotype.Component;
@@ -11,23 +11,22 @@ import java.math.BigDecimal;
 public class ValorLimiteContrato implements ContratacaoRule {
 
     @Override
-    public boolean aceita(ContratacaoContext contexto) {
+    public boolean aceita(CriarAutorizacaoCommand contexto) {
         return true;
     }
 
     @Override
-    public void validar(ContratacaoContext contexto) {
-        var dados = contexto.dados();
-        var tipoProduto = dados.tipoProduto();
+    public void validar(CriarAutorizacaoCommand contexto) {
+        var tipoProduto = contexto.tipoProduto();
 
         switch (tipoProduto) {
             case "PIX_AUTO" -> {
-                if (dados.valor().compareTo(new BigDecimal("1000000")) > 0) {
+                if (contexto.valor().compareTo(new BigDecimal("1000000")) > 0) {
                     throw new BusinessException("Valor contratacao invalido");
                 }
             }
             case "DDA_AUTO" -> {
-                if (dados.valor().compareTo(new BigDecimal("250000")) > 0) {
+                if (contexto.valor().compareTo(new BigDecimal("250000")) > 0) {
                     throw new BusinessException("Valor contratacao invalido");
                 }
             }

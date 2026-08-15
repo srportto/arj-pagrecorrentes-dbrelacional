@@ -2,8 +2,8 @@ package br.com.srportto.contratocommand.integration;
 
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
-import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -155,7 +155,7 @@ class ConcorrenciaOptimisticaIntegrationTest {
         Thread thread1 = new Thread(() -> {
             try {
                 podeComecar.await();
-                CancelamentoContext ctx = TestFixtures.cancelarContext(idAutorizacao.toString(), TipoProduto.PIX_AUTO);
+                CancelarAutorizacaoCommand ctx = TestFixtures.cancelarContext(idAutorizacao.toString(), TipoProduto.PIX_AUTO);
                 cancelarUseCase.execute(ctx);
             } catch (Exception e) {
                 primeiroErro.set(e);
@@ -167,7 +167,7 @@ class ConcorrenciaOptimisticaIntegrationTest {
         Thread thread2 = new Thread(() -> {
             try {
                 podeComecar.await();
-                CancelamentoContext ctx = TestFixtures.cancelarContext(idAutorizacao.toString(), TipoProduto.PIX_AUTO);
+                CancelarAutorizacaoCommand ctx = TestFixtures.cancelarContext(idAutorizacao.toString(), TipoProduto.PIX_AUTO);
                 cancelarUseCase.execute(ctx);
             } catch (Exception e) {
                 segundoErro.set(e);

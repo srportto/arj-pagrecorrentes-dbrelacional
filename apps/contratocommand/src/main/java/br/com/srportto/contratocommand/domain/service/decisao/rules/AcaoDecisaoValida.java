@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.service.decisao.rules;
 
-import br.com.srportto.contratocommand.application.decisao.DecisaoContext;
+import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.decisao.DecisaoRule;
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
 import org.springframework.core.Ordered;
@@ -13,13 +13,13 @@ import org.springframework.stereotype.Component;
 public class AcaoDecisaoValida implements DecisaoRule {
 
     @Override
-    public boolean aceita(DecisaoContext context) {
+    public boolean aceita(DecidirAutorizacaoCommand context) {
         return true;
     }
 
     @Override
-    public void validar(DecisaoContext context) {
-        AcaoDecisao.obterAcaoDecisaoEnumPorNome(context.dados().acao());
+    public void validar(DecidirAutorizacaoCommand context) {
+        AcaoDecisao.obterAcaoDecisaoEnumPorNome(context.acao());
     }
 
 }

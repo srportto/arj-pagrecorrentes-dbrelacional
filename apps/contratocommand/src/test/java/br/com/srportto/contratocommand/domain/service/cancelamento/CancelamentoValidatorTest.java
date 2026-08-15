@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.domain.service.cancelamento;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.cancelamento.rules.ProdutoSuportadoCancelamento;
 import br.com.srportto.contratocommand.domain.service.cancelamento.rules.TipoProdutoCancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -38,7 +38,7 @@ class CancelamentoValidatorTest {
     @Test
     @DisplayName("validar passa quando produto do header e da autorização coincidem")
     void validarOk() {
-        CancelamentoContext context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA);
         assertDoesNotThrow(() -> validator.validar(context));
     }
@@ -46,7 +46,7 @@ class CancelamentoValidatorTest {
     @Test
     @DisplayName("validar propaga BusinessException quando produtos divergem")
     void validarDivergente() {
-        CancelamentoContext context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.DDA_AUTO, StatusAutorizacao.ATIVA);
         assertThrows(BusinessException.class, () -> validator.validar(context));
     }
@@ -57,7 +57,7 @@ class CancelamentoValidatorTest {
         TipoProduto produtoDesabilitado = mock(TipoProduto.class);
         when(produtoDesabilitado.habilitadoParaCancelar()).thenReturn(false);
 
-        CancelamentoContext context = TestFixtures.cancelarContext("id", produtoDesabilitado)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", produtoDesabilitado)
                 .comAutorizacaoCarregada(TipoProduto.DDA_AUTO, StatusAutorizacao.ATIVA);
 
         BusinessException ex = assertThrows(BusinessException.class,

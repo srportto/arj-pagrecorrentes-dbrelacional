@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.domain.service.cancelamento.rules;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +28,7 @@ class ProdutoSuportadoCancelamentoTest {
     @Test
     @DisplayName("produto habilitado para cancelar não lança")
     void produtoHabilitadoNaoLanca() {
-        CancelamentoContext context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO);
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO);
         assertDoesNotThrow(() -> regra.validar(context));
     }
 
@@ -38,7 +38,7 @@ class ProdutoSuportadoCancelamentoTest {
         TipoProduto produtoDesabilitado = mock(TipoProduto.class);
         when(produtoDesabilitado.habilitadoParaCancelar()).thenReturn(false);
 
-        CancelamentoContext context = TestFixtures.cancelarContext("id", produtoDesabilitado);
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", produtoDesabilitado);
 
         assertThrows(BusinessException.class, () -> regra.validar(context));
     }

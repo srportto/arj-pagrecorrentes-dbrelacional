@@ -2,9 +2,9 @@ package br.com.srportto.contratocommand.integration;
 
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.cancelamento.CancelarAutorizacaoUseCase;
-import br.com.srportto.contratocommand.application.decisao.DecidirAutorizacaoUseCase;
-import br.com.srportto.contratocommand.application.decisao.DecisaoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
+import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
+import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -13,7 +13,6 @@ import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.DecisaoAutorizacaoRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -242,9 +241,9 @@ class ExpurgoParticaoIntegrationTest {
                 () -> assertEquals(1, contarEm(PARTICAO_EXPURGO_HOJE, idSegunda)));
     }
 
-    private DecisaoContext decisao(UUID idAutorizacao, String acao) {
-        return DecisaoContext.doRequest(idAutorizacao.toString(), TipoProduto.PIX_AUTO,
-                new DecisaoAutorizacaoRequest(acao, "C1", UUID.randomUUID()));
+    private DecidirAutorizacaoCommand decisao(UUID idAutorizacao, String acao) {
+        return DecidirAutorizacaoCommand.doRequest(idAutorizacao.toString(), TipoProduto.PIX_AUTO,
+                acao, "C1", UUID.randomUUID());
     }
 
     private int contarEm(int particao, UUID idAutorizacao) {

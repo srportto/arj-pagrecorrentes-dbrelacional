@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.service.decisao.rules;
 
-import br.com.srportto.contratocommand.application.decisao.DecisaoContext;
+import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.decisao.DecisaoRule;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.stereotype.Component;
@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
 public class TipoProdutoDecisao implements DecisaoRule {
 
     @Override
-    public boolean aceita(DecisaoContext context) {
+    public boolean aceita(DecidirAutorizacaoCommand context) {
         return true;
     }
 
     @Override
-    public void validar(DecisaoContext context) {
+    public void validar(DecidirAutorizacaoCommand context) {
         var produtoHeader = context.tipoProduto();
         var produtoDaAutorizacao = context.tipoProdutoAutorizacao();
 

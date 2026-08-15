@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.service.decisao.rules;
 
-import br.com.srportto.contratocommand.application.decisao.DecisaoContext;
+import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.decisao.DecisaoRule;
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
@@ -16,13 +16,13 @@ import org.springframework.stereotype.Component;
 public class TransicaoValidaDecisao implements DecisaoRule {
 
     @Override
-    public boolean aceita(DecisaoContext context) {
+    public boolean aceita(DecidirAutorizacaoCommand context) {
         return true;
     }
 
     @Override
-    public void validar(DecisaoContext context) {
-        var acao = AcaoDecisao.obterAcaoDecisaoEnumPorNome(context.dados().acao());
+    public void validar(DecidirAutorizacaoCommand context) {
+        var acao = AcaoDecisao.obterAcaoDecisaoEnumPorNome(context.acao());
         var statusAtual = context.statusAtual();
 
         // Exige RECEBIDA explicitamente: o grafo também permite ATIVA -> REJEITADA (outro fluxo),

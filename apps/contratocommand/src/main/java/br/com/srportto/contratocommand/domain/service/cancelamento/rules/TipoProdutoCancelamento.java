@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.service.cancelamento.rules;
 
-import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.cancelamento.CancelamentoRule;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.core.annotation.Order;
@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component;
 public class TipoProdutoCancelamento implements CancelamentoRule {
 
     @Override
-    public boolean aceita(CancelamentoContext context) {
+    public boolean aceita(CancelarAutorizacaoCommand context) {
         return true;
     }
 
     @Override
-    public void validar(CancelamentoContext context) {
+    public void validar(CancelarAutorizacaoCommand context) {
         var produtoHeader = context.tipoProduto();
         var produtoDaAutorizacao = context.tipoProdutoAutorizacao();
 

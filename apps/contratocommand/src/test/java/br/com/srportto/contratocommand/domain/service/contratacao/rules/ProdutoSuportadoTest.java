@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
+import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
@@ -42,7 +42,7 @@ class ProdutoSuportadoTest {
     @Test
     @DisplayName("validar lança BusinessException para produto desconhecido")
     void produtoDesconhecidoLanca() {
-        ContratacaoContext context = TestFixtures.criarContext(
+        CriarAutorizacaoCommand context = TestFixtures.criarContext(
                 "CARTAO_CREDITO", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
@@ -52,7 +52,7 @@ class ProdutoSuportadoTest {
     @Test
     @DisplayName("validar lança BusinessException para produto nulo")
     void produtoNuloLanca() {
-        ContratacaoContext context = TestFixtures.criarContext(
+        CriarAutorizacaoCommand context = TestFixtures.criarContext(
                 null, BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
 
         assertThrows(BusinessException.class, () -> regra.validar(context));
@@ -67,7 +67,7 @@ class ProdutoSuportadoTest {
             when(pixDesabilitado.habilitadoParaContratar()).thenReturn(false);
             tipoProdutoMock.when(TipoProduto::values).thenReturn(new TipoProduto[] { pixDesabilitado });
 
-            ContratacaoContext context = TestFixtures.criarContext(
+            CriarAutorizacaoCommand context = TestFixtures.criarContext(
                     "PIX_AUTO", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
 
             BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
