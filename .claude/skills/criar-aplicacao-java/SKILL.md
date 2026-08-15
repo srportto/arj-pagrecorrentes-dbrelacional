@@ -1,14 +1,14 @@
 ---
 
 name: criar-aplicacao-java
-description: "Generates a buildable Spring Boot 4 + Java 25 application skeleton following the hexagonal layout (`entrypoint` / `application` / `domain` / `shared`), with a `/disponibilidade` health route and a chosen variant (REST, CRUD with DB, SQS listener, Kafka consumer, SQS-to-Kafka bridge, REST publishing to Kafka, etc.). Use when the user asks to create a new application, microservice, or skeleton. Uso: agent `java-construtor` (and `java-revisor` modo `auditoria` for final validation) or manual invocation via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal."
+description: "Generates a buildable Spring Boot 4 + Java 25 application skeleton following the classic hexagonal (ports & adapters) layout — `domain` (model, port/in, port/out) / `application` (use cases) / `infrastructure` (adapters) —, with a `/disponibilidade` health route and a chosen variant (REST, CRUD with DB, SQS listener, Kafka consumer, SQS-to-Kafka bridge, REST publishing to Kafka, etc.). Use when the user asks to create a new application, microservice, or skeleton. Uso: agent `java-construtor` (and `java-revisor` modo `auditoria` for final validation) or manual invocation via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
   co-author: https://github.com/Jeffallan/claude-skills
-  version: "1.1.0"
+  version: "2.0.0"
   domain: application-scaffolding
-  triggers: crie uma aplicação, novo microserviço, esqueleto de app java, app que consome fila, consumidor kafka, hexagonal Spring Boot
+  triggers: crie uma aplicação, novo microserviço, esqueleto de app java, app que consome fila, consumidor kafka, hexagonal Spring Boot, ports and adapters
   role: builder
   scope: application-generation
   output-format: code
@@ -16,16 +16,17 @@ metadata:
 ---
 ---
 
-# Criar Aplicação Java (Spring Boot, hexagonal)
+# Criar Aplicação Java (Spring Boot, hexagonal clássica)
 
 ## Visão geral
 
-Gera uma aplicação Spring Boot **buildável** seguindo o esqueleto hexagonal (camadas `entrypoint` /
-`application` / `domain` / `shared`, ver `arquitetura-limpa-java`) com uma rota de disponibilidade
-pronta, combinada, opcionalmente, com uma **variante** que adiciona a funcionalidade pedida (CRUD com
-banco, consumo de fila, ponte de mensageria, etc.). Não há templates físicos para copiar neste
-catálogo — cada aplicação é gerada do zero seguindo os requisitos desta skill e das skills
-referenciadas (`arquitetura-limpa-java`, `mensageria-sqs-kafka`, `persistencia-jpa`, `java-moderno`).
+Gera uma aplicação Spring Boot **buildável** seguindo a **arquitetura hexagonal clássica (ports &
+adapters)** — camadas `domain` / `application` / `infrastructure`, ver `arquitetura-limpa-java` — com
+uma rota de disponibilidade pronta, combinada, opcionalmente, com uma **variante** que adiciona a
+funcionalidade pedida (CRUD com banco, consumo de fila, ponte de mensageria, etc.). Não há templates
+físicos para copiar neste catálogo — cada aplicação é gerada do zero seguindo os requisitos desta
+skill e das skills referenciadas (`arquitetura-limpa-java`, `mensageria-sqs-kafka`,
+`persistencia-jpa`, `java-moderno`).
 
 **Princípio central:** a base (sem variante) roda **sem depender de nenhuma infraestrutura externa**
 — nem banco, nem fila, nem broker. É o "esqueleto" seguro para começar qualquer aplicação. Cada
@@ -33,9 +34,31 @@ variante é quem introduz (e exige) a infraestrutura que passa a ser necessária
 
 A base entrega sempre:
 - Pacote `br.com.srportto.<nome>`, classe principal `<Nome>Application`
+- As três camadas já materializadas (ver "Layout gerado" abaixo), com o health check passando por
+  uma porta — é o exemplo vivo do padrão dentro do próprio esqueleto
 - Rota `GET /disponibilidade` → `200 OK`, corpo `{"aplicacao":"<nome>","status":"DISPONIVEL"}`
 - Tratamento de erros (`BusinessException` → 422, `ApplicationException` → 500, validação de bean)
 - Teste de contexto (`@SpringBootTest`) que sobe sem infra externa
+
+### Layout gerado
+
+```
+br.com.srportto.<nome>/
+├── domain/
+│   ├── model/                 ← modelo puro (ex.: Disponibilidade)
+│   ├── port/in/               ← ConsultarDisponibilidadeUseCase
+│   ├── port/out/              ← portas de saída (vazio na base pura)
+│   └── exception/             ← BusinessException, ApplicationException
+├── application/
+│   └── usecase/               ← ConsultarDisponibilidadeService (@Service, implementa a port/in)
+└── infrastructure/
+    ├── web/                   ← DisponibilidadeController, DTOs, ApiExceptionHandler
+    └── config/                ← @Configuration
+```
+
+> **Nunca** gere aplicação nova no layout legado `entrypoint`/`application`/`domain`/`shared` — as
+> apps de `apps/` ainda o usam, mas ele é transitório; a tabela de equivalência está em
+> `arquitetura-limpa-java`.
 
 ## Quando usar / Quando NÃO usar
 
@@ -100,12 +123,15 @@ Para Jetty, exclua o Tomcat do starter web e adicione o starter Jetty:
 | Variante | O que gerar | Skill de referência |
 |----------|-------------|----------------------|
 | **base pura** | Só a base hexagonal, sem infra externa. | — |
-| **rest-crud-banco** | JPA/Hibernate + PostgreSQL, `@RestController` + `@Service` + `Repository`, mapeamento via MapStruct. | `persistencia-jpa` |
-| **sqs-listener** | Listener em `entrypoint/sqs/` com idempotência em memória, **interceptor central de erro de consumo** (`entrypoint/sqs/*ErrorInterceptor`) e **fila provisionada com DLQ + `RedrivePolicy`** (nunca uma sem a outra). | `mensageria-sqs-kafka` (seções 2 e 3) |
-| **sqs-para-banco** | Como acima + idempotência **persistente** (constraint única) + gravação JPA. | `mensageria-sqs-kafka`, `persistencia-jpa` |
-| **sqs-para-kafka** | Ponte: consome SQS (interceptor + DLQ, como acima) e republica no Kafka via porta/adapter de saída em `application/`. | `mensageria-sqs-kafka` |
-| **kafka-consumer** | `@KafkaListener` + `DefaultErrorHandler`/`DeadLetterPublishingRecoverer` central (o ponto único de erro é o próprio `DefaultErrorHandler`, configurado em `shared/config/`). | `mensageria-sqs-kafka` (seções 3 e 5) |
-| **rest-para-kafka** | Endpoint REST (`POST /eventos`) que publica no Kafka via adapter de saída em `application/`. | `mensageria-sqs-kafka` (seção 4) |
+| **rest-crud-banco** | Modelo puro em `domain/model/`, `port/out` de repositório, use case em `application/usecase/`, e em `infrastructure/persistence/` a entidade JPA + Spring Data repo + adapter que implementa a porta (mapeamento via MapStruct). | `persistencia-jpa` |
+| **sqs-listener** | Listener (driving adapter) em `infrastructure/messaging/` com idempotência em memória, **interceptor central de erro de consumo** (`infrastructure/messaging/*ErrorInterceptor`) e **fila provisionada com DLQ + `RedrivePolicy`** (nunca uma sem a outra). | `mensageria-sqs-kafka` (seções 2 e 3) |
+| **sqs-para-banco** | Como acima + idempotência **persistente** (constraint única) + gravação via `port/out` e adapter JPA. | `mensageria-sqs-kafka`, `persistencia-jpa` |
+| **sqs-para-kafka** | Ponte: consome SQS (interceptor + DLQ, como acima) e republica no Kafka através de uma `port/out` implementada por um producer em `infrastructure/messaging/`. | `mensageria-sqs-kafka` |
+| **kafka-consumer** | `@KafkaListener` em `infrastructure/messaging/` + `DefaultErrorHandler`/`DeadLetterPublishingRecoverer` central (o ponto único de erro é o próprio `DefaultErrorHandler`, configurado em `infrastructure/config/`). | `mensageria-sqs-kafka` (seções 3 e 5) |
+| **rest-para-kafka** | Endpoint REST (`POST /eventos`) que chama um use case, o qual publica pela `port/out` implementada em `infrastructure/messaging/`. | `mensageria-sqs-kafka` (seção 4) |
+
+> Em toda variante, o adaptador **nunca** conversa com outro adaptador: a entrada chama uma `port/in`
+> e a saída é sempre uma `port/out` declarada no `domain`.
 
 **Toda variante que envolva SQS SHALL nascer com DLQ na fila e com o interceptor central de erro de
 consumo** — não é opcional, é parte da definição da variante (ver regra de ouro em
@@ -113,9 +139,9 @@ consumo** — não é opcional, é parte da definição da variante (ver regra d
 
 ## Fluxo de geração
 
-1. **Gerar a base**: estrutura `entrypoint`/`application`/`domain`/`shared`, classe principal, rota
-   `/disponibilidade`, tratamento de erro genérico e teste de contexto — seguindo
-   `arquitetura-limpa-java`. Aplique o container web escolhido no `pom.xml`.
+1. **Gerar a base**: estrutura `domain`/`application`/`infrastructure` (ver "Layout gerado"), classe
+   principal, rota `/disponibilidade` atendida via `port/in`, tratamento de erro genérico e teste de
+   contexto — seguindo `arquitetura-limpa-java`. Aplique o container web escolhido no `pom.xml`.
 
 2. **Aplicar a variante**, se houver: gere os componentes obrigatórios da tabela acima, seguindo a
    skill de referência indicada. Para variantes com SQS, provisione a fila com DLQ (IaC local, ex.
@@ -157,6 +183,10 @@ agent `java-revisor` (modo `auditoria`), independentemente de quem gerou os arqu
 - [ ] Os 6 parâmetros foram confirmados com o usuário (pasta, nome, porta, profile, container web, variante)
 - [ ] `mvn clean package` (ou `mvn test` completo, com a infra da variante no ar) passou
 - [ ] Rota `GET /disponibilidade` responde com o nome correto da aplicação
-- [ ] Estrutura hexagonal (`entrypoint`/`application`/`domain`/`shared`) presente e completa
+- [ ] Estrutura hexagonal clássica (`domain` com `model`/`port/in`/`port/out`, `application/usecase`,
+      `infrastructure` com os adapters) presente e completa
+- [ ] `domain` sem nenhum import de `org.springframework.*`, `jakarta.persistence.*` ou Jackson
+- [ ] Todo adapter de saída implementa uma `port/out`; nenhum use case injeta `JpaRepository`,
+      `RestClient` ou SDK de broker diretamente
 - [ ] Se a variante envolve SQS: fila tem DLQ + `RedrivePolicy`, e existe interceptor central de erro
 - [ ] Veredicto do agent `java-revisor` (modo `auditoria`) sem achados críticos

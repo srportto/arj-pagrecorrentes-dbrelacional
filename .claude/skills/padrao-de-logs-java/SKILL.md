@@ -27,7 +27,7 @@ critério objetivo de nível e de "o que logar" por camada.
 **Quando NÃO usar:** para o checklist completo de revisão de código (do qual logs é só um item), use
 `revisao-de-codigo-java` — ela referencia esta skill na seção "Logs". Para dúvida sobre em qual
 camada uma classe deve viver, use `arquitetura-limpa-java`; esta skill assume o mesmo modelo de
-camadas (`entrypoint` / `application` / `domain` / `shared`) só para decidir o que logar em cada uma.
+camadas (`domain` / `application` / `infrastructure`) só para decidir o que logar em cada uma.
 Para uma auditoria de logging de uma aplicação inteira (não só um trecho), invoque o agent
 `java-revisor`.
 
@@ -159,7 +159,8 @@ MDC (`Mapped Diagnostic Context`, do SLF4J) é um contexto por thread: tudo que 
 linhas de log emitidas naquela thread, sem repetir o valor em cada chamada de `log.info`. Combinado
 com `logging.structured.format.console: logstash` (seção 2), não exige configuração extra.
 
-O filtro abaixo popula um `traceId` no MDC na borda (`entrypoint`), reaproveita um `traceId` recebido
+O filtro abaixo popula um `traceId` no MDC na borda (driving adapter, `infrastructure/web`),
+reaproveita um `traceId` recebido
 de outro serviço via header quando existe, e sempre limpa o MDC no `finally` — sem isso, como o
 servlet container reaproveita threads de um pool, o `traceId` vazaria para a próxima requisição:
 
@@ -209,10 +210,11 @@ pool.
 
 | Camada | O que logar | O que NÃO logar aqui |
 |---|---|---|
-| `entrypoint` | Chegada e saída da requisição/mensagem; `traceId` gerado ou recebido; status HTTP retornado ou confirmação de consumo da mensagem | Corpo completo de payload sensível; stack trace de exceção (isso é do handler, ver `shared`) |
-| `application` | Decisões de negócio relevantes e seus ids (`"pedido duplicado ignorado id={}"`, `"pedido processado id={} valor={}"` — como em `ProcessarPedidoService`) | Log em todo método só por rotina; dado pessoal/sensível (regra de ouro, seção 1) |
-| `domain` | **Nada.** Domínio é puro — não importa SLF4J, não conhece logging, é testável sem subir nenhum contexto de log | Qualquer log — se uma regra de domínio "precisa" logar, o log pertence a quem chama, na `application` |
-| `shared` (handler central, ex. `ApiExceptionHandler`) | A exceção completa, com stack trace, **uma única vez**, no ponto central de tratamento, antes de montar a resposta de erro | Logar a mesma exceção de novo em outro lugar do fluxo — ver "log duplicado" na seção 6 |
+| `infrastructure` — driving adapters (`web/`, `messaging/`) | Chegada e saída da requisição/mensagem; `traceId` gerado ou recebido; status HTTP retornado ou confirmação de consumo da mensagem | Corpo completo de payload sensível; stack trace de exceção (isso é do handler central) |
+| `application/usecase` | Decisões de negócio relevantes e seus ids (`"pedido duplicado ignorado id={}"`, `"pedido processado id={} valor={}"` — como em `ProcessarPedidoService`) | Log em todo método só por rotina; dado pessoal/sensível (regra de ouro, seção 1) |
+| `domain` | **Nada.** Domínio é puro — não importa SLF4J, não conhece logging, é testável sem subir nenhum contexto de log | Qualquer log — se uma regra de domínio "precisa" logar, o log pertence a quem chama, no use case |
+| `infrastructure` — driven adapters (`persistence/`, `external/`) | Falha de integração com o recurso externo e o identificador da chamada, antes de traduzir para exceção de domínio | Repetir o log que o use case já emitiu para a mesma decisão |
+| Handler central (`ApiExceptionHandler`, em `infrastructure/web/`) | A exceção completa, com stack trace, **uma única vez**, no ponto central de tratamento, antes de montar a resposta de erro | Logar a mesma exceção de novo em outro lugar do fluxo — ver "log duplicado" na seção 6 |
 
 ## 6. Erros comuns
 

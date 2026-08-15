@@ -28,7 +28,7 @@ aplicar** o que a revisão aponta.
 
 **Quando NÃO usar:** para revisar um diff/PR com checklist por severidade, use
 `revisao-de-codigo-java` (ela referencia esta aqui). Para a regra de dependência entre camadas
-(domain/application/entrypoint), use `arquitetura-limpa-java`. Para JPA/Hibernate (N+1, dirty
+(`domain`/`application`/`infrastructure`), use `arquitetura-limpa-java`. Para JPA/Hibernate (N+1, dirty
 checking), use `persistencia-jpa`. Para logging (formato, MDC), use `padrao-de-logs-java`.
 
 ## Clean code — princípios com exemplo

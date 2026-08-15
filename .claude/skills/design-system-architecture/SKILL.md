@@ -25,7 +25,8 @@ Decision Records), trade-offs de tecnologia, e plano de escalabilidade/resiliên
 **Quando NÃO usar:**
 
 - Para decidir **em qual camada** um código vai dentro de uma aplicação Java hexagonal
-  (`entrypoint`/`application`/`domain`/`shared`), use `arquitetura-limpa-java`.
+  (`domain`/`application`/`infrastructure`, com `port/in` e `port/out`), use
+  `arquitetura-limpa-java`.
 - Para a stack Spring Boot 4 + Java 25 (camadas clássicas, módulos Spring), use
   `java-architecture`.
 - Para contrato de API REST (OpenAPI 3.1, RFC 9457), use `api-rest-design`.

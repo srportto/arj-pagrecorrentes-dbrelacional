@@ -40,13 +40,13 @@ Fluxo típico:
 
 ```
 .claude/
-├── skills/                                # 22 skills (+ 5 skills openspec, fora deste catálogo)
+├── skills/                                # 21 skills (+ 5 skills openspec, fora deste catálogo)
 │   ├── api-rest-design/                   # REST + OpenAPI + RFC 9457
-│   ├── arquitetura-limpa-java/            # Hexagonal + DDD + microservices
+│   ├── arquitetura-limpa-java/            # Hexagonal clássica (ports & adapters) + DDD + microservices
 │   ├── banco-de-dados-performance/        # SQL + EXPLAIN + tuning (PostgreSQL/MySQL)
 │   ├── chaos-engineer/                    # Chaos engineering, game days, Litmus
 │   ├── cloud-architect/                   # AWS / Azure / GCP topology, FinOps, DR
-│   ├── criar-aplicacao-java/              # Esqueleto hexagonal + variantes (SQS/Kafka/banco)
+│   ├── criar-aplicacao-java/              # Esqueleto hexagonal clássico + variantes (SQS/Kafka/banco)
 │   ├── design-system-architecture/        # System design + ADRs (renomeada de architecture-designer)
 │   ├── devops-cicd/                       # CI/CD GitHub Actions + Dockerfile + K8s manifest
 │   ├── gerar-diagramas/                   # Mermaid padronizado em .md versionados
@@ -114,7 +114,7 @@ Três atalhos:
 | Criar aplicação nova do zero | `criar-aplicacao-java` | `arquitetura-limpa-java`, `mensageria-sqs-kafka`, `persistencia-jpa` |
 | Dúvida sobre em qual camada colocar código | `arquitetura-limpa-java` | `java-architecture` |
 | Decompor monolito em microsserviços | `arquitetura-limpa-java` (seção DDD) | `mensageria-sqs-kafka`, `monitoramento-java` |
-| Desenhar contrato de API | `api-rest-design` | `arquitetura-limpa-java` (camada entrypoint) |
+| Desenhar contrato de API | `api-rest-design` | `arquitetura-limpa-java` (driving adapter em `infrastructure/web`) |
 | Implementar controller REST | `arquitetura-limpa-java` | `api-rest-design`, `revisao-de-codigo-java` |
 | Resolver N+1, LazyInit, dirty checking | `persistencia-jpa` | `banco-de-dados-performance` |
 | Otimizar query SQL, criar índice, tuning | `banco-de-dados-performance` | `persistencia-jpa` |
@@ -132,6 +132,10 @@ Três atalhos:
 | Manifests Kubernetes | `devops-cicd` | `monitoramento-java` (probes) |
 | Remover imports não usados | `remover-imports-nao-usados` | — |
 | Escolher entre patterns (quando aplicar) | `padroes-de-projeto-java` | `qualidade-codigo-java` |
+| Desenhar sistema distribuído, escrever ADR | `design-system-architecture` | `arquitetura-limpa-java`, `java-architecture` |
+| Topologia de nuvem (VPC, IAM, DR, FinOps) | `cloud-architect` | `devops-cicd` |
+| Experimento de chaos / game day | `chaos-engineer` | `monitoramento-java` |
+| Gerar diagrama Mermaid versionado | `gerar-diagramas` | `design-system-architecture` |
 
 ## Como escolher o agent certo
 
@@ -148,6 +152,9 @@ Três atalhos:
 | Refatorador | `refatorador-java` | medium | Aplicar refactorings do Fowler |
 | DevOps | `engenheiro-devops` | medium | Pipeline CI/CD + Dockerfile + manifest K8s (variantes) |
 | Segurança (auditoria dedicada) | `engenheiro-seguranca` | medium | Varredura de CVEs, pentest interno, pré-produção |
+| Arquiteto de sistemas | `arquiteto-sistemas` | medium | Desenhar/revisar arquitetura distribuída, escrever ADR |
+| Arquiteto de nuvem | `cloud-architect` | medium | Topologia AWS/Azure/GCP, IAM, DR, FinOps |
+| Chaos engineer | `engenheiro-chaos` | medium | Desenhar/executar experimento de falha, game day |
 
 ### Por fluxo de trabalho
 

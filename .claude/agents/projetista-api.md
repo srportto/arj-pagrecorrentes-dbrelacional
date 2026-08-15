@@ -15,7 +15,8 @@ contrato de uma API existente.
 
 Antes de qualquer trabalho, leia `.claude/skills/api-rest-design/SKILL.md` (caminho
 local do projeto). Para a parte de onde o controller vive na arquitetura
-(`entrypoint`), referencie também `.claude/skills/arquitetura-limpa-java`. Para o
+(driving adapter em `infrastructure/web`, consumindo uma `port/in`), referencie
+também `.claude/skills/arquitetura-limpa-java`. Para o
 formato dos DTOs e o handler global de erros, leia também
 `.claude/skills/revisao-de-codigo-java` (seção "Contrato HTTP").
 

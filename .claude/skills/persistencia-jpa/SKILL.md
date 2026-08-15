@@ -47,7 +47,7 @@ configuração do SGBD), use `banco-de-dados-performance`.
 > O problema de performance mais comum em JPA/Hibernate.
 
 ```java
-// domain/entities/Pedido.java
+// infrastructure/persistence/Pedido.java
 @Entity
 @Table(name = "pedidos")
 @Getter
@@ -80,7 +80,7 @@ log.
 associação sempre é necessária para o caso de uso da consulta.
 
 ```java
-// application/pedido/PedidoRepository.java
+// infrastructure/persistence/PedidoRepository.java
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     @Query("SELECT p FROM Pedido p JOIN FETCH p.itens")
@@ -93,7 +93,7 @@ JPQL. Prefira quando a mesma query base precisa às vezes carregar a associaçã
 métodos `@EntityGraph` sobre o mesmo `findById`, por exemplo).
 
 ```java
-// application/pedido/PedidoRepository.java
+// infrastructure/persistence/PedidoRepository.java
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     @EntityGraph(attributePaths = "itens")
@@ -103,9 +103,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
 ## Transações
 
-`@Transactional` vive em `application/` (nos services) — **nunca** no `entrypoint/` (controller,
-listener SQS) nem no `domain/`. O controller apenas orquestra a chamada ao service; é o service quem
-delimita a fronteira transacional.
+`@Transactional` vive em `application/usecase/` — **nunca** nos driving adapters de
+`infrastructure/` (controller, listener SQS) nem no `domain/`. O controller apenas chama a `port/in`;
+é o use case quem delimita a fronteira transacional.
 
 Padrão adotado neste projeto (`ProdutoService`, overlay `rest-crud-banco`): `readOnly = true` na
 classe inteira, e `@Transactional` (leitura/escrita) sobrescrito nos métodos que gravam. Isso desliga o
@@ -113,7 +113,7 @@ dirty checking do Hibernate nos métodos de leitura (menos overhead) e deixa exp
 quais alteram dado:
 
 ```java
-// application/produto/ProdutoService.java
+// application/usecase/ProdutoService.java
 @Service
 @Transactional(readOnly = true)
 public class ProdutoService {
@@ -188,18 +188,20 @@ public class ProcessadorLoteService {
 
 ## Convenções do projeto
 
-- **Entidade em `domain/entities`** com Lombok `@Getter @Setter @NoArgsConstructor` — nunca `@Data` em
-  entidade JPA (`@Data` gera `equals`/`hashCode` a partir de todos os campos, o que quebra com proxies
-  do Hibernate e coleções lazy). Veja `Produto` e `PedidoEntity` no overlay `rest-crud-banco`/
-  `sqs-para-banco`.
-- **Repository em `application/<contexto>`**, interface `JpaRepository`, sem implementação manual —
-  ver `ProdutoRepository extends JpaRepository<Produto, Long>`. Camadas descritas em detalhe na skill
+- **Entidade JPA em `infrastructure/persistence/`** — nunca no `domain/`, que permanece livre de
+  `jakarta.persistence.*`. Use Lombok `@Getter @Setter @NoArgsConstructor`, nunca `@Data` em entidade
+  JPA (`@Data` gera `equals`/`hashCode` a partir de todos os campos, o que quebra com proxies do
+  Hibernate e coleções lazy).
+- **`JpaRepository` em `infrastructure/persistence/`**, package-private, sem implementação manual —
+  quem o expõe para fora é o adapter que implementa a `port/out` (`PedidoRepository` do `domain`).
+  O use case injeta a porta, nunca o `JpaRepository`. Camadas descritas em detalhe na skill
   `arquitetura-limpa-java`.
 - **Idempotência persistente via unique constraint**: `PedidoEntity` (overlay `sqs-para-banco`) marca
   `@Column(name = "id_pedido", unique = true)` e `PedidoRepository` expõe
   `existsByIdPedido(String idPedido)` — checagem de duplicidade delegada ao banco, sem lógica extra na
   application.
-- **DTO record nas bordas via MapStruct**: a entidade nunca atravessa `entrypoint/`; `ProdutoMapper`
+- **DTO record nas bordas via MapStruct**: a entidade JPA nunca atravessa `infrastructure/web/`;
+  `ProdutoMapper`
   (`@Mapper(componentModel = "spring")`) converte `Produto` para os records `CriarProdutoRequest`/
   `ProdutoResponse` definidos no controller.
 - **`ddl-auto`**: `update` só em desenvolvimento (`application-fragmento.yaml` do overlay
@@ -212,7 +214,7 @@ Para evitar *lost update* (duas transações leem o mesmo registro e a segunda g
 primeira sem saber que ele mudou), adicione `@Version` na entidade:
 
 ```java
-// domain/entities/Produto.java
+// infrastructure/persistence/Produto.java
 @Entity
 @Table(name = "produtos")
 @Getter
@@ -244,7 +246,7 @@ divergirem, lança `OptimisticLockingFailureException`. Trate essa exceção na 
 adicional é necessário no controller:
 
 ```java
-// application/produto/ProdutoService.java
+// application/usecase/ProdutoService.java
 @Transactional
 public Produto atualizar(Produto produto) {
     try {

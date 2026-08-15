@@ -193,7 +193,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 ```
 
 `BusinessException`, `ApplicationException` e `@Valid` (Bean Validation) são todos tratados no mesmo
-handler central em `shared/`. Veja o mapa completo em `arquitetura-limpa-java` (seção "Mapa de
+handler central (`ApiExceptionHandler`, em `infrastructure/web/`). Veja o mapa completo em
+`arquitetura-limpa-java` (seção "Mapa de
 erros e onde lançar").
 
 ## HATEOAS (hypermedia)
