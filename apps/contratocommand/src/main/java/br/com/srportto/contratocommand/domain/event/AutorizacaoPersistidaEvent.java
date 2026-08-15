@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.application.eventos;
+package br.com.srportto.contratocommand.domain.event;
 
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 

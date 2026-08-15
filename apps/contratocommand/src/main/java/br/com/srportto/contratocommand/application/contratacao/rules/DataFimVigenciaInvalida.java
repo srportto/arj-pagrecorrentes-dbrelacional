@@ -2,7 +2,7 @@ package br.com.srportto.contratocommand.application.contratacao.rules;
 
 import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
 import br.com.srportto.contratocommand.application.contratacao.ContratacaoRule;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;

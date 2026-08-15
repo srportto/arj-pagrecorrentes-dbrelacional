@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.shared.exceptions;
+package br.com.srportto.contratocommand.domain.exception;
 
 public class BusinessException extends RuntimeException {
 

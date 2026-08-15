@@ -2,7 +2,7 @@ package br.com.srportto.contratocommand.application.contratacao.rules;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

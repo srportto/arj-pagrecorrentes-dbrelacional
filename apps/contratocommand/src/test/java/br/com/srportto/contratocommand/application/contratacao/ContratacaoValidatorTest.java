@@ -6,7 +6,7 @@ import br.com.srportto.contratocommand.application.contratacao.rules.MetadadoRul
 import br.com.srportto.contratocommand.application.contratacao.rules.ProdutoSuportado;
 import br.com.srportto.contratocommand.application.contratacao.rules.ValorLimiteContrato;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

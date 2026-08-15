@@ -2,7 +2,7 @@ package br.com.srportto.contratocommand.application.decisao.rules;
 
 import br.com.srportto.contratocommand.application.decisao.DecisaoContext;
 import br.com.srportto.contratocommand.application.decisao.DecisaoRule;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.stereotype.Component;
 
 /** Espelha {@code TipoProdutoCancelamento}: o produto do header deve bater com o persistido. */

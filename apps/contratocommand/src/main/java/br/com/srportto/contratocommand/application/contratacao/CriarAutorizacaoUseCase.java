@@ -2,10 +2,10 @@ package br.com.srportto.contratocommand.application.contratacao;
 
 import br.com.srportto.contratocommand.application.AutorizacaoMapper;
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
-import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.shared.exceptions.RecursoJaExisteException;
+import br.com.srportto.contratocommand.domain.exception.RecursoJaExisteException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -16,9 +16,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 
-import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
-import br.com.srportto.contratocommand.shared.exceptions.RecursoJaExisteException;
+import br.com.srportto.contratocommand.domain.exception.ApplicationException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.RecursoJaExisteException;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 

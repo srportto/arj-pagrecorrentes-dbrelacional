@@ -3,7 +3,7 @@ package br.com.srportto.contratocommand.application.cancelamento.rules;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

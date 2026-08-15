@@ -2,15 +2,15 @@ package br.com.srportto.contratocommand.application.decisao;
 
 import br.com.srportto.contratocommand.application.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.ExpurgoAutorizacaoService;
-import br.com.srportto.contratocommand.application.eventos.AutorizacaoPersistidaEvent;
+import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
 import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.entrypoint.contratosrest.AutorizacaoCompletaResponseDto;
-import br.com.srportto.contratocommand.shared.exceptions.ApplicationException;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.ApplicationException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

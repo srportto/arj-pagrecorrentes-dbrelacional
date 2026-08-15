@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.enums;
 
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 
 public enum MotivoStatusAutorizacao {
     RECEPCAO_SPI_J1(1L, "Recepcao de PAIN.009 , jornada 1"),

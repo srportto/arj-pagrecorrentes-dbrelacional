@@ -2,7 +2,7 @@ package br.com.srportto.contratocommand.application.cancelamento.rules;
 
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
 import br.com.srportto.contratocommand.application.cancelamento.CancelamentoRule;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 

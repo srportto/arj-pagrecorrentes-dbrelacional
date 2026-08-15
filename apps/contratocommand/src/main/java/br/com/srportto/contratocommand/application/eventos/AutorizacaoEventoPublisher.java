@@ -9,6 +9,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import java.util.Map;
 
 import br.com.srportto.contratocommand.domain.enums.TipoEventoAutorizacao;
+import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.shared.config.AwsProperties;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
