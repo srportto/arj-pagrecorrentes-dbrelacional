@@ -212,10 +212,14 @@ public class CriarPedidoService {
 
 ## Equivalência com a estrutura legada do monorepo
 
-As cinco aplicações de `apps/` ainda usam o layout anterior
-(`entrypoint`/`application`/`domain`/`shared`). A migração é trabalho à parte: **código existente
-nesse layout não é defeito** até ser migrado — o alvo desta tabela é orientar a migração e impedir
-que aplicação nova nasça no formato antigo.
+A migração das cinco aplicações de `apps/` do layout anterior
+(`entrypoint`/`application`/`domain`/`shared`) para o de referência é trabalho em andamento,
+app por app (ver `openspec/changes/hexagonal-classico-*`). Estado em 2026-08-15: `contratocommand`
+já está no layout de referência, domínio incluindo a separação modelo/entidade JPA
+(`hexagonal-classico-contratocommand-portas` + `hexagonal-classico-contratocommand-dominio-puro`).
+`contratoquery`, `autorizacaostatus-producer`, `eventos-consumer` e `temporiza-autorizacao` ainda
+usam o layout anterior. **Código existente no layout anterior não é defeito** até ser migrado — o
+alvo desta tabela é orientar a migração e impedir que aplicação nova nasça no formato antigo.
 
 | Layout legado | Layout de referência |
 |---|---|
