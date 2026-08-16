@@ -17,10 +17,12 @@ public class PostgresLocalDisponivelCondition implements ExecutionCondition {
     static final String HOST = System.getenv().getOrDefault("DB_HOST", "localhost");
     static final String PORTA = System.getenv().getOrDefault("DB_PORT", "5432");
     static final String BANCO = System.getenv().getOrDefault("DB_NAME", "db-csp-postgres");
-    static final String USUARIO = System.getenv().getOrDefault("DB_USER_NAME", "docker");
-    static final String SENHA = System.getenv("DB_PASSWORD");
+    // Público: ConsultaCascataIntegrationTest vive em infrastructure.persistence (precisa enxergar
+    // o repositório Spring Data package-private), fora do pacote desta classe.
+    public static final String USUARIO = System.getenv().getOrDefault("DB_USER_NAME", "docker");
+    public static final String SENHA = System.getenv("DB_PASSWORD");
 
-    static String urlBase() {
+    public static String urlBase() {
         return "jdbc:postgresql://" + HOST + ":" + PORTA + "/" + BANCO;
     }
 

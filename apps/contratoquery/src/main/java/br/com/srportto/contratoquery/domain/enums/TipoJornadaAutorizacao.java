@@ -1,6 +1,6 @@
 package br.com.srportto.contratoquery.domain.enums;
 
-import br.com.srportto.contratoquery.shared.exceptions.BusinessException;
+import br.com.srportto.contratoquery.domain.exception.BusinessException;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor

@@ -3,8 +3,9 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
-Ponte SQS → Kafka, em **arquitetura hexagonal**. Consome os eventos de estado de
-autorização publicados pelo `contratocommand` (via `sns-estados-autorizacao` →
+Ponte SQS → Kafka, em **arquitetura hexagonal clássica** (`domain`/`application`/`infrastructure`,
+ver `openspec/changes/hexagonal-classico-autorizacaostatus-producer/`). Consome os eventos de
+estado de autorização publicados pelo `contratocommand` (via `sns-estados-autorizacao` →
 SQS `SQS-eventos-autorizacao`), converte cada evento para Avro e produz no tópico Kafka
 `eventos-autorizacao` (Schema Registry), de forma idempotente. O ack no SQS só ocorre
 após a confirmação do broker Kafka.
@@ -12,18 +13,21 @@ após a confirmação do broker Kafka.
 ## Comece por aqui
 
 Leia nesta ordem:
-1. [SqsEventoAutorizacaoListener.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsEventoAutorizacaoListener.java) — adapter de ENTRADA: método `@SqsListener` (Spring Cloud AWS), só delega ao use case
-2. [SqsListenerContainerFactoryConfig.java](src/main/java/br/com/srportto/autorizacaostatusproducer/shared/config/SqsListenerContainerFactoryConfig.java) — concorrência (`maxConcurrentMessages`), shutdown gracioso do container e registro do error handler
-3. [SqsEventoAutorizacaoErrorInterceptor.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsEventoAutorizacaoErrorInterceptor.java) — ponto único de classificação de falha do consumo (retryable/não-retryable), equivalente ao `ApiExceptionHandler` do lado REST
-4. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/ProcessarEventoAutorizacaoUseCase.java) — orquestra: desserializa, valida, converte para Avro, produz no Kafka
-5. [AutorizacaoEventoPayloadValidator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayloadValidator.java) — valida os campos obrigatórios do `.avsc` antes de converter/produzir
-6. [EventoAutorizacaoConverter.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/EventoAutorizacaoConverter.java) — payload JSON → record Avro `EventoAutorizacao`
-7. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
-8. [PublicadorEventoAutorizacao.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/PublicadorEventoAutorizacao.java) — porta de SAÍDA da ponte
-9. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/KafkaEventoAutorizacaoProducer.java) — adapter de SAÍDA que implementa a porta (produce síncrono)
-10. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `contratocommand`
-11. [SqsListenerHealthIndicator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/entrypoint/sqs/SqsListenerHealthIndicator.java) — estado do consumo no `/actuator/health`, via `MessageListenerContainerRegistry`
-12. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
+1. [SqsEventoAutorizacaoListener.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/SqsEventoAutorizacaoListener.java) — adapter de ENTRADA: método `@SqsListener` (Spring Cloud AWS); desserializa, valida e converte para o modelo de domínio, delega ao use case
+2. [SqsListenerContainerFactoryConfig.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/config/SqsListenerContainerFactoryConfig.java) — concorrência (`maxConcurrentMessages`), shutdown gracioso do container e registro do error handler
+3. [SqsEventoAutorizacaoErrorInterceptor.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/SqsEventoAutorizacaoErrorInterceptor.java) — ponto único de classificação de falha do consumo (retryable/não-retryable), equivalente ao `ApiExceptionHandler` do lado REST
+4. [AutorizacaoEventoPayloadValidator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/AutorizacaoEventoPayloadValidator.java) — valida os campos obrigatórios do `.avsc` antes de converter/produzir
+5. [EventoAutorizacaoConverter.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/EventoAutorizacaoConverter.java) — payload JSON → `domain/model/EventoAutorizacao` (modelo de domínio puro)
+6. [EventoAutorizacao.java (domain/model)](src/main/java/br/com/srportto/autorizacaostatusproducer/domain/model/EventoAutorizacao.java) — modelo de domínio puro do evento, sem nenhum import de `org.apache.avro.*` (D2-b)
+7. [ProcessarEventoAutorizacaoUseCase.java (domain/port/in)](src/main/java/br/com/srportto/autorizacaostatusproducer/domain/port/in/ProcessarEventoAutorizacaoUseCase.java) — porta de entrada: recebe o evento já tipado
+8. [ProcessarEventoAutorizacaoService.java](src/main/java/br/com/srportto/autorizacaostatusproducer/application/usecase/ProcessarEventoAutorizacaoService.java) — orquestra: deriva a chave de idempotência e publica pela porta
+9. [IdempotenciaKeyGenerator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/domain/service/IdempotenciaKeyGenerator.java) — key SHA-256 (id_autorizacao + data_hora_ultima_atlz)
+10. [PublicadorEventoAutorizacao.java (domain/port/out)](src/main/java/br/com/srportto/autorizacaostatusproducer/domain/port/out/PublicadorEventoAutorizacao.java) — porta de SAÍDA da ponte, usa o modelo de domínio puro
+11. [EventoAutorizacaoAvroMapper.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/EventoAutorizacaoAvroMapper.java) — `domain/model/EventoAutorizacao` → record Avro gerado (setScale defensivo)
+12. [KafkaEventoAutorizacaoProducer.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/KafkaEventoAutorizacaoProducer.java) — adapter de SAÍDA que implementa a porta (produce síncrono, mapeia para Avro antes de enviar)
+13. [AutorizacaoEventoPayload.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/messaging/AutorizacaoEventoPayload.java) — espelho do payload publicado pelo `contratocommand`
+14. [SqsListenerHealthIndicator.java](src/main/java/br/com/srportto/autorizacaostatusproducer/infrastructure/web/SqsListenerHealthIndicator.java) — estado do consumo no `/actuator/health`, via `MessageListenerContainerRegistry`
+15. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro produzido no Kafka
 
 ## Build & Testes
 
@@ -80,51 +84,74 @@ mvn test                                     # Todos os testes
 > **Não há endpoints REST de negócio** — esta app não expõe API própria, apenas consome
 > a fila SQS e produz no Kafka em background.
 
-## Arquitetura (hexagonal)
+## Arquitetura (hexagonal clássica)
 
 ```
-entrypoint/sqs/         → SqsEventoAutorizacaoListener (adapter de ENTRADA, método @SqsListener),
-                           SqsEventoAutorizacaoErrorInterceptor (classificação central de falha),
-                           SqsListenerHealthIndicator
-application/eventos/    → ProcessarEventoAutorizacaoUseCase (orquestra), AutorizacaoEventoPayloadValidator,
-                           EventoAutorizacaoConverter, IdempotenciaKeyGenerator, AutorizacaoEventoPayload,
-                           PublicadorEventoAutorizacao (porta de SAÍDA),
-                           KafkaEventoAutorizacaoProducer (adapter de SAÍDA)
+domain/model/           → EventoAutorizacao (modelo de domínio puro, 28 campos, sem Avro/Jackson/AWS)
+domain/port/in/         → ProcessarEventoAutorizacaoUseCase (porta de ENTRADA)
+domain/port/out/        → PublicadorEventoAutorizacao (porta de SAÍDA, usa domain/model)
+domain/service/         → IdempotenciaKeyGenerator (regra de negócio; @Component é exceção consciente)
 domain/enums/           → StatusAutorizacao, TipoEventoAutorizacao (regra de negócio pura)
-shared/exceptions/      → EventoAutorizacaoInvalidoException, EventoAutorizacaoKafkaIndisponivelException
-shared/config/          → SqsListenerContainerFactoryConfig, KafkaProperties, KafkaProducerClientConfig
+domain/exception/       → EventoAutorizacaoInvalidoException, EventoAutorizacaoKafkaIndisponivelException
+application/usecase/    → ProcessarEventoAutorizacaoService (orquestra: chave de idempotência + publicação)
+infrastructure/messaging/ → SqsEventoAutorizacaoListener (adapter de ENTRADA, @SqsListener; desserializa,
+                             valida, converte), SqsEventoAutorizacaoErrorInterceptor (classificação
+                             central de falha), AutorizacaoEventoPayload, AutorizacaoEventoPayloadValidator,
+                             EventoAutorizacaoConverter (payload → domain/model), EventoAutorizacaoAvroMapper
+                             (domain/model → Avro), KafkaEventoAutorizacaoProducer (adapter de SAÍDA)
+infrastructure/web/     → SqsListenerHealthIndicator
+infrastructure/config/  → SqsListenerContainerFactoryConfig, KafkaProperties, KafkaProducerClientConfig
 ```
 
-**Não existe pacote `infrastructure/`** — o modelo hexagonal do monorepo é
-`entrypoint` / `application` / `domain` / `shared`, e as setas só apontam para dentro. O
-listener SQS é adapter de ENTRADA (`entrypoint/`); o producer Kafka é adapter de SAÍDA e
-vive em `application/`, atrás da porta `PublicadorEventoAutorizacao` — o use case depende
-da interface, não da classe concreta, e não conhece `org.apache.kafka.*`.
+Migração para este layout: `openspec/changes/hexagonal-classico-autorizacaostatus-producer/`. Camadas
+e regra de dependência seguem a skill `arquitetura-limpa-java` do monorepo — `domain` não importa
+Spring/Jakarta/Jackson/Avro/Kafka/AWS SDK (exceção documentada: `@Component` em
+`IdempotenciaKeyGenerator`, D3 do design da migração); `application` não conhece HTTP/JPA/broker;
+`infrastructure` concentra todo detalhe de framework.
 
 Não há classe própria configurando o `SqsAsyncClient` — ele é autoconfigurado pelo
 `spring-cloud-aws-starter-sqs` a partir de `spring.cloud.aws.*` (endpoint, região,
 credenciais). `SqsListenerContainerFactoryConfig` só configura a factory do container
 (concorrência, timeouts de shutdown, error handler), não o client em si.
 
-`AutorizacaoEventoPayload` fica em `application/eventos/` (não em `domain/`) porque é o
-contrato do evento consumido, não uma regra de negócio pura. Já `StatusAutorizacao` e
+`AutorizacaoEventoPayload` fica em `infrastructure/messaging/` (não em `domain/`) porque é o
+contrato de fio do evento consumido (JSON), não uma regra de negócio pura. Já `StatusAutorizacao` e
 `TipoEventoAutorizacao` são regra de negócio (grafo de transições) e ficam em
-`domain/enums/`, como nas outras três aplicações do monorepo.
+`domain/enums/`.
+
+### D2-b: por que existem DOIS modelos de evento além do payload JSON
+
+Esta app é uma ponte de formatos — seu "domínio" é a própria tradução. A decisão registrada em
+`design.md` (D2, revisada em 2026-08-16) foi manter `domain/` **livre de qualquer tipo Avro**, ao
+custo de um terceiro modelo espelhado:
+
+```
+SQS (JSON) ──▶ AutorizacaoEventoPayload ──▶ domain/model/EventoAutorizacao ──▶ Avro EventoAutorizacao ──▶ Kafka
+                (infrastructure/messaging)   (application, via EventoAutorizacaoConverter) (infrastructure/messaging,
+                                                                                              via EventoAutorizacaoAvroMapper)
+```
+
+`EventoAutorizacaoConverter` mapeia payload → domínio (sem `setScale`). `EventoAutorizacaoAvroMapper`
+mapeia domínio → Avro, e é onde o `setScale(2)` defensivo vive hoje — é particularidade do formato de
+fio Avro, não do modelo de domínio. Mudar um schema exige revisar os três (payload, domínio, Avro),
+não dois.
 
 ### Fluxo de consumo → produção (ponte)
 
 ```
 SqsEventoAutorizacaoListener.receber(String body)  — método anotado @SqsListener
   (queueNames = "${sqs.queue-url}", factory = eventosAutorizacaoSqsListenerContainerFactory)
-  └─ delega direto, sem try/catch:
-       └─ ProcessarEventoAutorizacaoUseCase.processar(body)
-            ├─ desserializa em AutorizacaoEventoPayload
-            ├─ AutorizacaoEventoPayloadValidator → exige os 8 campos obrigatórios do .avsc
-            ├─ TipoEventoAutorizacao.porStatus(payload.status()) → deriva o tipo do evento
-            ├─ EventoAutorizacaoConverter → record Avro EventoAutorizacao (setScale defensivo)
+  ├─ desserializa em AutorizacaoEventoPayload (ObjectMapper, tools.jackson) — responsabilidade do
+  │    adaptador desde a migração hexagonal (D1); antes vivia no use case
+  ├─ AutorizacaoEventoPayloadValidator → exige os 8 campos obrigatórios do .avsc
+  ├─ TipoEventoAutorizacao.porStatus(payload.status()) → deriva o tipo do evento
+  ├─ EventoAutorizacaoConverter → domain/model/EventoAutorizacao (sem setScale)
+  └─ delega, sem try/catch:
+       └─ ProcessarEventoAutorizacaoUseCase.processar(evento, tipoEvento)
             ├─ IdempotenciaKeyGenerator → key SHA-256(id_autorizacao + data_hora_ultima_atlz)
-            ├─ PublicadorEventoAutorizacao.produzir() → send() SÍNCRONO (get com timeout)
-            │    header Kafka "tipoEvento" = tipo derivado do status (sempre presente)
+            ├─ PublicadorEventoAutorizacao.produzir() — implementação (KafkaEventoAutorizacaoProducer)
+            │    mapeia domain/model → Avro via EventoAutorizacaoAvroMapper (setScale(2) aqui) e faz
+            │    send() SÍNCRONO (get com timeout); header Kafka "tipoEvento" sempre presente
             └─ loga sucesso com idAutorizacao, key e tipoEvento — NUNCA com o body
 
   método retorna normalmente → container confirma (ack) a mensagem
@@ -135,7 +162,7 @@ SqsEventoAutorizacaoListener.receber(String body)  — método anotado @SqsListe
        └─ qualquer outra exceção (Kafka/SR indisponível) → log ERROR + RELANÇA →
             SEM ack, mensagem volta à fila após o visibility timeout
 
-SqsListenerContainerFactoryConfig (shared/config/) — configura o container:
+SqsListenerContainerFactoryConfig (infrastructure/config/) — configura o container:
   maxConcurrentMessages=10 (concorrência real por instância — pool de platform threads
     dimensionado pelo próprio framework; não são virtual threads, ver design da migração),
   listenerShutdownTimeout=25s / acknowledgementShutdownTimeout=20s (shutdown gracioso:
@@ -164,7 +191,7 @@ agora é concorrente (não mais um lote serial), o dimensionamento é sobre o pi
 
 Esta app não tem API REST de negócio, mas tem o equivalente ao `ApiExceptionHandler`
 para o escopo de mensageria: **`SqsEventoAutorizacaoErrorInterceptor`**
-(`entrypoint/sqs/`), registrado como error handler da
+(`infrastructure/messaging/`), registrado como error handler da
 `eventosAutorizacaoSqsListenerContainerFactory`, é o ponto único que classifica toda
 exceção lançada pelo processamento de uma mensagem — o método `@SqsListener` não tem
 `catch` por tipo de exceção, o container invoca o interceptor automaticamente quando o
@@ -172,13 +199,14 @@ método lança. O contrato é por comportamento, não por retorno: **engolir a e
 (retornar normalmente) faz o container tratar a mensagem como recuperada e confirmar o
 ack; **relançar** mantém a mensagem sem ack. Duas exceções orientam essa classificação:
 
-- **`EventoAutorizacaoInvalidoException`** (`shared/exceptions/`) — não-retryable.
+- **`EventoAutorizacaoInvalidoException`** (`domain/exception/`) — não-retryable.
   JSON malformado, **campo obrigatório do schema Avro ausente ou nulo**, conversão para
-  Avro impossível, ou `status` desconhecido no payload (usado para derivar `tipoEvento`
-  via `TipoEventoAutorizacao.porStatus`). O interceptor loga ERROR com o `messageId` —
-  nunca com o body — e **engole** a exceção (descarta conscientemente: retry nunca
-  corrigiria um payload malformado).
-- **`EventoAutorizacaoKafkaIndisponivelException`** (`shared/exceptions/`) —
+  o modelo de domínio impossível, ou `status` desconhecido no payload (usado para derivar `tipoEvento`
+  via `TipoEventoAutorizacao.porStatus`). Toda essa classificação nasce agora dentro do
+  `SqsEventoAutorizacaoListener` (adaptador), não mais no use case — ver D1 e a armadilha #12.
+  O interceptor loga ERROR com o `messageId` — nunca com o body — e **engole** a exceção
+  (descarta conscientemente: retry nunca corrigiria um payload malformado).
+- **`EventoAutorizacaoKafkaIndisponivelException`** (`domain/exception/`) —
   retryable, junto com qualquer outra exceção não mapeada. Broker/Schema Registry
   indisponível ou timeout. O interceptor loga ERROR e **relança** — a mensagem volta à
   fila após o visibility timeout (60s). Se a falha persistir além de
@@ -198,7 +226,7 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 2. **Sem banco de dados** — não adicione JPA/Postgres aqui; se precisar persistir algo,
    isso é uma mudança de escopo desta app.
 3. **`AutorizacaoEventoPayload` é um espelho manual** do payload equivalente em
-   `contratocommand` (`application/eventos/AutorizacaoEventoPayload.java`) — os dois
+   `contratocommand` (lá, em `infrastructure/web/` ou pacote equivalente) — os dois
    não compartilham código; se o schema do evento mudar lá, replique aqui. Inclui
    `tipo_jornada` (nullable) desde a mudança `temporizacao-jornada-01-pix-auto`.
 4. **`EventoAutorizacao.avsc` também é um espelho manual**, replicado em
@@ -208,13 +236,15 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
    no JAR como insumo de documentação — o runtime não os lê, quem governa o schema é o
    Schema Registry.
 5. **O teste de integração do adaptador exige o Floci no ar** —
-   `SqsEventoAutorizacaoListenerIntegrationTest` (`entrypoint/sqs/`) envia mensagens
+   `SqsEventoAutorizacaoListenerIntegrationTest` (`infrastructure/messaging/`) envia mensagens
    reais à fila e observa ack/retenção através do pipeline real do `@SqsListener`, com
-   `ProcessarEventoAutorizacaoUseCase` mockado (isola do Kafka). Sem o Floci, essa
-   classe falha — mesmo pré-requisito de `mvn spring-boot:run`. A contagem de mensagens
-   nos asserts é por **delta** em relação a uma baseline, não por valor absoluto: a
-   mensagem do cenário retryable fica em voo pelo visibility timeout inteiro (60s) e não
-   é drenável entre testes.
+   `ProcessarEventoAutorizacaoUseCase` mockado (isola do Kafka; validator/converter são reais, então
+   os bodies enviados precisam ser JSON de verdade). Sem o Floci, essa classe falha — mesmo
+   pré-requisito de `mvn spring-boot:run`. A contagem de mensagens nos asserts é por **delta** em
+   relação a uma baseline, não por valor absoluto: a mensagem do cenário retryable fica em voo pelo
+   visibility timeout inteiro (60s) e não é drenável entre testes. **A cobertura fina de
+   classificação de erro (JSON malformado, campo obrigatório nulo) não depende do Floci** — está em
+   `SqsEventoAutorizacaoListenerTest` (unitário puro, sem Spring, sem fila).
 6. **Ack no SQS depende do Kafka, não só do parsing** — diferente da fase anterior
    (log + ack), agora uma mensagem só é confirmada na fila após o Kafka aceitar o
    evento. Sem Kafka no ar, a fila acumula mensagens não confirmadas (retry automático).
@@ -223,36 +253,41 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
    de erro, via `SqsEventoAutorizacaoErrorInterceptor` (retry nunca corrigiria um payload
    malformado).
 8. **`enableDecimalLogicalType=true`** no `avro-maven-plugin` — sem isso, os campos
-   decimais são gerados como `ByteBuffer`, não `BigDecimal`, quebrando o conversor.
+   decimais são gerados como `ByteBuffer`, não `BigDecimal`, quebrando `EventoAutorizacaoAvroMapper`.
 9. **`tipoEvento` não é mais lido do attribute SQS** — o listener não solicita
-   `messageAttributeNames` no `ReceiveMessage`; `ProcessarEventoAutorizacaoUseCase`
-   deriva o header Kafka `tipoEvento` do campo `status` do payload
-   (`TipoEventoAutorizacao.porStatus`), sempre presente. `StatusAutorizacao` e
+   `messageAttributeNames` no `ReceiveMessage`; ele mesmo deriva o header Kafka `tipoEvento` do campo
+   `status` do payload (`TipoEventoAutorizacao.porStatus`), sempre presente. `StatusAutorizacao` e
    `TipoEventoAutorizacao` (`domain/enums/`) são espelhos manuais dos mesmos enums do
    `contratocommand`.
 10. **O builder Avro NÃO valida `null` explícito** — ele só valida a *ausência* de `set`
-    (`fieldSetFlags()`). Como o converter sempre chama os setters, um campo obrigatório
-    nulo produziria um `SpecificRecord` inválido em silêncio, que só falharia adiante e
+    (`fieldSetFlags()`). Como `EventoAutorizacaoAvroMapper` sempre chama os setters, um campo
+    obrigatório nulo produziria um `SpecificRecord` inválido em silêncio, que só falharia adiante e
     fora da classificação (NPE na key, ou `SerializationException` **síncrona** dentro de
     `send()`, que o `catch` do producer não alcança) — resultando em reentrega infinita.
     Por isso `AutorizacaoEventoPayloadValidator` roda **antes** de converter, gerar key ou
-    produzir. Não remova essa validação nem a mova para depois.
+    produzir, dentro do listener. Não remova essa validação nem a mova para depois.
 11. **`/actuator/health` reflete o consumidor** — `SqsListenerHealthIndicator` reporta
     DOWN quando o `MessageListenerContainerRegistry` está ativo mas algum container
     parou fora de um shutdown intencional. Sem ele, um outage total do consumo passaria
     despercebido.
 12. **Não adicione `catch` por tipo de exceção de volta no listener** — toda
     classificação retryable/não-retryable é responsabilidade exclusiva de
-    `SqsEventoAutorizacaoErrorInterceptor` (`entrypoint/sqs/`), registrado como error
-    handler da factory; `SqsEventoAutorizacaoListener.receber()` só chama
-    `useCase.processar()`, sem `try/catch`. Duplicar a classificação no listener
+    `SqsEventoAutorizacaoErrorInterceptor` (`infrastructure/messaging/`), registrado como error
+    handler da factory. `SqsEventoAutorizacaoListener.receber()` desserializa/valida/converte, mas
+    não classifica: erros dessas etapas viram `EventoAutorizacaoInvalidoException` (via `throw new`,
+    não `try/catch` de decisão) e sobem até o interceptor. Duplicar a classificação no listener
     reintroduz o espalhamento que o interceptor existe para evitar.
-13. **A fila SQS tem DLQ** (`SQS-eventos-autorizacao-dlq`, `redrive_policy` em
+13. **A desserialização mora no listener, não no use case (D1 da migração hexagonal)** —
+    `ProcessarEventoAutorizacaoService` (`application/usecase/`) recebe o evento **já** tipado
+    (`domain/model/EventoAutorizacao` + `TipoEventoAutorizacao`); não conhece JSON, `ObjectMapper`
+    nem `AutorizacaoEventoPayload`. Se precisar adicionar validação de campo novo, ela vai em
+    `AutorizacaoEventoPayloadValidator`, chamada de dentro do listener — não no use case.
+14. **A fila SQS tem DLQ** (`SQS-eventos-autorizacao-dlq`, `redrive_policy` em
     `infra/envs/local-messaging/`) — uma falha retryable persistente (Kafka fora do ar
     por muito tempo) esgota as 10 tentativas do `maxReceiveCount` (~10min, dado o
     visibility timeout de 60s) e a mensagem cai na DLQ para investigação manual, em vez
     de reentregar para sempre.
-14. **`maxConcurrentMessages=10` roda em platform threads, não virtual threads** —
+15. **`maxConcurrentMessages=10` roda em platform threads, não virtual threads** —
     diferente do restante da aplicação (`spring.threads.virtual.enabled=true`), o
     pipeline de execução do `@SqsListener` no Spring Cloud AWS 4.0.0 exige threads
     criadas pela sua própria factory interna (`MessageExecutionThreadFactory`); um
@@ -264,6 +299,7 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 ## Documentação relacionada
 
 - [consumo-eventos-autorizacao](../../openspec/specs/consumo-eventos-autorizacao/spec.md) — contrato vigente de visibility timeout, maxReceiveCount e concorrência desta arquitetura de consumo (decidido pela change arquivada `migrar-sqs-listener-spring-cloud-aws`)
+- [design.md da migração hexagonal](../../openspec/changes/hexagonal-classico-autorizacaostatus-producer/design.md) — D1 (desserialização no listener), D2-b (modelo de domínio puro), D3-D5 (localização de key generator, validator/converter, health indicator)
 - [design.md da mudança original](../../openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md) — decisões do fluxo original SNS/SQS (log + ack)
 - [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — como provisionar o tópico/fila SNS/SQS no Floci
 - [infra/local/kafka/README.md](../../infra/local/kafka/README.md) — como subir o Kafka local (broker, Schema Registry, dashboard)
@@ -279,6 +315,8 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
       sendo engolida (ack) após o log de erro (não confundir as duas classificações)
 - [ ] Nenhum log novo nem mensagem de exceção carrega o body da mensagem (PII)
 - [ ] Se acrescentou campo obrigatório ao `.avsc`, incluí-lo em
-      `AutorizacaoEventoPayloadValidator`
-- [ ] Nenhuma classe nova em `infrastructure/` — o modelo é
-      `entrypoint`/`application`/`domain`/`shared`
+      `AutorizacaoEventoPayloadValidator` **e** nos três modelos do evento (payload,
+      `domain/model/EventoAutorizacao`, mapeamento em `EventoAutorizacaoAvroMapper`)
+- [ ] Nova classe vai na camada certa — `domain`/`application`/`infrastructure`, conforme a
+      skill `arquitetura-limpa-java`; `domain` continua sem import de Spring/Jakarta/Jackson/Avro/
+      Kafka/AWS SDK (exceção documentada: `@Component` em `IdempotenciaKeyGenerator`)

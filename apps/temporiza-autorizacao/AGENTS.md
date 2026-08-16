@@ -3,26 +3,27 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
-Temporizador da jornada 1 do PIX Automático, em **arquitetura hexagonal**. Consome os
-eventos de recepção de autorizações `PIX_AUTO`/`SPI_J1` publicados pelo
-`contratocommand` (via `sns-estados-autorizacao` → SQS `SQS-temporizacao-autorizacao`,
-filtrada por filter policy), agenda a expiração em 10 minutos no Valkey e, no vencimento,
-aciona `PATCH /api/autorizacoes/{id}/decisao` com `acao: EXPIRAR` — rejeitando
-sistemicamente a autorização caso o cliente pagador não tenha decidido a tempo.
+Temporizador da jornada 1 do PIX Automático, em **arquitetura hexagonal clássica**
+(`domain` / `application` / `infrastructure`). Consome os eventos de recepção de
+autorizações `PIX_AUTO`/`SPI_J1` publicados pelo `contratocommand` (via
+`sns-estados-autorizacao` → SQS `SQS-temporizacao-autorizacao`, filtrada por filter
+policy), agenda a expiração em 10 minutos no Valkey e, no vencimento, aciona
+`PATCH /api/autorizacoes/{id}/decisao` com `acao: EXPIRAR` — rejeitando sistemicamente a
+autorização caso o cliente pagador não tenha decidido a tempo.
 
 ## Comece por aqui
 
 Leia nesta ordem:
-1. [TemporizacaoEventoListener.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/sqs/TemporizacaoEventoListener.java) — adapter de ENTRADA: `@SqsListener`, só delega ao use case
-2. [AgendarExpiracaoUseCase.java](src/main/java/br/com/srportto/temporizaautorizacao/application/agendamento/AgendarExpiracaoUseCase.java) — calcula o vencimento (`data_hora_inclusao` do payload + prazo) e agenda
-3. [ValkeyAgendamentoRepository.java](src/main/java/br/com/srportto/temporizaautorizacao/application/agendamento/ValkeyAgendamentoRepository.java) — `ZADD` no sorted set que funciona como relógio
-4. [VarrerAgendamentosVencidosUseCase.java](src/main/java/br/com/srportto/temporizaautorizacao/application/varredura/VarrerAgendamentosVencidosUseCase.java) + [varredura.lua](src/main/resources/scripts/varredura.lua) — varredura atômica: move vencidos do sorted set para o stream
-5. [VarreduraAgendamentoScheduler.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/scheduler/VarreduraAgendamentoScheduler.java) — dispara a varredura em intervalo fixo
-6. [ValkeyStreamConfig.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/stream/ValkeyStreamConfig.java) — cria o consumer group (idempotente) e registra a subscription com ACK MANUAL
-7. [ExpiracaoStreamListener.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/stream/ExpiracaoStreamListener.java) — worker: só confirma (XACK) após desfecho conclusivo
-8. [PendenciasSchedulerReivindicador.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/stream/PendenciasSchedulerReivindicador.java) — reivindica (XCLAIM) pendências ociosas do grupo
-9. [CommandDecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/application/expiracao/CommandDecisaoAutorizacaoClient.java) — PATCH síncrono no `contratocommand`, classifica 2xx/4xx (conclusivo) vs. 5xx/timeout (retryable)
-10. [TemporizacaoHealthIndicator.java](src/main/java/br/com/srportto/temporizaautorizacao/entrypoint/health/TemporizacaoHealthIndicator.java) — `/actuator/health` reflete o consumo SQS e a conexão Valkey
+1. [TemporizacaoEventoListener.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/messaging/TemporizacaoEventoListener.java) — adapter de ENTRADA: `@SqsListener`, traduz o payload em `(UUID, LocalDateTime)` e delega ao use case
+2. [AgendarExpiracaoUseCase.java](src/main/java/br/com/srportto/temporizaautorizacao/domain/port/in/AgendarExpiracaoUseCase.java) + [AgendarExpiracaoService.java](src/main/java/br/com/srportto/temporizaautorizacao/application/usecase/AgendarExpiracaoService.java) — calcula o vencimento (`data_hora_inclusao` + prazo) e agenda
+3. [AgendamentoRepository.java](src/main/java/br/com/srportto/temporizaautorizacao/domain/port/out/AgendamentoRepository.java) + [ValkeyAgendamentoRepository.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/persistence/ValkeyAgendamentoRepository.java) — porta de saída + `ZADD` no sorted set que funciona como relógio
+4. [VarrerAgendamentosVencidosUseCase.java](src/main/java/br/com/srportto/temporizaautorizacao/domain/port/in/VarrerAgendamentosVencidosUseCase.java) + [VarrerAgendamentosVencidosService.java](src/main/java/br/com/srportto/temporizaautorizacao/application/usecase/VarrerAgendamentosVencidosService.java) + [varredura.lua](src/main/resources/scripts/varredura.lua) — varredura atômica: move vencidos do sorted set para o stream
+5. [VarreduraAgendamentoScheduler.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/scheduler/VarreduraAgendamentoScheduler.java) — dispara a varredura em intervalo fixo
+6. [ValkeyStreamConfig.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/config/ValkeyStreamConfig.java) — cria o consumer group (idempotente) e registra a subscription com ACK MANUAL
+7. [ExpiracaoStreamListener.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/messaging/ExpiracaoStreamListener.java) — worker: só confirma (XACK) após desfecho conclusivo
+8. [PendenciasSchedulerReivindicador.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/messaging/PendenciasSchedulerReivindicador.java) — reivindica (XCLAIM) pendências ociosas do grupo
+9. [DecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/domain/port/out/DecisaoAutorizacaoClient.java) + [CommandDecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/external/CommandDecisaoAutorizacaoClient.java) — porta de saída + PATCH síncrono no `contratocommand`, classifica 2xx/4xx (conclusivo) vs. 5xx/timeout (retryable)
+10. [TemporizacaoHealthIndicator.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/web/TemporizacaoHealthIndicator.java) — `/actuator/health` reflete o consumo SQS e a conexão Valkey
 
 ## Build & Testes
 
@@ -68,23 +69,40 @@ mvn test                                     # Todos os testes
 > **Não há endpoints REST de negócio** — consome a fila SQS, agenda/varre no Valkey e
 > aciona o command em background.
 
-## Arquitetura (hexagonal)
+## Arquitetura (hexagonal clássica)
 
 ```
-entrypoint/sqs/         → TemporizacaoEventoListener (@SqsListener), TemporizacaoEventoErrorInterceptor
-entrypoint/scheduler/   → VarreduraAgendamentoScheduler (@Scheduled)
-entrypoint/stream/      → ValkeyStreamConfig (consumer group + subscription), ExpiracaoStreamListener
-                           (worker, ack manual), PendenciasSchedulerReivindicador (XCLAIM)
-entrypoint/health/      → TemporizacaoHealthIndicator
-application/eventos/    → AutorizacaoEventoPayload (subconjunto do payload do command)
-application/agendamento/→ AgendarExpiracaoUseCase, AgendamentoRepository (porta),
-                           ValkeyAgendamentoRepository (adapter, ZADD)
-application/varredura/  → VarrerAgendamentosVencidosUseCase (script Lua)
-application/expiracao/  → ProcessarExpiracaoUseCase, DecisaoAutorizacaoClient (porta),
-                           CommandDecisaoAutorizacaoClient (adapter, RestClient)
-shared/config/          → TemporizacaoProperties, SqsListenerContainerFactoryConfig, CommandClientConfig
-shared/exceptions/      → AgendamentoInvalidoException (não-retryable), ExpiracaoRetryavelException (retryable)
+domain/port/in/              → AgendarExpiracaoUseCase, ProcessarExpiracaoUseCase, VarrerAgendamentosVencidosUseCase
+domain/port/out/              → AgendamentoRepository, DecisaoAutorizacaoClient
+domain/exception/              → AgendamentoInvalidoException (não-retryable), ExpiracaoRetryavelException (retryable)
+application/usecase/           → AgendarExpiracaoService, ProcessarExpiracaoService, VarrerAgendamentosVencidosService (script Lua)
+infrastructure/messaging/      → TemporizacaoEventoListener (@SqsListener, traduz payload → tipos simples),
+                                  TemporizacaoEventoErrorInterceptor, AutorizacaoEventoPayload (formato de fio),
+                                  ExpiracaoStreamListener (worker, ack manual), PendenciasSchedulerReivindicador (XCLAIM),
+                                  ConsumidorRemocaoService (remoção segura de consumidor)
+infrastructure/scheduler/      → VarreduraAgendamentoScheduler, ConsumidoresOrfaosLimpezaScheduler (ambos @Scheduled)
+infrastructure/web/            → TemporizacaoHealthIndicator
+infrastructure/persistence/    → ValkeyAgendamentoRepository (adapter, ZADD — estado próprio da app)
+infrastructure/external/       → CommandDecisaoAutorizacaoClient (adapter, RestClient — sistema de outro dono)
+infrastructure/config/         → TemporizacaoProperties, SqsListenerContainerFactoryConfig, CommandClientConfig, ValkeyStreamConfig
 ```
+
+Categorias de adaptador seguem o **gatilho**, não a tecnologia: `scheduler/` é para tudo
+acionado por `@Scheduled` (mesmo quando o assunto é o stream Valkey — o gatilho é tempo,
+não mensagem); `web/` inclui o health indicator do Actuator (gatilho é HTTP); `persistence/`
+é estado que só esta app lê/escreve (Valkey), `external/` é sistema de outro dono
+(`contratocommand`, via HTTP). Esta app foi a segunda das cinco a migrar do layout anterior
+(`entrypoint`/`application`/`domain`/`shared`) para o hexagonal clássico — ver a change
+`hexagonal-classico-temporiza-autorizacao` em `openspec/changes/` para as decisões (D1–D6)
+herdadas pelas migrações seguintes.
+
+**Nota de acoplamento conhecida:** `application/usecase/AgendarExpiracaoService` e
+`VarrerAgendamentosVencidosService` importam `infrastructure/config/TemporizacaoProperties`
+— uma dependência de `application` sobre `infrastructure`, tecnicamente na direção errada.
+É herança do desenho original (o mesmo acoplamento já existia entre `application` e
+`shared/config` antes da migração) e o proposal desta mudança deliberadamente não a
+redesenhou (movimento mecânico de pacote, zero mudança de comportamento). Corrigir exigiria
+introduzir uma abstração de configuração no domínio — fora do escopo desta etapa.
 
 ### Por que sorted set + stream, e não só um dos dois
 
@@ -98,23 +116,24 @@ descartadas (keyspace notifications, scheduler batendo no Postgres).
 ### Fluxo completo
 
 ```
-SqsListener.receber(body)
-  └─ AgendarExpiracaoUseCase.agendar(body)
-       ├─ desserializa {id_autorizacao, data_hora_inclusao}
-       ├─ vencimento = data_hora_inclusao + prazo (10 min, configurável)
-       └─ ValkeyAgendamentoRepository.agendar() → ZADD agenda:{pixauto:j1} <vencimento> <id>
+TemporizacaoEventoListener.receber(body)                      [infrastructure/messaging]
+  ├─ desserializa AutorizacaoEventoPayload {id_autorizacao, data_hora_inclusao}
+  └─ AgendarExpiracaoUseCase.agendar(idAutorizacao, dataHoraInclusao)   [domain/port/in → application/usecase]
+       ├─ vencimento = dataHoraInclusao + prazo (10 min, configurável)
+       └─ AgendamentoRepository.agendar()                     [domain/port/out → infrastructure/persistence]
+            → ZADD agenda:{pixauto:j1} <vencimento> <id>
             (idempotente: reagendar o mesmo id sobrescreve o score, não duplica)
 
-VarreduraAgendamentoScheduler (@Scheduled, ~5s, roda em TODAS as instâncias)
-  └─ VarrerAgendamentosVencidosUseCase.varrer()
+VarreduraAgendamentoScheduler (@Scheduled, ~5s, roda em TODAS as instâncias)  [infrastructure/scheduler]
+  └─ VarrerAgendamentosVencidosUseCase.varrer()                [domain/port/in → application/usecase]
        └─ script varredura.lua (atômico):
             ZRANGEBYSCORE agenda -inf <now> LIMIT 0 <lote>
             para cada id: ZREM (só um pod consegue — é o lock) → se sucesso, XADD stream
 
-ValkeyStreamConfig registra a subscription com ACK MANUAL (não confirma sozinho)
-ExpiracaoStreamListener.onMessage(record)
-  ├─ ProcessarExpiracaoUseCase.processar(idAutorizacao)
-  │    └─ CommandDecisaoAutorizacaoClient.expirar(id)
+ValkeyStreamConfig registra a subscription com ACK MANUAL (não confirma sozinho)   [infrastructure/config]
+ExpiracaoStreamListener.onMessage(record)                     [infrastructure/messaging]
+  ├─ ProcessarExpiracaoUseCase.processar(idAutorizacao)        [domain/port/in → application/usecase]
+  │    └─ DecisaoAutorizacaoClient.expirar(id)                 [domain/port/out → infrastructure/external]
   │         PATCH /api/autorizacoes/{id}/decisao {"acao":"EXPIRAR"}
   │         2xx/4xx (inclui 422 "já resolvida") → retorna normalmente
   │         5xx/timeout/conexão → ExpiracaoRetryavelException
