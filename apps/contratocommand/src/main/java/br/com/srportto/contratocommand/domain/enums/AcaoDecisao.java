@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.enums;
 
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
+import br.com.srportto.contratocommand.domain.exception.BusinessException;
 
 /** Ação submetida via {@code PATCH /api/autorizacoes/{id}/decisao} sobre uma autorização em RECEBIDA. */
 public enum AcaoDecisao {

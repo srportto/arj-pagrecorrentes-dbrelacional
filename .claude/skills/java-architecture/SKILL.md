@@ -25,8 +25,9 @@ estrutura de pacotes em camadas (`controller` / `service` / `repository` / `doma
 padrões de injeção de dependência, escolha de módulos Spring (Web vs WebFlux, JPA, Security,
 Cache, Data Redis), e estrutura de testes (slice, integration, Testcontainers).
 
-**Quando NÃO usar:** para a regra de dependência entre camadas hexagonais (`entrypoint`/
-`application`/`domain`/`shared`) — padrão **deste** catálogo — use `arquitetura-limpa-java`. Para
+**Quando NÃO usar:** para a regra de dependência entre camadas hexagonais (`domain` com
+`port/in`/`port/out`, `application/usecase`, `infrastructure`) — padrão **deste** catálogo — use
+`arquitetura-limpa-java`. Para
 um design pattern GoF, use `padroes-de-projeto-java`. Para revisão de código, use
 `revisao-de-codigo-java`. Para tuning de JPA/Hibernate, use `persistencia-jpa`.
 
@@ -58,9 +59,10 @@ um design pattern GoF, use `padroes-de-projeto-java`. Para revisão de código, 
 Database
 ```
 
-> **Diferente do hexagonal:** este é o estilo "clássico" (controller→service→repository), referência
-> para times que não migraram para hexagonal. Para o padrão hexagonal deste catálogo
-> (`entrypoint`/`application`/`domain`/`shared`), use `arquitetura-limpa-java`.
+> **Diferente do hexagonal:** este é o estilo em camadas (controller→service→repository), referência
+> para times que não migraram para hexagonal. Para o padrão hexagonal clássico deste catálogo
+> (`domain` com `port/in`/`port/out`, `application/usecase`, `infrastructure`), use
+> `arquitetura-limpa-java`.
 
 ## Camada Controller
 
@@ -132,8 +134,8 @@ src/main/resources/
 src/test/java/... (espelha main)
 ```
 
-> **Alternativa hexagonal** (`entrypoint`/`application`/`domain`/`shared`) é o padrão deste
-> catálogo. Ver `arquitetura-limpa-java`.
+> **Alternativa hexagonal clássica** (`domain` com `port/in`+`port/out` / `application/usecase` /
+> `infrastructure`) é o padrão deste catálogo. Ver `arquitetura-limpa-java`.
 
 ---
 

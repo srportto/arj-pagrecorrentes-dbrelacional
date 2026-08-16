@@ -614,9 +614,10 @@ Siga a skill `arquitetura-limpa-java` para o mapa completo de camadas e o checkl
 Nesta revisão, verifique pelo menos:
 
 - a camada onde a mudança caiu é a correta (regra de negócio em `domain`, orquestração em
-  `application`, adaptador em `entrypoint`);
-- nenhuma dependência aponta "para fora" (`domain` não importa `org.springframework.*`,
-  `application` não importa `jakarta.servlet.*`).
+  `application/usecase`, adaptador em `infrastructure`);
+- nenhuma dependência aponta "para fora" (`domain` não importa `org.springframework.*` nem
+  `jakarta.persistence.*`; `application` não importa `jakarta.servlet.*` nem Spring Data);
+- todo acesso a recurso externo passa por uma `port/out` do `domain`, implementada por um adapter.
 
 ## Quem revisa o quê
 

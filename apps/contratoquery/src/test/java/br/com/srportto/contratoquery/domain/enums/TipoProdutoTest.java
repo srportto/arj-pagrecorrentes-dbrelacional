@@ -3,7 +3,7 @@ package br.com.srportto.contratoquery.domain.enums;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import br.com.srportto.contratoquery.shared.exceptions.BusinessException;
+import br.com.srportto.contratoquery.domain.exception.BusinessException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

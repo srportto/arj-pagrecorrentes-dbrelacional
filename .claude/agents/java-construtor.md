@@ -28,8 +28,10 @@ Skills que você consome:
 
 1. Confirme os parâmetros recebidos (nome, porta, profile, container web, variante).
    Se algum faltar, pergunte antes de gerar.
-2. Gere a base hexagonal (`entrypoint`/`application`/`domain`/`shared`, classe principal, rota
-   `/disponibilidade`) seguindo `arquitetura-limpa-java`, com pacote `br.com.srportto.<nome>`.
+2. Gere a base hexagonal clássica (`domain` com `model`/`port/in`/`port/out`, `application/usecase`,
+   `infrastructure` com os adapters, classe principal, rota `/disponibilidade`) seguindo
+   `arquitetura-limpa-java`, com pacote `br.com.srportto.<nome>`. Aplicação nova **nunca** nasce no
+   layout legado `entrypoint`/`shared`.
 3. Se houver variante, gere seus componentes obrigatórios conforme a tabela "Variante — componentes
    obrigatórios" de `criar-aplicacao-java`. **Variante com SQS**: a fila SHALL nascer com DLQ +
    `RedrivePolicy` e o listener SHALL delegar a classificação de erro a um interceptor central

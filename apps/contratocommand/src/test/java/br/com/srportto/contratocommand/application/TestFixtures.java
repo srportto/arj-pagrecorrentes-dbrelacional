@@ -1,11 +1,11 @@
 package br.com.srportto.contratocommand.application;
 
-import br.com.srportto.contratocommand.application.cancelamento.CancelamentoContext;
-import br.com.srportto.contratocommand.application.contratacao.ContratacaoContext;
+import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
+import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CancelarAutorizacaoRequest;
-import br.com.srportto.contratocommand.entrypoint.contratosrest.CriarAutorizacaoRequest;
+import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
+import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CriarAutorizacaoRequest;
 import tools.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
@@ -48,17 +48,33 @@ public final class TestFixtures {
         return criarRequest("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null);
     }
 
-    public static ContratacaoContext criarContext(String tipoProduto, BigDecimal valor,
+    public static CriarAutorizacaoCommand criarContext(String tipoProduto, BigDecimal valor,
             LocalDate dataFimVigencia, JsonNode metadados, TipoJornadaAutorizacao tipoJornada) {
-        return ContratacaoContext.doRequest(tipoJornada, criarRequest(tipoProduto, valor, dataFimVigencia, metadados));
+        return new CriarAutorizacaoCommand(
+                tipoJornada,
+                dataFimVigencia,
+                tipoProduto,
+                valor,
+                "EMP001",
+                new BigDecimal("2000.00"),
+                2,
+                2,
+                0,
+                "C1",
+                "descricao de teste",
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                metadados == null ? null : metadados.toString());
     }
 
-    public static ContratacaoContext criarContextPix() {
+    public static CriarAutorizacaoCommand criarContextPix() {
         return criarContext("PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
                 TipoJornadaAutorizacao.SPI_J1);
     }
 
-    public static ContratacaoContext criarContextDda() {
+    public static CriarAutorizacaoCommand criarContextDda() {
         return criarContext("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
                 TipoJornadaAutorizacao.SPI_J1);
     }
@@ -67,7 +83,9 @@ public final class TestFixtures {
         return new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste cancelamento");
     }
 
-    public static CancelamentoContext cancelarContext(String idAutorizacao, TipoProduto produtoHeader) {
-        return CancelamentoContext.doRequest(idAutorizacao, produtoHeader, cancelarDados());
+    public static CancelarAutorizacaoCommand cancelarContext(String idAutorizacao, TipoProduto produtoHeader) {
+        CancelarAutorizacaoRequest dados = cancelarDados();
+        return CancelarAutorizacaoCommand.doRequest(idAutorizacao, produtoHeader,
+                dados.codigoCanalCancelamento(), dados.idPessoaCancelamento(), dados.motivoCancelamento());
     }
 }

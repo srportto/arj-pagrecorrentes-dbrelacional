@@ -29,20 +29,22 @@ um listener/consumer, use `padrao-de-logs-java`.
 
 ## 1. Onde a mensageria vive na arquitetura
 
-Listener SQS e consumer Kafka são **adaptadores de ENTRADA** — vivem em `entrypoint/`, no mesmo nível
-de um `@RestController`: recebem a mensagem e delegam para um service de `application/`, sem regra de
-negócio própria. Produtor Kafka é **adaptador de SAÍDA**, encapsulado em `application/`. O domínio
-nunca conhece o broker (nenhuma classe em `domain/` importa `io.awspring.cloud.*`,
-`org.springframework.kafka.*` ou `com.fasterxml.jackson.*`).
+Listener SQS e consumer Kafka são **driving adapters** — vivem em `infrastructure/messaging/`, no
+mesmo nível de um `@RestController`: recebem a mensagem e chamam uma `port/in`, sem regra de negócio
+própria. Produtor Kafka é **driven adapter**: implementa uma `port/out` declarada no `domain` e
+também reside em `infrastructure/messaging/`. O domínio nunca conhece o broker (nenhuma classe em
+`domain/` importa `io.awspring.cloud.*`, `org.springframework.kafka.*` ou `com.fasterxml.jackson.*`).
 
 ```
-entrypoint/                          application/
+infrastructure/messaging/            application/usecase/
   PedidoSqsListener      ────▶         ProcessarPedidoService (valida, garante idempotencia)
-  PedidoKafkaConsumer                      │
+  PedidoKafkaConsumer                      │        implements domain/port/in
                                             ▼
                                           domain/ (regra de negocio pura)
 
-  EventoController        ────▶         PublicarEventoService ──▶ KafkaTemplate.send(...)
+  EventoController        ────▶         PublicarEventoService ──▶ domain/port/out/EventoPublisher
+  (infrastructure/web/)                                                    ▲
+                                          KafkaEventoPublisher ────────────┘ (driven adapter)
                                         (adaptador de SAIDA, encapsula o KafkaTemplate)
 ```
 
@@ -124,7 +126,7 @@ da mensagem — nunca do body (ver `padrao-de-logs-java`).
 recebe a exceção e devolve a decisão de ack:
 
 ```java
-// entrypoint/sqs/PedidoErrorInterceptor.java — ponto unico de classificacao, listener so delega
+// infrastructure/messaging/PedidoErrorInterceptor.java — ponto unico de classificacao, listener so delega
 @Component
 public class PedidoErrorInterceptor {
 
@@ -154,7 +156,7 @@ try {
 
 **`@KafkaListener` (spring-kafka)** — o framework já oferece o ponto único pronto: um
 `DefaultErrorHandler` central com `DeadLetterPublishingRecoverer`, configurado uma vez em
-`shared/config/`, nunca com `try/catch` dentro do método do listener:
+`infrastructure/config/`, nunca com `try/catch` dentro do método do listener:
 
 ```java
 @Bean
