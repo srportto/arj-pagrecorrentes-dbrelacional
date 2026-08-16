@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.domain.utilities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import java.security.SecureRandom;
 import java.util.UUID;

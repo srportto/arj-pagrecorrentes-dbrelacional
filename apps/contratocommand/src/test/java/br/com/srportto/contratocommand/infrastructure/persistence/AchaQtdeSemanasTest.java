@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.domain.utilities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

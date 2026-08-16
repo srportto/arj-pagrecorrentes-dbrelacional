@@ -1,16 +1,15 @@
 package br.com.srportto.contratocommand.application.usecase;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.exception.ApplicationException;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Cancelamento;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.domain.service.cancelamento.CancelamentoValidator;
-import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +37,8 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
     public Autorizacao execute(CancelarAutorizacaoCommand command) {
         log.info("Iniciando cancelamento de autorização {}", command.idAutorizacao());
 
-        var idAutorizacaoStr = command.idAutorizacao();
-
-        var idParticaoAutorizacao = ReversibleUUIDv7.extract(UUID.fromString(idAutorizacaoStr));
-
-        var autorizacao = obterAutorizacaoPorIdEParticao(idAutorizacaoStr, idParticaoAutorizacao);
+        var idAutorizacaoUuid = UUID.fromString(command.idAutorizacao());
+        var autorizacao = obterAutorizacaoPorId(idAutorizacaoUuid);
 
         var statusAtual = StatusAutorizacao.obterStatusEnumPorIdStatus(autorizacao.getStatus());
         var comandoValidado = command.comAutorizacaoCarregada(autorizacao.getTipoProduto(), statusAtual);
@@ -72,16 +68,14 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
         return autorizacaoCanceladaEmNovaParticao;
     }
 
-    private Autorizacao obterAutorizacaoPorIdEParticao(String idAutorizacao, int idParticaoAutorizacao) {
+    private Autorizacao obterAutorizacaoPorId(UUID idAutorizacao) {
         try {
-            var idAutorizacaoUuid = UUID.fromString(idAutorizacao);
-            return repository.findByIdAutorizacaoAndParticao(idAutorizacaoUuid, idParticaoAutorizacao)
+            return repository.findById(idAutorizacao)
                     .orElseThrow(() -> new BusinessException("Autorização não encontrada com ID: " + idAutorizacao));
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            throw new ApplicationException(
-                    "Falha ao obter autorização " + idAutorizacao + " na partição " + idParticaoAutorizacao, e);
+            throw new ApplicationException("Falha ao obter autorização " + idAutorizacao, e);
         }
     }
 }

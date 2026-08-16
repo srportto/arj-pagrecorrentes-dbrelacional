@@ -8,11 +8,10 @@ import br.com.srportto.contratocommand.domain.service.cancelamento.rules.Produto
 import br.com.srportto.contratocommand.domain.service.cancelamento.rules.TipoProdutoCancelamento;
 import br.com.srportto.contratocommand.domain.service.cancelamento.rules.TransicaoStatusValida;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
+import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.domain.exception.ApplicationException;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,10 +60,11 @@ class CancelarAutorizacaoServiceTest {
         CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+        aut.setIdAutorizacao(uuid);
+        aut.setIdParticaoConta(PARTICAO);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         Autorizacao resp = service.execute(command);
@@ -84,7 +84,7 @@ class CancelarAutorizacaoServiceTest {
     void naoEncontrada() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.empty());
+        when(repository.findById(uuid)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> service.execute(command));
 
@@ -98,10 +98,11 @@ class CancelarAutorizacaoServiceTest {
         CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+        aut.setIdAutorizacao(uuid);
+        aut.setIdParticaoConta(PARTICAO);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
                 .thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
 
@@ -117,7 +118,7 @@ class CancelarAutorizacaoServiceTest {
         CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
         RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenThrow(causaOriginal);
+        when(repository.findById(uuid)).thenThrow(causaOriginal);
 
         ApplicationException ex = assertThrows(ApplicationException.class, () -> service.execute(command));
 
@@ -148,10 +149,11 @@ class CancelarAutorizacaoServiceTest {
             CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
             Autorizacao aut = new Autorizacao();
-            aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+            aut.setIdAutorizacao(uuid);
+            aut.setIdParticaoConta(PARTICAO);
             aut.setTipoProduto(TipoProduto.PIX_AUTO);
             aut.setStatus((int) StatusAutorizacao.CANCELADA.getStatusAutorizacao());
-            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
 
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
@@ -167,10 +169,11 @@ class CancelarAutorizacaoServiceTest {
             CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
             Autorizacao aut = new Autorizacao();
-            aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+            aut.setIdAutorizacao(uuid);
+            aut.setIdParticaoConta(PARTICAO);
             aut.setTipoProduto(TipoProduto.PIX_AUTO);
             aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
             when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(command);

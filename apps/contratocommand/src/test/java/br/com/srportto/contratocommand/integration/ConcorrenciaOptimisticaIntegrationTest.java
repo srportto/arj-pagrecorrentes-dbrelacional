@@ -4,14 +4,13 @@ import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
-import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
-import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
+import br.com.srportto.contratocommand.infrastructure.persistence.ControleExpurgoAutorizacao;
+import br.com.srportto.contratocommand.infrastructure.persistence.IdContaUUIDPartitionDistributor;
+import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -145,7 +144,7 @@ class ConcorrenciaOptimisticaIntegrationTest {
     void doisCancelamentosConcorrentes_ExatamenteUmVence() throws InterruptedException {
         Autorizacao aut = criarAutorizacaoTeste();
         repository.save(aut);
-        UUID idAutorizacao = aut.getIdAutorizacao().getIdAutorizacao();
+        UUID idAutorizacao = aut.getIdAutorizacao();
 
         CountDownLatch podeComecar = new CountDownLatch(1);
         CountDownLatch terminou = new CountDownLatch(2);
@@ -222,7 +221,8 @@ class ConcorrenciaOptimisticaIntegrationTest {
         UUID idAutorizacao = ReversibleUUIDv7.generate(particao);
 
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(idAutorizacao, particao));
+        aut.setIdAutorizacao(idAutorizacao);
+        aut.setIdParticaoConta(particao);
         aut.setIdAutorizacaoEmpresa("test-emp-" + UUID.randomUUID());
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setTipoJornada(TipoJornadaAutorizacao.SPI_J1);

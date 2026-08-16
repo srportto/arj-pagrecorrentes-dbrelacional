@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.infrastructure.messaging;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -76,14 +76,13 @@ public record AutorizacaoEventoPayload(
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static AutorizacaoEventoPayload from(Autorizacao autorizacao) {
-        var id = autorizacao.getIdAutorizacao();
         var tipoProduto = autorizacao.getTipoProduto();
         var tipoJornada = autorizacao.getTipoJornada();
         var cancelamento = autorizacao.getCancelamento();
 
         return new AutorizacaoEventoPayload(
-                id.getIdAutorizacao(),
-                id.getIdParticaoConta(),
+                autorizacao.getIdAutorizacao(),
+                autorizacao.getIdParticaoConta(),
                 autorizacao.getDataFimVigencia(),
                 tipoProduto != null ? tipoProduto.getTipoProduto() : null,
                 tipoJornada != null ? tipoJornada.getCodigoJornada() : null,

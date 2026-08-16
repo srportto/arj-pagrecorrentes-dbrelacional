@@ -1,7 +1,6 @@
 package br.com.srportto.contratocommand.application.usecase;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,8 @@ class ExpurgoAutorizacaoServiceTest {
     @DisplayName("delega a transferencia para a porta de saida")
     void delegaParaAPorta() {
         var autorizacao = new Autorizacao();
-        autorizacao.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 5));
+        autorizacao.setIdAutorizacao(UUID.randomUUID());
+        autorizacao.setIdParticaoConta(5);
         var transferida = new Autorizacao();
         when(repository.transferirParaExpurgo(autorizacao, DATA_REFERENCIA)).thenReturn(transferida);
 

@@ -1,7 +1,6 @@
 package br.com.srportto.contratocommand.infrastructure.messaging;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
@@ -39,7 +38,8 @@ class AutorizacaoEventoPublisherTest {
 
     private Autorizacao autorizacao(TipoProduto tipoProduto, int status, TipoJornadaAutorizacao tipoJornada) {
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 950));
+        aut.setIdAutorizacao(UUID.randomUUID());
+        aut.setIdParticaoConta(950);
         aut.setTipoProduto(tipoProduto);
         aut.setTipoJornada(tipoJornada);
         aut.setStatus(status);

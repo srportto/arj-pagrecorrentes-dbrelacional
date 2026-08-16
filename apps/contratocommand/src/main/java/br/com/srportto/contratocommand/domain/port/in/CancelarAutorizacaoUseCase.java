@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.domain.port.in;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 
 public interface CancelarAutorizacaoUseCase {
 

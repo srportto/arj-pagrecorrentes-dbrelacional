@@ -1,8 +1,7 @@
 package br.com.srportto.contratocommand.infrastructure.web;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoUseCase;
@@ -60,7 +59,8 @@ class AutorizacaoControllerTest {
 
     private Autorizacao autorizacaoComId(UUID id) {
         var aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(id, 5));
+        aut.setIdAutorizacao(id);
+        aut.setIdParticaoConta(5);
         return aut;
     }
 
@@ -75,7 +75,7 @@ class AutorizacaoControllerTest {
         ResponseEntity<AutorizacaoCompletaResponseDto> resp = controller.insert(request, "SPI_J1");
 
         assertEquals(HttpStatus.CREATED, resp.getStatusCode());
-        assertEquals(autorizada.getIdAutorizacao().getIdAutorizacao(), resp.getBody().getIdAutorizacao());
+        assertEquals(autorizada.getIdAutorizacao(), resp.getBody().getIdAutorizacao());
 
         ArgumentCaptor<CriarAutorizacaoCommand> captor = ArgumentCaptor.forClass(CriarAutorizacaoCommand.class);
         verify(criarAutorizacaoUseCase).execute(captor.capture());
@@ -98,7 +98,7 @@ class AutorizacaoControllerTest {
                 controller.cancelar("550e8400-e29b-41d4-a716-446655440000", "PIX_AUTO", dados);
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
-        assertEquals(autorizada.getIdAutorizacao().getIdAutorizacao(), resp.getBody().getIdAutorizacao());
+        assertEquals(autorizada.getIdAutorizacao(), resp.getBody().getIdAutorizacao());
 
         ArgumentCaptor<CancelarAutorizacaoCommand> captor = ArgumentCaptor.forClass(CancelarAutorizacaoCommand.class);
         verify(cancelarAutorizacaoUseCase).execute(captor.capture());
@@ -131,7 +131,7 @@ class AutorizacaoControllerTest {
                 controller.decidir("550e8400-e29b-41d4-a716-446655440000", "PIX_AUTO", dados);
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
-        assertEquals(autorizada.getIdAutorizacao().getIdAutorizacao(), resp.getBody().getIdAutorizacao());
+        assertEquals(autorizada.getIdAutorizacao(), resp.getBody().getIdAutorizacao());
 
         ArgumentCaptor<DecidirAutorizacaoCommand> captor = ArgumentCaptor.forClass(DecidirAutorizacaoCommand.class);
         verify(decidirAutorizacaoUseCase).execute(captor.capture());

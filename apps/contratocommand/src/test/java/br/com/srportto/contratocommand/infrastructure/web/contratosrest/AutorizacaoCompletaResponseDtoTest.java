@@ -1,7 +1,6 @@
 package br.com.srportto.contratocommand.infrastructure.web.contratosrest;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,8 @@ class AutorizacaoCompletaResponseDtoTest {
 
     private Autorizacao base(String metadados) {
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(UUID.randomUUID(), 10));
+        aut.setIdAutorizacao(UUID.randomUUID());
+        aut.setIdParticaoConta(10);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus(1);
         aut.setMetadados(metadados);
@@ -28,7 +28,7 @@ class AutorizacaoCompletaResponseDtoTest {
         Autorizacao aut = base("{\"k\":\"v\"}");
         AutorizacaoCompletaResponseDto dto = AutorizacaoCompletaResponseDto.from(aut);
 
-        assertEquals(aut.getIdAutorizacao().getIdAutorizacao(), dto.getIdAutorizacao());
+        assertEquals(aut.getIdAutorizacao(), dto.getIdAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, dto.getTipoProduto());
         assertNotNull(dto.getMetadados());
         assertTrue(dto.getMetadados().has("k"));

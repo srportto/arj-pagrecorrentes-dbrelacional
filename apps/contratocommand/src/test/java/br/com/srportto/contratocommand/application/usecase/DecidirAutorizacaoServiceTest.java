@@ -7,11 +7,10 @@ import br.com.srportto.contratocommand.domain.service.decisao.rules.AcaoDecisaoV
 import br.com.srportto.contratocommand.domain.service.decisao.rules.TipoProdutoDecisao;
 import br.com.srportto.contratocommand.domain.service.decisao.rules.TransicaoValidaDecisao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
+import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.domain.exception.ApplicationException;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +54,8 @@ class DecidirAutorizacaoServiceTest {
 
     private Autorizacao autorizacaoRecebida(UUID uuid) {
         var aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(uuid, PARTICAO));
+        aut.setIdAutorizacao(uuid);
+        aut.setIdParticaoConta(PARTICAO);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.RECEBIDA.getStatusAutorizacao());
         aut.setMotivoStatus("RECEPCAO_SPI_J1");
@@ -72,7 +72,7 @@ class DecidirAutorizacaoServiceTest {
     void aprova() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Autorizacao resp = service.execute(contexto(uuid, "APROVAR"));
@@ -90,7 +90,7 @@ class DecidirAutorizacaoServiceTest {
     void rejeita() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         service.execute(contexto(uuid, "REJEITAR"));
@@ -106,7 +106,7 @@ class DecidirAutorizacaoServiceTest {
     void expira() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
         when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         service.execute(contexto(uuid, "EXPIRAR"));
@@ -121,7 +121,7 @@ class DecidirAutorizacaoServiceTest {
     @DisplayName("lança BusinessException quando a autorização não é encontrada e não publica evento")
     void naoEncontrada() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.empty());
+        when(repository.findById(uuid)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> service.execute(contexto(uuid, "APROVAR")));
 
@@ -134,7 +134,7 @@ class DecidirAutorizacaoServiceTest {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
 
         RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
-        when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenThrow(causaOriginal);
+        when(repository.findById(uuid)).thenThrow(causaOriginal);
 
         ApplicationException ex = assertThrows(ApplicationException.class,
                 () -> service.execute(contexto(uuid, "APROVAR")));
@@ -166,7 +166,7 @@ class DecidirAutorizacaoServiceTest {
             var aut = autorizacaoRecebida(uuid);
             aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
             aut.setMotivoStatus("AUTORIZACAO_ACEITA_POR_TODOS");
-            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
 
             assertThrows(BusinessException.class,
                     () -> useCaseComValidacaoReal.execute(contexto(uuid, "EXPIRAR")));
@@ -182,7 +182,7 @@ class DecidirAutorizacaoServiceTest {
         void decisaoRepetidaPublicaUmUnicoEvento() {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
             var aut = autorizacaoRecebida(uuid);
-            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
             when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(contexto(uuid, "EXPIRAR"));
@@ -200,7 +200,7 @@ class DecidirAutorizacaoServiceTest {
         void acaoDesconhecida() {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
             var aut = autorizacaoRecebida(uuid);
-            when(repository.findByIdAutorizacaoAndParticao(uuid, PARTICAO)).thenReturn(Optional.of(aut));
+            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
 
             assertThrows(BusinessException.class,
                     () -> useCaseComValidacaoReal.execute(contexto(uuid, "CONFIRMAR")));

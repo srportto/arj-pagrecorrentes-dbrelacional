@@ -1,8 +1,7 @@
 package br.com.srportto.contratocommand.infrastructure.messaging;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.Cancelamento;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,8 @@ class AutorizacaoEventoPayloadTest {
     private Autorizacao autorizacaoCompleta() {
         UUID id = UUID.randomUUID();
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(id, 950));
+        aut.setIdAutorizacao(id);
+        aut.setIdParticaoConta(950);
         aut.setDataFimVigencia(LocalDate.of(2026, 12, 31));
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus(4);
@@ -58,8 +58,8 @@ class AutorizacaoEventoPayloadTest {
 
         AutorizacaoEventoPayload payload = AutorizacaoEventoPayload.from(aut);
 
-        assertEquals(aut.getIdAutorizacao().getIdAutorizacao(), payload.idAutorizacao());
-        assertEquals(aut.getIdAutorizacao().getIdParticaoConta(), payload.idParticaoConta());
+        assertEquals(aut.getIdAutorizacao(), payload.idAutorizacao());
+        assertEquals(aut.getIdParticaoConta(), payload.idParticaoConta());
         assertEquals(TipoProduto.PIX_AUTO.getTipoProduto(), payload.tipoProduto());
         assertEquals(aut.getStatus(), payload.status());
         assertEquals(aut.getIdAutorizacaoEmpresa(), payload.idAutorizacaoEmpresa());

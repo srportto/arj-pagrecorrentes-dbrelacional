@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.domain.utilities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 

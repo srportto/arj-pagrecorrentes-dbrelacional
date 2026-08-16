@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.domain.entities;
+package br.com.srportto.contratocommand.domain.model;
 
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -10,23 +10,20 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Testes da entidade Autorizacao")
+@DisplayName("Testes do modelo de dominio Autorizacao")
 class AutorizacaoTest {
 
     @Test
-    @DisplayName("inicializaCriacao gera id/partição e aplica defaults; dataFimVigencia nula vira 9999-12-31")
+    @DisplayName("inicializaCriacao grava o id recebido e aplica defaults; dataFimVigencia nula vira 9999-12-31")
     void inicializaComDefaults() {
         Autorizacao autorizacao = new Autorizacao();
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
         autorizacao.setTipoProduto(TipoProduto.DDA_AUTO);
+        UUID idGerado = UUID.randomUUID();
 
-        Autorizacao resultado = autorizacao.inicializaCriacao();
+        Autorizacao resultado = autorizacao.inicializaCriacao(idGerado);
 
-        assertNotNull(resultado.getIdAutorizacao());
-        assertNotNull(resultado.getIdAutorizacao().getIdAutorizacao());
-        int particao = resultado.getIdAutorizacao().getIdParticaoConta();
-        assertTrue(particao >= 0 && particao < 889, "partição embutida deve estar em 0..888, foi " + particao);
-
+        assertEquals(idGerado, resultado.getIdAutorizacao());
         assertEquals((int) StatusAutorizacao.ATIVA.getStatusAutorizacao(), resultado.getStatus());
         assertEquals(LocalDate.now(), resultado.getDataInicioVigencia());
         assertNotNull(resultado.getDataHoraInclusao());
@@ -44,7 +41,7 @@ class AutorizacaoTest {
         LocalDate fim = LocalDate.of(2030, 1, 1);
         autorizacao.setDataFimVigencia(fim);
 
-        autorizacao.inicializaCriacao();
+        autorizacao.inicializaCriacao(UUID.randomUUID());
 
         assertEquals(fim, autorizacao.getDataFimVigencia());
     }
@@ -56,7 +53,7 @@ class AutorizacaoTest {
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
         autorizacao.setTipoProduto(TipoProduto.PIX_AUTO);
 
-        Autorizacao resultado = autorizacao.inicializaCriacao();
+        Autorizacao resultado = autorizacao.inicializaCriacao(UUID.randomUUID());
 
         assertEquals((int) StatusAutorizacao.RECEBIDA.getStatusAutorizacao(), resultado.getStatus());
     }
@@ -68,7 +65,7 @@ class AutorizacaoTest {
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
         autorizacao.setTipoProduto(TipoProduto.DDA_AUTO);
 
-        Autorizacao resultado = autorizacao.inicializaCriacao();
+        Autorizacao resultado = autorizacao.inicializaCriacao(UUID.randomUUID());
 
         assertEquals((int) StatusAutorizacao.ATIVA.getStatusAutorizacao(), resultado.getStatus());
     }
@@ -79,6 +76,6 @@ class AutorizacaoTest {
         Autorizacao autorizacao = new Autorizacao();
         autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
 
-        assertThrows(IllegalStateException.class, autorizacao::inicializaCriacao);
+        assertThrows(IllegalStateException.class, () -> autorizacao.inicializaCriacao(UUID.randomUUID()));
     }
 }

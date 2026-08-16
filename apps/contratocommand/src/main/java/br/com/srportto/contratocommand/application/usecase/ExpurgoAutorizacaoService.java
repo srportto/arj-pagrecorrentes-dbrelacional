@@ -1,6 +1,6 @@
 package br.com.srportto.contratocommand.application.usecase;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

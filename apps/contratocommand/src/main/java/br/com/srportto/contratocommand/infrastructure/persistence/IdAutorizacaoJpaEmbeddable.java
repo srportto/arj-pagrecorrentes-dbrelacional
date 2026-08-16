@@ -1,18 +1,18 @@
-package br.com.srportto.contratocommand.domain.entities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
 @Embeddable
-public class IdAutorizacao {
+public class IdAutorizacaoJpaEmbeddable {
 
     @Column(name = "id_autorizacao", nullable = false)
     private UUID idAutorizacao;

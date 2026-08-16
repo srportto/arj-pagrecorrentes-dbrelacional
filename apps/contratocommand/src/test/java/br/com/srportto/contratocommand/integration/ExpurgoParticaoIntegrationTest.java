@@ -5,14 +5,13 @@ import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.IdAutorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
-import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
-import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
+import br.com.srportto.contratocommand.infrastructure.persistence.ControleExpurgoAutorizacao;
+import br.com.srportto.contratocommand.infrastructure.persistence.IdContaUUIDPartitionDistributor;
+import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -161,7 +160,7 @@ class ExpurgoParticaoIntegrationTest {
     @DisplayName("EXPIRAR move a autorizacao para a particao de expurgo, sem conflito")
     void expirar_MoveParaParticaoDeExpurgo() {
         Autorizacao autorizacao = persistirRecebida("emp-expirar-" + UUID.randomUUID());
-        UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
+        UUID id = autorizacao.getIdAutorizacao();
 
         assertDoesNotThrow(() -> decidirUseCase.execute(decisao(id, "EXPIRAR")),
                 "Expiracao isolada, sem nenhum chamador concorrente, nao pode falhar por conflito");
@@ -180,7 +179,7 @@ class ExpurgoParticaoIntegrationTest {
     @DisplayName("REJEITAR move a autorizacao para a particao de expurgo, sem conflito")
     void rejeitar_MoveParaParticaoDeExpurgo() {
         Autorizacao autorizacao = persistirRecebida("emp-rejeitar-" + UUID.randomUUID());
-        UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
+        UUID id = autorizacao.getIdAutorizacao();
 
         assertDoesNotThrow(() -> decidirUseCase.execute(decisao(id, "REJEITAR")));
 
@@ -196,7 +195,7 @@ class ExpurgoParticaoIntegrationTest {
         // TransicaoStatusValida só permite cancelar a partir de ATIVA.
         Autorizacao autorizacao = persistir("emp-cancelar-" + UUID.randomUUID(), PARTICAO_QUENTE,
                 StatusAutorizacao.ATIVA, "AUTORIZACAO_ACEITA_POR_TODOS");
-        UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
+        UUID id = autorizacao.getIdAutorizacao();
 
         assertDoesNotThrow(() -> cancelarUseCase.execute(
                 TestFixtures.cancelarContext(id.toString(), TipoProduto.PIX_AUTO)));
@@ -211,7 +210,7 @@ class ExpurgoParticaoIntegrationTest {
     @DisplayName("A transferencia incrementa a versao do lock otimista")
     void transferencia_IncrementaVersao() {
         Autorizacao autorizacao = persistirRecebida("emp-versao-" + UUID.randomUUID());
-        UUID id = autorizacao.getIdAutorizacao().getIdAutorizacao();
+        UUID id = autorizacao.getIdAutorizacao();
         long versaoAntes = versaoDe(id);
 
         decidirUseCase.execute(decisao(id, "EXPIRAR"));
@@ -228,8 +227,8 @@ class ExpurgoParticaoIntegrationTest {
         String chaveCompartilhada = "pedido-compartilhado-" + UUID.randomUUID();
         Autorizacao primeira = persistirRecebida(chaveCompartilhada, PARTICAO_QUENTE);
         Autorizacao segunda = persistirRecebida(chaveCompartilhada, OUTRA_PARTICAO_QUENTE);
-        UUID idPrimeira = primeira.getIdAutorizacao().getIdAutorizacao();
-        UUID idSegunda = segunda.getIdAutorizacao().getIdAutorizacao();
+        UUID idPrimeira = primeira.getIdAutorizacao();
+        UUID idSegunda = segunda.getIdAutorizacao();
 
         decidirUseCase.execute(decisao(idPrimeira, "EXPIRAR"));
 
@@ -282,7 +281,8 @@ class ExpurgoParticaoIntegrationTest {
         UUID idAutorizacao = ReversibleUUIDv7.generate(particaoQuente);
 
         Autorizacao aut = new Autorizacao();
-        aut.setIdAutorizacao(new IdAutorizacao(idAutorizacao, particaoQuente));
+        aut.setIdAutorizacao(idAutorizacao);
+        aut.setIdParticaoConta(particaoQuente);
         aut.setIdAutorizacaoEmpresa(idAutorizacaoEmpresa);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setTipoJornada(TipoJornadaAutorizacao.SPI_J1);

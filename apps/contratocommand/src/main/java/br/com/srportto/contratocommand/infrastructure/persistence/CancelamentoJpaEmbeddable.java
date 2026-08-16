@@ -1,4 +1,4 @@
-package br.com.srportto.contratocommand.domain.entities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -13,7 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Embeddable
-public class Cancelamento {
+public class CancelamentoJpaEmbeddable {
 
     @Column(name = "codigo_canal_cancelamento", nullable = true)
     private String codigoCanalCancelamento;

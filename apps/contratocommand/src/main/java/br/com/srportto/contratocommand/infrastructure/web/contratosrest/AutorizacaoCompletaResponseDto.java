@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.infrastructure.web.contratosrest;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
-import br.com.srportto.contratocommand.domain.entities.Cancelamento;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -50,7 +50,7 @@ public class AutorizacaoCompletaResponseDto {
 
     public static AutorizacaoCompletaResponseDto from(Autorizacao autorizacao) {
         return AutorizacaoCompletaResponseDto.builder()
-                .idAutorizacao(autorizacao.getIdAutorizacao().getIdAutorizacao())
+                .idAutorizacao(autorizacao.getIdAutorizacao())
                 .dataFimVigencia(autorizacao.getDataFimVigencia())
                 .tipoProduto(autorizacao.getTipoProduto())
                 .status(autorizacao.getStatus())

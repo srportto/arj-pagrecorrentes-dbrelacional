@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.application.usecase;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
@@ -11,6 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,14 +23,13 @@ class AutorizacaoMapperTest {
     @Test
     @DisplayName("toDomain mapeia campos e o afterMapping aplica produto e inicializaCriacao (PIX)")
     void toDomainPix() {
-        Autorizacao aut = mapper.toDomain(TestFixtures.criarContextPix());
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarContextPix(), UUID.randomUUID());
 
         assertNotNull(aut);
         assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
         assertEquals(0, aut.getValorAutorizacao().compareTo(new BigDecimal("1000.00")));
         assertEquals((short) 2, aut.getFrequenciaPagamento());
         assertNotNull(aut.getIdAutorizacao());
-        assertNotNull(aut.getIdAutorizacao().getIdAutorizacao());
         assertEquals(1, aut.getStatus()); // StatusAutorizacao.RECEBIDA
         assertEquals("RECEPCAO_SPI_J1", aut.getMotivoStatus());
         assertEquals(TipoJornadaAutorizacao.SPI_J1, aut.getTipoJornada());
@@ -38,7 +38,7 @@ class AutorizacaoMapperTest {
     @Test
     @DisplayName("toDomain mapeia produto DDA pelo nome do comando e grava status ATIVA")
     void toDomainDda() {
-        Autorizacao aut = mapper.toDomain(TestFixtures.criarContextDda());
+        Autorizacao aut = mapper.toDomain(TestFixtures.criarContextDda(), UUID.randomUUID());
 
         assertNotNull(aut);
         assertEquals(TipoProduto.DDA_AUTO, aut.getTipoProduto());
@@ -51,7 +51,7 @@ class AutorizacaoMapperTest {
     void toDomainPersisteJornadaQrcJ3() {
         Autorizacao aut = mapper.toDomain(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
-                TipoJornadaAutorizacao.QRC_J3));
+                TipoJornadaAutorizacao.QRC_J3), UUID.randomUUID());
 
         assertEquals(TipoJornadaAutorizacao.QRC_J3, aut.getTipoJornada());
         assertEquals("LEITURA_QRC_J3", aut.getMotivoStatus());
@@ -62,7 +62,7 @@ class AutorizacaoMapperTest {
     void toDomainProdutoCaseInsensitivo() {
         Autorizacao aut = mapper.toDomain(TestFixtures.criarContext(
                 "pix_auto", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
-                TipoJornadaAutorizacao.QRC_J2));
+                TipoJornadaAutorizacao.QRC_J2), UUID.randomUUID());
 
         assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
     }
@@ -72,7 +72,7 @@ class AutorizacaoMapperTest {
     void toDomainProdutoDesconhecidoLancaBusinessException() {
         assertThrows(BusinessException.class, () -> mapper.toDomain(TestFixtures.criarContext(
                 "CARTAO_CREDITO", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
-                TipoJornadaAutorizacao.QRC_J2)));
+                TipoJornadaAutorizacao.QRC_J2), UUID.randomUUID()));
     }
 
     @Test
@@ -81,7 +81,7 @@ class AutorizacaoMapperTest {
         var meta = new ObjectMapper().readTree("{\"k\":\"v\"}");
         Autorizacao aut = mapper.toDomain(TestFixtures.criarContext(
                 "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta,
-                TipoJornadaAutorizacao.QRC_J2));
+                TipoJornadaAutorizacao.QRC_J2), UUID.randomUUID());
 
         assertNotNull(aut.getMetadados());
         assertTrue(aut.getMetadados().contains("k"));

@@ -1,13 +1,13 @@
 package br.com.srportto.contratocommand.application.usecase;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.exception.RecursoJaExisteException;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
+import br.com.srportto.contratocommand.domain.port.out.GeradorIdentidadeAutorizacao;
 import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoValidator;
-import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +26,7 @@ public class CriarAutorizacaoService implements CriarAutorizacaoUseCase {
     private static final Logger log = LoggerFactory.getLogger(CriarAutorizacaoService.class);
 
     private final AutorizacaoRepository repository;
+    private final GeradorIdentidadeAutorizacao geradorIdentidade;
     private final AutorizacaoMapper mapper;
     private final ContratacaoValidator contratacaoValidator;
     private final ApplicationEventPublisher eventPublisher;
@@ -39,21 +40,20 @@ public class CriarAutorizacaoService implements CriarAutorizacaoUseCase {
         contratacaoValidator.validar(command);
 
         // Idempotência: mesmo escopo do índice único parcial uk_autorizacao_empresa_ativa no banco
-        // (partições quentes, id_particao_conta < 900) — poda a busca para 1 partição em vez de
-        // varrer todas.
-        var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(command.idUnicoContaContratante());
-        if (repository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(idParticaoConta, command.idAutorizacaoEmpresa())) {
+        // (partições quentes, id_particao_conta < 900) — a poda para 1 partição vive no adaptador.
+        if (repository.existeAutorizacaoAtivaComIdEmpresa(command.idUnicoContaContratante(), command.idAutorizacaoEmpresa())) {
             throw new RecursoJaExisteException("Autorização com id_autorizacao_empresa já existe: " + command.idAutorizacaoEmpresa());
         }
 
-        var autorizacaoMontada = mapper.toDomain(command);
+        var idGerado = geradorIdentidade.gerarPara(command.idUnicoContaContratante());
+        var autorizacaoMontada = mapper.toDomain(command, idGerado);
         var autorizadaPersistida = repository.save(autorizacaoMontada);
 
         eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizadaPersistida));
 
         log.info("Autorização {} criada com sucesso. ID: {}, Empresa: {}",
                 command.tipoProduto(),
-                autorizadaPersistida.getIdAutorizacao().getIdAutorizacao(),
+                autorizadaPersistida.getIdAutorizacao(),
                 autorizadaPersistida.getIdAutorizacaoEmpresa());
 
         return autorizadaPersistida;

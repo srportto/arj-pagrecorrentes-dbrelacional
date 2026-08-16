@@ -1,12 +1,7 @@
-package br.com.srportto.contratocommand.domain.entities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
-import br.com.srportto.contratocommand.domain.converters.TipoJornadaAutorizacaoConverter;
-import br.com.srportto.contratocommand.domain.converters.TipoProdutoConverter;
-import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.utilities.IdContaUUIDPartitionDistributor;
-import br.com.srportto.contratocommand.domain.utilities.ReversibleUUIDv7;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -15,9 +10,6 @@ import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -29,10 +21,10 @@ import java.util.UUID;
 // (só partições quentes), forma que JPA não expressa. @UniqueConstraint prometeria garantia
 // diferente da real. Ver infra/local/postgres/migrations/v1.0.4.
 @Table(name = "autorizacoes") // autorizacoes de produtos financeiros (PIX Automatico, DDA Automatico)
-public class Autorizacao {
+public class AutorizacaoJpaEntity {
 
     @EmbeddedId
-    private IdAutorizacao idAutorizacao;
+    private IdAutorizacaoJpaEmbeddable idAutorizacao;
 
     @Column(name = "data_fim_vigencia", nullable = false)
     private LocalDate dataFimVigencia;
@@ -94,63 +86,22 @@ public class Autorizacao {
     private String descricao;
 
     @Column(name = "id_unico_conta_contratante", nullable = false, unique = false, length = 36)
-    private UUID idUnicoContaContratante;
+    private java.util.UUID idUnicoContaContratante;
 
     @Column(name = "id_pessoa_pagadora", nullable = false, unique = false, length = 36)
-    private UUID idPessoaPagadora;
+    private java.util.UUID idPessoaPagadora;
 
     @Column(name = "id_pessoa_devedora", nullable = false, unique = false, length = 36)
-    private UUID idPessoaDevedora;
+    private java.util.UUID idPessoaDevedora;
 
     @Column(name = "id_pessoa_recebedora", nullable = false, unique = false, length = 36)
-    private UUID idPessoaRecebedora;
+    private java.util.UUID idPessoaRecebedora;
 
     @Embedded
-    private Cancelamento cancelamento;
+    private CancelamentoJpaEmbeddable cancelamento;
 
     @Column(name = "metadados", nullable = false, unique = false, columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private String metadados;
-
-    /** Status com que cada produto nasce na criação — fonte da verdade de {@link #inicializaCriacao()}. */
-    private static final Map<TipoProduto, StatusAutorizacao> STATUS_INICIAL_POR_PRODUTO = new EnumMap<>(TipoProduto.class);
-
-    static {
-        STATUS_INICIAL_POR_PRODUTO.put(TipoProduto.PIX_AUTO, StatusAutorizacao.RECEBIDA);
-        STATUS_INICIAL_POR_PRODUTO.put(TipoProduto.DDA_AUTO, StatusAutorizacao.ATIVA);
-    }
-
-    /**
-     * Gera a chave composta, marca o status inicial por produto ({@link #STATUS_INICIAL_POR_PRODUTO})
-     * e aplica defaults. {@code motivoStatus} é responsabilidade do mapper, não deste método.
-     */
-    public Autorizacao inicializaCriacao() {
-
-        var idParticaoConta = IdContaUUIDPartitionDistributor.getPartitionFast(this.idUnicoContaContratante);
-        var idAutorizacaoGerado = ReversibleUUIDv7.generate(idParticaoConta);
-        var dataHoraCorrente = LocalDateTime.now();
-        var dataCorrente = LocalDate.now();
-
-        this.idAutorizacao = new IdAutorizacao();
-        this.idAutorizacao.setIdAutorizacao(idAutorizacaoGerado);
-        this.idAutorizacao.setIdParticaoConta(idParticaoConta);
-
-        var statusInicial = STATUS_INICIAL_POR_PRODUTO.get(this.tipoProduto);
-        if (statusInicial == null) {
-            throw new IllegalStateException(
-                    "Nenhum status inicial de criação definido para o produto " + this.tipoProduto);
-        }
-        this.status = (int) statusInicial.getStatusAutorizacao();
-        this.dataInicioVigencia = dataCorrente;
-        this.dataHoraInclusao = dataHoraCorrente;
-        this.dataHoraUltimaAtualizacao = dataHoraCorrente;
-        this.indicadorTipoMensageria = (short) 0;
-
-        if (this.dataFimVigencia == null) {
-            this.dataFimVigencia = LocalDate.of(9999, 12, 31);
-        }
-
-        return this;
-    }
 
 }

@@ -1,8 +1,7 @@
 package br.com.srportto.contratocommand.infrastructure.persistence;
 
-import br.com.srportto.contratocommand.domain.entities.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
-import br.com.srportto.contratocommand.domain.utilities.ControleExpurgoAutorizacao;
 import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -22,41 +21,59 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
     private static final Logger log = LoggerFactory.getLogger(AutorizacaoJpaAdapter.class);
 
     private final SpringDataAutorizacaoRepository springDataRepository;
+    private final AutorizacaoPersistenceMapper mapper;
     private final EntityManager entityManager;
 
     @Override
     public Autorizacao save(Autorizacao autorizacao) {
-        return springDataRepository.save(autorizacao);
+        if (autorizacao.getVersion() == null) {
+            var entidade = mapper.paraEntidade(autorizacao);
+            var salva = springDataRepository.save(entidade);
+            return mapper.paraDominio(salva);
+        }
+
+        // Update: nunca montar+salvar uma instância nova com version não nulo (armadilha nº 11).
+        // A entidade gerenciada é a mesma instância já carregada nesta transação (cache L1) —
+        // aplicarEm + dirty-checking do Hibernate produzem o UPDATE ... AND version = ? no commit.
+        var particaoAtual = ReversibleUUIDv7.extract(autorizacao.getIdAutorizacao());
+        var entidadeGerenciada = entidadeGerenciadaObrigatoria(autorizacao.getIdAutorizacao(), particaoAtual);
+        mapper.aplicarEm(autorizacao, entidadeGerenciada);
+        return mapper.paraDominio(entidadeGerenciada);
     }
 
     @Override
-    public Optional<Autorizacao> findByIdAutorizacaoAndParticao(UUID idAutorizacao, Integer idParticaoConta) {
-        return springDataRepository.findByIdAutorizacaoAndParticao(idAutorizacao, idParticaoConta);
+    public Optional<Autorizacao> findById(UUID idAutorizacao) {
+        var particao = ReversibleUUIDv7.extract(idAutorizacao);
+        return springDataRepository.findByIdAutorizacaoAndParticao(idAutorizacao, particao)
+                .map(mapper::paraDominio);
     }
 
     @Override
-    public boolean existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(
-            Integer idParticaoConta, String idAutorizacaoEmpresa) {
-        return springDataRepository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(
-                idParticaoConta, idAutorizacaoEmpresa);
+    public boolean existeAutorizacaoAtivaComIdEmpresa(UUID idUnicoContaContratante, String idAutorizacaoEmpresa) {
+        var particao = IdContaUUIDPartitionDistributor.getPartitionFast(idUnicoContaContratante);
+        return springDataRepository.existsByIdAutorizacao_IdParticaoContaAndIdAutorizacaoEmpresa(particao, idAutorizacaoEmpresa);
     }
 
     @Override
     public Autorizacao transferirParaExpurgo(Autorizacao autorizacao, LocalDate dataReferenciaExpurgo) {
         var novaParticao = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataReferenciaExpurgo);
-        var particaoAntiga = autorizacao.getIdAutorizacao().getIdParticaoConta();
+        var particaoAntiga = ReversibleUUIDv7.extract(autorizacao.getIdAutorizacao());
+        var idAutorizacaoUuid = autorizacao.getIdAutorizacao();
 
-        if (novaParticao == particaoAntiga.intValue()) {
-            return springDataRepository.save(autorizacao);
+        var entidadeGerenciada = entidadeGerenciadaObrigatoria(idAutorizacaoUuid, particaoAntiga);
+        mapper.aplicarEm(autorizacao, entidadeGerenciada);
+
+        if (novaParticao == particaoAntiga) {
+            var salva = springDataRepository.save(entidadeGerenciada);
+            return mapper.paraDominio(salva);
         }
 
-        var idAutorizacaoUuid = autorizacao.getIdAutorizacao().getIdAutorizacao();
         log.info("Transferindo autorização {} da partição {} para partição {}",
                 idAutorizacaoUuid, particaoAntiga, novaParticao);
 
         // Passo 1: dirty-check do JPA monta UPDATE com AND version=? — é isso que protege contra
         // escrita concorrente de terceiro.
-        var autorizacaoAtualizada = springDataRepository.saveAndFlush(autorizacao);
+        var autorizacaoAtualizada = springDataRepository.saveAndFlush(entidadeGerenciada);
 
         // Passo 2: move via SQL nativo (JPA proíbe alterar @EmbeddedId de entidade gerenciada). A
         // antiga via delete+flush+detach+save quebrava com @Version (StaleObjectStateException).
@@ -74,6 +91,13 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
         entityManager.detach(autorizacaoAtualizada);
         autorizacaoAtualizada.getIdAutorizacao().setIdParticaoConta(novaParticao);
 
-        return autorizacaoAtualizada;
+        return mapper.paraDominio(autorizacaoAtualizada);
     }
+
+    private AutorizacaoJpaEntity entidadeGerenciadaObrigatoria(UUID idAutorizacao, int particao) {
+        return springDataRepository.findByIdAutorizacaoAndParticao(idAutorizacao, particao)
+                .orElseThrow(() -> new ObjectOptimisticLockingFailureException(Autorizacao.class, idAutorizacao,
+                        "Autorização gerenciada não encontrada na partição " + particao + " para aplicar escrita", null));
+    }
+
 }
