@@ -7,8 +7,8 @@ Código de infraestrutura do monorepo, separado do código de aplicação (`apps
 `modules/networking`, `modules/ecs-cluster`, `modules/ecs-service`, `envs/local` e
 `envs/local-messaging` têm Terraform funcional, validado com `terraform apply` real
 contra o [Floci](../docs/floci-aws-local/floci-aws-local.md) (emulador AWS local — ver
-`openspec/changes/add-ecs-networking-foundation` e
-`openspec/changes/add-eventos-autorizacao-sns-sqs` para o histórico completo das
+`openspec/changes/archive/2026-07-20-add-ecs-networking-foundation` e
+`openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs` para o histórico completo das
 mudanças). Nesta fase:
 
 - **Nenhum recurso de AWS real é provisionado** — `envs/local` só fala com o

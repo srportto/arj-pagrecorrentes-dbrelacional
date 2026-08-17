@@ -48,7 +48,7 @@ mvn test                                     # Todos os testes
   Antes do primeiro deploy de um schema novo/alterado em produção, registre manualmente o subject
   `eventos-autorizacao-value` no Schema Registry (CLI ou API REST do Registry, com o `.avsc`
   atualizado) e confirme compatibilidade. Ver
-  `openspec/changes/rede-seguranca-contrato-evento/design.md` (D5).
+  `openspec/changes/archive/2026-08-09-rede-seguranca-contrato-evento/design.md` (D5).
 
 ## Stack
 
@@ -154,7 +154,7 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
    (`auto.create.topics.enable: false`). Sem essa criação explícita, a publicação na DLT
    falha com `UnknownTopicOrPartitionException`, o offset não avança e a partição trava
    na mensagem venenosa que a DLT deveria isolar — exatamente o cenário que a DLT existe
-   para evitar (ver `openspec/changes/rede-seguranca-contrato-evento`).
+   para evitar (ver `openspec/changes/archive/2026-08-09-rede-seguranca-contrato-evento`).
 10. **O destino da DLT é resolvido explicitamente para `<tópico>.DLT`** em
     `KafkaConsumerConfig.eventoAutorizacaoDeadLetterRecoverer` (`BiFunction` passado ao
     `DeadLetterPublishingRecoverer`) — **não confie no destino default do spring-kafka**:

@@ -1,7 +1,7 @@
 # modules/elasticache-valkey
 
 Módulo reutilizável de cluster ElastiCache com engine **Valkey**, usado pela aplicação
-`temporiza-autorizacao` (ver `openspec/changes/temporizacao-jornada-01-pix-auto`) para
+`temporiza-autorizacao` (ver `openspec/changes/archive/2026-08-09-temporizacao-jornada-01-pix-auto`) para
 agendamento e disparo de expiração via sorted set + stream com consumer group.
 
 Segue o mesmo padrão dos demais módulos (`ecs-cluster`, `ecs-service`, `networking`): sem

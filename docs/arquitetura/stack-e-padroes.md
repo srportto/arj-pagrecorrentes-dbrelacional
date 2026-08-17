@@ -7,7 +7,8 @@
 > (topologia, portas e como subir o ambiente).
 >
 > Levantado em 2026-08-14 a partir dos cinco `pom.xml`, dos `CLAUDE.md` de cada app e do
-> `infra/`.
+> `infra/`. Seção de arquitetura hexagonal atualizada em 2026-08-17 após a conclusão das
+> migrações para o layout `domain`/`application`/`infrastructure` nas cinco apps.
 
 ## Onde cada tecnologia atua
 
@@ -95,7 +96,7 @@ flowchart TD
 | Padrão | Como aparece aqui |
 |---|---|
 | **CQRS** (sem event sourcing) | `contratocommand` (escrita) e `contratoquery` (leitura, `DB_READ_ONLY=true`) sobre **a mesma base e a mesma tabela** — separação de responsabilidade e de escala, não de storage |
-| **Arquitetura hexagonal** | As cinco apps usam `entrypoint` / `application` / `domain` / `shared`. **Não existe pacote `infrastructure`**: adapters de saída vivem em `application/`, atrás de portas |
+| **Arquitetura hexagonal clássica** | As cinco apps usam `domain` / `application` / `infrastructure` (ports & adapters): `domain` é Java puro (modelo, portas de entrada/saída), `application` orquestra casos de uso sem conhecer transporte/persistência concretos, `infrastructure` concentra os adapters (web, persistence, messaging, config) |
 | **EDA com fan-out e filtro no broker** | SNS publica um evento por transição de estado; duas filas SQS assinam, uma delas com **filter policy** por message attributes (`tipoEvento` + `tipoProduto` + `tipoJornada`) — o consumidor não precisa de lógica de filtro |
 | **Publicação pós-commit (outbox ausente por decisão)** | `@TransactionalEventListener(AFTER_COMMIT)`: rollback nunca publica; falha no `publish` só loga e não afeta a resposta HTTP já commitada. Trade-off documentado em `add-eventos-autorizacao-sns-sqs` |
 | **Bridge / anti-corruption layer** | `autorizacaostatus-producer` traduz JSON (SQS) → Avro (Kafka); o ack no SQS só ocorre após a confirmação do broker Kafka |

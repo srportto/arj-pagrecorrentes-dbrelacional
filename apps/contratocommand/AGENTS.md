@@ -37,8 +37,8 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes dos `*Ser
   - `DB_TRANSACTION_ISOLATION` — nível de isolamento (default `TRANSACTION_READ_COMMITTED`; aceita `TRANSACTION_READ_UNCOMMITTED`, `TRANSACTION_READ_COMMITTED`, `TRANSACTION_REPEATABLE_READ`, `TRANSACTION_SERIALIZABLE`).
   - `DB_READ_ONLY` — modo de acesso (default `false` no `contratocommand`, `true` no `contratoquery`).
   - Pool HikariCP: `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, `DB_POOL_CONNECTION_TIMEOUT`, `DB_POOL_IDLE_TIMEOUT`, `DB_POOL_MAX_LIFETIME`.
-  - `hikari.connection-init-sql` fixa `plan_cache_mode = force_generic_plan` em toda conexão física do pool — elimina o replanejamento em `findByIdAutorizacao` (sem poda de partição); regride sub-milissegundo em consultas já podadas para 1 partição (`existsBy...`, `moverParaParticao`). Ver `openspec/changes/reduzir-custo-planejamento-consultas/design.md`.
-- Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório) — fonte única do Postgres local. Exemplos de payloads em `docs/post-autorizacoes.txt`.
+  - `hikari.connection-init-sql` fixa `plan_cache_mode = force_generic_plan` em toda conexão física do pool — elimina o replanejamento em `findByIdAutorizacao` (sem poda de partição); regride sub-milissegundo em consultas já podadas para 1 partição (`existsBy...`, `moverParaParticao`). Ver `openspec/changes/archive/2026-08-15-reduzir-custo-planejamento-consultas/design.md`.
+- Docker com PostgreSQL em `infra/local/postgres/` (raiz do repositório) — fonte única do Postgres local.
 - Dockerfile próprio (multi-stage, Fargate-ready) nesta pasta; `apps/docker-compose.yml` sobe as cinco aplicações (sem Postgres — ver `infra/local/postgres/`). Para o ambiente local completo num só comando, use o `compose.yaml` da raiz.
 - Profiles Spring: `local` (padrão de desenvolvimento) e `prod` (deve ser setado explicitamente via `SPRING_PROFILES_ACTIVE=prod`) — não existe mais o profile `dev`.
 - **Publicação de eventos (opcional para rodar a API)**: a cada criação/cancelamento confirmado, a app publica no SNS `sns-estados-autorizacao` (ver `infra/envs/local-messaging/`). No profile `local` os defaults já apontam para o Floci (`http://localhost:4566`); se o Floci ou o tópico não existirem, o publish falha silenciosamente (só loga erro) — a API continua funcionando normalmente. Em `prod`, as variáveis `AWS_REGION` e `AWS_SNS_TOPIC_ARN` são obrigatórias (sem default).
@@ -83,7 +83,7 @@ Classes de teste existentes: `ContratocommandApplicationTests`, testes dos `*Ser
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
 
-> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/reconciliar-contrato-spec-doc/design.md` (D3).
+> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/archive/2026-08-09-reconciliar-contrato-spec-doc/design.md` (D3).
 
 > **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
 
@@ -225,7 +225,7 @@ subscription de `SQS-temporizacao-autorizacao` restringe a entrega a `RECEPCAO` 
 `SPI_J1`, sem precisar de lógica de filtro na app consumidora). Nenhum attribute expressa
 informação ausente do body.
 
-Rollback (ex.: `BusinessException` de validação) nunca chega ao listener — nenhum evento é publicado. Falha no `publish()` (ex.: Floci fora do ar) é apenas logada; a resposta HTTP, já confirmada pelo commit, não é afetada. Não há outbox pattern nesta fase — é um trade-off aceito e documentado em `openspec/changes/add-eventos-autorizacao-sns-sqs/design.md`.
+Rollback (ex.: `BusinessException` de validação) nunca chega ao listener — nenhum evento é publicado. Falha no `publish()` (ex.: Floci fora do ar) é apenas logada; a resposta HTTP, já confirmada pelo commit, não é afetada. Não há outbox pattern nesta fase — é um trade-off aceito e documentado em `openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md`.
 
 ### Variação por produto vive em rules, não em strategies
 
@@ -305,7 +305,6 @@ temporizador.
 
 - [info_build-my-image-and-execute.md](../../docs/info_build-my-image-and-execute.md) — Docker + PostgreSQL com partman/cron
 - [exemplos-queries.sql](../../infra/local/postgres/exemplos-queries.sql) — scripts SQL de particionamento
-- [post-autorizacoes.txt](../../docs/post-autorizacoes.txt) — exemplos de payloads REST
 - [modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](../../docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) — racional do particionamento (Buffer Ring + UUIDv7 reversível)
 
 ## Checklist antes do commit
