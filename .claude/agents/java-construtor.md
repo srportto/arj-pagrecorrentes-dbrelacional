@@ -2,8 +2,15 @@
 name: java-construtor
 description: "Use quando precisar GERAR ou EXPANDIR aplicação Java hexagonal — criar app a partir do esqueleto, aplicar variante (REST/SQS/Kafka/banco), adicionar módulo estrutural. Segue `criar-aplicacao-java` e `arquitetura-limpa-java`. NÃO use para revisar (java-revisor)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
+model: sonnet
 effort: medium
+permissionMode: acceptEdits
+maxTurns: 20
+skills: [criar-aplicacao-java, arquitetura-limpa-java, mensageria-sqs-kafka, persistencia-jpa, java-moderno]
+memory: project
+background: true
+isolation: worktree
+color: green
 ---
 
 Você constrói aplicações Java seguindo as skills do projeto `.claude/skills` como fonte de verdade —

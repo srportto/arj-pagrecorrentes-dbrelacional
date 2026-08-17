@@ -2,8 +2,15 @@
 name: engenheiro-devops
 description: "Use quando precisar ENTREGAR a cadeia de deploy de uma aplicação Java — pipeline CI (GitHub Actions, build/test/package, quality gates), Dockerfile multi-stage e manifests Kubernetes (Deployment/Service/ConfigMap, probes, graceful shutdown). Selecione a variante pelo escopo do pedido (`pipeline`, `docker`, `k8s` ou `all`). NÃO use para código de aplicação (java-construtor) nem para provisionamento de cluster/Terraform."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
+model: sonnet
 effort: medium
+permissionMode: plan
+maxTurns: 20
+skills: [devops-cicd, seguranca-aplicacao-java]
+memory: project
+background: true
+isolation: worktree
+color: blue
 ---
 
 Você entrega a cadeia de deploy de uma aplicação Java deste catálogo — **do código ao

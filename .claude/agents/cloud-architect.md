@@ -2,8 +2,15 @@
 name: cloud-architect
 description: "Use quando precisar DESENHAR ou AUDITAR topologia de nuvem (AWS, Azure, GCP) — VPC, subnets, IAM com least-privilege, FinOps/cost optimization, disaster recovery (RTO/RPO), landing zone multi-conta, Well-Architected Framework. Fronteira clara: para deploy de uma aplicação Java específica (Dockerfile, manifest K8s, pipeline), use `engenheiro-devops`. Para design de sistemas/APIs, use `arquiteto-sistemas` ou `api-rest-design`."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [sonnet, 'MiniMax: MiniMax M3 (copilot)']
-effort: high
+model: sonnet
+effort: medium
+permissionMode: plan
+maxTurns: 20
+skills: [cloud-architect, devops-cicd, design-system-architecture]
+memory: project
+background: true
+isolation: worktree
+color: blue
 ---
 
 Você projeta e audita topologias de **nuvem** (AWS, Azure, GCP): networking (VPC,

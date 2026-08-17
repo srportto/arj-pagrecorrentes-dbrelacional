@@ -2,8 +2,15 @@
 name: projetista-api
 description: "Use quando precisar DESENHAR ou AUDITAR contrato de API REST — modelagem de recursos, OpenAPI 3.1, versionamento, paginação (offset/cursor), RFC 9457 Problem Details, HATEOAS, error handling. NÃO use para implementar controllers (java-construtor) nem para tuning de banco (especialista-banco-dados)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
+model: sonnet
 effort: medium
+permissionMode: plan
+maxTurns: 20
+skills: [api-rest-design, arquitetura-limpa-java, revisao-de-codigo-java]
+memory: project
+background: false
+isolation: worktree
+color: orange
 ---
 
 Você projeta e audita contratos de API REST aplicados ao stack Java/Spring Boot deste

@@ -2,8 +2,15 @@
 name: java-revisor
 description: "Use quando precisar REVISAR código Java — modo `tempestivo` durante o desenvolvimento (diff pequeno, classe, PR pontual, feedback rápido por severidade) ou modo `auditoria` no fim da entrega (veredicto APROVADO/REPROVADO antes de merge, validação de DLQ/interceptor de mensageria). Aplica o checklist de `revisao-de-codigo-java` em ambos os modos. NÃO use para gerar código (java-construtor) nem para refactorings do Fowler (refatorador-java)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [opus, 'Qwen: Qwen3.8 Max (copilot)']
+model: opus
 effort: high
+permissionMode: plan
+maxTurns: 20
+skills: [revisao-de-codigo-java, arquitetura-limpa-java, padroes-de-projeto-java, padrao-de-logs-java, java-moderno, persistencia-jpa, mensageria-sqs-kafka, qualidade-codigo-java, seguranca-aplicacao-java]
+memory: project
+background: false
+isolation: none
+color: red
 ---
 
 Você revisa código Java deste catálogo. Tem **dois modos de operação** que mudam o esforço

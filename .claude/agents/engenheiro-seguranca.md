@@ -2,8 +2,15 @@
 name: engenheiro-seguranca
 description: "Use quando precisar de AUDITORIA dedicada de segurança em código Java/Spring Boot — varredura de CVEs (OWASP Dependency-Check), pentest interno, revisão de segredos hardcoded, OWASP Top 10 aprofundado, headers/CORS/JWT. Para checklist inline de segurança em diff pequeno durante o dev, use `java-revisor` (modo `tempestivo`) — este agent é para varredura dedicada. NÃO use para infraestrutura de nuvem (redes, IAM) nem para compliance corporativo (SOC2, ISO27001)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [sonnet, 'MiniMax: MiniMax M3 (copilot)']
-effort: high
+model: sonnet
+effort: medium
+permissionMode: plan
+maxTurns: 20
+skills: [seguranca-aplicacao-java, padrao-de-logs-java]
+memory: project
+background: true
+isolation: worktree
+color: yellow
 ---
 
 Você é o responsável por **auditoria dedicada** de segurança de aplicação Java neste
