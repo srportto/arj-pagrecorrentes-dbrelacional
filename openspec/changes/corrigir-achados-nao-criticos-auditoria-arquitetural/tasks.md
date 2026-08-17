@@ -72,42 +72,42 @@
 
 ## 3. autorizacaostatus-producer
 
-- [ ] 3.1 Restringir os três `catch (RuntimeException)` de `SqsEventoAutorizacaoListener`
+- [x] 3.1 Restringir os três `catch (RuntimeException)` de `SqsEventoAutorizacaoListener`
       (desserialização, derivação de tipo de evento, conversão para domínio) aos tipos realmente
       esperados (`JacksonException`, `IllegalArgumentException`, tipo específico do converter) —
       qualquer outra exceção deve subir como retryable
-- [ ] 3.2 Documentar em `CLAUDE.md`/`AGENTS.md` que `KafkaEventoAutorizacaoProducer` é uma segunda
+- [x] 3.2 Documentar em `CLAUDE.md`/`AGENTS.md` que `KafkaEventoAutorizacaoProducer` é uma segunda
       origem de `EventoAutorizacaoInvalidoException` (cadeia de causa Avro/`ClassCastException`),
       hoje só descrita como responsabilidade exclusiva do listener
-- [ ] 3.3 Remover `StatusAutorizacao.TRANSICOES`/`podeTransicionarPara` (sem chamador de produção
+- [x] 3.3 Remover `StatusAutorizacao.TRANSICOES`/`podeTransicionarPara` (sem chamador de produção
       nesta app-ponte); manter `obterStatusEnumPorIdStatus`; ajustar `StatusAutorizacaoTest`
-- [ ] 3.4 Expor `ObjectMapper` como `@Bean` em `infrastructure/config/` em vez de instanciado com
+- [x] 3.4 Expor `ObjectMapper` como `@Bean` em `infrastructure/config/` em vez de instanciado com
       `new` no listener
-- [ ] 3.5 Corrigir NPE latente em `SqsEventoAutorizacaoErrorInterceptor`
+- [x] 3.5 Corrigir NPE latente em `SqsEventoAutorizacaoErrorInterceptor`
       (`message.getHeaders().getId()` pode ser `null`) com `Optional.ofNullable(...).map(UUID::toString).orElse("desconhecido")`
-- [ ] 3.6 Ajustar a redação do `CLAUDE.md`/`AGENTS.md` sobre "produção idempotente" — `enable.idempotence`
+- [x] 3.6 Ajustar a redação do `CLAUDE.md`/`AGENTS.md` sobre "produção idempotente" — `enable.idempotence`
       cobre só retries internos do producer; declarar explicitamente que a deduplicação por key
       SHA-256 é responsabilidade do consumidor
-- [ ] 3.7 Documentar `GET_TIMEOUT_SECONDS=20` do `Future.get()` junto aos demais timeouts já
+- [x] 3.7 Documentar `GET_TIMEOUT_SECONDS=20` do `Future.get()` junto aos demais timeouts já
       listados no `CLAUDE.md`/`AGENTS.md`
-- [ ] 3.8 `mvn clean compile` e `mvn test` (exige Floci + Kafka local) — confirmar suíte verde,
+- [x] 3.8 `mvn clean compile` e `mvn test` (exige Floci + Kafka local) — confirmar suíte verde,
       incluindo o teste de integração do listener
 
 ## 4. eventos-consumer
 
-- [ ] 4.1 Criar `domain/exception/EventoAutorizacaoInvalidoException`; usar em
+- [x] 4.1 Criar `domain/exception/EventoAutorizacaoInvalidoException`; usar em
       `StatusAutorizacao.obterStatusEnumPorIdStatus` e `TipoEventoAutorizacao.porStatus` no lugar
       de `IllegalArgumentException` genérica
-- [ ] 4.2 `KafkaConsumerConfig`: registrar `errorHandler.addNotRetryableExceptions(EventoAutorizacaoInvalidoException.class)`
+- [x] 4.2 `KafkaConsumerConfig`: registrar `errorHandler.addNotRetryableExceptions(EventoAutorizacaoInvalidoException.class)`
       no `DefaultErrorHandler`, para status desconhecido ir direto à DLT sem retry+backoff inútil
-- [ ] 4.3 Remover `@NoArgsConstructor` (Lombok) de `StatusAutorizacao`; tornar
+- [x] 4.3 Remover `@NoArgsConstructor` (Lombok) de `StatusAutorizacao`; tornar
       `statusAutorizacao` `final` (alinhar ao `autorizacaostatus-producer`, que já faz certo)
-- [ ] 4.4 Unificar a configuração de `group-id` num único caminho (record de config **ou** atributo
+- [x] 4.4 Unificar a configuração de `group-id` num único caminho (record de config **ou** atributo
       da anotação `@KafkaListener`, não os dois)
-- [ ] 4.5 Documentar no `CLAUDE.md`/`AGENTS.md` que a ausência de vazamento de PII no log de erro do
+- [x] 4.5 Documentar no `CLAUDE.md`/`AGENTS.md` que a ausência de vazamento de PII no log de erro do
       Kafka depende do formatter default (`KafkaUtils.format`), não de configuração explícita —
       registrar o risco de regressão silenciosa se o default mudar
-- [ ] 4.6 `mvn clean compile` e `mvn test` — confirmar suíte verde
+- [x] 4.6 `mvn clean compile` e `mvn test` — confirmar suíte verde
 
 ## 5. temporiza-autorizacao
 

@@ -1,5 +1,7 @@
 package br.com.srportto.eventosconsumer.domain.enums;
 
+import br.com.srportto.eventosconsumer.domain.exception.EventoAutorizacaoInvalidoException;
+
 /** Tipo do evento, em bijeção com {@link StatusAutorizacao} — derivado do status, nunca informado à parte. */
 public enum TipoEventoAutorizacao {
     RECEPCAO(StatusAutorizacao.RECEBIDA),
@@ -24,7 +26,7 @@ public enum TipoEventoAutorizacao {
                 return tipo;
             }
         }
-        throw new IllegalArgumentException(
+        throw new EventoAutorizacaoInvalidoException(
                 String.format("Nenhum tipo de evento mapeado para o status %s", status));
     }
 }

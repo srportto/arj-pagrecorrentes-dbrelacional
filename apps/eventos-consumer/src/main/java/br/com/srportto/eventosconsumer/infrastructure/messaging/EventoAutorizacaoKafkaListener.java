@@ -16,8 +16,9 @@ public class EventoAutorizacaoKafkaListener {
         this.useCase = useCase;
     }
 
-    @KafkaListener(topics = "${kafka.topic}", groupId = "${kafka.group-id}",
-            containerFactory = "eventoAutorizacaoKafkaListenerContainerFactory")
+    // group-id vem só do ConsumerFactory (KafkaConsumerConfig, via kafka.group-id) — não duplicado
+    // aqui, para não ter dois caminhos de configuração para o mesmo valor.
+    @KafkaListener(topics = "${kafka.topic}", containerFactory = "eventoAutorizacaoKafkaListenerContainerFactory")
     public void escutar(@Payload EventoAutorizacao evento) {
         useCase.processar(EventoAutorizacaoAvroMapper.paraDominio(evento));
     }

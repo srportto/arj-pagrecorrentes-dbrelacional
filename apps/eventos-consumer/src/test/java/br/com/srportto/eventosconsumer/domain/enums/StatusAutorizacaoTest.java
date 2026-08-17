@@ -1,5 +1,6 @@
 package br.com.srportto.eventosconsumer.domain.enums;
 
+import br.com.srportto.eventosconsumer.domain.exception.EventoAutorizacaoInvalidoException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -17,9 +18,9 @@ class StatusAutorizacaoTest {
     }
 
     @Test
-    @DisplayName("obterStatusEnumPorIdStatus lança IllegalArgumentException para código desconhecido")
+    @DisplayName("obterStatusEnumPorIdStatus lança EventoAutorizacaoInvalidoException para código desconhecido")
     void lancaParaCodigoDesconhecido() {
-        assertThrows(IllegalArgumentException.class, () -> StatusAutorizacao.obterStatusEnumPorIdStatus(999L));
+        assertThrows(EventoAutorizacaoInvalidoException.class, () -> StatusAutorizacao.obterStatusEnumPorIdStatus(999L));
     }
 
     @Test

@@ -46,7 +46,7 @@ class SqsEventoAutorizacaoListenerTest {
     private SqsEventoAutorizacaoListener listener;
 
     private void inicializar() {
-        listener = new SqsEventoAutorizacaoListener(useCase, validator, converter);
+        listener = new SqsEventoAutorizacaoListener(useCase, validator, converter, new tools.jackson.databind.ObjectMapper());
     }
 
     /** Troca o valor do campo por null explícito — o caso que o builder Avro aceita em silêncio. */

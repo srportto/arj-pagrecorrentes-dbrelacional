@@ -30,13 +30,15 @@ public class SqsEventoAutorizacaoListener {
     private final ProcessarEventoAutorizacaoUseCase useCase;
     private final AutorizacaoEventoPayloadValidator validator;
     private final EventoAutorizacaoConverter converter;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public SqsEventoAutorizacaoListener(ProcessarEventoAutorizacaoUseCase useCase,
-            AutorizacaoEventoPayloadValidator validator, EventoAutorizacaoConverter converter) {
+            AutorizacaoEventoPayloadValidator validator, EventoAutorizacaoConverter converter,
+            ObjectMapper objectMapper) {
         this.useCase = useCase;
         this.validator = validator;
         this.converter = converter;
+        this.objectMapper = objectMapper;
     }
 
     @SqsListener(queueNames = "${sqs.queue-url}", factory = "eventosAutorizacaoSqsListenerContainerFactory")
@@ -61,20 +63,21 @@ public class SqsEventoAutorizacaoListener {
         try {
             return objectMapper.readValue(mensagemJson, AutorizacaoEventoPayload.class);
         } catch (JacksonException e) {
+            // JSON malformado ou campo não conversível para o tipo esperado — nunca se corrige
+            // por retry, então é não-retryável. getPathReference() dá o caminho sem o valor (PII).
             throw new EventoAutorizacaoInvalidoException(
                     "Campo do payload não pôde ser convertido para o tipo esperado: campo="
                             + e.getPathReference() + " causa=" + e.getClass().getSimpleName());
-        } catch (RuntimeException e) {
-            throw new EventoAutorizacaoInvalidoException(
-                    "Body da mensagem não é um JSON válido para o payload de autorização ("
-                            + e.getClass().getSimpleName() + ")");
         }
     }
 
     private TipoEventoAutorizacao derivarTipoEvento(AutorizacaoEventoPayload payload) {
         try {
             return TipoEventoAutorizacao.porStatus(payload.status());
-        } catch (RuntimeException e) {
+        } catch (IllegalArgumentException e) {
+            // StatusAutorizacao.obterStatusEnumPorIdStatus/TipoEventoAutorizacao.porStatus lançam
+            // IllegalArgumentException para status desconhecido — não-retryável, o mesmo motivo
+            // não vai desaparecer numa nova tentativa.
             throw new EventoAutorizacaoInvalidoException(
                     "Status desconhecido no payload: " + payload.status(), e);
         }
@@ -83,8 +86,10 @@ public class SqsEventoAutorizacaoListener {
     private EventoAutorizacao paraEventoDominio(AutorizacaoEventoPayload payload) {
         try {
             return converter.converter(payload);
-        } catch (RuntimeException e) {
-            // sem cause: a exceção de conversão pode embutir o valor do campo rejeitado
+        } catch (NullPointerException e) {
+            // Único jeito realista de o converter falhar num payload que já passou pelo
+            // validator: um campo obrigatório escapou da validação. Sem cause — a exceção de
+            // conversão pode embutir o valor do campo rejeitado.
             throw new EventoAutorizacaoInvalidoException(
                     "Falha ao converter o payload para o modelo de domínio ("
                             + e.getClass().getSimpleName() + ")");

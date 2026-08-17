@@ -162,6 +162,14 @@ e é o idioma dominante do ecossistema Kafka. Ver `design.md` da mudança
     `<tópico>.DLT`. Usar o default faria a publicação na DLT falhar contra um tópico
     inexistente, mesmo com `eventos-autorizacao.DLT` provisionado no compose. Verificado
     ao vivo antes desta correção: reproduziu exatamente a partição travada.
+11. **O log de erro do `DefaultErrorHandler` não vaza o `EventoAutorizacao` (com PII) hoje —
+    mas por causa do formatter default do spring-kafka, não de configuração explícita desta
+    app.** `KafkaUtils.format(ConsumerRecord)`, usado internamente pelo handler para descrever o
+    record que falhou, imprime só metadados (tópico/partição/offset), não o `value()` do record.
+    Não há `KafkaUtils.setConsumerRecordFormatter(...)` nesta app fixando esse comportamento —
+    se uma versão futura do spring-kafka mudar o formatter default para incluir o valor, o
+    vazamento de PII no log de erro passaria despercebido. Se isso importar o suficiente para
+    travar, considere `KafkaUtils.setConsumerRecordFormatter` explícito.
 
 ## Regra de logs — proteção de dado sensível
 
