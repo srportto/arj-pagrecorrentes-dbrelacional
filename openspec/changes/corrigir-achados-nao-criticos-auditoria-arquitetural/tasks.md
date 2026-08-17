@@ -138,9 +138,9 @@
 
 ## 6. Verificação final
 
-- [ ] 6.1 Subir o ambiente local completo (`docker compose up -d --build` na raiz) e confirmar as 5
+- [x] 6.1 Subir o ambiente local completo (`docker compose up -d --build` na raiz) e confirmar as 5
       apps `healthy`
-- [ ] 6.2 Rodar `mvn clean verify` em cada um dos 5 módulos com a infra correspondente no ar,
+- [x] 6.2 Rodar `mvn clean verify` em cada um dos 5 módulos com a infra correspondente no ar,
       confirmando o gate de cobertura JaCoCo (mínimo 80%) onde configurado
 - [ ] 6.3 Reinvocar o agent `java-revisor` em modo `auditoria` nas 5 aplicações (mesmo escopo da
       rodada original) e confirmar veredicto APROVADO sem achado crítico novo
