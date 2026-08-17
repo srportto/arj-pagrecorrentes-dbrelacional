@@ -58,7 +58,7 @@ class ExpiracaoStreamListenerTest {
         var id = UUID.randomUUID();
         listener.onMessage(mensagem(id));
 
-        verify(processarExpiracaoUseCase).processar(id.toString());
+        verify(processarExpiracaoUseCase).processar(id);
         verify(streamOperations).acknowledge(eq(properties.chaveStream()), eq(properties.grupoConsumidor()), any(RecordId.class));
     }
 
@@ -69,7 +69,7 @@ class ExpiracaoStreamListenerTest {
 
         var id = UUID.randomUUID();
         doThrow(new ExpiracaoRetryavelException("falha", new RuntimeException()))
-                .when(processarExpiracaoUseCase).processar(id.toString());
+                .when(processarExpiracaoUseCase).processar(id);
 
         listener.onMessage(mensagem(id));
 

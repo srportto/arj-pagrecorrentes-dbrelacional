@@ -21,7 +21,7 @@ Leia nesta ordem:
 5. [VarreduraAgendamentoScheduler.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/scheduler/VarreduraAgendamentoScheduler.java) — dispara a varredura em intervalo fixo
 6. [ValkeyStreamConfig.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/config/ValkeyStreamConfig.java) — cria o consumer group (idempotente) e registra a subscription com ACK MANUAL
 7. [ExpiracaoStreamListener.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/messaging/ExpiracaoStreamListener.java) — worker: só confirma (XACK) após desfecho conclusivo
-8. [PendenciasSchedulerReivindicador.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/messaging/PendenciasSchedulerReivindicador.java) — reivindica (XCLAIM) pendências ociosas do grupo
+8. [PendenciasSchedulerReivindicador.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/scheduler/PendenciasSchedulerReivindicador.java) — reivindica (XCLAIM) pendências ociosas do grupo
 9. [DecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/domain/port/out/DecisaoAutorizacaoClient.java) + [CommandDecisaoAutorizacaoClient.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/external/CommandDecisaoAutorizacaoClient.java) — porta de saída + PATCH síncrono no `contratocommand`, classifica 2xx/4xx (conclusivo) vs. 5xx/timeout (retryable)
 10. [TemporizacaoHealthIndicator.java](src/main/java/br/com/srportto/temporizaautorizacao/infrastructure/web/TemporizacaoHealthIndicator.java) — `/actuator/health` reflete o consumo SQS e a conexão Valkey
 
@@ -78,9 +78,9 @@ domain/exception/              → AgendamentoInvalidoException (não-retryable)
 application/usecase/           → AgendarExpiracaoService, ProcessarExpiracaoService, VarrerAgendamentosVencidosService (script Lua)
 infrastructure/messaging/      → TemporizacaoEventoListener (@SqsListener, traduz payload → tipos simples),
                                   TemporizacaoEventoErrorInterceptor, AutorizacaoEventoPayload (formato de fio),
-                                  ExpiracaoStreamListener (worker, ack manual), PendenciasSchedulerReivindicador (XCLAIM),
-                                  ConsumidorRemocaoService (remoção segura de consumidor)
-infrastructure/scheduler/      → VarreduraAgendamentoScheduler, ConsumidoresOrfaosLimpezaScheduler (ambos @Scheduled)
+                                  ExpiracaoStreamListener (worker, ack manual), ConsumidorStreamRemovedor (remoção segura de consumidor)
+infrastructure/scheduler/      → VarreduraAgendamentoScheduler, ConsumidoresOrfaosLimpezaScheduler,
+                                  PendenciasSchedulerReivindicador (XCLAIM) — os três @Scheduled
 infrastructure/web/            → TemporizacaoHealthIndicator
 infrastructure/persistence/    → ValkeyAgendamentoRepository (adapter, ZADD — estado próprio da app)
 infrastructure/external/       → CommandDecisaoAutorizacaoClient (adapter, RestClient — sistema de outro dono)
@@ -226,14 +226,14 @@ ack/retenção:
     entradas pendentes do consumidor removido: elas não voltam ao grupo, não são reivindicáveis
     por `XCLAIM` e nunca mais são entregues — a autorização correspondente fica presa em
     `RECEBIDA` para sempre, sem sinal nenhum. As duas camadas de remoção
-    (`ConsumidorRemocaoService.removerSeSemPendencia`) checam `pending` imediatamente antes de
+    (`ConsumidorStreamRemovedor.removerSeSemPendencia`) checam `pending` imediatamente antes de
     remover, nunca reaproveitando leitura de um ciclo anterior. Se for tocar nesse código, não
     remova a checagem achando redundante.
 13. **`XGROUP DELCONSUMER` via API tipada do Spring Data Redis não expõe a contagem de PEL
     descartado** — nem `StreamOperations#deleteConsumer` (só `Boolean`), nem
     `RedisConnection#execute("XGROUP", "DELCONSUMER", ...)` genérico (decodifica a resposta como
     bulk string; lança `UnsupportedOperationException` em runtime para o inteiro real que o
-    comando devolve — confirmado rodando os testes). `ConsumidorRemocaoService` acessa a conexão
+    comando devolve — confirmado rodando os testes). `ConsumidorStreamRemovedor` acessa a conexão
     nativa do driver Lettuce (`RedisClusterAsyncCommands#xgroupDelconsumer`, tipado `Long`) para
     conseguir esse valor, que a verificação de PEL descartado (armadilha 12) exige.
 14. **Rodar a app fora do Docker cria o consumidor `worker-local`** (o default de

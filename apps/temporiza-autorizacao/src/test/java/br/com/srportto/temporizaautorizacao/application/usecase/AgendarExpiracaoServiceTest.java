@@ -12,7 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +38,7 @@ class AgendarExpiracaoServiceTest {
     }
 
     @Test
-    @DisplayName("agenda o vencimento como data_hora_inclusao + prazo configurado")
+    @DisplayName("agenda o vencimento como data_hora_inclusao + prazo configurado, em UTC explícito")
     void agendaComVencimentoCorreto() {
         var useCaseComMock = new AgendarExpiracaoService(agendamentoRepository, properties);
         var id = UUID.randomUUID();
@@ -46,7 +46,7 @@ class AgendarExpiracaoServiceTest {
 
         useCaseComMock.agendar(id, inclusao);
 
-        var vencimentoEsperado = inclusao.plusMinutes(10).atZone(ZoneId.systemDefault()).toInstant();
+        var vencimentoEsperado = inclusao.plusMinutes(10).toInstant(ZoneOffset.UTC);
         var captor = ArgumentCaptor.forClass(Instant.class);
         verify(agendamentoRepository).agendar(org.mockito.ArgumentMatchers.eq(id), captor.capture());
         assertEquals(vencimentoEsperado, captor.getValue());

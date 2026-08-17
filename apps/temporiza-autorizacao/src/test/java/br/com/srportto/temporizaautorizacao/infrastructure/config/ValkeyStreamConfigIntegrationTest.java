@@ -1,7 +1,7 @@
 package br.com.srportto.temporizaautorizacao.infrastructure.config;
 
 import br.com.srportto.temporizaautorizacao.application.usecase.ProcessarExpiracaoService;
-import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ConsumidorRemocaoService;
+import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ConsumidorStreamRemovedor;
 import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ExpiracaoStreamListener;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -52,7 +52,7 @@ class ValkeyStreamConfigIntegrationTest {
     @Test
     @DisplayName("cria o consumer group (idempotente) e registra a subscription, mesmo sem o stream existir ainda")
     void criaGrupoERegistraSubscription() {
-        var config = new ValkeyStreamConfig(redisTemplate, new ConsumidorRemocaoService(redisTemplate, properties), properties);
+        var config = new ValkeyStreamConfig(redisTemplate, new ConsumidorStreamRemovedor(redisTemplate, properties), properties);
         StreamMessageListenerContainer<String, MapRecord<String, String, String>> container =
                 config.streamMessageListenerContainer(connectionFactory);
 

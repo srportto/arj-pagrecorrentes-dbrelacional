@@ -1,6 +1,7 @@
 package br.com.srportto.temporizaautorizacao.application.usecase;
 
 import br.com.srportto.temporizaautorizacao.domain.exception.AgendamentoInvalidoException;
+import br.com.srportto.temporizaautorizacao.domain.model.CalculadoraVencimento;
 import br.com.srportto.temporizaautorizacao.domain.port.in.AgendarExpiracaoUseCase;
 import br.com.srportto.temporizaautorizacao.domain.port.out.AgendamentoRepository;
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
@@ -9,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 
 /** Agenda a expiração: vencimento = data_hora_inclusao (do payload, não do instante de consumo) + prazo. */
@@ -33,10 +33,7 @@ public class AgendarExpiracaoService implements AgendarExpiracaoUseCase {
                     "Payload sem id_autorizacao ou data_hora_inclusao, necessários ao agendamento");
         }
 
-        var vencimento = dataHoraInclusao
-                .plus(properties.prazo())
-                .atZone(ZoneId.systemDefault())
-                .toInstant();
+        var vencimento = CalculadoraVencimento.calcular(dataHoraInclusao, properties.prazo());
 
         agendamentoRepository.agendar(idAutorizacao, vencimento);
 

@@ -1,6 +1,7 @@
-package br.com.srportto.temporizaautorizacao.infrastructure.messaging;
+package br.com.srportto.temporizaautorizacao.infrastructure.scheduler;
 
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
+import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ExpiracaoStreamListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Range;
@@ -44,7 +45,11 @@ public class PendenciasSchedulerReivindicador {
             pendentes = streamOps.pending(properties.chaveStream(), properties.grupoConsumidor(),
                     Range.unbounded(), LOTE_PENDENTES);
         } catch (RuntimeException e) {
-            // grupo/stream ainda nao existe — nada a reivindicar.
+            if (ehGrupoOuStreamInexistente(e)) {
+                return;
+            }
+            log.warn("Falha inesperada ao consultar pendências do stream '{}' — tentativa adiada para o "
+                    + "próximo ciclo", properties.chaveStream(), e);
             return;
         }
 
@@ -85,7 +90,7 @@ public class PendenciasSchedulerReivindicador {
                 reivindicadas.size(), properties.chaveStream());
 
         for (MapRecord<String, Object, Object> record : reivindicadas) {
-            String idAutorizacao = String.valueOf(record.getValue().get("id_autorizacao"));
+            String idAutorizacao = String.valueOf(record.getValue().get(ExpiracaoStreamListener.CAMPO_ID_AUTORIZACAO));
             listener.processarEConfirmarSeConcluido(record.getId(), idAutorizacao);
         }
     }
@@ -99,12 +104,22 @@ public class PendenciasSchedulerReivindicador {
                 properties.chaveStream(), properties.grupoConsumidor(), properties.consumidorId(), xClaimOptions);
 
         for (MapRecord<String, Object, Object> record : reivindicadas) {
-            String idAutorizacao = String.valueOf(record.getValue().get("id_autorizacao"));
+            String idAutorizacao = String.valueOf(record.getValue().get(ExpiracaoStreamListener.CAMPO_ID_AUTORIZACAO));
             log.error("Entrada {} (autorização {}) esgotou o teto de {} tentativas — confirmando sem novo "
                             + "acionamento do command; requer investigação manual",
                     record.getId(), idAutorizacao, MAX_TENTATIVAS_EXPIRACAO);
             streamOps.acknowledge(properties.chaveStream(), properties.grupoConsumidor(), record.getId());
         }
+    }
+
+    /** NOGROUP é a resposta do Valkey quando o grupo/stream ainda não existe — esperado no primeiro ciclo. */
+    private boolean ehGrupoOuStreamInexistente(Throwable t) {
+        for (Throwable atual = t; atual != null; atual = atual.getCause()) {
+            if (atual.getMessage() != null && atual.getMessage().contains("NOGROUP")) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

@@ -19,12 +19,12 @@ class ProcessarExpiracaoServiceTest {
     private DecisaoAutorizacaoClient decisaoAutorizacaoClient;
 
     @Test
-    @DisplayName("processar converte a string para UUID e aciona o client")
+    @DisplayName("processar aciona o client com o UUID recebido")
     void processarAcionaClient() {
         var useCase = new ProcessarExpiracaoService(decisaoAutorizacaoClient);
         var id = UUID.randomUUID();
 
-        useCase.processar(id.toString());
+        useCase.processar(id);
 
         verify(decisaoAutorizacaoClient).expirar(id);
     }

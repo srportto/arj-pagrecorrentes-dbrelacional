@@ -111,29 +111,29 @@
 
 ## 5. temporiza-autorizacao
 
-- [ ] 5.1 Mover `PendenciasSchedulerReivindicador` de `infrastructure/messaging/` para
+- [x] 5.1 Mover `PendenciasSchedulerReivindicador` de `infrastructure/messaging/` para
       `infrastructure/scheduler/` (mudança mecânica de pacote — a classe já é `@Scheduled`,
       conforme a própria convenção documentada no `CLAUDE.md`)
-- [ ] 5.2 `ExpiracaoStreamListener`: classificar explicitamente qualquer `RuntimeException` (não só
+- [x] 5.2 `ExpiracaoStreamListener`: classificar explicitamente qualquer `RuntimeException` (não só
       `ExpiracaoRetryavelException`) no mesmo ponto central, com log estruturado
       (`streamId`/`idAutorizacao`) antes de decidir XACK/retenção
-- [ ] 5.3 Restringir os `catch` mudos de `PendenciasSchedulerReivindicador` e
+- [x] 5.3 Restringir os `catch` mudos de `PendenciasSchedulerReivindicador` e
       `ConsumidoresOrfaosLimpezaScheduler` ao caso real esperado (`NOGROUP`/stream inexistente);
       logar (`log.warn`) qualquer outra exceção em vez de engolir
-- [ ] 5.4 Trocar `ZoneId.systemDefault()` por `ZoneOffset.UTC` explícito em
+- [x] 5.4 Trocar `ZoneId.systemDefault()` por `ZoneOffset.UTC` explícito em
       `AgendarExpiracaoService`
-- [ ] 5.5 Criar tipo em `domain/model` para a regra "vencimento = data_hora_inclusao + prazo" (ex.:
+- [x] 5.5 Criar tipo em `domain/model` para a regra "vencimento = data_hora_inclusao + prazo" (ex.:
       `Agendamento` ou `CalculadoraVencimento`); mover o cálculo de `AgendarExpiracaoService` para
       lá
-- [ ] 5.6 Tipar `ProcessarExpiracaoUseCase.processar(UUID)` (hoje recebe `String` cru); mover o
+- [x] 5.6 Tipar `ProcessarExpiracaoUseCase.processar(UUID)` (hoje recebe `String` cru); mover o
       parse de `String` para `UUID` para o adaptador (`ExpiracaoStreamListener`/reivindicador)
-- [ ] 5.7 Expor `ObjectMapper` como bean em vez de `new ObjectMapper()` no listener
-- [ ] 5.8 Renomear `ConsumidorRemocaoService` (sufixo `*Service` fora de `application/usecase`,
+- [x] 5.7 Expor `ObjectMapper` como bean em vez de `new ObjectMapper()` no listener
+- [x] 5.8 Renomear `ConsumidorRemocaoService` (sufixo `*Service` fora de `application/usecase`,
       inconsistente com o resto do monorepo) para algo como `ConsumidorStreamRemovedor`
-- [ ] 5.9 Substituir o literal `"id_autorizacao"` duplicado em
+- [x] 5.9 Substituir o literal `"id_autorizacao"` duplicado em
       `PendenciasSchedulerReivindicador`/`AutorizacaoEventoPayload`/`varredura.lua` pela constante
       já existente em `ExpiracaoStreamListener`
-- [ ] 5.10 `mvn clean compile` e `mvn test` (exige Floci + Valkey local) — confirmar suíte verde,
+- [x] 5.10 `mvn clean compile` e `mvn test` (exige Floci + Valkey local) — confirmar suíte verde,
       incluindo o teste de concorrência com múltiplas instâncias
 
 ## 6. Verificação final

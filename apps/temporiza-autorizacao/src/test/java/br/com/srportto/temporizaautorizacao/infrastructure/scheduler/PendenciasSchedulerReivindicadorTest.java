@@ -1,6 +1,7 @@
-package br.com.srportto.temporizaautorizacao.infrastructure.messaging;
+package br.com.srportto.temporizaautorizacao.infrastructure.scheduler;
 
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
+import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ExpiracaoStreamListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

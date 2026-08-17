@@ -17,10 +17,11 @@ import tools.jackson.databind.ObjectMapper;
 public class TemporizacaoEventoListener {
 
     private final AgendarExpiracaoUseCase useCase;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
-    public TemporizacaoEventoListener(AgendarExpiracaoUseCase useCase) {
+    public TemporizacaoEventoListener(AgendarExpiracaoUseCase useCase, ObjectMapper objectMapper) {
         this.useCase = useCase;
+        this.objectMapper = objectMapper;
     }
 
     @SqsListener(queueNames = "${sqs.queue-url}", factory = "temporizacaoSqsListenerContainerFactory")

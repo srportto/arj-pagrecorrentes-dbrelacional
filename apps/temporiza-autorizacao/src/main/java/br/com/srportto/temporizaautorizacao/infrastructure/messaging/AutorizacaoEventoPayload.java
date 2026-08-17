@@ -13,7 +13,7 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AutorizacaoEventoPayload(
 
-        @JsonProperty("id_autorizacao") UUID idAutorizacao,
+        @JsonProperty(ExpiracaoStreamListener.CAMPO_ID_AUTORIZACAO) UUID idAutorizacao,
 
         @JsonProperty("data_hora_inclusao") LocalDateTime dataHoraInclusao) {
 }
