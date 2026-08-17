@@ -87,9 +87,12 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
         }
 
         // Passo 3: sincroniza a instância em memória p/ o evento pós-commit e o response DTO;
-        // detach precisa vir antes por o JPA não permitir alterar @EmbeddedId gerenciado.
+        // detach precisa vir antes por o JPA não permitir alterar @EmbeddedId gerenciado. Troca o
+        // objeto de identidade inteiro (não muta idParticaoConta in-place) — IdAutorizacaoJpaEmbeddable
+        // tem equals/hashCode por valor (exigência do JPA para @EmbeddedId), e mutar um campo do
+        // objeto já usado como chave alteraria o hashCode de uma instância possivelmente em coleção.
         entityManager.detach(autorizacaoAtualizada);
-        autorizacaoAtualizada.getIdAutorizacao().setIdParticaoConta(novaParticao);
+        autorizacaoAtualizada.setIdAutorizacao(new IdAutorizacaoJpaEmbeddable(idAutorizacaoUuid, novaParticao));
 
         return mapper.paraDominio(autorizacaoAtualizada);
     }

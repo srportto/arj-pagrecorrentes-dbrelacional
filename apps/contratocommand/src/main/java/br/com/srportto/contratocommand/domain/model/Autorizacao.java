@@ -1,5 +1,6 @@
 package br.com.srportto.contratocommand.domain.model;
 
+import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -94,6 +95,34 @@ public class Autorizacao {
         }
 
         return this;
+    }
+
+    /** Decisão do pagador em RECEBIDA: aprova a jornada 1 do PIX_AUTO. Fixa status+motivo juntos. */
+    public void aprovar() {
+        this.status = (int) StatusAutorizacao.ATIVA.getStatusAutorizacao();
+        this.motivoStatus = MotivoStatusAutorizacao.AUTORIZACAO_ACEITA_POR_TODOS.name();
+        this.dataHoraUltimaAtualizacao = LocalDateTime.now();
+    }
+
+    /** Decisão do pagador em RECEBIDA: rejeita a jornada 1 do PIX_AUTO. Fixa status+motivo juntos. */
+    public void rejeitarPeloPagador() {
+        this.status = (int) StatusAutorizacao.REJEITADA.getStatusAutorizacao();
+        this.motivoStatus = MotivoStatusAutorizacao.REJEITADA_PAGADOR.name();
+        this.dataHoraUltimaAtualizacao = LocalDateTime.now();
+    }
+
+    /** Prazo de 10 minutos da jornada 1 vencido sem decisão do pagador. Fixa status+motivo juntos. */
+    public void expirarJornada1() {
+        this.status = (int) StatusAutorizacao.REJEITADA.getStatusAutorizacao();
+        this.motivoStatus = MotivoStatusAutorizacao.REJEITADA_SISTEMA_TIMEOUT_J1.name();
+        this.dataHoraUltimaAtualizacao = LocalDateTime.now();
+    }
+
+    /** Cancelamento a pedido: fixa status+dados de cancelamento juntos, com o mesmo instante da entrada. */
+    public void cancelar(Cancelamento dadosCancelamento) {
+        this.status = (int) StatusAutorizacao.CANCELADA.getStatusAutorizacao();
+        this.cancelamento = dadosCancelamento;
+        this.dataHoraUltimaAtualizacao = dadosCancelamento.getDataHoraCancelamento();
     }
 
 }

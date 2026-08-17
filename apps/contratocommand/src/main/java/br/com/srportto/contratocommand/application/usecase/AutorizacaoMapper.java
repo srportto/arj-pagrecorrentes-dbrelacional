@@ -1,7 +1,6 @@
 package br.com.srportto.contratocommand.application.usecase;
 
 import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
-import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import org.mapstruct.AfterMapping;
@@ -45,7 +44,7 @@ public interface AutorizacaoMapper {
     @AfterMapping
     default void afterMapping(CriarAutorizacaoCommand command, UUID idGerado, @MappingTarget Autorizacao autorizacao) {
 
-        autorizacao.setTipoProduto(TipoProduto.obterTipoProdutoEnumPorNome(command.tipoProduto()));
+        autorizacao.setTipoProduto(command.tipoProduto());
         autorizacao.setTipoJornada(command.tipoJornada());
 
         autorizacao.inicializaCriacao(idGerado);

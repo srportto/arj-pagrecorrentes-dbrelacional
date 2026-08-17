@@ -3,19 +3,25 @@ package br.com.srportto.contratocommand.domain.enums;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @NoArgsConstructor
 public enum TipoProduto {
-    PIX_AUTO(1L, true, true),
-    DDA_AUTO(2L, true, true);
+    PIX_AUTO(1L, true, true, new BigDecimal("1000000")),
+    DDA_AUTO(2L, true, true, new BigDecimal("250000"));
 
     private long tipoProduto;
     private boolean habilitadoParaContratar;
     private boolean habilitadoParaCancelar;
+    /** Valor máximo de contratação — obrigatório por produto (ver {@code ValorLimiteContrato}). */
+    private BigDecimal valorLimiteContratacao;
 
-    TipoProduto(long tipoProduto, boolean habilitadoParaContratar, boolean habilitadoParaCancelar) {
+    TipoProduto(long tipoProduto, boolean habilitadoParaContratar, boolean habilitadoParaCancelar,
+                BigDecimal valorLimiteContratacao) {
         this.tipoProduto = tipoProduto;
         this.habilitadoParaContratar = habilitadoParaContratar;
         this.habilitadoParaCancelar = habilitadoParaCancelar;
+        this.valorLimiteContratacao = valorLimiteContratacao;
     }
 
     public long getTipoProduto() {
@@ -28,6 +34,10 @@ public enum TipoProduto {
 
     public boolean habilitadoParaCancelar() {
         return this.habilitadoParaCancelar;
+    }
+
+    public BigDecimal getValorLimiteContratacao() {
+        return this.valorLimiteContratacao;
     }
 
     public static TipoProduto obterTipoProdutoEnumPorId(long tipoProdutoId) {

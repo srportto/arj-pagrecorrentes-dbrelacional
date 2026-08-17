@@ -81,10 +81,22 @@ class AutorizacaoControllerTest {
         verify(criarAutorizacaoUseCase).execute(captor.capture());
         CriarAutorizacaoCommand command = captor.getValue();
         assertEquals(TipoJornadaAutorizacao.SPI_J1, command.tipoJornada());
-        assertEquals(request.tipoProduto(), command.tipoProduto());
+        assertEquals(TipoProduto.PIX_AUTO, command.tipoProduto());
         assertEquals(request.valor(), command.valor());
         assertEquals(request.idAutorizacaoEmpresa(), command.idAutorizacaoEmpresa());
         assertEquals(request.idUnicoContaContratante(), command.idUnicoContaContratante());
+    }
+
+    @Test
+    @DisplayName("insert com tipoProduto desconhecido no body lança BusinessException antes de chamar o use case")
+    void insertComTipoProdutoDesconhecidoLancaAntesDoUseCase() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
+        CriarAutorizacaoRequest request = TestFixtures.criarRequest(
+                "CARTAO_CREDITO", java.math.BigDecimal.ONE, java.time.LocalDate.now().plusDays(1), null);
+
+        assertThrows(BusinessException.class, () -> controller.insert(request, "SPI_J1"));
+
+        verifyNoInteractions(criarAutorizacaoUseCase);
     }
 
     @Test

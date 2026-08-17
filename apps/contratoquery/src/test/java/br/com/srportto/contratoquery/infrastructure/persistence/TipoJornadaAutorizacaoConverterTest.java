@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,8 +30,8 @@ class TipoJornadaAutorizacaoConverterTest {
     }
 
     @Test
-    @DisplayName("convertToEntityAttribute lança BusinessException para código inválido")
+    @DisplayName("convertToEntityAttribute lança ApplicationException (dado corrompido no banco, não erro de request) para código inválido")
     void toEntityAttributeInvalido() {
-        assertThrows(BusinessException.class, () -> converter.convertToEntityAttribute(99L));
+        assertThrows(ApplicationException.class, () -> converter.convertToEntityAttribute(99L));
     }
 }

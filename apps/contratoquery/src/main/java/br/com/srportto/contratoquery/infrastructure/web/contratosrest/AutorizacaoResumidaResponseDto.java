@@ -6,9 +6,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
-import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,8 +17,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class AutorizacaoResumidaResponseDto {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private UUID idAutorizacao;
     private LocalDateTime dataCriacao;
@@ -34,15 +30,6 @@ public class AutorizacaoResumidaResponseDto {
     private JsonNode metadado;
 
     public static AutorizacaoResumidaResponseDto from(Autorizacao autorizacao) {
-        JsonNode metadadoNode = null;
-        if (autorizacao.getMetadados() != null) {
-            try {
-                metadadoNode = OBJECT_MAPPER.readTree(autorizacao.getMetadados());
-            } catch (Exception e) {
-                metadadoNode = null;
-            }
-        }
-
         return AutorizacaoResumidaResponseDto.builder()
                 .idAutorizacao(autorizacao.getIdAutorizacao())
                 .dataCriacao(autorizacao.getDataHoraInclusao())
@@ -51,16 +38,9 @@ public class AutorizacaoResumidaResponseDto {
                 .idPessoaRecebedora(autorizacao.getIdPessoaRecebedora())
                 .nomeRecebedor(null)
                 .valor(autorizacao.getValorAutorizacao())
-                .status(mapearStatus(autorizacao.getStatus()))
+                .status(autorizacao.getStatus() == null ? null : autorizacao.getStatus().name())
                 .motivoStatus(autorizacao.getMotivoStatus())
-                .metadado(metadadoNode)
+                .metadado(MetadadoJsonParser.parse(autorizacao.getMetadados()))
                 .build();
-    }
-
-    private static String mapearStatus(Integer status) {
-        if (status == null) {
-            return null;
-        }
-        return StatusAutorizacao.obterStatusEnumPorIdStatus(status).name();
     }
 }

@@ -1,5 +1,6 @@
 package br.com.srportto.contratoquery.domain.model;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import lombok.Builder;
@@ -28,7 +29,7 @@ public class Autorizacao {
     UUID idAutorizacao;
     TipoProduto tipoProduto;
     TipoJornadaAutorizacao tipoJornada;
-    Integer status;
+    StatusAutorizacao status;
     String motivoStatus;
     LocalDate dataInicioVigencia;
     LocalDate dataFimVigencia;

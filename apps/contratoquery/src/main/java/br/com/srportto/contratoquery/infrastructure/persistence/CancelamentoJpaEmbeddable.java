@@ -3,27 +3,29 @@ package br.com.srportto.contratoquery.infrastructure.persistence;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Embeddable
 public class CancelamentoJpaEmbeddable {
 
-    @JoinColumn(name = "codigo_canal_cancelamento", nullable = true)
+    @Column(name = "codigo_canal_cancelamento", nullable = true)
     private String codigoCanalCancelamento;
 
-    @JoinColumn(name = "id_pessoa_cancelamento", nullable = true, unique = false)
+    @Column(name = "id_pessoa_cancelamento", nullable = true, unique = false)
     private UUID idPessoaCancelamento;
 
-    @JoinColumn(name = "data_hora_cancelamento", nullable = true)
+    @Column(name = "data_hora_cancelamento", nullable = true)
     private LocalDateTime dataHoraCancelamento;
 
-    @JoinColumn(name = "motivo_cancelamento", nullable = true)
+    @Column(name = "motivo_cancelamento", nullable = true)
     private String motivoCancelamento;
 }

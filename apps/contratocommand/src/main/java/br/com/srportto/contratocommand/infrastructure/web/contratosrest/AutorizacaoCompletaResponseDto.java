@@ -1,7 +1,6 @@
 package br.com.srportto.contratocommand.infrastructure.web.contratosrest;
 
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
-import br.com.srportto.contratocommand.domain.model.Cancelamento;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,7 +42,7 @@ public class AutorizacaoCompletaResponseDto {
     private UUID idPessoaPagadora;
     private UUID idPessoaDevedora;
     private UUID idPessoaRecebedora;
-    private Cancelamento cancelamento;
+    private CancelamentoResponseDto cancelamento;
     private JsonNode metadados;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -71,7 +70,7 @@ public class AutorizacaoCompletaResponseDto {
                 .idPessoaPagadora(autorizacao.getIdPessoaPagadora())
                 .idPessoaDevedora(autorizacao.getIdPessoaDevedora())
                 .idPessoaRecebedora(autorizacao.getIdPessoaRecebedora())
-                .cancelamento(autorizacao.getCancelamento())
+                .cancelamento(CancelamentoResponseDto.from(autorizacao.getCancelamento()))
                 .metadados(parseMetadados(autorizacao.getMetadados()))
                 .build();
     }

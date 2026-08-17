@@ -46,8 +46,6 @@ class CancelarAutorizacaoServiceTest {
     @Mock
     private CancelamentoValidator cancelamentoValidator;
     @Mock
-    private ExpurgoAutorizacaoService expurgoAutorizacaoService;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -65,7 +63,7 @@ class CancelarAutorizacaoServiceTest {
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
         when(repository.findById(uuid)).thenReturn(Optional.of(aut));
-        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
+        when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         Autorizacao resp = service.execute(command);
 
@@ -74,7 +72,7 @@ class CancelarAutorizacaoServiceTest {
         assertNotNull(aut.getCancelamento());
         assertEquals("C1", aut.getCancelamento().getCodigoCanalCancelamento());
         verify(cancelamentoValidator).validar(any(CancelarAutorizacaoCommand.class));
-        verify(expurgoAutorizacaoService).transferirParaExpurgo(eq(aut), any(LocalDate.class));
+        verify(repository).transferirParaExpurgo(eq(aut), any(LocalDate.class));
 
         verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
@@ -103,7 +101,7 @@ class CancelarAutorizacaoServiceTest {
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
         when(repository.findById(uuid)).thenReturn(Optional.of(aut));
-        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
+        when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
                 .thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
 
         // execute() é @Transactional: exceção propagada faz o container fazer rollback.
@@ -139,7 +137,7 @@ class CancelarAutorizacaoServiceTest {
             var validatorReal = new CancelamentoValidator(
                     List.of(new ProdutoSuportadoCancelamento(), new TipoProdutoCancelamento(), new TransicaoStatusValida()));
             useCaseComValidacaoReal = new CancelarAutorizacaoService(
-                    repository, validatorReal, expurgoAutorizacaoService, eventPublisher);
+                    repository, validatorReal, eventPublisher);
         }
 
         @Test
@@ -158,7 +156,7 @@ class CancelarAutorizacaoServiceTest {
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
             assertEquals(5, aut.getStatus()); // permanece CANCELADA
-            verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
+            verify(repository, never()).transferirParaExpurgo(any(), any());
             verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
         }
 
@@ -174,7 +172,7 @@ class CancelarAutorizacaoServiceTest {
             aut.setTipoProduto(TipoProduto.PIX_AUTO);
             aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
             when(repository.findById(uuid)).thenReturn(Optional.of(aut));
-            when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
+            when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(command);
 

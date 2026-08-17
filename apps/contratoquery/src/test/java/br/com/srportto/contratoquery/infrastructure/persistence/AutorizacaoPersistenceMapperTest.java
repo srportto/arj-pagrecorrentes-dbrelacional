@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 
@@ -37,7 +38,7 @@ class AutorizacaoPersistenceMapperTest {
         entity.setDataFimVigencia(hoje.plusDays(30));
         entity.setTipoProduto(TipoProduto.PIX_AUTO);
         entity.setTipoJornada(TipoJornadaAutorizacao.SPI_J1);
-        entity.setStatus(5);
+        entity.setStatus(StatusAutorizacao.obterStatusEnumPorIdStatus(5));
         entity.setMotivoStatus("CANCELADA_PELO_PAGADOR");
         entity.setDataInicioVigencia(hoje);
         entity.setDataHoraInclusao(agora);
@@ -65,7 +66,7 @@ class AutorizacaoPersistenceMapperTest {
         assertEquals(idAutorizacao, dominio.getIdAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, dominio.getTipoProduto());
         assertEquals(TipoJornadaAutorizacao.SPI_J1, dominio.getTipoJornada());
-        assertEquals(5, dominio.getStatus());
+        assertEquals(StatusAutorizacao.CANCELADA, dominio.getStatus());
         assertEquals("CANCELADA_PELO_PAGADOR", dominio.getMotivoStatus());
         assertEquals(hoje, dominio.getDataInicioVigencia());
         assertEquals(hoje.plusDays(30), dominio.getDataFimVigencia());
@@ -100,7 +101,7 @@ class AutorizacaoPersistenceMapperTest {
         entity.setIdAutorizacao(new IdAutorizacaoJpaEmbeddable(UUID.randomUUID(), 5));
         entity.setTipoProduto(TipoProduto.DDA_AUTO);
         entity.setTipoJornada(TipoJornadaAutorizacao.DESCONHECIDA);
-        entity.setStatus(4);
+        entity.setStatus(StatusAutorizacao.obterStatusEnumPorIdStatus(4));
         entity.setMotivoStatus("Teste");
         entity.setDataInicioVigencia(LocalDate.now());
         entity.setDataFimVigencia(LocalDate.now().plusDays(1));

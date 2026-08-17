@@ -5,8 +5,7 @@ import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoRul
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-
+/** Limite de valor por produto vem de {@code TipoProduto.getValorLimiteContratacao()} — produto novo sem limite configurado não compila. */
 @Component
 public class ValorLimiteContrato implements ContratacaoRule {
 
@@ -17,20 +16,10 @@ public class ValorLimiteContrato implements ContratacaoRule {
 
     @Override
     public void validar(CriarAutorizacaoCommand contexto) {
-        var tipoProduto = contexto.tipoProduto();
+        var limite = contexto.tipoProduto().getValorLimiteContratacao();
 
-        switch (tipoProduto) {
-            case "PIX_AUTO" -> {
-                if (contexto.valor().compareTo(new BigDecimal("1000000")) > 0) {
-                    throw new BusinessException("Valor contratacao invalido");
-                }
-            }
-            case "DDA_AUTO" -> {
-                if (contexto.valor().compareTo(new BigDecimal("250000")) > 0) {
-                    throw new BusinessException("Valor contratacao invalido");
-                }
-            }
-            default -> throw new BusinessException(String.format("Nao ha configuracao de valor limite para o produto %s",tipoProduto));
+        if (contexto.valor().compareTo(limite) > 0) {
+            throw new BusinessException("Valor contratacao invalido");
         }
     }
 }

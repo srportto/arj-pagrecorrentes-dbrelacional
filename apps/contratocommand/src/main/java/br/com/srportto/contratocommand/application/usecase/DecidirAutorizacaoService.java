@@ -1,7 +1,6 @@
 package br.com.srportto.contratocommand.application.usecase;
 
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
-import br.com.srportto.contratocommand.domain.enums.MotivoStatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.exception.ApplicationException;
@@ -18,7 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -35,7 +33,6 @@ public class DecidirAutorizacaoService implements DecidirAutorizacaoUseCase {
 
     private final AutorizacaoRepository repository;
     private final DecisaoValidator decisaoValidator;
-    private final ExpurgoAutorizacaoService expurgoAutorizacaoService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -53,12 +50,11 @@ public class DecidirAutorizacaoService implements DecidirAutorizacaoUseCase {
         var acao = AcaoDecisao.obterAcaoDecisaoEnumPorNome(command.acao());
         aplicarDecisao(autorizacao, acao);
 
-        var dataHoraDecisao = LocalDateTime.now();
-        autorizacao.setDataHoraUltimaAtualizacao(dataHoraDecisao);
+        var dataHoraDecisao = autorizacao.getDataHoraUltimaAtualizacao();
 
         var statusResultante = StatusAutorizacao.obterStatusEnumPorIdStatus(autorizacao.getStatus());
         var autorizacaoDecidida = statusResultante == StatusAutorizacao.REJEITADA
-                ? expurgoAutorizacaoService.transferirParaExpurgo(autorizacao, dataHoraDecisao.toLocalDate())
+                ? repository.transferirParaExpurgo(autorizacao, dataHoraDecisao.toLocalDate())
                 : repository.save(autorizacao);
 
         eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacaoDecidida));
@@ -68,18 +64,9 @@ public class DecidirAutorizacaoService implements DecidirAutorizacaoUseCase {
 
     private void aplicarDecisao(Autorizacao autorizacao, AcaoDecisao acao) {
         switch (acao) {
-            case APROVAR -> {
-                autorizacao.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-                autorizacao.setMotivoStatus(MotivoStatusAutorizacao.AUTORIZACAO_ACEITA_POR_TODOS.name());
-            }
-            case REJEITAR -> {
-                autorizacao.setStatus((int) StatusAutorizacao.REJEITADA.getStatusAutorizacao());
-                autorizacao.setMotivoStatus(MotivoStatusAutorizacao.REJEITADA_PAGADOR.name());
-            }
-            case EXPIRAR -> {
-                autorizacao.setStatus((int) StatusAutorizacao.REJEITADA.getStatusAutorizacao());
-                autorizacao.setMotivoStatus(MotivoStatusAutorizacao.REJEITADA_SISTEMA_TIMEOUT_J1.name());
-            }
+            case APROVAR -> autorizacao.aprovar();
+            case REJEITAR -> autorizacao.rejeitarPeloPagador();
+            case EXPIRAR -> autorizacao.expirarJornada1();
         }
     }
 

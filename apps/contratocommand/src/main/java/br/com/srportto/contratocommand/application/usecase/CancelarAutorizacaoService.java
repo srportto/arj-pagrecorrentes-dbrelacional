@@ -29,7 +29,6 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
 
     private final AutorizacaoRepository repository;
     private final CancelamentoValidator cancelamentoValidator;
-    private final ExpurgoAutorizacaoService expurgoAutorizacaoService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -44,7 +43,6 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
         var comandoValidado = command.comAutorizacaoCarregada(autorizacao.getTipoProduto(), statusAtual);
         cancelamentoValidator.validar(comandoValidado);
 
-        autorizacao.setStatus((int) StatusAutorizacao.CANCELADA.getStatusAutorizacao());
         var dadosCancelamento = new Cancelamento();
 
         var dataHoraCancelamento = LocalDateTime.now();
@@ -52,16 +50,14 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
         dadosCancelamento.setCodigoCanalCancelamento(command.codigoCanalCancelamento());
         dadosCancelamento.setIdPessoaCancelamento(command.idPessoaCancelamento());
 
-        autorizacao.setDataHoraUltimaAtualizacao(dataHoraCancelamento);
-
         if (command.motivoCancelamento() != null) {
             dadosCancelamento.setMotivoCancelamento(command.motivoCancelamento());
         }
 
-        autorizacao.setCancelamento(dadosCancelamento);
+        autorizacao.cancelar(dadosCancelamento);
 
         var dataCancelamento = dataHoraCancelamento.toLocalDate();
-        var autorizacaoCanceladaEmNovaParticao = expurgoAutorizacaoService.transferirParaExpurgo(autorizacao, dataCancelamento);
+        var autorizacaoCanceladaEmNovaParticao = repository.transferirParaExpurgo(autorizacao, dataCancelamento);
 
         eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacaoCanceladaEmNovaParticao));
 

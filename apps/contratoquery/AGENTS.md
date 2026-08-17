@@ -131,10 +131,12 @@ infrastructure/
 AutorizacaoController.listar()
   └─ ListarAutorizacoesUseCase.listar()   (application/usecase/ListarAutorizacoesService)
        ├─ valida idUnicoContaContratante (BusinessException se nulo) e os limites de paginação
-       ├─ mapeia ordenarPor para (campo JPA, ascendente) via whitelist
+       ├─ mapeia ordenarPor para (CampoOrdenacao, ascendente) via whitelist — vocabulário de
+       │    domínio, sem conhecer caminho JPA (ver domain/enums/CampoOrdenacao)
        └─ AutorizacaoRepository.listarPorConta(...)   (domain/port/out, implementado por
             infrastructure/persistence/AutorizacaoJpaAdapter)
-            ├─ monta Pageable/Sort e chama o Spring Data (JPQL explícito)
+            ├─ traduz CampoOrdenacao → caminho de propriedade JPA, monta Pageable/Sort e chama
+            │    o Spring Data (JPQL explícito) — única tradução para vocabulário de persistência
             └─ mapeia cada AutorizacaoJpaEntity → Autorizacao (domínio) e devolve
                PaginaAutorizacoes(conteúdo, total)
   └─ controller monta PaginacaoResponseDto a partir do ResultadoListagem

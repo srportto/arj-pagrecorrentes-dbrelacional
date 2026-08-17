@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
@@ -17,15 +18,17 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Entidade JPA de {@code autorizacoes} — só aqui vivem as anotações de ORM (D1). O modelo de
  * domínio puro é {@link br.com.srportto.contratoquery.domain.model.Autorizacao}; a ponte é
  * {@link AutorizacaoPersistenceMapper}.
  */
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -47,7 +50,8 @@ public class AutorizacaoJpaEntity {
     private TipoJornadaAutorizacao tipoJornada;
 
     @Column(name = "status", nullable = false)
-    private Integer status;
+    @Convert(converter = StatusAutorizacaoConverter.class)
+    private StatusAutorizacao status;
 
     @Column(name = "motivo_status", nullable = false)
     private String motivoStatus;
@@ -79,7 +83,7 @@ public class AutorizacaoJpaEntity {
     @Column(name = "indicador_uso_limite_conta", nullable = false)
     private short indicadorUsoLimiteConta;
 
-    @Column(name = "indicador_tipo_mensageria ", nullable = false)
+    @Column(name = "indicador_tipo_mensageria", nullable = false)
     private short indicadorTipoMensageria;
 
     @Column(name = "codigo_canal_contratacao", nullable = false)

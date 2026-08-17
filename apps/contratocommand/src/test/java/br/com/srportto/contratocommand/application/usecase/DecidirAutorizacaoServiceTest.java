@@ -45,8 +45,6 @@ class DecidirAutorizacaoServiceTest {
     @Mock
     private DecisaoValidator decisaoValidator;
     @Mock
-    private ExpurgoAutorizacaoService expurgoAutorizacaoService;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
@@ -81,7 +79,7 @@ class DecidirAutorizacaoServiceTest {
         assertEquals(4, aut.getStatus()); // StatusAutorizacao.ATIVA
         assertEquals("AUTORIZACAO_ACEITA_POR_TODOS", aut.getMotivoStatus());
         verify(repository).save(aut);
-        verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
+        verify(repository, never()).transferirParaExpurgo(any(), any());
         verify(eventPublisher).publishEvent(new AutorizacaoPersistidaEvent(aut));
     }
 
@@ -91,13 +89,13 @@ class DecidirAutorizacaoServiceTest {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
         when(repository.findById(uuid)).thenReturn(Optional.of(aut));
-        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
+        when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         service.execute(contexto(uuid, "REJEITAR"));
 
         assertEquals(6, aut.getStatus()); // StatusAutorizacao.REJEITADA
         assertEquals("REJEITADA_PAGADOR", aut.getMotivoStatus());
-        verify(expurgoAutorizacaoService).transferirParaExpurgo(eq(aut), any(LocalDate.class));
+        verify(repository).transferirParaExpurgo(eq(aut), any(LocalDate.class));
         verify(repository, never()).save(any());
     }
 
@@ -107,13 +105,13 @@ class DecidirAutorizacaoServiceTest {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
         when(repository.findById(uuid)).thenReturn(Optional.of(aut));
-        when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
+        when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         service.execute(contexto(uuid, "EXPIRAR"));
 
         assertEquals(6, aut.getStatus()); // StatusAutorizacao.REJEITADA
         assertEquals("REJEITADA_SISTEMA_TIMEOUT_J1", aut.getMotivoStatus());
-        verify(expurgoAutorizacaoService).transferirParaExpurgo(eq(aut), any(LocalDate.class));
+        verify(repository).transferirParaExpurgo(eq(aut), any(LocalDate.class));
         verify(repository, never()).save(any());
     }
 
@@ -156,7 +154,7 @@ class DecidirAutorizacaoServiceTest {
             var validatorReal = new DecisaoValidator(
                     List.of(new AcaoDecisaoValida(), new TipoProdutoDecisao(), new TransicaoValidaDecisao()));
             useCaseComValidacaoReal = new DecidirAutorizacaoService(
-                    repository, validatorReal, expurgoAutorizacaoService, eventPublisher);
+                    repository, validatorReal, eventPublisher);
         }
 
         @Test
@@ -173,7 +171,7 @@ class DecidirAutorizacaoServiceTest {
 
             assertEquals(4, aut.getStatus()); // permanece ATIVA
             verify(repository, never()).save(any());
-            verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
+            verify(repository, never()).transferirParaExpurgo(any(), any());
             verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
         }
 
@@ -183,7 +181,7 @@ class DecidirAutorizacaoServiceTest {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
             var aut = autorizacaoRecebida(uuid);
             when(repository.findById(uuid)).thenReturn(Optional.of(aut));
-            when(expurgoAutorizacaoService.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
+            when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(contexto(uuid, "EXPIRAR"));
             assertEquals(6, aut.getStatus()); // agora REJEITADA
@@ -206,7 +204,7 @@ class DecidirAutorizacaoServiceTest {
                     () -> useCaseComValidacaoReal.execute(contexto(uuid, "CONFIRMAR")));
 
             verify(repository, never()).save(any());
-            verify(expurgoAutorizacaoService, never()).transferirParaExpurgo(any(), any());
+            verify(repository, never()).transferirParaExpurgo(any(), any());
         }
     }
 }

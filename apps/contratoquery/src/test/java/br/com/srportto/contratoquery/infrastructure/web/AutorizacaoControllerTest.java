@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 import br.com.srportto.contratoquery.domain.port.in.ConsultarAutorizacaoUseCase;
 import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase;
@@ -85,7 +86,7 @@ class AutorizacaoControllerTest {
     private Autorizacao autorizacao() {
         return Autorizacao.builder()
                 .idAutorizacao(UUID.randomUUID())
-                .status(4)
+                .status(StatusAutorizacao.obterStatusEnumPorIdStatus(4))
                 .motivoStatus("Teste")
                 .dataInicioVigencia(LocalDate.now())
                 .dataFimVigencia(LocalDate.now().plusDays(30))

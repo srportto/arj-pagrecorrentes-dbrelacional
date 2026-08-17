@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
@@ -61,7 +62,7 @@ class AutorizacaoJpaAdapterTest {
         AutorizacaoJpaEntity auto = new AutorizacaoJpaEntity();
         auto.setIdAutorizacao(new IdAutorizacaoJpaEmbeddable(idAutorizacao, idParticaoConta));
         auto.setTipoProduto(TipoProduto.PIX_AUTO);
-        auto.setStatus(4);
+        auto.setStatus(StatusAutorizacao.obterStatusEnumPorIdStatus(4));
         auto.setMotivoStatus("Teste");
         auto.setDataInicioVigencia(LocalDate.now());
         auto.setDataFimVigencia(LocalDate.now().plusDays(30));

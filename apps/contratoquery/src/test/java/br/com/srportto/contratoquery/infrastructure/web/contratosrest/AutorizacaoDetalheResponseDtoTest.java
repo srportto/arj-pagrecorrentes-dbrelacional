@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 
@@ -20,7 +21,7 @@ class AutorizacaoDetalheResponseDtoTest {
         return Autorizacao.builder()
                 .idAutorizacao(UUID.randomUUID())
                 .tipoProduto(TipoProduto.PIX_AUTO)
-                .status(status)
+                .status(status == null ? null : StatusAutorizacao.obterStatusEnumPorIdStatus(status))
                 .dataInicioVigencia(LocalDate.now())
                 .dataFimVigencia(LocalDate.now().plusDays(30))
                 .dataHoraInclusao(LocalDateTime.now())

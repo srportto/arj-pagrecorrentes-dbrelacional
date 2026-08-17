@@ -41,10 +41,11 @@ public class AutorizacaoController {
             @RequestBody @Valid CriarAutorizacaoRequest request,
             @RequestHeader String tipoJornada) {
         var jornada = TipoJornadaAutorizacao.obterJornadaAutorizacaoEnumPorNome(tipoJornada);
+        var produto = TipoProduto.obterTipoProdutoEnumPorNome(request.tipoProduto());
         var command = new CriarAutorizacaoCommand(
                 jornada,
                 request.dataFimVigencia(),
-                request.tipoProduto(),
+                produto,
                 request.valor(),
                 request.idAutorizacaoEmpresa(),
                 request.valorLimite(),

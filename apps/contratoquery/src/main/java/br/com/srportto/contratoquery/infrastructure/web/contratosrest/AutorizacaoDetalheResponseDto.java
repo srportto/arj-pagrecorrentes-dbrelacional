@@ -6,10 +6,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
-import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,8 +19,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class AutorizacaoDetalheResponseDto {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private UUID idAutorizacao;
     private TipoProduto tipoProduto;
@@ -46,7 +42,7 @@ public class AutorizacaoDetalheResponseDto {
         return AutorizacaoDetalheResponseDto.builder()
                 .idAutorizacao(autorizacao.getIdAutorizacao())
                 .tipoProduto(autorizacao.getTipoProduto())
-                .status(mapearStatus(autorizacao.getStatus()))
+                .status(autorizacao.getStatus() == null ? null : autorizacao.getStatus().name())
                 .motivoStatus(autorizacao.getMotivoStatus())
                 .dataInicioVigencia(autorizacao.getDataInicioVigencia())
                 .dataFimVigencia(autorizacao.getDataFimVigencia())
@@ -60,25 +56,7 @@ public class AutorizacaoDetalheResponseDto {
                 .idPessoaRecebedora(autorizacao.getIdPessoaRecebedora())
                 .idAutorizacaoEmpresa(autorizacao.getIdAutorizacaoEmpresa())
                 .descricao(autorizacao.getDescricao())
-                .metadado(parsearMetadado(autorizacao.getMetadados()))
+                .metadado(MetadadoJsonParser.parse(autorizacao.getMetadados()))
                 .build();
-    }
-
-    private static String mapearStatus(Integer status) {
-        if (status == null) {
-            return null;
-        }
-        return StatusAutorizacao.obterStatusEnumPorIdStatus(status).name();
-    }
-
-    private static JsonNode parsearMetadado(String metadados) {
-        if (metadados == null) {
-            return null;
-        }
-        try {
-            return OBJECT_MAPPER.readTree(metadados);
-        } catch (Exception e) {
-            return null;
-        }
     }
 }

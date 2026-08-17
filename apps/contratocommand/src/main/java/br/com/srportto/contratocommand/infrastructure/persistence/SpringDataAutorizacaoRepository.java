@@ -5,24 +5,17 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /** Repositório único de {@link AutorizacaoJpaEntity}, compartilhado por todos os produtos — a variação por produto vive nas rules, não na persistência. Package-private: só {@link AutorizacaoJpaAdapter} conhece Spring Data. */
 interface SpringDataAutorizacaoRepository extends JpaRepository<AutorizacaoJpaEntity, IdAutorizacaoJpaEmbeddable> {
 
-    List<AutorizacaoJpaEntity> findByStatus(Integer status);
-
     /** Busca pela chave composta completa (UUID + partição). */
     @Query("SELECT a FROM AutorizacaoJpaEntity a WHERE a.idAutorizacao.idAutorizacao = :idAutorizacao AND a.idAutorizacao.idParticaoConta = :idParticaoConta")
     Optional<AutorizacaoJpaEntity> findByIdAutorizacaoAndParticao(
             @Param("idAutorizacao") UUID idAutorizacao,
             @Param("idParticaoConta") Integer idParticaoConta);
-
-    /** Busca por UUID, independentemente da partição. */
-    @Query("SELECT a FROM AutorizacaoJpaEntity a WHERE a.idAutorizacao.idAutorizacao = :idAutorizacao")
-    List<AutorizacaoJpaEntity> findByIdAutorizacao(@Param("idAutorizacao") UUID idAutorizacao);
 
     /**
      * Verifica a existência de autorização por chave de negócio (id_autorizacao_empresa), restrita

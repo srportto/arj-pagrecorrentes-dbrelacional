@@ -1,72 +1,72 @@
 ## 1. contratocommand
 
-- [ ] 1.1 Criar `CancelamentoResponseDto` (record) em `infrastructure/web/contratosrest/` e mapear
+- [x] 1.1 Criar `CancelamentoResponseDto` (record) em `infrastructure/web/contratosrest/` e mapear
       explicitamente em `AutorizacaoCompletaResponseDto` (hoje expõe `domain/model/Cancelamento`
       direto)
-- [ ] 1.2 Implementar `Autorizacao.aprovar()`, `rejeitarPeloPagador()`, `expirarJornada1()` e
+- [x] 1.2 Implementar `Autorizacao.aprovar()`, `rejeitarPeloPagador()`, `expirarJornada1()` e
       `cancelar(Cancelamento)` em `domain/model/Autorizacao`, cada um fixando o par
       status+motivoStatus correspondente
-- [ ] 1.3 Atualizar `DecidirAutorizacaoService` e `CancelarAutorizacaoService` para chamar os novos
+- [x] 1.3 Atualizar `DecidirAutorizacaoService` e `CancelarAutorizacaoService` para chamar os novos
       métodos do modelo em vez de `setStatus`/`setMotivoStatus`/`setCancelamento` diretos
-- [ ] 1.4 Tipar `CriarAutorizacaoCommand.tipoProduto` como `TipoProduto` (hoje `String`); resolver o
+- [x] 1.4 Tipar `CriarAutorizacaoCommand.tipoProduto` como `TipoProduto` (hoje `String`); resolver o
       enum no `AutorizacaoController.insert()`, igual às rotas de cancelar/decidir já fazem
-- [ ] 1.5 Ajustar `AutorizacaoMapper`/`ProdutoSuportado`/consumidores do comando de criação para o
+- [x] 1.5 Ajustar `AutorizacaoMapper`/`ProdutoSuportado`/consumidores do comando de criação para o
       tipo `TipoProduto` tipado
-- [ ] 1.6 Reescrever `ValorLimiteContrato` sem `switch` sobre literais de produto — limite como
+- [x] 1.6 Reescrever `ValorLimiteContrato` sem `switch` sobre literais de produto — limite como
       atributo de `TipoProduto` ou rule filtrada por `aceita(comando)`, com constante nomeada
-- [ ] 1.7 Remover `@Data` de `AutorizacaoJpaEntity`, `IdAutorizacaoJpaEmbeddable` e
+- [x] 1.7 Remover `@Data` de `AutorizacaoJpaEntity`, `IdAutorizacaoJpaEmbeddable` e
       `CancelamentoJpaEmbeddable`; substituir por `@Getter @Setter @NoArgsConstructor
       @AllArgsConstructor`
-- [ ] 1.8 Remover `SpringDataAutorizacaoRepository.findByStatus`/`findByIdAutorizacao` (sem
+- [x] 1.8 Remover `SpringDataAutorizacaoRepository.findByStatus`/`findByIdAutorizacao` (sem
       chamador de produção, varrem partições sem poda)
-- [ ] 1.9 Remover `IdContaUUIDPartitionDistributor.getPartitionPrecision` e
+- [x] 1.9 Remover `IdContaUUIDPartitionDistributor.getPartitionPrecision` e
       `ControleExpurgoAutorizacao.obterParticaoExpurgoDrop` (só usados em teste) — ajustar os testes
       correspondentes na mesma tarefa
-- [ ] 1.10 Trocar `Math.abs(hash) % 889` por `Math.floorMod(hash, 889)` em
+- [x] 1.10 Trocar `Math.abs(hash) % 889` por `Math.floorMod(hash, 889)` em
       `IdContaUUIDPartitionDistributor`; extrair `889` como constante nomeada compartilhada pelos
       dois métodos que a usam
-- [ ] 1.11 Trocar o `{@link AutorizacaoEventoPublisher}` do javadoc de
+- [x] 1.11 Trocar o `{@link AutorizacaoEventoPublisher}` do javadoc de
       `domain/event/AutorizacaoPersistidaEvent` por texto neutro, sem apontar para
       `infrastructure`
-- [ ] 1.12 Resolver o comentário contraditório em `AutorizacaoJpaEntity` (linhas ~20-22 vs ~58-59)
+- [x] 1.12 Resolver o comentário contraditório em `AutorizacaoJpaEntity` (linhas ~20-22 vs ~58-59)
       sobre onde a unicidade parcial é declarada
-- [ ] 1.13 Avaliar `ExpurgoAutorizacaoService`: dar comportamento próprio (ex.: decidir data de
+- [x] 1.13 Avaliar `ExpurgoAutorizacaoService`: dar comportamento próprio (ex.: decidir data de
       referência) ou remover a indireção e chamar `AutorizacaoRepository` direto dos use cases
-- [ ] 1.14 Atualizar `CLAUDE.md`/`AGENTS.md` (idênticos) documentando as duas ampliações existentes
+- [x] 1.14 Atualizar `CLAUDE.md`/`AGENTS.md` (idênticos) documentando as duas ampliações existentes
       da exceção "domínio sem Spring" (`@Service` nos validadores, Jackson em `MetadadoRule`) — hoje
       só o `design.md` arquivado registra
-- [ ] 1.15 `mvn clean compile` e `mvn test` (exige PostgreSQL local — `infra/local/postgres/`) —
+- [x] 1.15 `mvn clean compile` e `mvn test` (exige PostgreSQL local — `infra/local/postgres/`) —
       confirmar suíte verde com a mesma contagem de testes mais os que cobrem o comportamento novo
       do modelo
 
 ## 2. contratoquery
 
-- [ ] 2.1 `TipoProdutoConverter`/`TipoJornadaAutorizacaoConverter`: capturar
+- [x] 2.1 `TipoProdutoConverter`/`TipoJornadaAutorizacaoConverter`: capturar
       `IllegalArgumentException` do enum e relançar como `ApplicationException` (500), preservando
       a causa — hoje propaga como `BusinessException` (422)
-- [ ] 2.2 Criar `StatusAutorizacaoConverter` (`@Convert`, mesmo padrão dos outros dois); tipar
+- [x] 2.2 Criar `StatusAutorizacaoConverter` (`@Convert`, mesmo padrão dos outros dois); tipar
       `Autorizacao.status` como `StatusAutorizacao`; remover `mapearStatus(Integer)` duplicado dos
       dois DTOs de resposta
-- [ ] 2.3 Mover o parse de `metadados` (hoje `ObjectMapper` próprio por DTO, falha engolida em
+- [x] 2.3 Mover o parse de `metadados` (hoje `ObjectMapper` próprio por DTO, falha engolida em
       `catch (Exception) { return null; }`) para `AutorizacaoPersistenceMapper` ou um `@Convert`
       dedicado; se permanecer na borda, usar `ObjectMapper` único (bean em
       `infrastructure/config/`) e `log.warn` na falha
-- [ ] 2.4 Trocar `@JoinColumn` por `@Column` (com nome explícito) em `IdAutorizacaoJpaEmbeddable` e
+- [x] 2.4 Trocar `@JoinColumn` por `@Column` (com nome explícito) em `IdAutorizacaoJpaEmbeddable` e
       `CancelamentoJpaEmbeddable`
-- [ ] 2.5 Remover o espaço à direita de `"indicador_tipo_mensageria "` em `AutorizacaoJpaEntity`
+- [x] 2.5 Remover o espaço à direita de `"indicador_tipo_mensageria "` em `AutorizacaoJpaEntity`
       (alinhar com o `contratocommand`, já corrigido)
-- [ ] 2.6 Remover `@Data` de `AutorizacaoJpaEntity` e dos embeddables; `@Getter @Setter
+- [x] 2.6 Remover `@Data` de `AutorizacaoJpaEntity` e dos embeddables; `@Getter @Setter
       @NoArgsConstructor` na entidade, `equals`/`hashCode` explícitos no `@EmbeddedId`
 - [ ] 2.7 Converter `AutorizacaoDetalheResponseDto`, `AutorizacaoResumidaResponseDto`,
       `PaginacaoResponseDto` e `LayoutErrosApiResponse` de `@Data` para `record`
-- [ ] 2.8 Remover `@NoArgsConstructor` (Lombok) de `StatusAutorizacao`, `TipoProduto`,
+- [x] 2.8 Remover `@NoArgsConstructor` (Lombok) de `StatusAutorizacao`, `TipoProduto`,
       `TipoJornadaAutorizacao` (sem efeito nos enums)
-- [ ] 2.9 Simplificar o ramo inalcançável em `ListarAutorizacoesService` (`tamanhoFinal == 0` já
+- [x] 2.9 Simplificar o ramo inalcançável em `ListarAutorizacoesService` (`tamanhoFinal == 0` já
       rejeitado antes) para `(int) Math.ceil(...)` direto
-- [ ] 2.10 Atualizar `CLAUDE.md`/`AGENTS.md` (linha ~134): o fluxo de ordenação mapeia para
+- [x] 2.10 Atualizar `CLAUDE.md`/`AGENTS.md` (linha ~134): o fluxo de ordenação mapeia para
       `CampoOrdenacao` (domínio), não mais para "campo JPA" — desatualizado desde a correção do
       crítico já aplicada
-- [ ] 2.11 `mvn clean compile` e `mvn test` (exige PostgreSQL local) — confirmar suíte verde,
+- [x] 2.11 `mvn clean compile` e `mvn test` (exige PostgreSQL local) — confirmar suíte verde,
       rodando contra a massa sintética (`infra/local/postgres/gerar-massa-sintetica-representativa.sql`)
       para validar os converters contra dado real
 

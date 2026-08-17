@@ -1,9 +1,7 @@
 package br.com.srportto.contratoquery.domain.enums;
 
 import br.com.srportto.contratoquery.domain.exception.BusinessException;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
 public enum TipoProduto {
     PIX_AUTO(1L),
     DDA_AUTO(2L);

@@ -131,46 +131,4 @@ class ControleExpurgoAutorizacaoTest {
     assertEquals(resultado2, resultado3, "Resultados deveriam ser iguais para mesma data");
   }
 
-  @Test
-  @DisplayName("obterParticaoExpurgoDrop deve gerar todas as 100 partições de 900 a 999 ao longo do tempo")
-  void testObterParticaoExpurgoDropGeraTodasAsParticoes() {
-    Set<Integer> particoesGeradas = new HashSet<>();
-    LocalDate dataAtual = LocalDate.now();
-
-    System.out.println("data-referencia,particao-write,particao-drop");
-
-    // Sempre há uma partição que conflita com a partição de escrita atual (BusinessException),
-    // então com data fixa só 99 das 100 partições podem ser geradas nesta execução.
-    for (int semanas = 10; semanas < 1010; semanas++) {
-      LocalDate dataReferencia = dataAtual.plusWeeks(semanas);  
-      
-      try {
-        int particaoWrite = ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataReferencia);
-        int particaoDrop = ControleExpurgoAutorizacao.obterParticaoExpurgoDrop(dataReferencia);
-
-        System.out.println(dataReferencia + ","+ particaoWrite + "," + particaoDrop);
-
-        particoesGeradas.add(particaoDrop);
-      } catch (Exception e) {
-        // Ignora conflito esperado com a partição de escrita atual
-      }
-    }
-
-    assertTrue(particoesGeradas.size() >= 99,
-        "Deveria gerar no mínimo 99 valores diferentes. Gerados: " + particoesGeradas.size());
-
-    for (int particao : particoesGeradas) {
-      assertTrue(particao >= 900 && particao <= 999,
-          "Partição " + particao + " fora do range [900, 999]");
-    }
-
-    Set<Integer> faltantes = new HashSet<>();
-    for (int i = 900; i <= 999; i++) {
-      if (!particoesGeradas.contains(i)) {
-        faltantes.add(i);
-      }
-    }
-    assertTrue(faltantes.size() <= 1,
-        "Deveria faltar no máximo 1 partição. Faltantes: " + faltantes);
-  }
 }

@@ -1,6 +1,7 @@
 package br.com.srportto.contratoquery.infrastructure.persistence;
 
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 import br.com.srportto.contratoquery.domain.exception.ResourceNotFoundException;
@@ -209,7 +210,7 @@ class ConsultaCascataIntegrationTest {
         a.setIdAutorizacao(new IdAutorizacaoJpaEmbeddable(id, particao));
         a.setTipoProduto(TipoProduto.PIX_AUTO);
         a.setTipoJornada(TipoJornadaAutorizacao.SPI_J1);
-        a.setStatus(status);
+        a.setStatus(StatusAutorizacao.obterStatusEnumPorIdStatus(status));
         a.setMotivoStatus(motivoStatus);
         a.setDataInicioVigencia(LocalDate.now());
         a.setDataFimVigencia(LocalDate.of(9999, 12, 31));

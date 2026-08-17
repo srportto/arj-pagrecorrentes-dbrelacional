@@ -1,13 +1,10 @@
 package br.com.srportto.contratoquery.domain.enums;
 
-import lombok.NoArgsConstructor;
-
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
-@NoArgsConstructor
 public enum StatusAutorizacao {
     RECEBIDA(1L),
     PENDENTE_ACEITE(2L),

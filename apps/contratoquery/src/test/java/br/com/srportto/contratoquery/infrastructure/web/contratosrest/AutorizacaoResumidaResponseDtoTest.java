@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +19,7 @@ class AutorizacaoResumidaResponseDtoTest {
     private Autorizacao base(Integer status, String metadados) {
         return Autorizacao.builder()
                 .idAutorizacao(UUID.randomUUID())
-                .status(status)
+                .status(status == null ? null : StatusAutorizacao.obterStatusEnumPorIdStatus(status))
                 .dataHoraInclusao(LocalDateTime.now())
                 .dataInicioVigencia(LocalDate.now())
                 .dataFimVigencia(LocalDate.now().plusDays(30))

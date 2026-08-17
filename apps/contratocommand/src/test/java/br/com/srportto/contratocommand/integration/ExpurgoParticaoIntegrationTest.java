@@ -38,9 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Testa a transferência para a partição de expurgo contra PostgreSQL real, com partições físicas
  * distintas (uma DEFAULT esconderia a movimentação). Existe porque o defeito corrigido por
- * `corrigir-expurgo-merge-version` era invisível a teste mockado: `ExpurgoAutorizacaoServiceTest`
- * só verificava a ordem das chamadas, não a decisão que o Hibernate toma dentro do `save` com
- * `@Version` num banco real.
+ * `corrigir-expurgo-merge-version` era invisível a teste mockado — um mock só verifica a ordem
+ * das chamadas, não a decisão que o Hibernate toma dentro do `save` com `@Version` num banco real.
  *
  * Roda em schema dedicado (não via Testcontainers, que não fala com Docker Desktop recente aqui).
  * Ver {@link PostgresLocalDisponivelCondition}.

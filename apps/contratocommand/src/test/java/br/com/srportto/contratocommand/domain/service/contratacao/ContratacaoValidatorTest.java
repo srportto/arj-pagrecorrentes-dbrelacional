@@ -6,6 +6,7 @@ import br.com.srportto.contratocommand.domain.service.contratacao.rules.Metadado
 import br.com.srportto.contratocommand.domain.service.contratacao.rules.ProdutoSuportado;
 import br.com.srportto.contratocommand.domain.service.contratacao.rules.ValorLimiteContrato;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class ContratacaoValidatorTest {
     @DisplayName("validar propaga BusinessException de uma regra violada")
     void validarRequisicaoInvalida() {
         assertThrows(BusinessException.class, () -> validator.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("100"), LocalDate.now().minusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("100"), LocalDate.now().minusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -48,12 +49,12 @@ class ContratacaoValidatorTest {
         ContratacaoValidator validatorComProdutoSuportadoPrimeiro = new ContratacaoValidator(
                 List.of(new ProdutoSuportado(), new DataFimVigenciaInvalida(), new ValorLimiteContrato(), new MetadadoRule()));
 
-        // Ambas as regras violariam; ProdutoSuportado (primeira) deve reportar antes.
+        // Ambas as regras violariam (produto nulo e data no passado); ProdutoSuportado (primeira) deve reportar antes.
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> validatorComProdutoSuportadoPrimeiro.validar(TestFixtures.criarContext(
-                        "CARTAO_CREDITO", new BigDecimal("100"), LocalDate.now().minusDays(1), null,
+                        null, new BigDecimal("100"), LocalDate.now().minusDays(1), null,
                         TipoJornadaAutorizacao.SPI_J1)));
 
-        assertEquals("Produto nao suportado ou invalido (tipoProduto: CARTAO_CREDITO)", ex.getMessage());
+        assertEquals("Produto nao suportado ou invalido (tipoProduto: null)", ex.getMessage());
     }
 }

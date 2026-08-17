@@ -12,11 +12,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+/**
+ * A resolução de nome de produto desconhecido (string→enum) acontece no controller — ver
+ * {@code TipoProdutoTest#lancaPorNomeDesconhecido} e
+ * {@code AutorizacaoControllerTest#insertComTipoProdutoDesconhecidoLancaAntesDoUseCase}. Esta
+ * classe testa só a regra em si, que já recebe um {@link TipoProduto} resolvido (ou nulo).
+ */
 @DisplayName("Testes da regra ProdutoSuportado")
 class ProdutoSuportadoTest {
 
@@ -29,24 +33,10 @@ class ProdutoSuportadoTest {
     }
 
     @Test
-    @DisplayName("validar aceita produto suportado em qualquer caixa")
-    void produtoSuportadoEmQualquerCaixa() {
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "pix_auto", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
-        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "DdA_aUtO", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
-    }
-
-    @Test
-    @DisplayName("validar lança BusinessException para produto desconhecido")
-    void produtoDesconhecidoLanca() {
-        CriarAutorizacaoCommand context = TestFixtures.criarContext(
-                "CARTAO_CREDITO", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
-
-        BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
-        assertEquals("Produto nao suportado ou invalido (tipoProduto: CARTAO_CREDITO)", ex.getMessage());
+    @DisplayName("validar aceita produto habilitado para contratar")
+    void produtoHabilitadoNaoLanca() {
+        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContextPix()));
+        assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContextDda()));
     }
 
     @Test
@@ -61,17 +51,14 @@ class ProdutoSuportadoTest {
     @Test
     @DisplayName("validar lança BusinessException para produto conhecido porém desabilitado para contratar")
     void produtoDesabilitadoParaContratarLanca() {
-        try (var tipoProdutoMock = mockStatic(TipoProduto.class, CALLS_REAL_METHODS)) {
-            TipoProduto pixDesabilitado = mock(TipoProduto.class);
-            when(pixDesabilitado.name()).thenReturn("PIX_AUTO");
-            when(pixDesabilitado.habilitadoParaContratar()).thenReturn(false);
-            tipoProdutoMock.when(TipoProduto::values).thenReturn(new TipoProduto[] { pixDesabilitado });
+        TipoProduto pixDesabilitado = mock(TipoProduto.class);
+        when(pixDesabilitado.habilitadoParaContratar()).thenReturn(false);
+        when(pixDesabilitado.toString()).thenReturn("PIX_AUTO");
 
-            CriarAutorizacaoCommand context = TestFixtures.criarContext(
-                    "PIX_AUTO", BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
+        CriarAutorizacaoCommand context = TestFixtures.criarContext(
+                pixDesabilitado, BigDecimal.ONE, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
 
-            BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
-            assertEquals("Produto nao suportado ou invalido (tipoProduto: PIX_AUTO)", ex.getMessage());
-        }
+        BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
+        assertEquals("Produto nao suportado ou invalido (tipoProduto: PIX_AUTO)", ex.getMessage());
     }
 }
