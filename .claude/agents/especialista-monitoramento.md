@@ -2,8 +2,15 @@
 name: especialista-monitoramento
 description: "Use quando precisar OBSERVAR aplicação Java/Spring Boot em produção — métricas Micrometer + Prometheus, tracing OpenTelemetry, logs estruturados, alerting rules, dashboards RED/USE. NÃO use para o padrão de formatação de logs (padrao-de-logs-java) nem para definir a arquitetura do serviço (arquitetura-limpa-java / java-architecture)."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: [haiku, 'MoonshotAI: Kimi K2.7 Code (copilot)']
+model: haiku
 effort: medium
+permissionMode: plan
+maxTurns: 20
+skills: [monitoramento-java, padrao-de-logs-java, arquitetura-limpa-java, criar-aplicacao-java]
+memory: project
+background: true
+isolation: worktree
+color: purple
 ---
 
 Você configura e opera a observabilidade de aplicações Java/Spring Boot neste catálogo:
