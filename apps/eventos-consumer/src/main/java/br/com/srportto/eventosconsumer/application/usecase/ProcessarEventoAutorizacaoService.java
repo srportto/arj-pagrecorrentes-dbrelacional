@@ -1,7 +1,7 @@
 package br.com.srportto.eventosconsumer.application.usecase;
 
-import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
 import br.com.srportto.eventosconsumer.domain.enums.TipoEventoAutorizacao;
+import br.com.srportto.eventosconsumer.domain.model.EventoAutorizacaoConsumido;
 import br.com.srportto.eventosconsumer.domain.port.in.ProcessarEventoAutorizacaoUseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +14,10 @@ public class ProcessarEventoAutorizacaoService implements ProcessarEventoAutoriz
     private static final Logger log = LoggerFactory.getLogger(ProcessarEventoAutorizacaoService.class);
 
     @Override
-    public void processar(EventoAutorizacao evento) {
-        TipoEventoAutorizacao tipoEvento = TipoEventoAutorizacao.porStatus(evento.getStatus());
+    public void processar(EventoAutorizacaoConsumido evento) {
+        TipoEventoAutorizacao tipoEvento = TipoEventoAutorizacao.porStatus(evento.status());
         log.info("Autorização {} consumida com sucesso (tipoEvento={})",
-                evento.getIdAutorizacao(), tipoEvento);
+                evento.idAutorizacao(), tipoEvento);
     }
 
 }

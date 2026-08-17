@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.model.PaginaAutorizacoes;
@@ -14,10 +15,11 @@ import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase;
 import br.com.srportto.contratoquery.domain.port.out.AutorizacaoRepository;
 
 /**
- * Caso de uso de listagem paginada. A tradução do campo de ordenação para o caminho JPA (ex.:
- * {@code idAutorizacao.idAutorizacao}, por causa da chave composta) é feita aqui porque é a mesma
- * whitelist de sempre — só o formato de saída da porta mudou (D7): conteúdo + total, não
- * {@code Page} nem {@code PaginacaoResponseDto}.
+ * Caso de uso de listagem paginada. Traduz os aliases aceitos no parâmetro de request
+ * (`ordenarPor`) para o vocabulário de domínio {@link CampoOrdenacao} e os nomes de status para
+ * {@link StatusAutorizacao} — a tradução para caminho JPA/código numérico de banco fica no
+ * adaptador (a porta {@link AutorizacaoRepository} não conhece nem um nem outro). Devolve
+ * conteúdo + total (D7): não {@code Page} nem {@code PaginacaoResponseDto}.
  */
 @Service
 public class ListarAutorizacoesService implements ListarAutorizacoesUseCase {
@@ -27,7 +29,7 @@ public class ListarAutorizacoesService implements ListarAutorizacoesUseCase {
     private static final Integer PAGINA_PADRAO = 0;
     private static final Integer TAMANHO_PADRAO = 20;
     private static final Integer TAMANHO_MAXIMO = 100;
-    private static final String CAMPO_ORDENACAO_PADRAO = "dataHoraInclusao";
+    private static final CampoOrdenacao CAMPO_ORDENACAO_PADRAO = CampoOrdenacao.DATA_CRIACAO;
     private static final boolean ASCENDENTE_PADRAO = false;
 
     public ListarAutorizacoesService(AutorizacaoRepository repository) {
@@ -62,25 +64,25 @@ public class ListarAutorizacoesService implements ListarAutorizacoesUseCase {
             throw new BusinessException(String.format("tamanho não pode ser maior que %d", TAMANHO_MAXIMO));
         }
 
-        String campoOrdenacaoJpa = CAMPO_ORDENACAO_PADRAO;
+        CampoOrdenacao campoOrdenacao = CAMPO_ORDENACAO_PADRAO;
         boolean ascendente = ASCENDENTE_PADRAO;
 
         if (ordenarPor != null && !ordenarPor.isBlank()) {
             String[] partes = ordenarPor.split(",");
             if (partes.length >= 1) {
-                campoOrdenacaoJpa = mapearCampoDTO(partes[0].trim());
+                campoOrdenacao = mapearCampoOrdenacao(partes[0].trim());
             }
             if (partes.length >= 2) {
                 ascendente = "asc".equalsIgnoreCase(partes[1].trim());
             }
         }
 
-        List<Integer> statusCodigos = (statuses == null || statuses.isEmpty())
+        List<StatusAutorizacao> statusEnums = (statuses == null || statuses.isEmpty())
                 ? null
-                : converterStatusParaInteiros(statuses);
+                : converterStatus(statuses);
 
         PaginaAutorizacoes resultado = repository.listarPorConta(
-                idUnicoContaContratante, statusCodigos, paginaFinal, tamanhoFinal, campoOrdenacaoJpa, ascendente);
+                idUnicoContaContratante, statusEnums, paginaFinal, tamanhoFinal, campoOrdenacao, ascendente);
 
         int totalPaginas = tamanhoFinal == 0
                 ? 1
@@ -90,44 +92,29 @@ public class ListarAutorizacoesService implements ListarAutorizacoesUseCase {
                 resultado.conteudo(), paginaFinal, tamanhoFinal, resultado.totalElementos(), totalPaginas);
     }
 
-    private String mapearCampoDTO(String campoDtoOuEntidade) {
-        String mapeado = switch (campoDtoOuEntidade) {
-            case "dataCriacao" -> "dataHoraInclusao";
-            case "valor" -> "valorAutorizacao";
-            case "idAutorizacao" -> "idAutorizacao.idAutorizacao";
-            case "dataInicioVigencia" -> "dataInicioVigencia";
-            case "dataFimVigencia" -> "dataFimVigencia";
-            case "idPessoaRecebedora" -> "idPessoaRecebedora";
-            default -> null;
+    /** Whitelist de aliases aceitos no request → vocabulário de domínio. Nada aqui conhece JPA. */
+    private CampoOrdenacao mapearCampoOrdenacao(String campoRequest) {
+        return switch (campoRequest) {
+            case "dataCriacao", "dataHoraInclusao" -> CampoOrdenacao.DATA_CRIACAO;
+            case "valor", "valorAutorizacao" -> CampoOrdenacao.VALOR;
+            case "idAutorizacao" -> CampoOrdenacao.ID_AUTORIZACAO;
+            case "dataInicioVigencia" -> CampoOrdenacao.DATA_INICIO_VIGENCIA;
+            case "dataFimVigencia" -> CampoOrdenacao.DATA_FIM_VIGENCIA;
+            case "idPessoaRecebedora" -> CampoOrdenacao.ID_PESSOA_RECEBEDORA;
+            case "status" -> CampoOrdenacao.STATUS;
+            default -> throw new BusinessException(
+                    String.format("Campo de ordenação inválido: %s. Campos aceitos: " +
+                            "dataCriacao, dataHoraInclusao, valor, valorAutorizacao, idAutorizacao, " +
+                            "dataInicioVigencia, dataFimVigencia, idPessoaRecebedora, status",
+                            campoRequest));
         };
-
-        if (mapeado != null) {
-            return mapeado;
-        }
-
-        // Whitelist: só passam campos de entidade explicitamente permitidos
-        if (campoDtoOuEntidade.equals("dataHoraInclusao") ||
-            campoDtoOuEntidade.equals("status") ||
-            campoDtoOuEntidade.equals("valorAutorizacao") ||
-            campoDtoOuEntidade.equals("dataInicioVigencia") ||
-            campoDtoOuEntidade.equals("dataFimVigencia") ||
-            campoDtoOuEntidade.equals("idPessoaRecebedora")) {
-            return campoDtoOuEntidade;
-        }
-
-        throw new BusinessException(
-                String.format("Campo de ordenação inválido: %s. Campos aceitos: " +
-                        "dataCriacao, dataHoraInclusao, valor, valorAutorizacao, idAutorizacao, " +
-                        "dataInicioVigencia, dataFimVigencia, idPessoaRecebedora, status",
-                        campoDtoOuEntidade));
     }
 
-    private List<Integer> converterStatusParaInteiros(List<String> statuses) {
+    private List<StatusAutorizacao> converterStatus(List<String> statuses) {
         return statuses.stream()
                 .map(statusStr -> {
                     try {
-                        StatusAutorizacao statusEnum = StatusAutorizacao.valueOf(statusStr.toUpperCase());
-                        return (int) statusEnum.getStatusAutorizacao();
+                        return StatusAutorizacao.valueOf(statusStr.toUpperCase());
                     } catch (IllegalArgumentException e) {
                         throw new BusinessException(
                                 String.format("Status inválido: %s. Use um dos valores: %s",

@@ -19,7 +19,7 @@ public class EventoAutorizacaoKafkaListener {
     @KafkaListener(topics = "${kafka.topic}", groupId = "${kafka.group-id}",
             containerFactory = "eventoAutorizacaoKafkaListenerContainerFactory")
     public void escutar(@Payload EventoAutorizacao evento) {
-        useCase.processar(evento);
+        useCase.processar(EventoAutorizacaoAvroMapper.paraDominio(evento));
     }
 
 }

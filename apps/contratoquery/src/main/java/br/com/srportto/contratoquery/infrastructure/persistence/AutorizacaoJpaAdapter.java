@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 import br.com.srportto.contratoquery.domain.model.PaginaAutorizacoes;
@@ -122,24 +124,44 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
     @Override
     public PaginaAutorizacoes listarPorConta(
             UUID idUnicoContaContratante,
-            List<Integer> statusCodigos,
+            List<StatusAutorizacao> statuses,
             int pagina,
             int tamanho,
-            String campoOrdenacaoJpa,
+            CampoOrdenacao campoOrdenacao,
             boolean ordenacaoAscendente) {
 
         Sort.Direction direcao = ordenacaoAscendente ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(pagina, tamanho, Sort.by(direcao, campoOrdenacaoJpa));
+        Pageable pageable = PageRequest.of(pagina, tamanho, Sort.by(direcao, campoJpaPara(campoOrdenacao)));
 
-        Page<AutorizacaoJpaEntity> paginaJpa = (statusCodigos == null || statusCodigos.isEmpty())
+        Page<AutorizacaoJpaEntity> paginaJpa = (statuses == null || statuses.isEmpty())
                 ? springDataRepository.findByIdUnicoContaContratante(idUnicoContaContratante, pageable)
                 : springDataRepository.findByIdUnicoContaContratanteAndStatusIn(
-                        idUnicoContaContratante, statusCodigos, pageable);
+                        idUnicoContaContratante, codigosPara(statuses), pageable);
 
         List<Autorizacao> conteudo = paginaJpa.getContent().stream()
                 .map(mapper::paraDominio)
                 .toList();
 
         return new PaginaAutorizacoes(conteudo, paginaJpa.getTotalElements());
+    }
+
+    /** Única tradução de {@link CampoOrdenacao} para caminho de propriedade JPA — a porta não conhece esse caminho. */
+    private String campoJpaPara(CampoOrdenacao campoOrdenacao) {
+        return switch (campoOrdenacao) {
+            case DATA_CRIACAO -> "dataHoraInclusao";
+            case VALOR -> "valorAutorizacao";
+            // Chave composta (D3): sem esse caminho, o Spring Data não sabe ordenar por idAutorizacao.
+            case ID_AUTORIZACAO -> "idAutorizacao.idAutorizacao";
+            case DATA_INICIO_VIGENCIA -> "dataInicioVigencia";
+            case DATA_FIM_VIGENCIA -> "dataFimVigencia";
+            case ID_PESSOA_RECEBEDORA -> "idPessoaRecebedora";
+            case STATUS -> "status";
+        };
+    }
+
+    private List<Integer> codigosPara(List<StatusAutorizacao> statuses) {
+        return statuses.stream()
+                .map(status -> (int) status.getStatusAutorizacao())
+                .toList();
     }
 }
