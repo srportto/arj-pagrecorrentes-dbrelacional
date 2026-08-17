@@ -68,8 +68,6 @@ services:
   temporiza-autorizacao:
     build:
       context: ./temporiza-autorizacao
-    ports:
-      - "8084:8084"
     environment:
       SPRING_PROFILES_ACTIVE: local
       SPRING_CLOUD_AWS_ENDPOINT: http://floci:4566
@@ -81,6 +79,8 @@ services:
       - floci_default
       - redis_default
     restart: unless-stopped
+    deploy:
+      replicas: 2
 
 networks:
   default: {}

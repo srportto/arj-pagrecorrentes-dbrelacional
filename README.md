@@ -58,7 +58,6 @@ arj-pagrecorrentes-dbrelacional/
 ├── docs/
 │   ├── arquitetura/                        # Diagramas de arquitetura + POC de particionamento (Buffer Ring/UUIDv7)
 │   ├── info_build-my-image-and-execute.md  # Docker + PostgreSQL com partman/cron
-│   ├── post-autorizacoes.txt               # Exemplos de payloads REST
 │   └── contrato-api-para-gateway.md        # Insumo temporário p/ montar o gateway (ver nota no topo do arquivo)
 ├── openspec/                  # Planejamento de mudanças (proposta → spec → tasks)
 ├── .env.example                # Modelo do .env único (raiz) — copie para .env
@@ -98,7 +97,9 @@ docker compose up -d --build
 - `contratoquery` → http://localhost:8081
 - `autorizacaostatus-producer` → http://localhost:8082 — ponte SQS → Kafka
 - `eventos-consumer` → http://localhost:8083 — loga cada evento consumido do Kafka
-- `temporiza-autorizacao` → http://localhost:8084 — agenda e expira autorizações PIX_AUTO/SPI_J1
+- `temporiza-autorizacao` — agenda e expira autorizações PIX_AUTO/SPI_J1; roda com 2 réplicas
+  (`deploy.replicas`) e por isso **não publica porta no host** (sem endpoint de negócio, só
+  `/actuator/health`, acessível via `docker compose exec` de dentro da rede)
 - Dashboard do Kafka (mensagens, consumer groups, lag) → http://localhost:8090
 
 Para o fluxo de eventos fim a fim funcionar (SNS → SQS → Kafka, e o timer da jornada 1), o
@@ -175,7 +176,6 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 | [infra/local/redis/README.md](infra/local/redis/README.md) | Valkey local (sorted set + stream de expiração) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
 | [infra/local/postgres/exemplos-queries.sql](infra/local/postgres/exemplos-queries.sql) | Scripts SQL de particionamento |
-| [docs/post-autorizacoes.txt](docs/post-autorizacoes.txt) | Exemplos de payloads REST |
 | [docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) | POC do particionamento com UUIDv7 reversível (Buffer Ring) |
 
 ## Licença

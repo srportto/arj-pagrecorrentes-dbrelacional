@@ -3,7 +3,7 @@
 > **Este arquivo tem prazo de validade.** Ele existe porque as anotações springdoc/OpenAPI foram
 > removidas do código de produção (`contratocommand`, `contratoquery`) sem que o gateway
 > ainda tivesse absorvido o contrato — decisão registrada em
-> `openspec/changes/limpar-codigo-das-apps/design.md` (D1, D1b). Ele consolida as três fontes que
+> `openspec/changes/archive/2026-08-15-limpar-codigo-das-apps/design.md` (D1, D1b). Ele consolida as três fontes que
 > carregavam esse contrato no repositório, para servir de insumo a quem montar o gateway.
 > **Quando o gateway assumir o contrato, remova este arquivo.**
 >

@@ -74,7 +74,8 @@ class VarreduraEAgendamentoIntegrationTest {
     @Test
     @DisplayName("varredura move vencidos para o stream e os remove da agenda")
     void varreduraMoveVencidosParaStream() {
-        var useCase = new VarrerAgendamentosVencidosService(redisTemplate, properties);
+        var useCase = new VarrerAgendamentosVencidosService(
+                new ValkeyAgendamentoRepository(redisTemplate, properties), properties);
         var idVencido = UUID.randomUUID();
         var idFuturo = UUID.randomUUID();
 
@@ -109,7 +110,8 @@ class VarreduraEAgendamentoIntegrationTest {
                     Instant.now().minus(Duration.ofSeconds(1)).toEpochMilli());
         }
 
-        var useCase = new VarrerAgendamentosVencidosService(redisTemplate, properties);
+        var useCase = new VarrerAgendamentosVencidosService(
+                new ValkeyAgendamentoRepository(redisTemplate, properties), properties);
         int instancias = 8;
         var executor = Executors.newFixedThreadPool(instancias);
         var latch = new CountDownLatch(instancias);

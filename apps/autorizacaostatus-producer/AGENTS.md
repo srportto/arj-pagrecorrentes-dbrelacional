@@ -4,7 +4,7 @@
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
 Ponte SQS → Kafka, em **arquitetura hexagonal clássica** (`domain`/`application`/`infrastructure`,
-ver `openspec/changes/hexagonal-classico-autorizacaostatus-producer/`). Consome os eventos de
+ver `openspec/changes/archive/2026-08-16-hexagonal-classico-autorizacaostatus-producer/`). Consome os eventos de
 estado de autorização publicados pelo `contratocommand` (via `sns-estados-autorizacao` →
 SQS `SQS-eventos-autorizacao`), converte cada evento para Avro e produz no tópico Kafka
 `eventos-autorizacao` (Schema Registry), de forma idempotente. O ack no SQS só ocorre
@@ -61,7 +61,7 @@ mvn test                                     # Todos os testes
   `eventos-autorizacao-value` no Schema Registry (CLI ou API REST do Registry, com o `.avsc`
   atualizado) e confirme compatibilidade — sem esse passo, o produce em `prod` falha com erro
   explícito de schema não registrado, em vez de registrar silenciosamente algo incompatível. Ver
-  `openspec/changes/rede-seguranca-contrato-evento/design.md` (D5).
+  `openspec/changes/archive/2026-08-09-rede-seguranca-contrato-evento/design.md` (D5).
 
 ## Stack
 
@@ -103,7 +103,7 @@ infrastructure/web/     → SqsListenerHealthIndicator
 infrastructure/config/  → SqsListenerContainerFactoryConfig, KafkaProperties, KafkaProducerClientConfig
 ```
 
-Migração para este layout: `openspec/changes/hexagonal-classico-autorizacaostatus-producer/`. Camadas
+Migração para este layout: `openspec/changes/archive/2026-08-16-hexagonal-classico-autorizacaostatus-producer/`. Camadas
 e regra de dependência seguem a skill `arquitetura-limpa-java` do monorepo — `domain` não importa
 Spring/Jakarta/Jackson/Avro/Kafka/AWS SDK (exceção documentada: `@Component` em
 `IdempotenciaKeyGenerator`, D3 do design da migração); `application` não conhece HTTP/JPA/broker;
@@ -299,7 +299,7 @@ pessoal (`id_pessoa_pagadora`, `id_pessoa_devedora`, `id_pessoa_recebedora`, `va
 ## Documentação relacionada
 
 - [consumo-eventos-autorizacao](../../openspec/specs/consumo-eventos-autorizacao/spec.md) — contrato vigente de visibility timeout, maxReceiveCount e concorrência desta arquitetura de consumo (decidido pela change arquivada `migrar-sqs-listener-spring-cloud-aws`)
-- [design.md da migração hexagonal](../../openspec/changes/hexagonal-classico-autorizacaostatus-producer/design.md) — D1 (desserialização no listener), D2-b (modelo de domínio puro), D3-D5 (localização de key generator, validator/converter, health indicator)
+- [design.md da migração hexagonal](../../openspec/changes/archive/2026-08-16-hexagonal-classico-autorizacaostatus-producer/design.md) — D1 (desserialização no listener), D2-b (modelo de domínio puro), D3-D5 (localização de key generator, validator/converter, health indicator)
 - [design.md da mudança original](../../openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md) — decisões do fluxo original SNS/SQS (log + ack)
 - [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — como provisionar o tópico/fila SNS/SQS no Floci
 - [infra/local/kafka/README.md](../../infra/local/kafka/README.md) — como subir o Kafka local (broker, Schema Registry, dashboard)

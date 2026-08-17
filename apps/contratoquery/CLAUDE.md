@@ -92,7 +92,7 @@ Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutoriza
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
 
-> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/reconciliar-contrato-spec-doc/design.md` (D3).
+> **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/archive/2026-08-09-reconciliar-contrato-spec-doc/design.md` (D3).
 
 > **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
 

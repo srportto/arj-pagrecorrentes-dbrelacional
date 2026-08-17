@@ -110,16 +110,32 @@ sem aviso e sem entrada de log.
 - **WHEN** o `command:` do serviço PostgreSQL é inspecionado
 - **THEN** `shared_preload_libraries` aparece em exatamente uma diretiva `-c`
 
-### Requirement: Publicação de portas é uniforme entre as aplicações
+### Requirement: Publicação de portas é uniforme entre as aplicações, com exceção de réplicas múltiplas
 
-As cinco aplicações SHALL publicar sua porta no host de forma explícita e previsível, no formato
-`porta:porta`, usando a mesma porta declarada no `application.yaml` de cada uma.
+As aplicações que rodam com uma única réplica SHALL publicar sua porta no host de forma explícita
+e previsível, no formato `porta:porta`, usando a mesma porta declarada no `application.yaml` de
+cada uma. Uma aplicação configurada com `deploy.replicas` maior que 1 MUST NOT publicar porta fixa
+de host — múltiplos containers não podem fazer bind da mesma porta —, e essa exceção só é
+aceitável para aplicações sem endpoint HTTP de negócio (apenas `/actuator/health`).
 
-#### Scenario: As cinco portas são determinísticas
+`temporiza-autorizacao` é a exceção vigente: roda com `deploy.replicas: 2` (a app já foi desenhada
+para múltiplas instâncias concorrentes — o script Lua de varredura e o consumer id por `HOSTNAME`
+não exigem coordenação externa) e não publica porta de host. Seu health-check é verificado via
+`docker compose exec`/`docker inspect`, não por acesso HTTP direto do host.
+
+#### Scenario: As portas de aplicações single-réplica são determinísticas
 
 - **WHEN** o ambiente local sobe
-- **THEN** as aplicações respondem em 8080, 8081, 8082, 8083 e 8084 no host
+- **THEN** `contratocommand`, `contratoquery`, `autorizacaostatus-producer` e `eventos-consumer`
+  respondem em 8080, 8081, 8082 e 8083 no host
 - **AND** nenhuma delas recebe porta atribuída aleatoriamente pelo Docker
+
+#### Scenario: temporiza-autorizacao não publica porta de host
+
+- **WHEN** o ambiente local sobe
+- **THEN** `temporiza-autorizacao` roda com 2 réplicas e nenhuma delas tem porta publicada no host
+- **AND** o healthcheck de cada réplica é validado via `docker inspect`/`docker compose exec`,
+  não via `curl localhost:8084`
 
 ### Requirement: Configuração de ambiente tem uma fonte única
 

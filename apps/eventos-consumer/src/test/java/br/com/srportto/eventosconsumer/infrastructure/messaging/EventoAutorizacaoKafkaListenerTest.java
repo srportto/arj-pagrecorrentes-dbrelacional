@@ -1,6 +1,7 @@
 package br.com.srportto.eventosconsumer.infrastructure.messaging;
 
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
+import br.com.srportto.eventosconsumer.domain.model.EventoAutorizacaoConsumido;
 import br.com.srportto.eventosconsumer.domain.port.in.ProcessarEventoAutorizacaoUseCase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
@@ -44,14 +46,17 @@ class EventoAutorizacaoKafkaListenerTest {
     }
 
     @Test
-    @DisplayName("processa com sucesso (AckMode.RECORD comita o offset ao retornar sem exceção)")
+    @DisplayName("processa com sucesso (AckMode.RECORD comita o offset ao retornar sem exceção), "
+            + "traduzindo o Avro para o modelo de domínio antes de chamar o use case")
     void processaComSucesso() {
         inicializar();
         EventoAutorizacao evento = eventoMinimo();
+        EventoAutorizacaoConsumido esperado =
+                new EventoAutorizacaoConsumido(evento.getIdAutorizacao(), evento.getStatus());
 
         assertDoesNotThrow(() -> listener.escutar(evento));
 
-        verify(useCase).processar(evento);
+        verify(useCase).processar(eq(esperado));
     }
 
     @Test
@@ -59,7 +64,9 @@ class EventoAutorizacaoKafkaListenerTest {
     void erroNoProcessamentoPropagaExcecao() {
         inicializar();
         EventoAutorizacao evento = eventoMinimo();
-        doThrow(new RuntimeException("falha")).when(useCase).processar(evento);
+        EventoAutorizacaoConsumido esperado =
+                new EventoAutorizacaoConsumido(evento.getIdAutorizacao(), evento.getStatus());
+        doThrow(new RuntimeException("falha")).when(useCase).processar(eq(esperado));
 
         assertThrows(RuntimeException.class, () -> listener.escutar(evento));
     }
