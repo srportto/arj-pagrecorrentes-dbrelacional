@@ -1,5 +1,10 @@
 package br.com.srportto.contratoquery.infrastructure.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -16,10 +21,6 @@ import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 import br.com.srportto.contratoquery.domain.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @DisplayName("Testes do ApiExceptionHandler")
 class ApiExceptionHandlerTest {
@@ -39,9 +40,9 @@ class ApiExceptionHandlerTest {
                 handler.erroNegocio(new BusinessException("regra violada"), req());
 
         assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, resp.getStatusCode());
-        assertEquals("regra violada", resp.getBody().getMessage());
-        assertEquals("/api/autorizacoes", resp.getBody().getPath());
-        assertNotNull(resp.getBody().getTimestamp());
+        assertEquals("regra violada", resp.getBody().message());
+        assertEquals("/api/autorizacoes", resp.getBody().path());
+        assertNotNull(resp.getBody().timestamp());
     }
 
     @Test
@@ -52,7 +53,7 @@ class ApiExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
         // Não vaza o getMessage() da exceção original
-        assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
+        assertEquals("Consulte o suporte para mais informações", resp.getBody().message());
     }
 
     @Test
@@ -62,7 +63,7 @@ class ApiExceptionHandlerTest {
                 handler.recursoNaoEncontrado(new ResourceNotFoundException("sumiu"), req());
 
         assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
-        assertEquals("sumiu", resp.getBody().getMessage());
+        assertEquals("sumiu", resp.getBody().message());
     }
 
     @Test
@@ -77,9 +78,9 @@ class ApiExceptionHandlerTest {
         ResponseEntity<LayoutErrosApiValidationsResponse> resp = handler.validation(ex, req());
 
         assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, resp.getStatusCode());
-        assertEquals(1, resp.getBody().getOccurrences().size());
-        assertEquals("idUnicoContaContratante", resp.getBody().getOccurrences().get(0).getFieldName());
-        assertEquals("é obrigatório", resp.getBody().getOccurrences().get(0).getMessage());
+        assertEquals(1, resp.getBody().occurrences().size());
+        assertEquals("idUnicoContaContratante", resp.getBody().occurrences().get(0).fieldName());
+        assertEquals("é obrigatório", resp.getBody().occurrences().get(0).message());
     }
 
     @Test
@@ -90,9 +91,9 @@ class ApiExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
         // Não vaza o getMessage() da exceção original
-        assertEquals("Consulte o suporte para mais informações", resp.getBody().getMessage());
-        assertEquals("/api/autorizacoes", resp.getBody().getPath());
-        assertNotNull(resp.getBody().getTimestamp());
+        assertEquals("Consulte o suporte para mais informações", resp.getBody().message());
+        assertEquals("/api/autorizacoes", resp.getBody().path());
+        assertNotNull(resp.getBody().timestamp());
     }
 
     @Test

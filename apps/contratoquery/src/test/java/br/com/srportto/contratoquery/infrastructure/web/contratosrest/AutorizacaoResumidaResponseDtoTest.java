@@ -1,5 +1,10 @@
 package br.com.srportto.contratoquery.infrastructure.web.contratosrest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -10,8 +15,6 @@ import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Testes do AutorizacaoResumidaResponseDto.from")
 class AutorizacaoResumidaResponseDtoTest {
@@ -37,35 +40,35 @@ class AutorizacaoResumidaResponseDtoTest {
 
         AutorizacaoResumidaResponseDto dto = AutorizacaoResumidaResponseDto.from(a);
 
-        assertEquals(a.getIdAutorizacao(), dto.getIdAutorizacao());
-        assertEquals(a.getDataHoraInclusao(), dto.getDataCriacao());
-        assertEquals(a.getValorAutorizacao(), dto.getValor());
-        assertEquals("ATIVA", dto.getStatus());
-        assertEquals("LEITURA_QRC_J2", dto.getMotivoStatus());
-        assertNotNull(dto.getMetadado());
-        assertTrue(dto.getMetadado().has("origem"));
-        assertNull(dto.getNomeRecebedor());
+        assertEquals(a.getIdAutorizacao(), dto.idAutorizacao());
+        assertEquals(a.getDataHoraInclusao(), dto.dataCriacao());
+        assertEquals(a.getValorAutorizacao(), dto.valor());
+        assertEquals("ATIVA", dto.status());
+        assertEquals("LEITURA_QRC_J2", dto.motivoStatus());
+        assertNotNull(dto.metadado());
+        assertTrue(dto.metadado().has("origem"));
+        assertNull(dto.nomeRecebedor());
     }
 
     @Test
     @DisplayName("metadado nulo resulta em metadado nulo no DTO")
     void metadadoNulo() {
         AutorizacaoResumidaResponseDto dto = AutorizacaoResumidaResponseDto.from(base(1, null));
-        assertNull(dto.getMetadado());
-        assertEquals("RECEBIDA", dto.getStatus());
+        assertNull(dto.metadado());
+        assertEquals("RECEBIDA", dto.status());
     }
 
     @Test
     @DisplayName("metadado com JSON inválido é tratado como nulo (sem lançar)")
     void metadadoInvalido() {
         AutorizacaoResumidaResponseDto dto = AutorizacaoResumidaResponseDto.from(base(1, "{invalido"));
-        assertNull(dto.getMetadado());
+        assertNull(dto.metadado());
     }
 
     @Test
     @DisplayName("status nulo resulta em status nulo no DTO")
     void statusNulo() {
         AutorizacaoResumidaResponseDto dto = AutorizacaoResumidaResponseDto.from(base(null, null));
-        assertNull(dto.getStatus());
+        assertNull(dto.status());
     }
 }

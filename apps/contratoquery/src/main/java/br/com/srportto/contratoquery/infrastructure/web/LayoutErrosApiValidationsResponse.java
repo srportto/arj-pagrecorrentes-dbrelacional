@@ -1,18 +1,26 @@
 package br.com.srportto.contratoquery.infrastructure.web;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.Getter;
-import lombok.Setter;
+public record LayoutErrosApiValidationsResponse(
+		Instant timestamp,
+		String error,
+		String message,
+		String path,
+		List<BodyOcorrenciasErrosValidations> occurrences) {
 
-@Getter
-@Setter
-public class LayoutErrosApiValidationsResponse extends LayoutErrosApiResponse {
+	public LayoutErrosApiValidationsResponse {
+		occurrences = occurrences == null ? new ArrayList<>() : new ArrayList<>(occurrences);
+	}
 
-	private List<BodyOcorrenciasErrosValidations> occurrences = new ArrayList<>();
+	public LayoutErrosApiValidationsResponse(Instant timestamp, String error, String message, String path) {
+		this(timestamp, error, message, path, new ArrayList<>());
+	}
 
-	public void addOccurrences(String fieldName, String message) {
-		occurrences.add(new BodyOcorrenciasErrosValidations(fieldName, message));
+	public LayoutErrosApiValidationsResponse addOccurrence(String fieldName, String message) {
+		this.occurrences.add(new BodyOcorrenciasErrosValidations(fieldName, message));
+		return this;
 	}
 }

@@ -2,20 +2,10 @@ package br.com.srportto.contratoquery.infrastructure.web.contratosrest;
 
 import java.util.List;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class PaginacaoResponseDto<T> {
-
-    private List<T> conteudo;
-    private Integer paginaAtual;
-    private Integer totalPaginas;
-    private Long totalElementos;
-    private Integer tamanho;
+public record PaginacaoResponseDto<T>(
+        List<T> conteudo,
+        Integer paginaAtual,
+        Integer totalPaginas,
+        Long totalElementos,
+        Integer tamanho) {
 }

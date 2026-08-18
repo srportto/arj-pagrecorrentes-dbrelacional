@@ -1,14 +1,4 @@
 package br.com.srportto.contratoquery.infrastructure.web;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class BodyOcorrenciasErrosValidations {
-
-	private String fieldName;
-	private String message;
+public record BodyOcorrenciasErrosValidations(String fieldName, String message) {
 }

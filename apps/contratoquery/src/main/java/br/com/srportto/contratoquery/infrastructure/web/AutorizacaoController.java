@@ -48,16 +48,14 @@ public class AutorizacaoController {
                 ordenarPor);
 
         // Monta o envelope de paginação a partir do modelo de domínio — o caso de uso não conhece o DTO (D6, D7).
-        PaginacaoResponseDto<AutorizacaoResumidaResponseDto> corpo =
-                PaginacaoResponseDto.<AutorizacaoResumidaResponseDto>builder()
-                        .conteudo(resultado.conteudo().stream()
-                                .map(AutorizacaoResumidaResponseDto::from)
-                                .collect(Collectors.toList()))
-                        .paginaAtual(resultado.paginaAtual())
-                        .totalPaginas(resultado.totalPaginas())
-                        .totalElementos(resultado.totalElementos())
-                        .tamanho(resultado.tamanho())
-                        .build();
+        var corpo = new PaginacaoResponseDto<AutorizacaoResumidaResponseDto>(
+                resultado.conteudo().stream()
+                        .map(AutorizacaoResumidaResponseDto::from)
+                        .collect(Collectors.toList()),
+                resultado.paginaAtual(),
+                resultado.totalPaginas(),
+                resultado.totalElementos(),
+                resultado.tamanho());
 
         return ResponseEntity.ok(corpo);
     }

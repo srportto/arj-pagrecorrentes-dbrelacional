@@ -26,11 +26,11 @@ public class ApiExceptionHandler {
 	public ResponseEntity<LayoutErrosApiResponse> erroNegocio(BusinessException exception,
 			HttpServletRequest req) {
 
-		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
-		layoutError.setTimestamp(Instant.now());
-		layoutError.setError("Uma regra de negocio foi violada");
-		layoutError.setMessage(exception.getMessage());
-		layoutError.setPath(req.getRequestURI());
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Uma regra de negocio foi violada",
+				exception.getMessage(),
+				req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(layoutError);
 	}
@@ -39,11 +39,11 @@ public class ApiExceptionHandler {
 	public ResponseEntity<LayoutErrosApiResponse> recursoNaoEncontrado(ResourceNotFoundException exception,
 			HttpServletRequest req) {
 
-		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
-		layoutError.setTimestamp(Instant.now());
-		layoutError.setError("Recurso nao encontrado");
-		layoutError.setMessage(exception.getMessage());
-		layoutError.setPath(req.getRequestURI());
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Recurso nao encontrado",
+				exception.getMessage(),
+				req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(layoutError);
 	}
@@ -54,11 +54,11 @@ public class ApiExceptionHandler {
 
 		log.error("Erro de aplicacao ao processar {} {}", req.getMethod(), req.getRequestURI(), exception);
 
-		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
-		layoutError.setTimestamp(Instant.now());
-		layoutError.setError("Ocorreu um erro inesperado, entre em contato com o suporte");
-		layoutError.setMessage("Consulte o suporte para mais informações");
-		layoutError.setPath(req.getRequestURI());
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Ocorreu um erro inesperado, entre em contato com o suporte",
+				"Consulte o suporte para mais informações",
+				req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(layoutError);
 	}
@@ -70,11 +70,11 @@ public class ApiExceptionHandler {
 		log.error("Erro inesperado (nao mapeado) ao processar {} {}", req.getMethod(), req.getRequestURI(),
 				exception);
 
-		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
-		layoutError.setTimestamp(Instant.now());
-		layoutError.setError("Ocorreu um erro inesperado, entre em contato com o suporte");
-		layoutError.setMessage("Consulte o suporte para mais informações");
-		layoutError.setPath(req.getRequestURI());
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Ocorreu um erro inesperado, entre em contato com o suporte",
+				"Consulte o suporte para mais informações",
+				req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(layoutError);
 	}
@@ -87,11 +87,11 @@ public class ApiExceptionHandler {
 		log.debug("Recurso estatico nao encontrado em {} {}: {}", req.getMethod(), req.getRequestURI(),
 				exception.getMessage());
 
-		LayoutErrosApiResponse layoutError = new LayoutErrosApiResponse();
-		layoutError.setTimestamp(Instant.now());
-		layoutError.setError("Recurso nao encontrado");
-		layoutError.setMessage("O recurso solicitado nao foi encontrado");
-		layoutError.setPath(req.getRequestURI());
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Recurso nao encontrado",
+				"O recurso solicitado nao foi encontrado",
+				req.getRequestURI());
 
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(layoutError);
 	}
@@ -100,17 +100,14 @@ public class ApiExceptionHandler {
 	public ResponseEntity<LayoutErrosApiValidationsResponse> validation(MethodArgumentNotValidException exception,
 			HttpServletRequest request) {
 
-		LayoutErrosApiValidationsResponse layoutErrosApiValidationsResponse = new LayoutErrosApiValidationsResponse();
-
-		layoutErrosApiValidationsResponse.setTimestamp(Instant.now());
-		layoutErrosApiValidationsResponse.setError(
-				"Requisicao nao respeitou as validacoes basicas do contrato, confira as occurrences para mais detalhes");
-		layoutErrosApiValidationsResponse
-				.setMessage("Erro durante a validacao da requisicao, confira as occurrences...");
-		layoutErrosApiValidationsResponse.setPath(request.getRequestURI());
+		var layoutErrosApiValidationsResponse = new LayoutErrosApiValidationsResponse(
+				Instant.now(),
+				"Requisicao nao respeitou as validacoes basicas do contrato, confira as occurrences para mais detalhes",
+				"Erro durante a validacao da requisicao, confira as occurrences...",
+				request.getRequestURI());
 
 		for (FieldError f : exception.getBindingResult().getFieldErrors()) {
-			layoutErrosApiValidationsResponse.addOccurrences(f.getField(), f.getDefaultMessage());
+			layoutErrosApiValidationsResponse.addOccurrence(f.getField(), f.getDefaultMessage());
 		}
 
 		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(layoutErrosApiValidationsResponse);

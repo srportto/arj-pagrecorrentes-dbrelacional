@@ -1,5 +1,11 @@
 package br.com.srportto.contratoquery.infrastructure.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,12 +29,6 @@ import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase.Re
 import br.com.srportto.contratoquery.infrastructure.web.contratosrest.AutorizacaoDetalheResponseDto;
 import br.com.srportto.contratoquery.infrastructure.web.contratosrest.AutorizacaoResumidaResponseDto;
 import br.com.srportto.contratoquery.infrastructure.web.contratosrest.PaginacaoResponseDto;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /** O controller agora monta o DTO a partir do modelo de domínio devolvido pelos casos de uso (D6). */
 @ExtendWith(MockitoExtension.class)
@@ -61,11 +61,11 @@ class AutorizacaoControllerTest {
                 controller.listar(conta, List.of(), 0, 20, "dataHoraInclusao,desc");
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
-        assertEquals(1, resp.getBody().getConteudo().size());
-        assertEquals(0, resp.getBody().getPaginaAtual());
-        assertEquals(1, resp.getBody().getTotalPaginas());
-        assertEquals(1L, resp.getBody().getTotalElementos());
-        assertEquals(20, resp.getBody().getTamanho());
+        assertEquals(1, resp.getBody().conteudo().size());
+        assertEquals(0, resp.getBody().paginaAtual());
+        assertEquals(1, resp.getBody().totalPaginas());
+        assertEquals(1L, resp.getBody().totalElementos());
+        assertEquals(20, resp.getBody().tamanho());
         verify(listarAutorizacoesUseCase).listar(eq(conta), any(), eq(0), eq(20), any());
     }
 
@@ -79,7 +79,7 @@ class AutorizacaoControllerTest {
         ResponseEntity<AutorizacaoDetalheResponseDto> resp = controller.consultarPorId(id);
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
-        assertEquals(autorizacao.getIdAutorizacao(), resp.getBody().getIdAutorizacao());
+        assertEquals(autorizacao.getIdAutorizacao(), resp.getBody().idAutorizacao());
         verify(consultarAutorizacaoUseCase).consultarPorId(id);
     }
 
