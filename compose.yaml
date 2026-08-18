@@ -10,4 +10,9 @@ include:
   - infra/local/floci/compose.yaml
   - infra/local/kafka/compose.yaml
   - infra/local/redis/compose.yaml
-  - apps/docker-compose.yml
+  # O segundo arquivo so declara depends_on (service_healthy) dos 5 apps contra a infra acima --
+  # fica fora de apps/docker-compose.yml para nao quebrar a subida standalone (Opcao C do
+  # README), que nao conhece os servicos de infra/local/*. Ver apps/docker-compose.depends-on.yml.
+  - path:
+      - apps/docker-compose.yml
+      - apps/docker-compose.depends-on.yml

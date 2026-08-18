@@ -1,0 +1,53 @@
+# Overlay de dependencias de subida para os 5 servicos de apps/docker-compose.yml.
+#
+# Vive em arquivo separado (nao dentro de apps/docker-compose.yml) porque depends_on so
+# resolve contra servicos definidos no MESMO projeto Compose resolvido: postgres, floci,
+# kafka, schema-registry e valkey vivem em infra/local/*, arquivos que apps/docker-compose.yml
+# nao conhece quando sobe sozinho (Opcao C do README, apps contra infra ja no ar). Declarar
+# depends_on diretamente em apps/docker-compose.yml quebra esse caminho com
+# "depends_on undefined service" -- confirmado empiricamente na tarefa 2.4 da change
+# declarar-depends-on-compose-apps.
+#
+# So o compose.yaml da raiz inclui este arquivo (via include: path: [...], que mescla os dois
+# antes de trazer o resultado para o projeto unificado) -- e la, junto com os composes de
+# infra/local/*, os servicos abaixo existem e o depends_on resolve. Ver design.md da mesma
+# change para o racional completo.
+services:
+  contratocommand:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+
+  contratoquery:
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  autorizacaostatus-producer:
+    depends_on:
+      # floci nao declara healthcheck neste repo -- vem embutido na propria imagem
+      # floci/floci:latest (confirmado via `docker ps`, que mostra "healthy" mesmo sem
+      # declaracao local). Se uma atualizacao de imagem remover esse healthcheck,
+      # `condition: service_healthy` passa a travar a subida indefinidamente.
+      floci:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+
+  eventos-consumer:
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+
+  temporiza-autorizacao:
+    depends_on:
+      floci:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
