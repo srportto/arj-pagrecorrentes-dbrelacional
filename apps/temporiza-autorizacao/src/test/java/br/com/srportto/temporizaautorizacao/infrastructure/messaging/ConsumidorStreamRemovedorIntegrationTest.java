@@ -3,6 +3,7 @@ package br.com.srportto.temporizaautorizacao.infrastructure.messaging;
 import br.com.srportto.temporizaautorizacao.application.usecase.ProcessarExpiracaoService;
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
 import br.com.srportto.temporizaautorizacao.infrastructure.scheduler.ConsumidoresOrfaosLimpezaScheduler;
+import br.com.srportto.temporizaautorizacao.infrastructure.scheduler.PendenciasSchedulerReivindicador;
 import br.com.srportto.temporizaautorizacao.infrastructure.web.TemporizacaoHealthIndicator;
 import io.awspring.cloud.sqs.listener.MessageListenerContainerRegistry;
 import org.junit.jupiter.api.AfterAll;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 /** Exige o Valkey local no ar (ver infra/local/redis). Limiares de ociosidade artificialmente pequenos (ms, não min). */
 @DisplayName("Testes de integração: remoção de consumidores órfãos contra o Valkey real")
-class ConsumidorRemocaoIntegrationTest {
+class ConsumidorStreamRemovedorIntegrationTest {
 
     private static LettuceConnectionFactory connectionFactory;
     private static StringRedisTemplate redisTemplate;
@@ -101,7 +102,7 @@ class ConsumidorRemocaoIntegrationTest {
         publicar(UUID.randomUUID().toString());
         lerComo("vivo", true); // acabou de interagir — idle ~0, bem abaixo do limiar
 
-        var remocaoService = new ConsumidorRemocaoService(redisTemplate, properties);
+        var remocaoService = new ConsumidorStreamRemovedor(redisTemplate, properties);
         var scheduler = new ConsumidoresOrfaosLimpezaScheduler(redisTemplate, remocaoService, properties);
         scheduler.removerConsumidoresOrfaos();
 
@@ -117,7 +118,7 @@ class ConsumidorRemocaoIntegrationTest {
 
         Thread.sleep(properties.consumidorOciosoLimiteMs() + 50);
 
-        var remocaoService = new ConsumidorRemocaoService(redisTemplate, properties);
+        var remocaoService = new ConsumidorStreamRemovedor(redisTemplate, properties);
         var scheduler = new ConsumidoresOrfaosLimpezaScheduler(redisTemplate, remocaoService, properties);
         scheduler.removerConsumidoresOrfaos();
 
@@ -139,7 +140,7 @@ class ConsumidorRemocaoIntegrationTest {
         Thread.sleep(properties.consumidorOciosoLimiteMs() + 50);
 
         // 1) limpeza roda primeiro: consumidor tem pendência, não é removido
-        var remocaoService = new ConsumidorRemocaoService(redisTemplate, properties);
+        var remocaoService = new ConsumidorStreamRemovedor(redisTemplate, properties);
         var scheduler = new ConsumidoresOrfaosLimpezaScheduler(redisTemplate, remocaoService, properties);
         scheduler.removerConsumidoresOrfaos();
         assertTrue(consumidorExiste("instancia-morta"), "ainda tem pendência — não pode ter sido removido");
@@ -168,7 +169,7 @@ class ConsumidorRemocaoIntegrationTest {
 
         Thread.sleep(properties.consumidorOciosoLimiteMs() + 50);
 
-        var remocaoService = new ConsumidorRemocaoService(redisTemplate, properties);
+        var remocaoService = new ConsumidorStreamRemovedor(redisTemplate, properties);
         int tentativas = 5;
         var executor = Executors.newFixedThreadPool(tentativas);
         var latch = new CountDownLatch(tentativas);
@@ -196,7 +197,7 @@ class ConsumidorRemocaoIntegrationTest {
     @DisplayName("remover consumidor inexistente é no-op, sem lançar exceção")
     void removerInexistenteNaoLanca() {
         publicarECriarGrupo(UUID.randomUUID().toString());
-        var remocaoService = new ConsumidorRemocaoService(redisTemplate, properties);
+        var remocaoService = new ConsumidorStreamRemovedor(redisTemplate, properties);
         assertDoesNotThrow(() -> remocaoService.removerSeSemPendencia("nunca-existiu", 0));
     }
 

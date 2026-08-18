@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -55,8 +54,10 @@ public class AutorizacaoJpaEntity {
     @Column(name = "valor", nullable = false, precision = 17, scale = 2)
     private BigDecimal valorAutorizacao;
 
-    // Unicidade real é a constraint composta declarada em @Table; `unique = true` aqui geraria
-    // constraint de coluna única sem a chave de particionamento, rejeitada em tabela PARTITION BY.
+    // Unicidade NÃO é declarada aqui, pelo mesmo motivo do comentário no topo da classe: é índice
+    // único PARCIAL (só partições quentes), e `unique = true` geraria constraint de coluna única
+    // sem a chave de particionamento — rejeitada em tabela PARTITION BY, além de prometer uma
+    // garantia mais ampla do que a real.
     @Column(name = "id_autorizacao_empresa", nullable = false)
     private String idAutorizacaoEmpresa;
 

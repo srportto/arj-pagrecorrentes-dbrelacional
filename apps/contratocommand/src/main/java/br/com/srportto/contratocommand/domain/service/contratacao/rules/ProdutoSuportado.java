@@ -8,11 +8,11 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-
 /**
- * Substitui a antiga seleção por strategy: rejeita produto desconhecido antes das demais
- * rules de contratação, que assumem um {@link TipoProduto} válido.
+ * Rejeita produto não habilitado para contratação antes das demais rules de contratação, que
+ * assumem um {@link TipoProduto} habilitado. A resolução de string desconhecida para enum já
+ * acontece no controller ({@link TipoProduto#obterTipoProdutoEnumPorNome}) — esta rule cobre o
+ * caso de um produto que existe no enum mas não está habilitado para contratar.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -27,11 +27,7 @@ public class ProdutoSuportado implements ContratacaoRule {
     public void validar(CriarAutorizacaoCommand contexto) {
         var tipoProduto = contexto.tipoProduto();
 
-        boolean suportado = tipoProduto != null && Arrays.stream(TipoProduto.values())
-                .filter(produto -> produto.name().equalsIgnoreCase(tipoProduto))
-                .anyMatch(produto -> produto.habilitadoParaContratar());
-
-        if (!suportado) {
+        if (tipoProduto == null || !tipoProduto.habilitadoParaContratar()) {
             throw new BusinessException("Produto nao suportado ou invalido (tipoProduto: " + tipoProduto + ")");
         }
     }

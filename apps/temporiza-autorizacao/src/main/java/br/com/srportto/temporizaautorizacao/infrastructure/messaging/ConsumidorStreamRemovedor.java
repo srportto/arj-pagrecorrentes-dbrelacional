@@ -22,14 +22,14 @@ import java.util.concurrent.TimeoutException;
  * consumidor removido para sempre.
  */
 @Component
-public class ConsumidorRemocaoService {
+public class ConsumidorStreamRemovedor {
 
-    private static final Logger log = LoggerFactory.getLogger(ConsumidorRemocaoService.class);
+    private static final Logger log = LoggerFactory.getLogger(ConsumidorStreamRemovedor.class);
 
     private final StringRedisTemplate redisTemplate;
     private final TemporizacaoProperties properties;
 
-    public ConsumidorRemocaoService(StringRedisTemplate redisTemplate, TemporizacaoProperties properties) {
+    public ConsumidorStreamRemovedor(StringRedisTemplate redisTemplate, TemporizacaoProperties properties) {
         this.redisTemplate = redisTemplate;
         this.properties = properties;
     }

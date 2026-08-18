@@ -24,7 +24,7 @@ class TemporizacaoEventoListenerTest {
     @Test
     @DisplayName("receber desserializa o payload e delega ao use case com id e data de inclusão")
     void receberDesserializaEDelegaAoUseCase() {
-        var listener = new TemporizacaoEventoListener(useCase);
+        var listener = new TemporizacaoEventoListener(useCase, new tools.jackson.databind.ObjectMapper());
         var id = UUID.randomUUID();
         var inclusao = LocalDateTime.of(2026, 8, 8, 10, 0, 0);
         var json = "{\"id_autorizacao\":\"" + id + "\",\"data_hora_inclusao\":\"" + inclusao + "\"}";
@@ -37,7 +37,7 @@ class TemporizacaoEventoListenerTest {
     @Test
     @DisplayName("JSON malformado lança AgendamentoInvalidoException")
     void jsonMalformadoLanca() {
-        var listener = new TemporizacaoEventoListener(useCase);
+        var listener = new TemporizacaoEventoListener(useCase, new tools.jackson.databind.ObjectMapper());
 
         assertThrows(AgendamentoInvalidoException.class, () -> listener.receber("{isto nao e json"));
     }

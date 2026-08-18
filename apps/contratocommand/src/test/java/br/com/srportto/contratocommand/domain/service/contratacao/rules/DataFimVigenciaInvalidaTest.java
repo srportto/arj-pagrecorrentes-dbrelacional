@@ -3,6 +3,7 @@ package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class DataFimVigenciaInvalidaTest {
     @DisplayName("validar lança BusinessException quando a data está no passado")
     void dataPassadoLanca() {
         CriarAutorizacaoCommand context = TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("100"), LocalDate.now().minusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
+                TipoProduto.PIX_AUTO, new BigDecimal("100"), LocalDate.now().minusDays(1), null, TipoJornadaAutorizacao.SPI_J1);
         assertThrows(BusinessException.class, () -> regra.validar(context));
     }
 
@@ -35,8 +36,8 @@ class DataFimVigenciaInvalidaTest {
     @DisplayName("validar aceita data futura e data nula")
     void dataFuturaOuNulaOk() {
         assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("100"), LocalDate.now().plusDays(10), null, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("100"), LocalDate.now().plusDays(10), null, TipoJornadaAutorizacao.SPI_J1)));
         assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("100"), null, null, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("100"), null, null, TipoJornadaAutorizacao.SPI_J1)));
     }
 }

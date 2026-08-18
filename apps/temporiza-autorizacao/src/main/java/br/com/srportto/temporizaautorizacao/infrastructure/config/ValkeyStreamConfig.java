@@ -1,6 +1,6 @@
 package br.com.srportto.temporizaautorizacao.infrastructure.config;
 
-import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ConsumidorRemocaoService;
+import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ConsumidorStreamRemovedor;
 import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ExpiracaoStreamListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +44,10 @@ public class ValkeyStreamConfig implements SmartLifecycle {
     private static final Logger log = LoggerFactory.getLogger(ValkeyStreamConfig.class);
 
     private final StringRedisTemplate redisTemplate;
-    private final ConsumidorRemocaoService remocaoService;
+    private final ConsumidorStreamRemovedor remocaoService;
     private final TemporizacaoProperties properties;
 
-    public ValkeyStreamConfig(StringRedisTemplate redisTemplate, ConsumidorRemocaoService remocaoService,
+    public ValkeyStreamConfig(StringRedisTemplate redisTemplate, ConsumidorStreamRemovedor remocaoService,
             TemporizacaoProperties properties) {
         this.redisTemplate = redisTemplate;
         this.remocaoService = remocaoService;

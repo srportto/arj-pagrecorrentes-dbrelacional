@@ -3,6 +3,7 @@ package br.com.srportto.contratoquery.infrastructure.persistence;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
+import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 
 @Converter(autoApply = true)
 public class TipoProdutoConverter implements AttributeConverter<TipoProduto, Long> {
@@ -20,6 +21,12 @@ public class TipoProdutoConverter implements AttributeConverter<TipoProduto, Lon
         if (dbData == null) {
             return null;
         }
-        return TipoProduto.obterTipoProdutoEnumPorId(dbData);
+        // Código não mapeável na leitura é dado corrompido no banco, não requisição inválida do
+        // cliente — 500, não 422 (o BusinessException do enum é pensado para validação de entrada).
+        try {
+            return TipoProduto.obterTipoProdutoEnumPorId(dbData);
+        } catch (RuntimeException e) {
+            throw new ApplicationException("Código de tipoProduto inválido na linha lida do banco: " + dbData, e);
+        }
     }
 }

@@ -84,9 +84,8 @@ public class ListarAutorizacoesService implements ListarAutorizacoesUseCase {
         PaginaAutorizacoes resultado = repository.listarPorConta(
                 idUnicoContaContratante, statusEnums, paginaFinal, tamanhoFinal, campoOrdenacao, ascendente);
 
-        int totalPaginas = tamanhoFinal == 0
-                ? 1
-                : (int) Math.ceil((double) resultado.totalElementos() / tamanhoFinal);
+        // tamanhoFinal > 0 sempre aqui — rejeitado acima (linha 59) antes de chegar neste ponto.
+        int totalPaginas = (int) Math.ceil((double) resultado.totalElementos() / tamanhoFinal);
 
         return new ResultadoListagem(
                 resultado.conteudo(), paginaFinal, tamanhoFinal, resultado.totalElementos(), totalPaginas);

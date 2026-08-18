@@ -48,7 +48,13 @@ public final class TestFixtures {
         return criarRequest("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null);
     }
 
-    public static CriarAutorizacaoCommand criarContext(String tipoProduto, BigDecimal valor,
+    /**
+     * Comando de criação já com {@code tipoProduto} resolvido — a resolução de string→enum
+     * (e a rejeição de nome desconhecido) acontece no controller, não faz parte do comando.
+     * Ver {@code TipoProdutoTest} para a cobertura de resolução, e
+     * {@code AutorizacaoControllerTest} para a cobertura do controller rejeitando antes do use case.
+     */
+    public static CriarAutorizacaoCommand criarContext(TipoProduto tipoProduto, BigDecimal valor,
             LocalDate dataFimVigencia, JsonNode metadados, TipoJornadaAutorizacao tipoJornada) {
         return new CriarAutorizacaoCommand(
                 tipoJornada,
@@ -70,12 +76,12 @@ public final class TestFixtures {
     }
 
     public static CriarAutorizacaoCommand criarContextPix() {
-        return criarContext("PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
+        return criarContext(TipoProduto.PIX_AUTO, new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
                 TipoJornadaAutorizacao.SPI_J1);
     }
 
     public static CriarAutorizacaoCommand criarContextDda() {
-        return criarContext("DDA_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
+        return criarContext(TipoProduto.DDA_AUTO, new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
                 TipoJornadaAutorizacao.SPI_J1);
     }
 

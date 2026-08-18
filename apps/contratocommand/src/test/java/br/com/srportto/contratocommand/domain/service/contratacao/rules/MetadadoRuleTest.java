@@ -2,6 +2,7 @@ package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class MetadadoRuleTest {
     @DisplayName("metadado nulo é aceito")
     void metadadoNulo() {
         assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("10"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -36,7 +37,7 @@ class MetadadoRuleTest {
     void metadadoValido() {
         JsonNode meta = json("{\"nomePessoaRecebedora\":\"Joao\",\"apelidoPessoaRecebedora\":\"Jo\"}");
         assertDoesNotThrow(() -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -44,7 +45,7 @@ class MetadadoRuleTest {
     void nomeMuitoLongo() {
         JsonNode meta = json("{\"nomePessoaRecebedora\":\"" + "a".repeat(256) + "\"}");
         assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 
     @Test
@@ -52,6 +53,6 @@ class MetadadoRuleTest {
     void apelidoMuitoLongo() {
         JsonNode meta = json("{\"apelidoPessoaRecebedora\":\"" + "b".repeat(256) + "\"}");
         assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
+                TipoProduto.PIX_AUTO, new BigDecimal("10"), LocalDate.now().plusDays(1), meta, TipoJornadaAutorizacao.SPI_J1)));
     }
 }

@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.domain.port.in;
 
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
+import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,7 +11,7 @@ import java.util.UUID;
 public record CriarAutorizacaoCommand(
         TipoJornadaAutorizacao tipoJornada,
         LocalDate dataFimVigencia,
-        String tipoProduto,
+        TipoProduto tipoProduto,
         BigDecimal valor,
         String idAutorizacaoEmpresa,
         BigDecimal valorLimite,

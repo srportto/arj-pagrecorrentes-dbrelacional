@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -18,10 +20,13 @@ interface SpringDataAutorizacaoRepository extends JpaRepository<AutorizacaoJpaEn
     // Varre as 889 partições quentes (idUnicoContaContratante não é a chave de particionamento).
     // plan_cache_mode=force_generic_plan amortiza o planejamento, não a execução — ver design.md
     // de reduzir-custo-planejamento-consultas.
+    // O parâmetro trafega como StatusAutorizacao (não como código numérico): a coluna é mapeada
+    // por StatusAutorizacaoConverter, e o Hibernate rejeita o bind de Integer contra o atributo
+    // convertido (QueryArgumentException).
     @Query("SELECT a FROM AutorizacaoJpaEntity a WHERE a.idUnicoContaContratante = :idUnicoContaContratante AND a.status IN :statuses")
     Page<AutorizacaoJpaEntity> findByIdUnicoContaContratanteAndStatusIn(
             @Param("idUnicoContaContratante") UUID idUnicoContaContratante,
-            @Param("statuses") List<Integer> statuses,
+            @Param("statuses") List<StatusAutorizacao> statuses,
             Pageable pageable);
 
     @Query("SELECT a FROM AutorizacaoJpaEntity a WHERE a.idUnicoContaContratante = :idUnicoContaContratante")

@@ -1,13 +1,13 @@
 package br.com.srportto.eventosconsumer.domain.enums;
 
-import lombok.NoArgsConstructor;
+import br.com.srportto.eventosconsumer.domain.exception.EventoAutorizacaoInvalidoException;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
-@NoArgsConstructor
+/** Máquina de estados da autorização — regra de negócio pura desta app (ver CLAUDE.md). */
 public enum StatusAutorizacao {
     RECEBIDA(1L),
     PENDENTE_ACEITE(2L),
@@ -31,7 +31,7 @@ public enum StatusAutorizacao {
         TRANSICOES.put(FINALIZADA, EnumSet.noneOf(StatusAutorizacao.class));
     }
 
-    private long statusAutorizacao;
+    private final long statusAutorizacao;
 
     StatusAutorizacao(long statusAutorizacao) {
         this.statusAutorizacao = statusAutorizacao;
@@ -52,7 +52,7 @@ public enum StatusAutorizacao {
                 return statusEnum;
             }
         }
-        throw new IllegalArgumentException(
+        throw new EventoAutorizacaoInvalidoException(
                 String.format("Status de autorização %d não conhecido ", statusAutorizacaoId));
     }
 }

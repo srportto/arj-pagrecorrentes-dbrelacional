@@ -1,5 +1,6 @@
 package br.com.srportto.eventosconsumer.domain.enums;
 
+import br.com.srportto.eventosconsumer.domain.exception.EventoAutorizacaoInvalidoException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,7 @@ class TipoEventoAutorizacaoTest {
     @Test
     @DisplayName("porStatus lança exceção para status desconhecido")
     void lancaParaStatusDesconhecido() {
-        assertThrows(IllegalArgumentException.class, () -> TipoEventoAutorizacao.porStatus(99L));
+        assertThrows(EventoAutorizacaoInvalidoException.class, () -> TipoEventoAutorizacao.porStatus(99L));
     }
 
     @Test

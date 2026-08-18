@@ -1,22 +1,16 @@
 package br.com.srportto.contratocommand.infrastructure.persistence;
 
-import java.math.BigInteger;
 import java.util.UUID;
 
 public class IdContaUUIDPartitionDistributor {
 
-  // Metodo ultra rápido (bom o suficiente para a maioria dos casos)
+    /** Quantidade de partições quentes (faixa 0..888). */
+    private static final int QUANTIDADE_PARTICOES_QUENTES = 889;
+
     public static int getPartitionFast(UUID uuid) {
         int hash = uuid.hashCode();
-        return Math.abs(hash) % 889;
-    }
-    
-    // Metodo garantido (matematicamente perfeito distribuindo os 128 bits)
-    public static int getPartitionPrecision(UUID uuid) {
-        String hex = uuid.toString().replace("-", "");
-        BigInteger bigInt = new BigInteger(hex, 16);
-        BigInteger divisor = new BigInteger("889");
-        return bigInt.remainder(divisor).intValue();
+        // Math.floorMod (não Math.abs % n): Math.abs(Integer.MIN_VALUE) continua negativo.
+        return Math.floorMod(hash, QUANTIDADE_PARTICOES_QUENTES);
     }
 
 }

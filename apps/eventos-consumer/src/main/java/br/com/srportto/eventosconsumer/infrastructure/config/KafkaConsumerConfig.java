@@ -1,6 +1,7 @@
 package br.com.srportto.eventosconsumer.infrastructure.config;
 
 import br.com.srportto.eventos.autorizacao.EventoAutorizacao;
+import br.com.srportto.eventosconsumer.domain.exception.EventoAutorizacaoInvalidoException;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
@@ -69,11 +70,19 @@ public class KafkaConsumerConfig {
         return factory;
     }
 
-    /** 3 tentativas com 1s de intervalo; esgotadas, publica na DLT (não-ack indefinido). */
+    /**
+     * 3 tentativas com 1s de intervalo; esgotadas, publica na DLT (não-ack indefinido).
+     * {@link EventoAutorizacaoInvalidoException} (status desconhecido) é não-retryable: vai
+     * direto à DLT na primeira falha, sem gastar o orçamento de retry num erro determinístico
+     * que nenhuma nova tentativa corrige.
+     */
     @Bean
     public DefaultErrorHandler eventoAutorizacaoErrorHandler(
             DeadLetterPublishingRecoverer eventoAutorizacaoDeadLetterRecoverer) {
-        return new DefaultErrorHandler(eventoAutorizacaoDeadLetterRecoverer, new FixedBackOff(1_000L, 3));
+        DefaultErrorHandler errorHandler =
+                new DefaultErrorHandler(eventoAutorizacaoDeadLetterRecoverer, new FixedBackOff(1_000L, 3));
+        errorHandler.addNotRetryableExceptions(EventoAutorizacaoInvalidoException.class);
+        return errorHandler;
     }
 
     /**

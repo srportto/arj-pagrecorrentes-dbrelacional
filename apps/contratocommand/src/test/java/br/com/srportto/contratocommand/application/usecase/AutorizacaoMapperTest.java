@@ -4,7 +4,6 @@ import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
@@ -50,7 +49,7 @@ class AutorizacaoMapperTest {
     @DisplayName("toDomain persiste a jornada recebida mesmo quando difere da jornada usada no motivo (QRC_J3)")
     void toDomainPersisteJornadaQrcJ3() {
         Autorizacao aut = mapper.toDomain(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
+                TipoProduto.PIX_AUTO, new BigDecimal("1000.00"), LocalDate.now().plusDays(30), null,
                 TipoJornadaAutorizacao.QRC_J3), UUID.randomUUID());
 
         assertEquals(TipoJornadaAutorizacao.QRC_J3, aut.getTipoJornada());
@@ -58,29 +57,11 @@ class AutorizacaoMapperTest {
     }
 
     @Test
-    @DisplayName("toDomain resolve tipoProduto com case diferente via obterTipoProdutoEnumPorNome (nao usa Enum.valueOf implicito)")
-    void toDomainProdutoCaseInsensitivo() {
-        Autorizacao aut = mapper.toDomain(TestFixtures.criarContext(
-                "pix_auto", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
-                TipoJornadaAutorizacao.QRC_J2), UUID.randomUUID());
-
-        assertEquals(TipoProduto.PIX_AUTO, aut.getTipoProduto());
-    }
-
-    @Test
-    @DisplayName("toDomain lança BusinessException (nao IllegalArgumentException) para produto desconhecido")
-    void toDomainProdutoDesconhecidoLancaBusinessException() {
-        assertThrows(BusinessException.class, () -> mapper.toDomain(TestFixtures.criarContext(
-                "CARTAO_CREDITO", new BigDecimal("10"), LocalDate.now().plusDays(1), null,
-                TipoJornadaAutorizacao.QRC_J2), UUID.randomUUID()));
-    }
-
-    @Test
     @DisplayName("toDomain grava metadados quando presentes")
     void toDomainComMetadado() {
         var meta = new ObjectMapper().readTree("{\"k\":\"v\"}");
         Autorizacao aut = mapper.toDomain(TestFixtures.criarContext(
-                "PIX_AUTO", new BigDecimal("10"), LocalDate.now().plusDays(1), meta,
+                TipoProduto.PIX_AUTO, new BigDecimal("10"), LocalDate.now().plusDays(1), meta,
                 TipoJornadaAutorizacao.QRC_J2), UUID.randomUUID());
 
         assertNotNull(aut.getMetadados());

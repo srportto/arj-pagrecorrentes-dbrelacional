@@ -1,5 +1,10 @@
 package br.com.srportto.contratoquery.infrastructure.web.contratosrest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,10 +13,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import br.com.srportto.contratoquery.domain.model.Autorizacao;
+import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
-
-import static org.junit.jupiter.api.Assertions.*;
+import br.com.srportto.contratoquery.domain.model.Autorizacao;
 
 @DisplayName("Testes do AutorizacaoDetalheResponseDto.from")
 class AutorizacaoDetalheResponseDtoTest {
@@ -20,7 +24,7 @@ class AutorizacaoDetalheResponseDtoTest {
         return Autorizacao.builder()
                 .idAutorizacao(UUID.randomUUID())
                 .tipoProduto(TipoProduto.PIX_AUTO)
-                .status(status)
+                .status(status == null ? null : StatusAutorizacao.obterStatusEnumPorIdStatus(status))
                 .dataInicioVigencia(LocalDate.now())
                 .dataFimVigencia(LocalDate.now().plusDays(30))
                 .dataHoraInclusao(LocalDateTime.now())
@@ -44,29 +48,29 @@ class AutorizacaoDetalheResponseDtoTest {
         Autorizacao a = base(4, "{\"k\":\"v\"}");
         AutorizacaoDetalheResponseDto dto = AutorizacaoDetalheResponseDto.from(a);
 
-        assertEquals(a.getIdAutorizacao(), dto.getIdAutorizacao());
-        assertEquals(TipoProduto.PIX_AUTO, dto.getTipoProduto());
-        assertEquals("ATIVA", dto.getStatus());
-        assertEquals("RECEPCAO_SPI_J1", dto.getMotivoStatus());
-        assertEquals(a.getValorLimite(), dto.getValorLimite());
-        assertEquals(a.getIdPessoaPagadora(), dto.getIdPessoaPagadora());
-        assertNotNull(dto.getMetadado());
-        assertTrue(dto.getMetadado().has("k"));
+        assertEquals(a.getIdAutorizacao(), dto.idAutorizacao());
+        assertEquals(TipoProduto.PIX_AUTO, dto.tipoProduto());
+        assertEquals("ATIVA", dto.status());
+        assertEquals("RECEPCAO_SPI_J1", dto.motivoStatus());
+        assertEquals(a.getValorLimite(), dto.valorLimite());
+        assertEquals(a.getIdPessoaPagadora(), dto.idPessoaPagadora());
+        assertNotNull(dto.metadado());
+        assertTrue(dto.metadado().has("k"));
     }
 
     @Test
     @DisplayName("metadado nulo e status nulo são tolerados")
     void nulos() {
         AutorizacaoDetalheResponseDto dto = AutorizacaoDetalheResponseDto.from(base(null, null));
-        assertNull(dto.getMetadado());
-        assertNull(dto.getStatus());
+        assertNull(dto.metadado());
+        assertNull(dto.status());
     }
 
     @Test
     @DisplayName("metadado com JSON inválido vira nulo sem lançar")
     void metadadoInvalido() {
         AutorizacaoDetalheResponseDto dto = AutorizacaoDetalheResponseDto.from(base(1, "{quebrado"));
-        assertNull(dto.getMetadado());
-        assertEquals("RECEBIDA", dto.getStatus());
+        assertNull(dto.metadado());
+        assertEquals("RECEBIDA", dto.status());
     }
 }

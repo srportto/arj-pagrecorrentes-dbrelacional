@@ -1,7 +1,7 @@
 package br.com.srportto.temporizaautorizacao.infrastructure.scheduler;
 
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
-import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ConsumidorRemocaoService;
+import br.com.srportto.temporizaautorizacao.infrastructure.messaging.ConsumidorStreamRemovedor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.stream.StreamInfo;
@@ -16,11 +16,11 @@ public class ConsumidoresOrfaosLimpezaScheduler {
     private static final Logger log = LoggerFactory.getLogger(ConsumidoresOrfaosLimpezaScheduler.class);
 
     private final StringRedisTemplate redisTemplate;
-    private final ConsumidorRemocaoService remocaoService;
+    private final ConsumidorStreamRemovedor remocaoService;
     private final TemporizacaoProperties properties;
 
     public ConsumidoresOrfaosLimpezaScheduler(StringRedisTemplate redisTemplate,
-            ConsumidorRemocaoService remocaoService, TemporizacaoProperties properties) {
+            ConsumidorStreamRemovedor remocaoService, TemporizacaoProperties properties) {
         this.redisTemplate = redisTemplate;
         this.remocaoService = remocaoService;
         this.properties = properties;
@@ -32,7 +32,10 @@ public class ConsumidoresOrfaosLimpezaScheduler {
         try {
             consumidores = redisTemplate.opsForStream().consumers(properties.chaveStream(), properties.grupoConsumidor());
         } catch (RuntimeException e) {
-            // grupo/stream ainda nao existe — nada a limpar.
+            if (!ehGrupoOuStreamInexistente(e)) {
+                log.warn("Falha inesperada ao consultar consumidores do stream '{}' — tentativa adiada para "
+                        + "o próximo ciclo", properties.chaveStream(), e);
+            }
             return;
         }
 
@@ -47,6 +50,16 @@ public class ConsumidoresOrfaosLimpezaScheduler {
                         consumidor.consumerName(), properties.grupoConsumidor(), consumidor.idleTimeMs());
             }
         }
+    }
+
+    /** NOGROUP é a resposta do Valkey quando o grupo/stream ainda não existe — esperado no primeiro ciclo. */
+    private boolean ehGrupoOuStreamInexistente(Throwable t) {
+        for (Throwable atual = t; atual != null; atual = atual.getCause()) {
+            if (atual.getMessage() != null && atual.getMessage().contains("NOGROUP")) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

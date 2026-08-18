@@ -17,8 +17,7 @@ public class ProcessarExpiracaoService implements ProcessarExpiracaoUseCase {
     }
 
     @Override
-    public void processar(String idAutorizacaoStr) {
-        var idAutorizacao = UUID.fromString(idAutorizacaoStr);
+    public void processar(UUID idAutorizacao) {
         decisaoAutorizacaoClient.expirar(idAutorizacao);
     }
 

@@ -7,8 +7,11 @@ Ponte SQS → Kafka, em **arquitetura hexagonal clássica** (`domain`/`applicati
 ver `openspec/changes/archive/2026-08-16-hexagonal-classico-autorizacaostatus-producer/`). Consome os eventos de
 estado de autorização publicados pelo `contratocommand` (via `sns-estados-autorizacao` →
 SQS `SQS-eventos-autorizacao`), converte cada evento para Avro e produz no tópico Kafka
-`eventos-autorizacao` (Schema Registry), de forma idempotente. O ack no SQS só ocorre
-após a confirmação do broker Kafka.
+`eventos-autorizacao` (Schema Registry), com uma key SHA-256 determinística que **permite**
+deduplicação a jusante — a produção em si não é idempotente ponta a ponta (`enable.idempotence`
+só cobre retries internos do producer dentro de uma sessão; o tópico não é compactado por chave),
+então a garantia de não processar o mesmo evento duas vezes é responsabilidade de quem consome
+`eventos-autorizacao`, não desta app. O ack no SQS só ocorre após a confirmação do broker Kafka.
 
 ## Comece por aqui
 
@@ -178,9 +181,11 @@ SqsListenerHealthIndicator → /actuator/health, via MessageListenerContainerReg
 ```
 
 O produce é **síncrono**: `KafkaEventoAutorizacaoProducer` aguarda a confirmação do
-broker (`Future.get()`) antes de retornar. Os timeouts do producer
+broker (`Future.get(GET_TIMEOUT_SECONDS=20, TimeUnit.SECONDS)`) antes de retornar — esse
+`get()` é o teto real do bloqueio da thread do listener. Os timeouts do producer
 (`max.block.ms=5s`, `request.timeout.ms=5s`, `delivery.timeout.ms=15s`, mais o timeout
-explícito do cliente do Schema Registry `http.connect/read.timeout.ms=3s`) ficam abaixo
+explícito do cliente do Schema Registry `http.connect/read.timeout.ms=3s`, mais os 20s do
+`GET_TIMEOUT_SECONDS`) ficam abaixo
 do visibility timeout da fila SQS (**60s** — `infra/envs/local-messaging/variables.tf`,
 `sqs_visibility_timeout_seconds`) — uma falha de produção se resolve (sucesso ou
 exceção) antes de o SQS reentregar a mensagem em processamento. Como o processamento
@@ -202,10 +207,15 @@ ack; **relançar** mantém a mensagem sem ack. Duas exceções orientam essa cla
 - **`EventoAutorizacaoInvalidoException`** (`domain/exception/`) — não-retryable.
   JSON malformado, **campo obrigatório do schema Avro ausente ou nulo**, conversão para
   o modelo de domínio impossível, ou `status` desconhecido no payload (usado para derivar `tipoEvento`
-  via `TipoEventoAutorizacao.porStatus`). Toda essa classificação nasce agora dentro do
-  `SqsEventoAutorizacaoListener` (adaptador), não mais no use case — ver D1 e a armadilha #12.
-  O interceptor loga ERROR com o `messageId` — nunca com o body — e **engole** a exceção
-  (descarta conscientemente: retry nunca corrigiria um payload malformado).
+  via `TipoEventoAutorizacao.porStatus`). A classificação da etapa de consumo (desserialização,
+  validação, conversão) nasce dentro do `SqsEventoAutorizacaoListener` (adaptador), não mais no
+  use case — ver D1 e a armadilha #12. **Há uma segunda origem**, do lado da produção:
+  `KafkaEventoAutorizacaoProducer.classificarFalhaDoProduce` também lança
+  `EventoAutorizacaoInvalidoException` quando a cadeia de causas do `send()` contém
+  `AvroRuntimeException`/`ClassCastException` (evento incompatível com o schema registrado) — esse
+  caminho não passa pelo listener. O interceptor loga ERROR com o `messageId` — nunca com o body —
+  e **engole** a exceção (descarta conscientemente: retry nunca corrigiria um payload malformado
+  nem um schema incompatível).
 - **`EventoAutorizacaoKafkaIndisponivelException`** (`domain/exception/`) —
   retryable, junto com qualquer outra exceção não mapeada. Broker/Schema Registry
   indisponível ou timeout. O interceptor loga ERROR e **relança** — a mensagem volta à

@@ -55,7 +55,7 @@ class ListarAutorizacoesServiceTest {
     private Autorizacao criarAutorizacao(int status, double valor) {
         return Autorizacao.builder()
                 .idAutorizacao(UUID.randomUUID())
-                .status(status)
+                .status(StatusAutorizacao.obterStatusEnumPorIdStatus(status))
                 .dataHoraInclusao(LocalDateTime.now())
                 .dataInicioVigencia(LocalDate.now())
                 .dataFimVigencia(LocalDate.now().plusDays(30))

@@ -2,6 +2,7 @@ package br.com.srportto.autorizacaostatusproducer.infrastructure.messaging;
 
 import br.com.srportto.autorizacaostatusproducer.domain.exception.EventoAutorizacaoKafkaIndisponivelException;
 import br.com.srportto.autorizacaostatusproducer.domain.port.in.ProcessarEventoAutorizacaoUseCase;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,18 +10,27 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteQueueRequest;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,6 +64,41 @@ class SqsEventoAutorizacaoListenerIntegrationTest {
             + "\"data_hora_inclusao\":\"2026-07-26T10:00:00\","
             + "\"data_hora_ultima_atlz\":\"2026-07-26T10:00:00\","
             + "\"codigo_canal_contratacao\":\"canal\"}";
+
+    /** Cliente usado só para provisionar/derrubar a fila dedicada — separado do bean da aplicação. */
+    private static SqsAsyncClient clienteDeSetup;
+    private static String queueUrlDedicada;
+
+    /**
+     * A suíte inteira reutilizava {@code SQS-eventos-autorizacao} — a fila compartilhada que o
+     * container da própria aplicação também consome quando a orquestração local está no ar,
+     * fazendo os dois disputarem a mesma mensagem. Cada execução desta classe agora recebe uma
+     * fila só sua, criada antes do contexto Spring subir (o {@code @SqsListener} resolve o nome
+     * da fila na inicialização).
+     */
+    @DynamicPropertySource
+    static void queueDedicadaParaEsteTeste(DynamicPropertyRegistry registry) {
+        clienteDeSetup = SqsAsyncClient.builder()
+                .endpointOverride(URI.create("http://localhost:4566"))
+                .region(Region.US_EAST_1)
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")))
+                .build();
+
+        String nomeFila = "SQS-eventos-autorizacao-it-" + UUID.randomUUID();
+        queueUrlDedicada = clienteDeSetup.createQueue(CreateQueueRequest.builder()
+                        .queueName(nomeFila)
+                        .build())
+                .join()
+                .queueUrl();
+
+        registry.add("sqs.queue-url", () -> queueUrlDedicada);
+    }
+
+    @AfterAll
+    static void removerQueueDedicada() {
+        clienteDeSetup.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrlDedicada).build()).join();
+        clienteDeSetup.close();
+    }
 
     @Value("${sqs.queue-url}")
     private String queueUrl;

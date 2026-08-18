@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Ponto único de classificação de falha do consumo — equivalente ao {@code ApiExceptionHandler}
@@ -23,7 +25,11 @@ public class SqsEventoAutorizacaoErrorInterceptor implements ErrorHandler<String
 
     @Override
     public void handle(Message<String> message, Throwable t) {
-        String messageId = message.getHeaders().getId().toString();
+        // MessageHeaders#getId() é anulável por contrato — não deixar a classificação falhar com
+        // NPE antes de decidir ack/retenção por causa só do log.
+        String messageId = Optional.ofNullable(message.getHeaders().getId())
+                .map(UUID::toString)
+                .orElse("desconhecido");
 
         if (contemEventoInvalido(t)) {
             log.error("Mensagem não-retryable descartada: messageId={}", messageId, t);

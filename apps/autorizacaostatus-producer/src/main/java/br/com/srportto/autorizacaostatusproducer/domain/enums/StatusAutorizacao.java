@@ -1,11 +1,10 @@
 package br.com.srportto.autorizacaostatusproducer.domain.enums;
 
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
-
-/** Máquina de estados da autorização. Domínio puro: sem Spring, sem Jakarta, sem Lombok. */
+/**
+ * Espelho manual do status persistido pelo contratocommand. Esta app é uma ponte de formatos
+ * (SQS → Kafka), sem regra de máquina de estados própria — só precisa mapear id↔enum para
+ * derivar {@link TipoEventoAutorizacao}.
+ */
 public enum StatusAutorizacao {
     RECEBIDA(1L),
     PENDENTE_ACEITE(2L),
@@ -16,19 +15,6 @@ public enum StatusAutorizacao {
     EXPIRADA(7L),
     FINALIZADA(8L);
 
-    private static final Map<StatusAutorizacao, Set<StatusAutorizacao>> TRANSICOES = new EnumMap<>(StatusAutorizacao.class);
-
-    static {
-        TRANSICOES.put(RECEBIDA, EnumSet.of(PENDENTE_ACEITE, EM_PROCESSO_ATIVACAO, REJEITADA));
-        TRANSICOES.put(PENDENTE_ACEITE, EnumSet.of(EM_PROCESSO_ATIVACAO, REJEITADA, EXPIRADA));
-        TRANSICOES.put(EM_PROCESSO_ATIVACAO, EnumSet.of(ATIVA, REJEITADA, EXPIRADA));
-        TRANSICOES.put(ATIVA, EnumSet.of(CANCELADA, FINALIZADA, REJEITADA));
-        TRANSICOES.put(CANCELADA, EnumSet.noneOf(StatusAutorizacao.class));
-        TRANSICOES.put(REJEITADA, EnumSet.noneOf(StatusAutorizacao.class));
-        TRANSICOES.put(EXPIRADA, EnumSet.noneOf(StatusAutorizacao.class));
-        TRANSICOES.put(FINALIZADA, EnumSet.noneOf(StatusAutorizacao.class));
-    }
-
     private final long statusAutorizacao;
 
     StatusAutorizacao(long statusAutorizacao) {
@@ -37,11 +23,6 @@ public enum StatusAutorizacao {
 
     public long getStatusAutorizacao() {
         return this.statusAutorizacao;
-    }
-
-    /** Consulta o grafo de transições da máquina de estados da autorização. */
-    public boolean podeTransicionarPara(StatusAutorizacao destino) {
-        return TRANSICOES.get(this).contains(destino);
     }
 
     public static StatusAutorizacao obterStatusEnumPorIdStatus(long statusAutorizacaoId) {

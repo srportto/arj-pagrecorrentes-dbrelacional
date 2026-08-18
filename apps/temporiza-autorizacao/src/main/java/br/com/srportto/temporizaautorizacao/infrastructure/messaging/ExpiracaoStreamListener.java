@@ -11,17 +11,21 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 /**
  * Consome o stream de expirações (ack manual via
  * {@link br.com.srportto.temporizaautorizacao.infrastructure.config.ValkeyStreamConfig}). Só
  * confirma (XACK) após {@link ProcessarExpiracaoUseCase} concluir sem exceção; falha retryable
- * deixa a entrada pendente, elegível a {@link PendenciasSchedulerReivindicador}.
+ * ou inesperada deixa a entrada pendente, elegível a
+ * {@link br.com.srportto.temporizaautorizacao.infrastructure.scheduler.PendenciasSchedulerReivindicador}.
  */
 @Component
 public class ExpiracaoStreamListener implements StreamListener<String, MapRecord<String, String, String>> {
 
     private static final Logger log = LoggerFactory.getLogger(ExpiracaoStreamListener.class);
-    private static final String CAMPO_ID_AUTORIZACAO = "id_autorizacao";
+    /** Compartilhada com {@code PendenciasSchedulerReivindicador} e o {@code @JsonProperty} de {@link AutorizacaoEventoPayload}. */
+    public static final String CAMPO_ID_AUTORIZACAO = "id_autorizacao";
 
     private final ProcessarExpiracaoUseCase processarExpiracaoUseCase;
     private final StringRedisTemplate redisTemplate;
@@ -39,14 +43,24 @@ public class ExpiracaoStreamListener implements StreamListener<String, MapRecord
         processarEConfirmarSeConcluido(message.getId(), message.getValue().get(CAMPO_ID_AUTORIZACAO));
     }
 
-    /** Reusado por {@link PendenciasSchedulerReivindicador} p/ reprocessar entradas reivindicadas. */
-    public void processarEConfirmarSeConcluido(RecordId streamId, String idAutorizacao) {
+    /**
+     * Reusado por {@code PendenciasSchedulerReivindicador} p/ reprocessar entradas reivindicadas.
+     * O parse de {@code String} para {@link UUID} é responsabilidade do adaptador — a porta
+     * {@link ProcessarExpiracaoUseCase} recebe o identificador já tipado.
+     */
+    public void processarEConfirmarSeConcluido(RecordId streamId, String idAutorizacaoStr) {
         try {
+            UUID idAutorizacao = UUID.fromString(idAutorizacaoStr);
             processarExpiracaoUseCase.processar(idAutorizacao);
             confirmar(streamId);
         } catch (ExpiracaoRetryavelException e) {
             log.error("Falha retryable ao processar expiração de {}, entrada permanece pendente: streamId={}",
-                    idAutorizacao, streamId, e);
+                    idAutorizacaoStr, streamId, e);
+        } catch (RuntimeException e) {
+            // inclui IllegalArgumentException de UUID.fromString malformado — classificação
+            // explícita em vez de deixar escapar sem log nem decisão de ack/retenção.
+            log.error("Falha inesperada ao processar expiração de {}, entrada permanece pendente: streamId={}",
+                    idAutorizacaoStr, streamId, e);
         }
     }
 

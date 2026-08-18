@@ -22,24 +22,4 @@ class StatusAutorizacaoTest {
         assertThrows(IllegalArgumentException.class, () -> StatusAutorizacao.obterStatusEnumPorIdStatus(999L));
     }
 
-    @Test
-    @DisplayName("ATIVA pode transicionar para CANCELADA, FINALIZADA e REJEITADA, mas não EXPIRADA")
-    void transicoesDeAtiva() {
-        assertTrue(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.CANCELADA));
-        assertTrue(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.FINALIZADA));
-        assertTrue(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.REJEITADA));
-        assertFalse(StatusAutorizacao.ATIVA.podeTransicionarPara(StatusAutorizacao.EXPIRADA));
-    }
-
-    @Test
-    @DisplayName("estados terminais não transicionam para nenhum outro estado")
-    void estadosTerminaisNaoTransicionam() {
-        for (StatusAutorizacao terminal : new StatusAutorizacao[] {
-                StatusAutorizacao.CANCELADA, StatusAutorizacao.REJEITADA,
-                StatusAutorizacao.EXPIRADA, StatusAutorizacao.FINALIZADA}) {
-            for (StatusAutorizacao destino : StatusAutorizacao.values()) {
-                assertFalse(terminal.podeTransicionarPara(destino));
-            }
-        }
-    }
 }
