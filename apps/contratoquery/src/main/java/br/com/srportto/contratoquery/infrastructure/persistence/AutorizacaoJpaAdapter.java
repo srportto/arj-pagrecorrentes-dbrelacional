@@ -136,7 +136,7 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
         Page<AutorizacaoJpaEntity> paginaJpa = (statuses == null || statuses.isEmpty())
                 ? springDataRepository.findByIdUnicoContaContratante(idUnicoContaContratante, pageable)
                 : springDataRepository.findByIdUnicoContaContratanteAndStatusIn(
-                        idUnicoContaContratante, codigosPara(statuses), pageable);
+                        idUnicoContaContratante, statuses, pageable);
 
         List<Autorizacao> conteudo = paginaJpa.getContent().stream()
                 .map(mapper::paraDominio)
@@ -157,11 +157,5 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
             case ID_PESSOA_RECEBEDORA -> "idPessoaRecebedora";
             case STATUS -> "status";
         };
-    }
-
-    private List<Integer> codigosPara(List<StatusAutorizacao> statuses) {
-        return statuses.stream()
-                .map(status -> (int) status.getStatusAutorizacao())
-                .toList();
     }
 }

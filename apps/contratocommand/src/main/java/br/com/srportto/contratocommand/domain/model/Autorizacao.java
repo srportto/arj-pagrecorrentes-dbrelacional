@@ -94,6 +94,12 @@ public class Autorizacao {
             this.dataFimVigencia = LocalDate.of(9999, 12, 31);
         }
 
+        // Coluna metadados e NOT NULL desde a migration v1.0.5, que normalizou o legado
+        // com o mesmo criterio: ausencia de metadados == objeto JSON vazio.
+        if (this.metadados == null || this.metadados.isBlank()) {
+            this.metadados = "{}";
+        }
+
         return this;
     }
 

@@ -5,9 +5,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
@@ -111,5 +115,63 @@ public class ApiExceptionHandler {
 		}
 
 		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(layoutErrosApiValidationsResponse);
+	}
+
+	/** Parâmetro com tipo incompatível (ex.: {@code ?pagina=abc}) é entrada inválida do cliente — 422, não 500 (D3). */
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<LayoutErrosApiValidationsResponse> parametroComTipoInvalido(
+			MethodArgumentTypeMismatchException exception, HttpServletRequest request) {
+
+		var layoutErrosApiValidationsResponse = new LayoutErrosApiValidationsResponse(
+				Instant.now(),
+				"Requisicao nao respeitou as validacoes basicas do contrato, confira as occurrences para mais detalhes",
+				"Erro durante a validacao da requisicao, confira as occurrences...",
+				request.getRequestURI());
+
+		layoutErrosApiValidationsResponse.addOccurrence(exception.getName(), "valor invalido para o parametro");
+
+		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(layoutErrosApiValidationsResponse);
+	}
+
+	/** Parâmetro obrigatório ausente é entrada inválida do cliente — 422, não 500 (D3). */
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<LayoutErrosApiValidationsResponse> parametroObrigatorioAusente(
+			MissingServletRequestParameterException exception, HttpServletRequest request) {
+
+		var layoutErrosApiValidationsResponse = new LayoutErrosApiValidationsResponse(
+				Instant.now(),
+				"Requisicao nao respeitou as validacoes basicas do contrato, confira as occurrences para mais detalhes",
+				"Erro durante a validacao da requisicao, confira as occurrences...",
+				request.getRequestURI());
+
+		layoutErrosApiValidationsResponse.addOccurrence(exception.getParameterName(), "parametro obrigatorio ausente");
+
+		return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(layoutErrosApiValidationsResponse);
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity<LayoutErrosApiResponse> metodoNaoSuportado(HttpRequestMethodNotSupportedException exception,
+			HttpServletRequest req) {
+
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Metodo HTTP nao suportado neste recurso",
+				exception.getMessage(),
+				req.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(layoutError);
+	}
+
+	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+	public ResponseEntity<LayoutErrosApiResponse> mediaTypeNaoSuportado(HttpMediaTypeNotSupportedException exception,
+			HttpServletRequest req) {
+
+		var layoutError = new LayoutErrosApiResponse(
+				Instant.now(),
+				"Tipo de midia nao suportado neste recurso",
+				exception.getMessage(),
+				req.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(layoutError);
 	}
 }

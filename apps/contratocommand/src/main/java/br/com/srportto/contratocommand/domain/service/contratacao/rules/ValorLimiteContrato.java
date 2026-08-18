@@ -18,6 +18,10 @@ public class ValorLimiteContrato implements ContratacaoRule {
     public void validar(CriarAutorizacaoCommand contexto) {
         var limite = contexto.tipoProduto().getValorLimiteContratacao();
 
+        if (contexto.valor().signum() <= 0) {
+            throw new BusinessException("Valor de contratacao deve ser maior que zero");
+        }
+
         if (contexto.valor().compareTo(limite) > 0) {
             throw new BusinessException("Valor contratacao invalido");
         }

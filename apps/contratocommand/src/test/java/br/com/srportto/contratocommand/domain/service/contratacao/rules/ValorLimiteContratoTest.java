@@ -35,4 +35,13 @@ class ValorLimiteContratoTest {
         assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
                 TipoProduto.DDA_AUTO, new BigDecimal("250000.01"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
     }
+
+    @Test
+    @DisplayName("valor zero e valor negativo sao rejeitados")
+    void valorNaoPositivoLanca() {
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
+                TipoProduto.PIX_AUTO, BigDecimal.ZERO, LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
+        assertThrows(BusinessException.class, () -> regra.validar(TestFixtures.criarContext(
+                TipoProduto.PIX_AUTO, new BigDecimal("-0.01"), LocalDate.now().plusDays(1), null, TipoJornadaAutorizacao.SPI_J1)));
+    }
 }

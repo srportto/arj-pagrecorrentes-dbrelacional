@@ -78,4 +78,42 @@ class AutorizacaoTest {
 
         assertThrows(IllegalStateException.class, () -> autorizacao.inicializaCriacao(UUID.randomUUID()));
     }
+
+    @Test
+    @DisplayName("inicializaCriacao normaliza metadados ausente para objeto JSON vazio")
+    void metadadosAusenteViraObjetoVazio() {
+        Autorizacao autorizacao = new Autorizacao();
+        autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.PIX_AUTO);
+
+        autorizacao.inicializaCriacao(UUID.randomUUID());
+
+        assertEquals("{}", autorizacao.getMetadados());
+    }
+
+    @Test
+    @DisplayName("inicializaCriacao normaliza metadados em branco para objeto JSON vazio")
+    void metadadosEmBrancoViraObjetoVazio() {
+        Autorizacao autorizacao = new Autorizacao();
+        autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.PIX_AUTO);
+        autorizacao.setMetadados("   ");
+
+        autorizacao.inicializaCriacao(UUID.randomUUID());
+
+        assertEquals("{}", autorizacao.getMetadados());
+    }
+
+    @Test
+    @DisplayName("inicializaCriacao preserva metadados já informados")
+    void preservaMetadadosInformados() {
+        Autorizacao autorizacao = new Autorizacao();
+        autorizacao.setIdUnicoContaContratante(UUID.randomUUID());
+        autorizacao.setTipoProduto(TipoProduto.PIX_AUTO);
+        autorizacao.setMetadados("{\"chave\":\"valor\"}");
+
+        autorizacao.inicializaCriacao(UUID.randomUUID());
+
+        assertEquals("{\"chave\":\"valor\"}", autorizacao.getMetadados());
+    }
 }

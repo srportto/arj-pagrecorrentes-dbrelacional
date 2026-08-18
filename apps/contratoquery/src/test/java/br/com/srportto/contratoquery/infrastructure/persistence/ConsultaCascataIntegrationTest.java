@@ -148,7 +148,7 @@ class ConsultaCascataIntegrationTest {
 
         assertNotNull(autorizacao);
         assertEquals(id, autorizacao.getIdAutorizacao());
-        assertEquals(4, autorizacao.getStatus());
+        assertEquals(StatusAutorizacao.ATIVA, autorizacao.getStatus());
     }
 
     @Test
@@ -161,7 +161,7 @@ class ConsultaCascataIntegrationTest {
 
         assertNotNull(autorizacao, "Autorizacao em estado terminal precisa continuar consultavel por id");
         assertEquals(id, autorizacao.getIdAutorizacao());
-        assertEquals(6, autorizacao.getStatus());
+        assertEquals(StatusAutorizacao.REJEITADA, autorizacao.getStatus());
     }
 
     @Test
