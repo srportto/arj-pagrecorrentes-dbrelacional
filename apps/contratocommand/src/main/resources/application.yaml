@@ -40,3 +40,8 @@ management:
 
 server:
     shutdown: graceful
+
+logging:
+    structured:
+        format:
+            console: logstash

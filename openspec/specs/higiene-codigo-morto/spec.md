@@ -36,6 +36,29 @@ Métodos públicos de classes vivas em `src/main` SHALL ter ao menos um chamador
 - **WHEN** a classe `ReversibleUUIDv7` de `contratoquery` é inspecionada
 - **THEN** ela mantém `generate()` e `extract()`, pois `extract()` tem uso de produção e seus testes dependem de `generate()` para construir UUIDs v7 válidos
 
+#### Scenario: Métodos de repositório que furam a poda de partição são removidos do contratocommand
+
+- **WHEN** `apps/contratocommand/src/main/java/.../infrastructure/persistence/SpringDataAutorizacaoRepository.java`
+  é inspecionado após a limpeza desta rodada
+- **THEN** os métodos `findByStatus` e `findByIdAutorizacao` não existem — nenhum tinha chamador de
+  produção, e ambos consultam sem `id_particao_conta`, varrendo as ~989 partições
+
+#### Scenario: Utilitários de partição sem uso removidos do contratocommand
+
+- **WHEN** `infrastructure/persistence/IdContaUUIDPartitionDistributor.java` e
+  `ControleExpurgoAutorizacao.java` do `contratocommand` são inspecionados após a limpeza
+- **THEN** `getPartitionPrecision` e `obterParticaoExpurgoDrop` não existem em `src/main` — cada um
+  só tinha chamador em `src/test`
+
+#### Scenario: Grafo de transição sem uso removido da app-ponte autorizacaostatus-producer
+
+- **WHEN** `domain/enums/StatusAutorizacao.java` de `autorizacaostatus-producer` é inspecionado após
+  a limpeza
+- **THEN** `TRANSICOES` e `podeTransicionarPara` não existem — a app é uma ponte de formatos sem
+  regra de máquina de estados própria, e nenhum caminho de produção os chamava
+- **AND** `obterStatusEnumPorIdStatus` continua existindo, pois `TipoEventoAutorizacao.porStatus` o
+  usa em produção
+
 ### Requirement: Utilitários usados apenas por testes vivem em src/test
 Uma classe utilitária referenciada exclusivamente por código de teste SHALL residir em `src/test`, não em `src/main`, para não ser empacotada no artefato de produção.
 

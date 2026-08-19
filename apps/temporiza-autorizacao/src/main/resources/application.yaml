@@ -17,6 +17,11 @@ server:
     port: 8084
     shutdown: graceful
 
+logging:
+    structured:
+        format:
+            console: logstash
+
 temporizacao:
     prazo-minutos: 10
     varredura-intervalo-ms: 5000

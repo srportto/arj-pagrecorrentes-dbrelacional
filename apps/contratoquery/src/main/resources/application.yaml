@@ -42,6 +42,11 @@ server:
     port: 8081
     shutdown: graceful
 
+logging:
+    structured:
+        format:
+            console: logstash
+
 contratoquery:
     consulta:
         # Nivel 3 da cascata de localizacao do GET /api/autorizacoes/{id}: procura nas demais
