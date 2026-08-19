@@ -5,6 +5,8 @@ import br.com.srportto.autorizacaostatusproducer.domain.exception.EventoAutoriza
 import br.com.srportto.autorizacaostatusproducer.domain.model.EventoAutorizacao;
 import br.com.srportto.autorizacaostatusproducer.domain.port.in.ProcessarEventoAutorizacaoUseCase;
 import io.awspring.cloud.sqs.annotation.SqsListener;
+import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -43,15 +45,21 @@ public class SqsEventoAutorizacaoListener {
 
     @SqsListener(queueNames = "${sqs.queue-url}", factory = "eventosAutorizacaoSqsListenerContainerFactory")
     public void receber(String body) {
-        AutorizacaoEventoPayload payload = desserializar(body);
+        // traceId por mensagem: MDC e por thread do pool, sempre limpo no finally.
+        MDC.put("traceId", UUID.randomUUID().toString());
+        try {
+            AutorizacaoEventoPayload payload = desserializar(body);
 
-        // valida antes: campo obrigatório nulo passa em silêncio pelo builder Avro
-        validator.validar(payload);
+            // valida antes: campo obrigatório nulo passa em silêncio pelo builder Avro
+            validator.validar(payload);
 
-        TipoEventoAutorizacao tipoEvento = derivarTipoEvento(payload);
-        EventoAutorizacao evento = paraEventoDominio(payload);
+            TipoEventoAutorizacao tipoEvento = derivarTipoEvento(payload);
+            EventoAutorizacao evento = paraEventoDominio(payload);
 
-        useCase.processar(evento, tipoEvento);
+            useCase.processar(evento, tipoEvento);
+        } finally {
+            MDC.clear();
+        }
     }
 
     /**

@@ -70,6 +70,16 @@ mvn test                                     # Todos os testes
 > **Não há endpoints REST de negócio** — esta app não expõe API própria, apenas consome
 > o tópico Kafka em background.
 
+## Logging
+
+Log estruturado em JSON (`logging.structured.format.console: logstash`, `application.yaml`) em todo
+profile, inclusive `local` — suporte nativo do Spring Boot 4, sem dependência extra.
+
+Cada registro Kafka processado é correlacionado por `traceId` no MDC do SLF4J, populado no início de
+`EventoAutorizacaoKafkaListener.escutar()` (`infrastructure/messaging/`) — gera um `UUID` novo por
+registro — e limpo no `finally` (threads do container são reaproveitadas de um pool entre
+registros).
+
 ## Arquitetura (hexagonal clássica)
 
 ```

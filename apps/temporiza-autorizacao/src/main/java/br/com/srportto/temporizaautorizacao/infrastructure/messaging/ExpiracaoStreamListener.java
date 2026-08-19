@@ -5,6 +5,7 @@ import br.com.srportto.temporizaautorizacao.domain.port.in.ProcessarExpiracaoUse
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -49,6 +50,10 @@ public class ExpiracaoStreamListener implements StreamListener<String, MapRecord
      * {@link ProcessarExpiracaoUseCase} recebe o identificador já tipado.
      */
     public void processarEConfirmarSeConcluido(RecordId streamId, String idAutorizacaoStr) {
+        // traceId por mensagem: o streamId já é o identificador único da entrada (equivalente ao
+        // atributo de correlação de outras filas); cobre também o reprocessamento via
+        // PendenciasSchedulerReivindicador, que chama este mesmo método. MDC e por thread, limpo no finally.
+        MDC.put("traceId", streamId.getValue());
         try {
             UUID idAutorizacao = UUID.fromString(idAutorizacaoStr);
             processarExpiracaoUseCase.processar(idAutorizacao);
@@ -61,6 +66,8 @@ public class ExpiracaoStreamListener implements StreamListener<String, MapRecord
             // explícita em vez de deixar escapar sem log nem decisão de ack/retenção.
             log.error("Falha inesperada ao processar expiração de {}, entrada permanece pendente: streamId={}",
                     idAutorizacaoStr, streamId, e);
+        } finally {
+            MDC.clear();
         }
     }
 

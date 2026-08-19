@@ -54,6 +54,17 @@ Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutoriza
 
 > Sem MapStruct — não há mapeamento DTO↔Entity nesta app; os DTOs são construídos via `from()` estático. O mapeamento entidade JPA↔domínio (`AutorizacaoPersistenceMapper`) também é feito à mão, num sentido só.
 
+## Logging
+
+Log estruturado em JSON (`logging.structured.format.console: logstash`, `application.yaml`) em todo
+profile, inclusive `local` — suporte nativo do Spring Boot 4, sem dependência extra. Para leitura
+legível em desenvolvimento: `mvn spring-boot:run | jq .`.
+
+Toda requisição HTTP é correlacionada por `traceId` no MDC do SLF4J, populado por `TraceIdFilter`
+(`infrastructure/web/`): reaproveita o cabeçalho `X-Trace-Id` quando presente, gera um `UUID` novo
+caso contrário, e limpa o MDC no `finally` (thread do pool do servidor é reaproveitada entre
+requisições).
+
 ## Endpoints reais (base `/api/autorizacoes`)
 
 | Método | Caminho | Descrição |

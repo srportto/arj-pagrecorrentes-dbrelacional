@@ -3,11 +3,13 @@ package br.com.srportto.temporizaautorizacao.infrastructure.messaging;
 import br.com.srportto.temporizaautorizacao.domain.exception.ExpiracaoRetryavelException;
 import br.com.srportto.temporizaautorizacao.domain.port.in.ProcessarExpiracaoUseCase;
 import br.com.srportto.temporizaautorizacao.infrastructure.config.TemporizacaoProperties;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.connection.stream.StreamRecords;
@@ -17,8 +19,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -74,6 +79,43 @@ class ExpiracaoStreamListenerTest {
         listener.onMessage(mensagem(id));
 
         verify(redisTemplate, never()).opsForStream();
+    }
+
+    @AfterEach
+    void limpaMdc() {
+        MDC.clear();
+    }
+
+    @Test
+    @DisplayName("MDC é limpo após o processamento, com sucesso ou falha")
+    void mdcELimpoAposProcessamento() {
+        when(redisTemplate.opsForStream()).thenReturn((StreamOperations) streamOperations);
+        listener = new ExpiracaoStreamListener(processarExpiracaoUseCase, redisTemplate, properties);
+
+        listener.onMessage(mensagem(UUID.randomUUID()));
+        assertNull(MDC.get("traceId"), "MDC deve ser limpo após sucesso");
+
+        var idFalha = UUID.randomUUID();
+        doThrow(new ExpiracaoRetryavelException("falha", new RuntimeException()))
+                .when(processarExpiracaoUseCase).processar(idFalha);
+        listener.onMessage(mensagem(idFalha));
+        assertNull(MDC.get("traceId"), "MDC deve ser limpo mesmo após falha retryable");
+    }
+
+    @Test
+    @DisplayName("um traceId (streamId) é populado no MDC durante o processamento da mensagem")
+    void traceIdEPopuladoDuranteOProcessamento() {
+        when(redisTemplate.opsForStream()).thenReturn((StreamOperations) streamOperations);
+        listener = new ExpiracaoStreamListener(processarExpiracaoUseCase, redisTemplate, properties);
+        var id = UUID.randomUUID();
+        doAnswer(invocation -> {
+            assertTrue(MDC.get("traceId") != null && !MDC.get("traceId").isBlank());
+            return null;
+        }).when(processarExpiracaoUseCase).processar(id);
+
+        listener.onMessage(mensagem(id));
+
+        verify(processarExpiracaoUseCase).processar(id);
     }
 
 }

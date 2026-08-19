@@ -87,6 +87,16 @@ mvn test                                     # Todos os testes
 > **Não há endpoints REST de negócio** — esta app não expõe API própria, apenas consome
 > a fila SQS e produz no Kafka em background.
 
+## Logging
+
+Log estruturado em JSON (`logging.structured.format.console: logstash`, `application.yaml`) em todo
+profile, inclusive `local` — suporte nativo do Spring Boot 4, sem dependência extra.
+
+Cada mensagem SQS processada é correlacionada por `traceId` no MDC do SLF4J, populado no início de
+`SqsEventoAutorizacaoListener.receber()` (`infrastructure/messaging/`) — gera um `UUID` novo por
+mensagem (a fila não carrega um atributo de correlação reaproveitável hoje) — e limpo no `finally`
+(threads do listener são reaproveitadas de um pool entre mensagens).
+
 ## Arquitetura (hexagonal clássica)
 
 ```

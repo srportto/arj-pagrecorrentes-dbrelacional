@@ -3,17 +3,21 @@ package br.com.srportto.autorizacaostatusproducer.infrastructure.messaging;
 import br.com.srportto.autorizacaostatusproducer.domain.exception.EventoAutorizacaoInvalidoException;
 import br.com.srportto.autorizacaostatusproducer.domain.model.EventoAutorizacao;
 import br.com.srportto.autorizacaostatusproducer.domain.port.in.ProcessarEventoAutorizacaoUseCase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -47,6 +51,11 @@ class SqsEventoAutorizacaoListenerTest {
 
     private void inicializar() {
         listener = new SqsEventoAutorizacaoListener(useCase, validator, converter, new tools.jackson.databind.ObjectMapper());
+    }
+
+    @AfterEach
+    void limpaMdc() {
+        MDC.clear();
     }
 
     /** Troca o valor do campo por null explícito — o caso que o builder Avro aceita em silêncio. */
@@ -200,6 +209,32 @@ class SqsEventoAutorizacaoListenerTest {
                 () -> listener.receber("{\"campo_futuro_ainda_nao_replicado\":\"x\"}"));
 
         verifyNoInteractions(useCase);
+    }
+
+    @Test
+    @DisplayName("MDC é limpo após o processamento, com sucesso ou falha")
+    void mdcELimpoAposProcessamento() {
+        inicializar();
+
+        listener.receber(MENSAGEM_VALIDA);
+        assertNull(MDC.get("traceId"), "MDC deve ser limpo após sucesso");
+
+        assertThrows(EventoAutorizacaoInvalidoException.class, () -> listener.receber("{isso nao e json"));
+        assertNull(MDC.get("traceId"), "MDC deve ser limpo mesmo após falha não-retryable");
+    }
+
+    @Test
+    @DisplayName("um traceId é populado no MDC durante o processamento da mensagem")
+    void traceIdEPopuladoDuranteOProcessamento() {
+        inicializar();
+        doAnswer(invocation -> {
+            assertTrue(MDC.get("traceId") != null && !MDC.get("traceId").isBlank());
+            return null;
+        }).when(useCase).processar(any(EventoAutorizacao.class), any());
+
+        listener.receber(MENSAGEM_VALIDA);
+
+        verify(useCase).processar(any(EventoAutorizacao.class), any());
     }
 
 }

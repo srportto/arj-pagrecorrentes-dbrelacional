@@ -69,6 +69,21 @@ mvn test                                     # Todos os testes
 > **Não há endpoints REST de negócio** — consome a fila SQS, agenda/varre no Valkey e
 > aciona o command em background.
 
+## Logging
+
+Log estruturado em JSON (`logging.structured.format.console: logstash`, `application.yaml`) em todo
+profile, inclusive `local` — suporte nativo do Spring Boot 4, sem dependência extra.
+
+`traceId` no MDC do SLF4J correlaciona cada mensagem nos dois pontos de entrada:
+- `TemporizacaoEventoListener.receber()` (`infrastructure/messaging/`, SQS) — gera um `UUID` novo por
+  mensagem.
+- `ExpiracaoStreamListener.processarEConfirmarSeConcluido()` (`infrastructure/messaging/`, stream
+  Valkey) — reaproveita o `streamId` (identificador único da entrada) como `traceId`; cobre também o
+  reprocessamento via `PendenciasSchedulerReivindicador`, que chama o mesmo método.
+
+Em ambos, o MDC é limpo no `finally` (threads dos listeners são reaproveitadas de um pool entre
+mensagens).
+
 ## Arquitetura (hexagonal clássica)
 
 ```

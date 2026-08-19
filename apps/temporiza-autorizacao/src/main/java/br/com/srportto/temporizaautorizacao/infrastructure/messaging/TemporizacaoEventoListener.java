@@ -3,6 +3,8 @@ package br.com.srportto.temporizaautorizacao.infrastructure.messaging;
 import br.com.srportto.temporizaautorizacao.domain.exception.AgendamentoInvalidoException;
 import br.com.srportto.temporizaautorizacao.domain.port.in.AgendarExpiracaoUseCase;
 import io.awspring.cloud.sqs.annotation.SqsListener;
+import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -26,8 +28,14 @@ public class TemporizacaoEventoListener {
 
     @SqsListener(queueNames = "${sqs.queue-url}", factory = "temporizacaoSqsListenerContainerFactory")
     public void receber(String body) {
-        AutorizacaoEventoPayload payload = desserializar(body);
-        useCase.agendar(payload.idAutorizacao(), payload.dataHoraInclusao());
+        // traceId por mensagem: MDC e por thread do pool, sempre limpo no finally.
+        MDC.put("traceId", UUID.randomUUID().toString());
+        try {
+            AutorizacaoEventoPayload payload = desserializar(body);
+            useCase.agendar(payload.idAutorizacao(), payload.dataHoraInclusao());
+        } finally {
+            MDC.clear();
+        }
     }
 
     private AutorizacaoEventoPayload desserializar(String mensagemJson) {
