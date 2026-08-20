@@ -28,10 +28,10 @@ public class VerificarContratoEventos {
             "apps/eventos-consumer/src/main/resources/avro/EventoAutorizacao.avsc");
     private static final Path PAYLOAD_COMMAND = Path.of(
             "apps/contratocommand/src/main/java/br/com/srportto/contratocommand"
-                    + "/application/eventos/AutorizacaoEventoPayload.java");
+                    + "/infrastructure/messaging/AutorizacaoEventoPayload.java");
     private static final Path PAYLOAD_PRODUCER = Path.of(
             "apps/autorizacaostatus-producer/src/main/java/br/com/srportto"
-                    + "/autorizacaostatusproducer/application/eventos/AutorizacaoEventoPayload.java");
+                    + "/autorizacaostatusproducer/infrastructure/messaging/AutorizacaoEventoPayload.java");
 
     public static void main(String[] args) throws IOException {
         Path raiz = Path.of(args.length > 0 ? args[0] : ".").toAbsolutePath().normalize();
