@@ -43,6 +43,12 @@ mvn test                                     # Todos os testes
 > **Maven Wrapper**: este app não possui `mvnw`/`mvnw.cmd` — use `mvn` diretamente
 > (mesma orientação do `contratocommand` no Windows).
 
+> **CI**: `ci-testesunitarios-autorizacaostatus-producer.yml` roda
+> `mvn test -Dtest='!*IntegrationTest'` a cada push/PR que toque
+> `apps/autorizacaostatus-producer/**`, usando o Maven do runner. Exclui por convenção de nome toda
+> classe terminada em `IntegrationTest` — em particular
+> `SqsEventoAutorizacaoListenerIntegrationTest`, que exige o Floci no ar e não roda no CI hoje.
+
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin

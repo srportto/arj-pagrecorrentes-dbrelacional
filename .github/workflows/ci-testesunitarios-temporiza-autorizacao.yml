@@ -1,0 +1,26 @@
+name: CI testes unitarios temporiza-autorizacao
+
+on:
+  push:
+    paths:
+      - "apps/temporiza-autorizacao/**"
+  pull_request:
+    paths:
+      - "apps/temporiza-autorizacao/**"
+
+jobs:
+  testes-unitarios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/temporiza-autorizacao/pom.xml
+
+      - name: Rodar testes unitarios
+        working-directory: apps/temporiza-autorizacao
+        run: mvn -B test -Dtest='!*IntegrationTest'

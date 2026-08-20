@@ -1,0 +1,26 @@
+name: CI testes unitarios eventos-consumer
+
+on:
+  push:
+    paths:
+      - "apps/eventos-consumer/**"
+  pull_request:
+    paths:
+      - "apps/eventos-consumer/**"
+
+jobs:
+  testes-unitarios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/eventos-consumer/pom.xml
+
+      - name: Rodar testes unitarios
+        working-directory: apps/eventos-consumer
+        run: mvn -B test -Dtest='!*IntegrationTest'

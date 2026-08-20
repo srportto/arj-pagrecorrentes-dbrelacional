@@ -26,6 +26,11 @@ mvn test -Dtest=ListarAutorizacoesServiceTest#metodo # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
+> **CI**: `ci-testesunitarios-contratoquery.yml` roda `mvn test -Dtest='!*IntegrationTest'` a cada
+> push/PR que toque `apps/contratoquery/**`, usando o Maven do runner (mesma razão do wrapper
+> quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
+> delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
+
 Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest` (`domain/enums/`); `PlanCacheModeHikariIntegrationTest` (`integration/`).
 
 ## Pré-requisitos

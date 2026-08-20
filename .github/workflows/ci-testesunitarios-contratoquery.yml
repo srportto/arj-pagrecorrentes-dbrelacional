@@ -1,0 +1,26 @@
+name: CI testes unitarios contratoquery
+
+on:
+  push:
+    paths:
+      - "apps/contratoquery/**"
+  pull_request:
+    paths:
+      - "apps/contratoquery/**"
+
+jobs:
+  testes-unitarios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/contratoquery/pom.xml
+
+      - name: Rodar testes unitarios
+        working-directory: apps/contratoquery
+        run: mvn -B test -Dtest='!*IntegrationTest'
