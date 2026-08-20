@@ -161,6 +161,18 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 - **Local** (padrão de desenvolvimento): ativado automaticamente quando `SPRING_PROFILES_ACTIVE` não é definido.
 - **Produção**: **deve** definir `SPRING_PROFILES_ACTIVE=prod` explicitamente — o default `local` é só uma conveniência de desenvolvimento e não deve ser assumido em produção.
 
+## CI
+
+`.github/workflows/` mantém um workflow por preocupação, disparado só quando o path relevante muda:
+
+| Workflow | O quê | Dispara em |
+|---|---|---|
+| `contrato-eventos.yml` | Compara as cópias espelhadas do contrato de evento (`AutorizacaoEventoPayload`, `.avsc`) | `apps/**`, `ci/contrato-eventos/**` |
+| `ci-testesunitarios-<app>.yml` (uma por app) | Roda `mvn test -Dtest='!*IntegrationTest'` — só testes unitários, testes de integração excluídos por convenção de nome | `apps/<app>/**` |
+
+Testes de integração (Postgres, Floci, Valkey) não rodam no CI hoje — seguem manuais, com infra local
+no ar (ver `infra/local/`).
+
 ## Documentação
 
 | Arquivo | Descrição |

@@ -26,6 +26,11 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 
 > **Maven Wrapper quebrado no Windows**: se `./mvnw.cmd` falhar, use `mvn` diretamente.
 
+> **CI**: `ci-testesunitarios-contratocommand.yml` roda `mvn test -Dtest='!*IntegrationTest'` a cada
+> push/PR que toque `apps/contratocommand/**`, usando o Maven do runner (mesma razão do wrapper
+> quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
+> delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
+
 Classes de teste existentes: `ContratocommandApplicationTests`, testes dos `*Service` e `AutorizacaoMapper` (`application/usecase/`), dos validators/rules (`domain/service/{contratacao,cancelamento,decisao}/`), `AutorizacaoControllerTest` e `AutorizacaoCompletaResponseDtoTest` (`infrastructure/web/`), `AutorizacaoJpaAdapterTest` e os testes de particionamento — `ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `AchaQtdeSemanasTest` — (`infrastructure/persistence/`), `AutorizacaoEventoPublisherTest`/`AutorizacaoEventoPayloadTest` (`infrastructure/messaging/`), `AutorizacaoTest` (`domain/model/`), `ApiExceptionHandlerTest`, `TipoProdutoTest`/`MotivoStatusAutorizacaoTest` (`domain/enums/`). Helpers em `src/test`: `TestFixtures`, `GeraDatasPorParticao` e a utility `AchaQtdeSemanas` (usada apenas por testes — vive no source set de teste, não em `src/main`).
 
 ## Pré-requisitos

@@ -35,6 +35,12 @@ mvn test                                     # Todos os testes
 
 > **Sem `mvnw`/`mvnw.cmd`** — use `mvn` diretamente, mesma orientação das demais apps.
 
+> **CI**: `ci-testesunitarios-temporiza-autorizacao.yml` roda `mvn test -Dtest='!*IntegrationTest'`
+> a cada push/PR que toque `apps/temporiza-autorizacao/**`, usando o Maven do runner. Exclui por
+> convenção de nome toda classe terminada em `IntegrationTest` — em particular as que exigem Valkey
+> local (`ValkeyStreamConfigIntegrationTest`, `VarreduraEAgendamentoIntegrationTest` e as demais),
+> que não rodam no CI hoje.
+
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`
