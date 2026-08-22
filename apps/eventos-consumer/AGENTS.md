@@ -119,6 +119,30 @@ intervalo (`FixedBackOff`) e, esgotadas, a mensagem original é publicada em
 `eventos-autorizacao.DLT` via `DeadLetterPublishingRecoverer` (o offset da mensagem
 original avança nesse ponto — ela não é reentregue indefinidamente).
 
+### Fluxo de erro (retry → DLT)
+
+```mermaid
+flowchart TD
+    A[Evento chega no tópico eventos-autorizacao] --> B{Desserialização Avro OK?}
+    B -- Não --> C[ErrorHandlingDeserializer captura DeserializationException]
+    B -- Sim --> D[EventoAutorizacaoKafkaListener.escutar]
+    D --> E[ProcessarEventoAutorizacaoUseCase.processar]
+    E --> F{Erro no processamento? ex.: status desconhecido}
+    F -- Não --> G[Log de sucesso + offset avança - AckMode.RECORD]
+    F -- Sim --> H[Offset não avança]
+    C --> H
+    H --> I["DefaultErrorHandler: retry via seek (FixedBackOff, 3x / 1s)"]
+    I -- reprocessa --> D
+    I --> J{Tentativas esgotadas?}
+    J -- Não --> D
+    J -- Sim --> K{Tipo de falha}
+    K -- Desserialização --> L["DeadLetterPublishingRecoverer publica bytes crus\nvia KafkaTemplate&lt;String, byte[]&gt;"]
+    K -- Negócio --> M["DeadLetterPublishingRecoverer publica EventoAutorizacao tipado\nvia KafkaTemplate&lt;String, EventoAutorizacao&gt; (KafkaAvroSerializer)"]
+    L --> N[eventos-autorizacao.DLT]
+    M --> N
+    N --> O[Offset da mensagem original avança - não é reentregue indefinidamente]
+```
+
 ### Diferença deliberada de padrão em relação ao SQS
 
 Ao contrário do listener SQS da `autorizacaostatus-producer` (cliente AWS SDK v2 puro,
