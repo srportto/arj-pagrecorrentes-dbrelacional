@@ -2,8 +2,7 @@
 
 ## Purpose
 
-TBD — capability criada a partir da mudança `add-eventos-autorizacao-kafka`. Descreve a
-aplicação `apps/eventos-consumer`, que consome os eventos Avro publicados no tópico
+Descreve a aplicação `apps/eventos-consumer`, que consome os eventos Avro publicados no tópico
 Kafka `eventos-autorizacao`.
 
 ## Requirements

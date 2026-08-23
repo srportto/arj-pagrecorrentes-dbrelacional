@@ -1,7 +1,13 @@
 # protecao-dado-sensivel Specification
 
 ## Purpose
-TBD - created by archiving change parar-vazamento-dado-sensivel. Update Purpose after archive.
+
+Descreve o que nunca pode vazar pelas duas superfícies de saída das aplicações — log e resposta
+de erro. Cobre a proibição de registrar dado pessoal e financeiro, a proibição de interpolar
+objeto de domínio em log (que expõe campo novo automaticamente, sem ninguém decidir), a
+resposta de erro interno sem detalhe de implementação, e a preservação da causa original para
+diagnóstico no lado de dentro.
+
 ## Requirements
 ### Requirement: Dado pessoal e financeiro nunca é registrado em log
 

@@ -1,7 +1,12 @@
 # tratamento-erro-nao-mapeado Specification
 
 ## Purpose
-TBD - created by archiving change blindar-superficie-leitura. Update Purpose after archive.
+
+Descreve a garantia de que nenhuma exceção escapa do contrato de erro da API: toda falha,
+mapeada ou não, sai pelo mesmo formato de resposta, e nenhuma delas expõe detalhe interno ao
+cliente. É a rede que cobre o caso não previsto — a exceção que ninguém antecipou é justamente
+a que vazaria stack trace se não houvesse tratamento terminal.
+
 ## Requirements
 ### Requirement: Nenhuma exceção escapa do contrato de erro
 

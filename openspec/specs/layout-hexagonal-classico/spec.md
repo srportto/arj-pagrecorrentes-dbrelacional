@@ -2,9 +2,8 @@
 
 ## Purpose
 
-TBD — capability criada a partir da change `hexagonal-classico-contratocommand-dominio-puro`. Cobre a
-migração das aplicações do monorepo para o layout hexagonal clássico (`domain` / `application` /
-`infrastructure`), com domínio livre de dependências de infraestrutura.
+Cobre a migração das aplicações do monorepo para o layout hexagonal clássico (`domain` /
+`application` / `infrastructure`), com domínio livre de dependências de infraestrutura.
 
 ## Requirements
 

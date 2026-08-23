@@ -2,9 +2,8 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `temporizacao-jornada-01-pix-auto`. Descreve a
-aplicação `temporiza-autorizacao`, que consome recepções de `PIX_AUTO` na jornada `SPI_J1` e
-aciona a expiração automática após o prazo, sem intervenção humana.
+Descreve a aplicação `temporiza-autorizacao`, que consome recepções de `PIX_AUTO` na jornada
+`SPI_J1` e aciona a expiração automática após o prazo, sem intervenção humana.
 
 ## Requirements
 

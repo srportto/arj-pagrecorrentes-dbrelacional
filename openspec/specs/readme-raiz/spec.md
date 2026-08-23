@@ -1,6 +1,7 @@
 ## Purpose
 
-TBD — Documentação de raiz do repositório `arj-pagrecorrentes-dbrelacional`, descrevendo a visão geral do sistema, a relação entre os microserviços e os links para a documentação de cada aplicação.
+Descreve a documentação de raiz do repositório `arj-pagrecorrentes-dbrelacional`: a visão geral
+do sistema, a relação entre os microserviços e os links para a documentação de cada aplicação.
 
 ## Requirements
 

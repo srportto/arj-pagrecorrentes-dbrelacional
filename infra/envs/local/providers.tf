@@ -21,5 +21,8 @@ provider "aws" {
     sts            = var.floci_endpoint
     ecr            = var.floci_endpoint
     cloudwatchlogs = var.floci_endpoint
+    # Adicionados para o modulo lambda-scheduled (change reclamar-particao-expurgo-ciclo)
+    lambda    = var.floci_endpoint
+    scheduler = var.floci_endpoint
   }
 }

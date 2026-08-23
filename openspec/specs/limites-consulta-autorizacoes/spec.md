@@ -1,7 +1,12 @@
 # limites-consulta-autorizacoes Specification
 
 ## Purpose
-TBD - created by archiving change blindar-superficie-leitura. Update Purpose after archive.
+
+Descreve os limites que blindam a superfície de leitura do `contratoquery` contra consulta
+capaz de degradar o banco: teto máximo de tamanho de página, validação de índice e tamanho, e
+whitelist fechada de campos de ordenação. O alvo é a tabela `autorizacoes`, particionada em 989
+partições, onde uma consulta sem limite não é lenta apenas para quem a fez.
+
 ## Requirements
 ### Requirement: Teto máximo de tamanho de página
 

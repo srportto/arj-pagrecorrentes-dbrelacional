@@ -167,6 +167,49 @@ PendenciasSchedulerReivindicador (@Scheduled, intervalo = stream-min-idle-time-m
   └─ reprocessa cada um pelo mesmo caminho do listener normal (mesmo método, sem duplicar lógica)
 ```
 
+### Diagrama de sequência: agendamento e expiração via Valkey
+
+```mermaid
+sequenceDiagram
+    participant SQS as SQS-temporizacao-autorizacao
+    participant Listener as TemporizacaoEventoListener
+    participant Agendar as AgendarExpiracaoService
+    participant Repo as ValkeyAgendamentoRepository
+    participant Valkey as Valkey (sorted set + stream)
+    participant Scheduler as VarreduraAgendamentoScheduler
+    participant Varrer as VarrerAgendamentosVencidosService
+    participant Worker as ExpiracaoStreamListener
+    participant Processar as ProcessarExpiracaoService
+    participant Command as contratocommand
+
+    SQS->>Listener: receber(AutorizacaoEventoPayload)
+    Listener->>Agendar: agendar(idAutorizacao, dataHoraInclusao)
+    Agendar->>Agendar: vencimento = dataHoraInclusao + prazo (10 min)
+    Agendar->>Repo: agendar(id, vencimento)
+    Repo->>Valkey: ZADD agenda:{pixauto:j1} vencimento id
+
+    loop a cada ~5s, em todas as instâncias
+        Scheduler->>Varrer: varrer()
+        Varrer->>Valkey: EVAL varredura.lua (ZRANGEBYSCORE + ZREM + XADD)
+        alt id vencido e ZREM desta instância teve sucesso
+            Valkey-->>Varrer: id movido para o stream
+        end
+    end
+
+    Valkey->>Worker: XREADGROUP (stream:{pixauto:j1}:expiracoes)
+    Worker->>Processar: processar(idAutorizacao)
+    Processar->>Command: PATCH /api/autorizacoes/{id}/decisao {"acao":"EXPIRAR"}
+    alt 2xx ou 4xx exceto 409
+        Command-->>Processar: conclusivo
+        Processar-->>Worker: retorna normalmente
+        Worker->>Valkey: XACK
+    else 409 ou 5xx/timeout
+        Command-->>Processar: retryable
+        Processar-->>Worker: ExpiracaoRetryavelException
+        Worker->>Valkey: (sem XACK, entrada permanece no PEL)
+    end
+```
+
 ### Contrato de conclusão com o command
 
 A rota `/decisao` do `contratocommand` é o único ponto que decide se a expiração se

@@ -2,8 +2,7 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `add-eventos-autorizacao-sns-sqs`. Descreve
-a aplicação `apps/autorizacaostatus-producer`, que consome eventos de estados de
+Descreve a aplicação `apps/autorizacaostatus-producer`, que consome eventos de estados de
 autorização publicados pelo `contratocommand` via SQS.
 
 ## Requirements

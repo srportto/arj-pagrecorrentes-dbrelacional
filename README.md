@@ -7,6 +7,10 @@ flowchart TD
     ClienteEscrita["Cliente (escrita)"] --> Command["contratocommand<br/>porta 8080 · DB_READ_ONLY=false"]
     ClienteLeitura["Cliente (leitura)"] --> Query["contratoquery<br/>porta 8081 · DB_READ_ONLY=true"]
 
+    Command --> TipoAutorizacao{"Tipo de<br/>autorização"}
+    TipoAutorizacao -->|"DDA_AUTO"| DdaAtiva["nasce ATIVA<br/>(sem decisão/timer)"]
+    TipoAutorizacao -->|"PIX_AUTO"| PixRecebida["nasce RECEBIDA<br/>(aguarda decisão)"]
+
     Command --> Postgres[("PostgreSQL 18<br/>pg_partman + pg_cron + pgvector")]
     Query --> Postgres
 
@@ -23,6 +27,22 @@ flowchart TD
     Temporiza -->|"PATCH /decisao<br/>acao=EXPIRAR"| Command
 ```
 
+## Estados da Autorização PIX_AUTO
+
+Autorizações `PIX_AUTO` nascem `RECEBIDA` e aguardam decisão do cliente pagador (`PATCH
+/decisao`) ou o vencimento de 10 minutos da jornada 1, temporizado por `temporiza-autorizacao`.
+`DDA_AUTO` não passa por esse fluxo — nasce `ATIVA` diretamente (ver fluxograma acima).
+
+```mermaid
+stateDiagram-v2
+    [*] --> RECEBIDA: criação (tipoJornada SPI_J1)
+    RECEBIDA --> ATIVA: aprovação<br/>(PATCH /decisao, acao=APROVAR)
+    RECEBIDA --> REJEITADA: rejeição do cliente<br/>(PATCH /decisao, acao=REJEITAR)
+    RECEBIDA --> REJEITADA: timeout de 10min<br/>(temporiza-autorizacao, acao=EXPIRAR)
+    ATIVA --> [*]
+    REJEITADA --> [*]
+```
+
 ## Microserviços
 
 | Serviço | Porta | Responsabilidade | Read-Only |
@@ -34,6 +54,70 @@ flowchart TD
 | [temporiza-autorizacao](apps/temporiza-autorizacao/README.md) | 8084 | Temporiza a jornada 1 do PIX_AUTO: agenda a expiração no Valkey e aciona `PATCH /decisao` no vencimento | N/A |
 
 `contratocommand` e `contratoquery` compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura. `autorizacaostatus-producer`, `eventos-consumer` e `temporiza-autorizacao` não acessam o banco: os dois primeiros formam a ponte SQS → Kafka (a primeira consome a fila SQS alimentada pelos eventos publicados pelo `contratocommand` — ver [`infra/envs/local-messaging/`](infra/envs/local-messaging/) para provisionar tópico/filas no Floci — e produz no Kafka local, ver [`infra/local/kafka/`](infra/local/kafka/README.md); a segunda apenas consome esse tópico); `temporiza-autorizacao` consome uma fila **filtrada** do mesmo tópico SNS (só recepção de `PIX_AUTO` em `SPI_J1`), agenda no [Valkey local](infra/local/redis/README.md) e aciona de volta o `contratocommand` no vencimento de 10 minutos, sem nunca ler a tabela `autorizacoes`.
+
+## Máquina de Estados: Autorização PIX_AUTO
+
+Estados da autorização `PIX_AUTO` na jornada 1 (`SPI_J1`), decididos via `PATCH
+/api/autorizacoes/{id}/decisao` no `contratocommand` (`DecidirAutorizacaoService` +
+`StatusAutorizacao`). `DDA_AUTO` nasce direto em `ATIVA`, sem essa máquina de estados.
+
+```mermaid
+stateDiagram-v2
+    [*] --> RECEBIDA: POST /api/autorizacoes<br/>(PIX_AUTO, SPI_J1)
+    RECEBIDA --> EM_PROCESSO_ATIVACAO: PATCH /decisao<br/>acao=APROVAR
+    EM_PROCESSO_ATIVACAO --> ATIVA
+    RECEBIDA --> REJEITADA: PATCH /decisao<br/>acao=REJEITAR<br/>(motivo REJEITADA_PAGADOR)
+    RECEBIDA --> REJEITADA: PATCH /decisao<br/>acao=EXPIRAR<br/>timeout 10min (temporiza-autorizacao)<br/>(motivo REJEITADA_SISTEMA_TIMEOUT_J1)
+    ATIVA --> [*]
+    REJEITADA --> [*]
+```
+
+> `RECEBIDA → EM_PROCESSO_ATIVACAO → ATIVA` acontece em uma única transação (`APROVAR`).
+> A transição só é aceita a partir de `RECEBIDA` — mesmo o grafo completo de
+> `StatusAutorizacao` permitindo `ATIVA → REJEITADA` por outro fluxo (cancelamento), a
+> regra `TransicaoValidaDecisao` exige `statusAtual == RECEBIDA` explicitamente, tornando
+> a rota seguros para chamada repetida at-least-once pelo `temporiza-autorizacao` sem
+> "rejeitar" uma autorização já aprovada.
+
+## Arquitetura de Conexão entre Serviços
+
+Visão de infraestrutura: como os 5 microserviços se conectam entre si e com a mensageria
+(SNS/SQS/Kafka) e o Valkey. Para o fluxo de negócio (estados da autorização, decisão
+PIX_AUTO vs DDA_AUTO), veja o fluxograma no topo deste README.
+
+```mermaid
+flowchart LR
+    subgraph Servicos["Microserviços (Java 25 + Spring Boot 4)"]
+        CC["contratocommand<br/>:8080"]
+        CQ["contratoquery<br/>:8081"]
+        ASP["autorizacaostatus-producer<br/>:8082"]
+        EC["eventos-consumer<br/>:8083"]
+        TA["temporiza-autorizacao<br/>:8084"]
+    end
+
+    subgraph Mensageria["Mensageria (Floci local / SNS+SQS na AWS)"]
+        SNS["SNS<br/>sns-estados-autorizacao"]
+        SQS1["SQS<br/>SQS-eventos-autorizacao"]
+        SQS2["SQS<br/>SQS-temporizacao-autorizacao<br/>(filtro: RECEPCAO+PIX_AUTO+SPI_J1)"]
+        KAFKA["Kafka<br/>tópico eventos-autorizacao<br/>(Avro + Schema Registry)"]
+    end
+
+    PG[("PostgreSQL 18<br/>tabela autorizacoes")]
+    VALKEY[("Valkey<br/>sorted set + stream")]
+
+    CC --> PG
+    CQ --> PG
+    CC -->|"publica evento por commit"| SNS
+    SNS --> SQS1
+    SNS --> SQS2
+    SQS1 --> ASP
+    ASP -->|"produz Avro idempotente"| KAFKA
+    KAFKA --> EC
+    SQS2 --> TA
+    TA -->|"ZADD (agenda expiração)"| VALKEY
+    VALKEY -->|"vencido: XADD (script Lua)"| TA
+    TA -->|"PATCH /decisao acao=EXPIRAR"| CC
+```
 
 ## Estrutura do Repositório
 

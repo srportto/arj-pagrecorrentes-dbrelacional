@@ -90,3 +90,28 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+#### Reclamacao da particao de expurgo (change reclamar-particao-expurgo-ciclo) ####
+#
+# A Lambda conecta com um usuario proprio, de privilegio minimo -- nao o superuser
+# `docker` usado pelas duas aplicacoes Java. O role e' criado por
+# infra/local/postgres/migrations/v1.0.9.-roles-privilegio-minimo-expurgo-particao.sql
+# (SELECT + GRANT TRUNCATE granular nas 100 particoes de expurgo, sem ownership).
+
+variable "expurgo_particao_db_user_name" {
+  description = "Usuario do banco de dados usado pela Lambda de reclamacao de particao de expurgo (role de privilegio minimo, nao o superuser das apps Java)."
+  type        = string
+  default     = "expurgo_particao_rotina"
+}
+
+variable "expurgo_particao_db_password" {
+  description = "Senha do role expurgo_particao_rotina (definida ao aplicar a migration v1.0.9 -- ver README de infra/local/postgres)."
+  type        = string
+  sensitive   = true
+}
+
+variable "expurgo_particao_schedule_expression" {
+  description = "Expressao do EventBridge Scheduler que dispara a reclamacao da particao de expurgo."
+  type        = string
+  default     = "rate(30 minutes)"
+}
