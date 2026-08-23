@@ -2,7 +2,8 @@ FROM postgres:18
 
 LABEL maintainer="postgres:18" \
     version="18" \
-    description="PostgreSQL 18 com pg_cron, pg_partman e pgvector"
+    description="PostgreSQL 18 com pg_cron, pg_partman e pgvector" \
+    pgvector.version="v0.8.6"
 
 # Instala dependencias de build, pg_cron e pg_partman via apt (repositorio PGDG ja configurado na imagem oficial),
 # e compila o pgvector a partir do codigo-fonte para nao depender da disponibilidade do pacote apt para o PG 18
@@ -14,7 +15,7 @@ RUN apt-get update \
         build-essential \
         ca-certificates \
         git \
-    && git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector \
+    && git clone --depth 1 --branch v0.8.6 https://github.com/pgvector/pgvector.git /tmp/pgvector \
     && cd /tmp/pgvector \
     && make \
     && make install \
