@@ -14,14 +14,20 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
+import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 
 @DisplayName("Testes do AutorizacaoResumidaResponseDto.from")
 class AutorizacaoResumidaResponseDtoTest {
 
     private Autorizacao base(Integer status, String metadados) {
+        return base(status, metadados, TipoProduto.PIX_AUTO);
+    }
+
+    private Autorizacao base(Integer status, String metadados, TipoProduto tipoProduto) {
         return Autorizacao.builder()
                 .idAutorizacao(UUID.randomUUID())
+                .tipoProduto(tipoProduto)
                 .status(status == null ? null : StatusAutorizacao.obterStatusEnumPorIdStatus(status))
                 .dataHoraInclusao(LocalDateTime.now())
                 .dataInicioVigencia(LocalDate.now())
@@ -41,6 +47,7 @@ class AutorizacaoResumidaResponseDtoTest {
         AutorizacaoResumidaResponseDto dto = AutorizacaoResumidaResponseDto.from(a);
 
         assertEquals(a.getIdAutorizacao(), dto.idAutorizacao());
+        assertEquals(TipoProduto.PIX_AUTO, dto.tipoProduto());
         assertEquals(a.getDataHoraInclusao(), dto.dataCriacao());
         assertEquals(a.getValorAutorizacao(), dto.valor());
         assertEquals("ATIVA", dto.status());
@@ -48,6 +55,18 @@ class AutorizacaoResumidaResponseDtoTest {
         assertNotNull(dto.metadado());
         assertTrue(dto.metadado().has("origem"));
         assertNull(dto.nomeRecebedor());
+    }
+
+    @Test
+    @DisplayName("tipoProduto reflete o produto da autorização (PIX_AUTO e DDA_AUTO)")
+    void mapeiaTipoProduto() {
+        AutorizacaoResumidaResponseDto pixAuto =
+                AutorizacaoResumidaResponseDto.from(base(4, null, TipoProduto.PIX_AUTO));
+        AutorizacaoResumidaResponseDto ddaAuto =
+                AutorizacaoResumidaResponseDto.from(base(4, null, TipoProduto.DDA_AUTO));
+
+        assertEquals(TipoProduto.PIX_AUTO, pixAuto.tipoProduto());
+        assertEquals(TipoProduto.DDA_AUTO, ddaAuto.tipoProduto());
     }
 
     @Test
