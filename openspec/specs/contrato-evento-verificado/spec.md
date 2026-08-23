@@ -1,7 +1,14 @@
 # contrato-evento-verificado Specification
 
 ## Purpose
-TBD - created by archiving change rede-seguranca-contrato-evento. Update Purpose after archive.
+
+Descreve a rede de segurança que protege as cópias manuais dos schemas de evento espalhadas
+pelo monorepo — `AutorizacaoEventoPayload` (JSON) em `contratocommand` e
+`autorizacaostatus-producer`, e `EventoAutorizacao.avsc` (Avro) em `autorizacaostatus-producer`
+e `eventos-consumer`. Não há módulo compartilhado: a verificação de build e de CI é o que
+impede que uma alteração unilateral numa cópia passe despercebida, e a tolerância a campo
+desconhecido é o que impede que a divergência descarte mensagem em produção.
+
 ## Requirements
 ### Requirement: Divergência entre cópias de schema falha o build
 

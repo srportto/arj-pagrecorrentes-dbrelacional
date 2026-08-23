@@ -2,9 +2,9 @@
 
 ## Purpose
 
-TBD — capability criada a partir da mudança `add-eventos-autorizacao-kafka`. Descreve o
-ambiente Kafka local (broker, Schema Registry e dashboard) usado para desenvolvimento e
-observação da ponte SQS → Kafka.
+Descreve o ambiente Kafka local (broker, Schema Registry e dashboard) usado para
+desenvolvimento e observação da ponte SQS → Kafka.
+
 ## Requirements
 ### Requirement: Compose Kafka dedicado e isolado
 

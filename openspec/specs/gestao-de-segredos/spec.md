@@ -1,7 +1,13 @@
 # gestao-de-segredos Specification
 
 ## Purpose
-TBD - created by archiving change rotacionar-segredo-versionado. Update Purpose after archive.
+
+Descreve como credenciais são tratadas no repositório: proibição de valor literal em arquivo
+versionado (inclusive como padrão de expansão de variável), falha explícita e nomeada quando
+uma variável obrigatória está ausente, o `.env.example` como contrato de configuração, e a
+rotação obrigatória após exposição. Credenciais dummy exigidas por emuladores locais são
+explicitamente excluídas do escopo.
+
 ## Requirements
 ### Requirement: Proibição de segredo literal em arquivo versionado
 

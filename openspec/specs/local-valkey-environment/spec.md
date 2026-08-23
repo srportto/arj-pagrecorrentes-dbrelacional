@@ -2,9 +2,8 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `temporizacao-jornada-01-pix-auto`. Descreve a
-instância Valkey local, provisionada via Docker Compose e independente do Floci, usada pela
-aplicação `temporiza-autorizacao` em desenvolvimento.
+Descreve a instância Valkey local, provisionada via Docker Compose e independente do Floci,
+usada pela aplicação `temporiza-autorizacao` em desenvolvimento.
 
 ## Requirements
 

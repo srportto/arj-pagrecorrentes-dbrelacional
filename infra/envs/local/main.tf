@@ -66,3 +66,27 @@ module "ecs_service_contratoquery" {
   db_user_name           = var.db_user_name
   db_password            = var.db_password
 }
+
+## Reclamacao periodica da particao de expurgo permitida do ciclo (change
+## reclamar-particao-expurgo-ciclo) -- fecha o ring buffer cujo lado de escrita e'
+## descrito por transferirParaExpurgo (contratocommand). Nao e' um ECS Service: e' uma
+## Lambda agendada, provisionada pelo mesmo Floci que emula o resto do ambiente local.
+##
+## db_host = var.db_host (host.docker.internal por padrao, D4 do design.md) segue o
+## MESMO precedente ja validado pelas duas ECS Services acima -- o modulo
+## lambda-scheduled recebe db_host como variavel opaca, exatamente como ecs-service.
+module "expurgo_particao" {
+  source = "../../modules/lambda-scheduled"
+
+  name      = "expurgo-particao"
+  region    = var.region
+  image_uri = local.expurgo_particao_image_uri
+
+  schedule_expression = var.expurgo_particao_schedule_expression
+
+  db_host      = var.db_host
+  db_port      = var.db_port
+  db_name      = var.db_name
+  db_user_name = var.expurgo_particao_db_user_name
+  db_password  = var.expurgo_particao_db_password
+}

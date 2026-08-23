@@ -2,7 +2,9 @@
 
 ## Purpose
 
-TBD — capability recém-criada a partir da mudança `reorganizar-monorepo-code-infra`. Descreve como o monorepo separa código de aplicação (`apps/`) de código de infraestrutura (`infra/`), incluindo o esqueleto de Terraform, contêineres compatíveis com ECS/Fargate, configuração Spring por profiles, infraestrutura local de banco e documentação da topologia.
+Descreve como o monorepo separa código de aplicação (`apps/`) de código de infraestrutura
+(`infra/`), incluindo o esqueleto de Terraform, contêineres compatíveis com ECS/Fargate,
+configuração Spring por profiles, infraestrutura local de banco e documentação da topologia.
 
 ## Requirements
 

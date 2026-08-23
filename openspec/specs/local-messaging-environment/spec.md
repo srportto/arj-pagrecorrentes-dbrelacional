@@ -2,8 +2,7 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `add-eventos-autorizacao-sns-sqs`. Descreve
-a infraestrutura local de mensageria (SNS/SQS) provisionada via Terraform sobre o
+Descreve a infraestrutura local de mensageria (SNS/SQS) provisionada via Terraform sobre o
 Floci, isolada do ambiente ECS local (`local-aws-environment`).
 
 ## Requirements

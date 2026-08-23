@@ -2,9 +2,8 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `temporizacao-jornada-01-pix-auto`. Descreve o
-módulo Terraform reutilizável que provisiona o ElastiCache Valkey consumido pela aplicação
-`temporiza-autorizacao` em ambientes AWS.
+Descreve o módulo Terraform reutilizável que provisiona o ElastiCache Valkey consumido pela
+aplicação `temporiza-autorizacao` em ambientes AWS.
 
 ## Requirements
 

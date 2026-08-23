@@ -2,10 +2,10 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `add-maquina-estados-autorizacao`. Descreve
-o enum `StatusAutorizacao` com o grafo de transições de estado da autorização e o enum
-`TipoEventoAutorizacao` derivado 1:1 do status, espelhados manualmente nas 4 aplicações
-do monorepo.
+Descreve o enum `StatusAutorizacao` com o grafo de transições de estado da autorização e o enum
+`TipoEventoAutorizacao` derivado 1:1 do status, espelhados manualmente nas 4 aplicações do
+monorepo.
+
 ## Requirements
 ### Requirement: Enum StatusAutorizacao com grafo de transições nas 4 aplicações
 

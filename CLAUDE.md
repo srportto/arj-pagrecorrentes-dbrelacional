@@ -37,3 +37,13 @@ Antes de editar código de um serviço, leia o `CLAUDE.md` dele (armadilhas, flu
   `reconciliar-contrato-spec-doc`): a distinção entre "formato" e "regra" é carregada pelo
   **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não
   pelo primeiro byte do status.
+- **O ring buffer de expurgo tem escritor e reclamador em apps diferentes.** O `contratocommand`
+  só escreve: `transferirParaExpurgo` move autorizações em estado terminal para a gaveta semanal
+  calculada por `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite` (partições `900`–`999`) e
+  nunca esvazia nada. Quem fecha o ciclo é `apps/expurgo-particao` (Python, Lambda agendada a cada
+  30 minutos, change `reclamar-particao-expurgo-ciclo`): calcula a partição alvo (`escrita + 2`,
+  retenção de 98 semanas), classifica seu estado e a esvazia via `TRUNCATE` só quando contém dado
+  do ciclo anterior — nunca sobre dado recente. `pg_cron` audita o resultado (registro forense),
+  mas não expurga. Mudou a fórmula de particionamento num lado, replique no outro — não há módulo
+  compartilhado entre Java e Python aqui, mesma convenção de espelhamento manual do resto do
+  monorepo.

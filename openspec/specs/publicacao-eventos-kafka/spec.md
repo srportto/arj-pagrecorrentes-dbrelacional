@@ -2,9 +2,9 @@
 
 ## Purpose
 
-TBD — capability criada a partir da mudança `add-eventos-autorizacao-kafka`. Descreve
-como a `autorizacaostatus-producer` produz eventos Avro no tópico Kafka
+Descreve como a `autorizacaostatus-producer` produz eventos Avro no tópico Kafka
 `eventos-autorizacao` a partir das mensagens consumidas da fila SQS.
+
 ## Requirements
 ### Requirement: Produtor Kafka como adaptador de saída atrás de porta
 

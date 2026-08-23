@@ -31,8 +31,6 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 > quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
 > delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
 
-Classes de teste existentes: `ContratocommandApplicationTests`, testes dos `*Service` e `AutorizacaoMapper` (`application/usecase/`), dos validators/rules (`domain/service/{contratacao,cancelamento,decisao}/`), `AutorizacaoControllerTest` e `AutorizacaoCompletaResponseDtoTest` (`infrastructure/web/`), `AutorizacaoJpaAdapterTest` e os testes de particionamento — `ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `AchaQtdeSemanasTest` — (`infrastructure/persistence/`), `AutorizacaoEventoPublisherTest`/`AutorizacaoEventoPayloadTest` (`infrastructure/messaging/`), `AutorizacaoTest` (`domain/model/`), `ApiExceptionHandlerTest`, `TipoProdutoTest`/`MotivoStatusAutorizacaoTest` (`domain/enums/`). Helpers em `src/test`: `TestFixtures`, `GeraDatasPorParticao` e a utility `AchaQtdeSemanas` (usada apenas por testes — vive no source set de teste, não em `src/main`).
-
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
@@ -244,6 +242,53 @@ informação ausente do body.
 
 Rollback (ex.: `BusinessException` de validação) nunca chega ao listener — nenhum evento é publicado. Falha no `publish()` (ex.: Floci fora do ar) é apenas logada; a resposta HTTP, já confirmada pelo commit, não é afetada. Não há outbox pattern nesta fase — é um trade-off aceito e documentado em `openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs/design.md`.
 
+### Diagrama de sequência: decisão da autorização (PATCH → SNS)
+
+Fluxo completo de `PATCH /api/autorizacoes/{id}/decisao`, desde a requisição até a publicação do evento no SNS (une as duas seções anteriores num único diagrama):
+
+```mermaid
+sequenceDiagram
+    participant Cliente
+    participant AutorizacaoController
+    participant DecidirAutorizacaoService
+    participant DecisaoValidator
+    participant AutorizacaoRepository
+    participant AutorizacaoPersistenceMapper
+    participant ApplicationEventPublisher
+    participant AutorizacaoEventoPublisher
+    participant SnsClient
+
+    Cliente->>AutorizacaoController: PATCH /api/autorizacoes/{id}/decisao<br/>header tipoProduto, body acao
+    AutorizacaoController->>DecidirAutorizacaoService: execute(DecidirAutorizacaoCommand)
+
+    DecidirAutorizacaoService->>AutorizacaoRepository: findById (UUID + partição extraída)
+    AutorizacaoRepository-->>DecidirAutorizacaoService: Autorizacao (status RECEBIDA?)
+
+    DecidirAutorizacaoService->>DecisaoValidator: validar(command)
+    DecisaoValidator->>DecisaoValidator: AcaoDecisaoValida (HIGHEST_PRECEDENCE)
+    DecisaoValidator->>DecisaoValidator: TipoProdutoDecisao
+    DecisaoValidator->>DecisaoValidator: TransicaoValidaDecisao (statusAtual == RECEBIDA)
+
+    alt regra violada (produto diverge, ação inválida ou status != RECEBIDA)
+        DecisaoValidator-->>AutorizacaoController: BusinessException
+        AutorizacaoController-->>Cliente: 422 (LayoutErrosApiResponse)
+    else validado
+        DecidirAutorizacaoService->>DecidirAutorizacaoService: aplica efeito da ação<br/>APROVAR→ATIVA / REJEITAR→REJEITADA / EXPIRAR→REJEITADA
+        DecidirAutorizacaoService->>AutorizacaoPersistenceMapper: aplicarEm(modelo, entidadeGerenciada)
+        AutorizacaoPersistenceMapper->>AutorizacaoRepository: dirty-checking → UPDATE ... AND version = ?
+        DecidirAutorizacaoService->>ApplicationEventPublisher: publishEvent(AutorizacaoPersistidaEvent)
+        Note over DecidirAutorizacaoService,ApplicationEventPublisher: fim da transação → commit
+        AutorizacaoController-->>Cliente: 200
+
+        ApplicationEventPublisher->>AutorizacaoEventoPublisher: aoPersistir() (@TransactionalEventListener AFTER_COMMIT)
+        AutorizacaoEventoPublisher->>AutorizacaoEventoPublisher: AutorizacaoEventoPayload.from(autorizacao)
+        AutorizacaoEventoPublisher->>AutorizacaoEventoPublisher: TipoEventoAutorizacao.porStatus(status)
+        AutorizacaoEventoPublisher->>SnsClient: publish(topico sns-estados-autorizacao,<br/>attributes tipoEvento/tipoProduto/tipoJornada)
+    end
+```
+
+> Se o `publish()` falhar (ex.: Floci fora do ar), `AutorizacaoEventoPublisher` só loga o erro — a resposta 200 ao cliente já foi confirmada pelo commit e não é afetada (armadilha nº 8).
+
 ### Variação por produto vive em rules, não em strategies
 
 Não existem mais `*OrquestradorService`, `*Service` (strategy) nem `ContratacaoService`/`CancelamentoService`. A rejeição de `tipoProduto` desconhecido na criação é feita pela rule `ProdutoSuportado` (`domain/service/contratacao/rules/`), anotada com `@Order(Ordered.HIGHEST_PRECEDENCE)` para rodar antes das demais `ContratacaoRule` — ela lança `BusinessException` ("Produto nao suportado ou invalido...") do mesmo jeito que o antigo orquestrador. No cancelamento, o header `tipoProduto` já é resolvido para o enum no controller (`TipoProduto.obterTipoProdutoEnumPorNome`) e a rule `TipoProdutoCancelamento` valida a divergência contra o produto lido do banco.
@@ -270,8 +315,8 @@ Regras de cancelamento (`domain/service/cancelamento/rules/`): `ProdutoSuportado
 Tabela `autorizacoes` particionada por `id_particao_conta` (range **900–999**). Todo o conhecimento
 de particionamento vive em `infrastructure/persistence/` — o domínio nunca importa essas classes.
 
-- **Partição de escrita**: `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataFimVigencia)` — `900 + (semanas desde Epoch % 100)`.
-- **Partição segura para drop**: `ControleExpurgoAutorizacao.obterParticaoExpurgoDrop(dataReferencia)` — lança `BusinessException` se a data está no passado ou colide com a partição de escrita atual.
+- **Partição de escrita**: `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataReferencia)` — `900 + (semanas desde Epoch % 100)`. `dataReferencia` é o **instante da finalização** da autorização (`dataHoraCancelamento`/`dataHoraUltimaAtualizacao`), não `dataFimVigencia` — ver `transferirParaExpurgo` e a spec `expurgo-estados-terminais`.
+- **Reclamação da partição de expurgo**: `obterParticaoExpurgoDrop` (que calculava `escrita + 2` com validação) foi removido em `585f584` por não ter chamador de produção — o `contratocommand` só escreve no anel, nunca o esvazia. A reclamação (esvaziamento via `TRUNCATE`, alvo = escrita + 2, retenção de 98 semanas) é responsabilidade de `apps/expurgo-particao` (Lambda agendada), fora deste módulo — ver a capability `reclamacao-particao-expurgo` (change `reclamar-particao-expurgo-ciclo`).
 - **UUID com partição embutida**: `IdContaUUIDPartitionDistributor.getPartitionFast(idUnicoContaContratante)` + `ReversibleUUIDv7.generate(particao)`, atrás da porta `GeradorIdentidadeAutorizacao` (`GeradorIdentidadeAutorizacaoAdapter`). `AutorizacaoJpaAdapter` extrai depois com `ReversibleUUIDv7.extract(uuid)` — válido para `findById`/`existeAutorizacaoAtivaComIdEmpresa`/o cálculo de `particaoAtual` em `transferirParaExpurgo`, porque nesses pontos a autorização ainda não passou por expurgo (a partição embutida no UUID ainda é a física).
 - `Autorizacao.inicializaCriacao(UUID idGerado)` recebe o id pronto — não gera nada, não sabe de partição.
 

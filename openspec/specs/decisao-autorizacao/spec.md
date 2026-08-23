@@ -2,9 +2,9 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `temporizacao-jornada-01-pix-auto`. Descreve a
-rota `PATCH /api/autorizacoes/{idAutorizacao}/decisao` do `contratocommand`, que aplica
-aprovação, rejeição explícita ou expiração sistêmica sobre uma autorização em `RECEBIDA`.
+Descreve a rota `PATCH /api/autorizacoes/{idAutorizacao}/decisao` do `contratocommand`, que
+aplica aprovação, rejeição explícita ou expiração sistêmica sobre uma autorização em
+`RECEBIDA`.
 
 ## Requirements
 

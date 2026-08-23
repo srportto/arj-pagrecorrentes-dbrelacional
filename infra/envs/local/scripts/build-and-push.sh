@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builda as imagens de contratocommand e contratoquery e publica no ECR
-# emulado pelo Floci. Pre-requisitos: Floci no ar (localhost:4566), os
+# Builda as imagens de contratocommand, contratoquery e expurgo-particao e publica no
+# ECR emulado pelo Floci. Pre-requisitos: Floci no ar (localhost:4566), os
 # repositorios ECR ja criados (terraform apply do modulo ecr.tf) e Docker.
 #
 # Uso: infra/envs/local/scripts/build-and-push.sh [tag]
@@ -17,6 +17,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 declare -A APPS=(
   ["contratocommand"]="apps/contratocommand"
   ["contratoquery"]="apps/contratoquery"
+  ["expurgo-particao"]="apps/expurgo-particao"
 )
 
 for repo_name in "${!APPS[@]}"; do

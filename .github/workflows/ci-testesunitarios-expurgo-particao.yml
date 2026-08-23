@@ -1,0 +1,34 @@
+name: CI testes unitarios expurgo-particao
+
+on:
+  push:
+    paths:
+      - "apps/expurgo-particao/**"
+  pull_request:
+    paths:
+      - "apps/expurgo-particao/**"
+
+jobs:
+  testes-unitarios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: apps/expurgo-particao/requirements-dev.txt
+
+      - name: Instalar dependencias
+        working-directory: apps/expurgo-particao
+        run: pip install -r requirements-dev.txt
+
+      - name: Rodar testes unitarios
+        working-directory: apps/expurgo-particao
+        env:
+          PYTHONPATH: src
+        # Ignora test_rotina_integracao.py (exige Postgres real no ar) -- mesma
+        # convencao de separacao das 5 apps Java (`!*IntegrationTest`), adaptada ao
+        # nome de arquivo Python.
+        run: pytest tests --ignore=tests/test_rotina_integracao.py

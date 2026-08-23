@@ -80,3 +80,8 @@ override.tf.json
 .terraformrc
 terraform.rc
 *.tfvars
+
+### Python (apps/expurgo-particao) ###
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -2,8 +2,7 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `add-eventos-autorizacao-sns-sqs`. Descreve
-como o `contratocommand` publica eventos de estados de autorização no tópico SNS
+Descreve como o `contratocommand` publica eventos de estados de autorização no tópico SNS
 `sns-estados-autorizacao` após cada persistência confirmada.
 
 ## Requirements

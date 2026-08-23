@@ -2,9 +2,8 @@
 
 ## Purpose
 
-TBD — capacidade criada a partir da mudança `temporizacao-jornada-01-pix-auto`. Descreve
-como a aplicação `temporiza-autorizacao` usa o Valkey para agendar e disparar, de forma
-idempotente e resiliente, a expiração de autorizações `PIX_AUTO` na jornada `SPI_J1`.
+Descreve como a aplicação `temporiza-autorizacao` usa o Valkey para agendar e disparar, de
+forma idempotente e resiliente, a expiração de autorizações `PIX_AUTO` na jornada `SPI_J1`.
 
 ## Requirements
 

@@ -9,14 +9,26 @@
 
 ## 📋 Sumário Executivo
 
-Esta POC implementa uma estratégia inovadora de **particionamento com Buffer Ring (Circular)** para gerenciar autorizações PIX automáticas em PostgreSQL, eliminando gargalos de crescimento de dados e permitindo expurgo eficiente via `DROP TABLE` em vez de `DELETE`.
+Esta POC implementa uma estratégia inovadora de **particionamento com Buffer Ring (Circular)** para gerenciar autorizações PIX automáticas em PostgreSQL, eliminando gargalos de crescimento de dados e permitindo expurgo eficiente via `TRUNCATE` em vez de `DELETE`.
+
+> **Atualização (change `reclamar-particao-expurgo-ciclo`):** a versão original desta POC propunha
+> `DETACH PARTITION CONCURRENTLY` + `DROP TABLE` + `CREATE TABLE` como mecanismo de expurgo. A
+> implementação real, entregue por `apps/expurgo-particao`, usa **`TRUNCATE`** na partição folha —
+> mesmo resultado (partição vazia, espaço devolvido ao disco na hora), sem tomar lock na tabela pai
+> e sem os efeitos colaterais de recriar a partição do zero (nomes de índice auto-gerados, dois
+> `ACCESS EXCLUSIVE` na tabela inteira). Ver a seção "Expurgo de Partição" e o comparativo mais
+> abaixo para o racional completo. Os trechos desta POC que descreviam `DROP`/`DETACH` foram
+> corrigidos para refletir a decisão final; o valor histórico da comparação entre as abordagens foi
+> preservado.
 
 ### Resultado-Chave
 - ✅ **889 partições ativas** distribuindo carga uniformemente (range 0-888)
 - ✅ **100 partições de expurgo** funcionando como buffer circular (range 900-999)
-- ✅ **Janela de segurança**: ~2 anos antes de reutilizar partições
+- ✅ **Janela de retenção**: 98 semanas (~22,5 meses) — número deliberado, não arredondamento: o anel
+  tem 100 gavetas semanais e 2 delas são folga de segurança à frente do ponteiro de escrita (não
+  "2 anos", que 100 gavetas semanais jamais poderiam entregar)
 - ✅ **Movimento automático**: PostgreSQL move registros entre partições ao atualizar chave primária
-- ✅ **Expurgo a custo zero**: `DROP TABLE` instantaneamente libera espaço em disco
+- ✅ **Expurgo a custo zero**: `TRUNCATE` instantaneamente libera espaço em disco, sem lock na tabela pai
 
 ---
 
@@ -68,27 +80,33 @@ Problema:
             Range: 900 a 999 (100 partições)                  │
             Função: Armazenar dados "frios" (cancelados)      │
             Movimento: Automático quando status = cancelado   │
-            Ciclo: A cada ~2 anos (100 semanas), reutiliza    │
-            Expurgo: DROP TABLE PARTITION (zero locks)        │
+            Ciclo: 100 semanas; retenção real de 98 semanas   │
+                   (2 gavetas de folga à frente do ponteiro)  │
+            Expurgo: TRUNCATE da partição folha (zero locks   │
+                     na tabela pai)                            │
                                                               │
             Exemplo de Ring Buffer:                           │
-            Semana 0:  Particao 900 escreve (primeira vez)    │
-            Semana 100: Particao 900 pronta para reutilizar   │
-            Semana 101: Particao 900 = DROP antiga + CREATE   │
+            Semana 0:   Particao 900 é a partição de escrita  │
+            Semana 2:   Alvo de reclamação = 902 (teria dado  │
+                        de 98 semanas atrás, se o anel já      │
+                        tivesse completado uma volta)          │
+            Semana 100: Particao 900 volta a ser a de escrita │
+            Semana 102: Alvo de reclamação = 902 novamente —   │
+                        agora com dado real do ciclo anterior  │
                                                               │
             └──────────────────────────────────────────────────┘
 ```
 
 ### Por que Ring Buffer é Eficiente?
 
-| Aspecto | Expurgo com DELETE | Expurgo com DROP (Ring) |
+| Aspecto | Expurgo com DELETE | Expurgo com TRUNCATE (Ring) |
 |---------|-------------------|------------------------|
 | **Velocidade** | Lenta (milisegundos por linha) | Instantânea (metadados) |
-| **Locks** | Bloqueia tabela inteira | Sem locks na partição principal |
+| **Locks** | Bloqueia tabela inteira | `ACCESS EXCLUSIVE` só na partição folha, nunca na pai |
 | **Fragmentação** | Gera dead tuples | Libera espaço imediatamente |
 | **VACUUM** | Necessário (overhead) | Não necessário |
 | **Espaço em Disco** | Lentamente recuperado | Imediatamente disponível |
-| **Retenção de Dados** | Difícil de garantir | Garantida (2 anos) |
+| **Retenção de Dados** | Difícil de garantir | Garantida (98 semanas, ~22,5 meses) |
 
 ---
 
@@ -260,11 +278,10 @@ RESULTADO: particao_expurgo ∈ [900, 999]
 #### Classe: `ControleExpurgoAutorizacao.java`
 
 ```java
-package br.com.srportto.contratocommand.domain.utilities;
+package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import br.com.srportto.contratocommand.shared.exceptions.BusinessException;
 
 public class ControleExpurgoAutorizacao {
 
@@ -273,8 +290,8 @@ public class ControleExpurgoAutorizacao {
    * 
    * LÓGICA:
    * - Usa data de cancelamento para determinar "gaveta" semanal
-   * - Semanas desde 1970 divididas em 100 "gavetas"
-   * - Cada gaveta representa ~2 anos de dados (100 semanas)
+   * - Semanas desde 1970 divididas em 100 "gavetas" — cada gaveta é 1 semana
+   * - As 100 gavetas juntas cobrem o ciclo inteiro do anel (100 semanas)
    * - Ring buffer reutiliza gavetas a cada 100 semanas
    * 
    * EXEMPLO:
@@ -295,95 +312,45 @@ public class ControleExpurgoAutorizacao {
     int gaveta = (int) (semanasTotais % 100);
     return 900 + gaveta;
   }
-
-  /**
-   * Calcula partição de expurgo para DROP (deletar dados antigos).
-   * 
-   * RESTRIÇÕES DE SEGURANÇA:
-   * 1. Data de referência não pode estar no PASSADO
-   *    → Previne deleção de dados ainda em vigência
-   * 
-   * 2. Partição de DROP deve estar 2 gavetas (2 semanas) à frente
-   *    → Garante que nenhum dado será deletado enquanto está sendo escrito
-   * 
-   * 3. Partição de DROP ≠ Partição de ESCRITA atual
-   *    → Previne deleção de dados em transação
-   * 
-   * LÓGICA:
-   *   particao_escrita_agora = obterParticaoExpurgoWrite(LocalDate.now())
-   *   particao_drop = obterParticaoExpurgoWrite(dataReferencia) + 2
-   *   
-   *   Validações:
-   *   ✓ dataReferencia >= LocalDate.now()  (não passado)
-   *   ✓ particao_drop != particao_escrita_agora  (não conflita)
-   * 
-   * EXEMPLO (com data_hoje = 2026-04-21):
-   *   Semana 0:   Escrevendo em partição 950
-   *   Semana 2:   Pode deletar partição 952 (2 semanas atrás)
-   *   Semana 100: Pode deletar partição 900 (completou ciclo completo)
-   * 
-   * @param dataReferenciaCalculoParticaoExpurgo Data para calcular partição de drop
-   * @return Partição segura para deletar (900-999)
-   * @throws BusinessException Se data estiver no passado ou conflitar com escrita
-   */
-  public static int obterParticaoExpurgoDrop(LocalDate dataReferenciaCalculoParticaoExpurgo) {
-    LocalDate dataAtual = LocalDate.now();
-    var particaoExpurgoWriteMoment = obterParticaoExpurgoWrite(dataAtual);
-
-    // VALIDAÇÃO 1: Data de referência não pode estar no passado
-    if (dataReferenciaCalculoParticaoExpurgo.isBefore(dataAtual)) {
-      throw new BusinessException(
-        "Data de referencia para expurgo invalida (no passado), " +
-        "pode pedir pra dropar a particao em escrita no momento: " +
-        dataReferenciaCalculoParticaoExpurgo
-      );
-    }
-
-    // PASSO 1: Calcular partição base a partir da data de referência
-    var particaoExpurgoDelete = obterParticaoExpurgoWrite(dataReferenciaCalculoParticaoExpurgo);
-
-    // PASSO 2: Adicionar buffer de segurança (2 gavetas/semanas à frente)
-    particaoExpurgoDelete += 2;
-
-    // PASSO 3: Wraparound do ring buffer (volta ao 900 se passar de 999)
-    if (particaoExpurgoDelete > 999) {
-      particaoExpurgoDelete = particaoExpurgoDelete - 100;  // Volta para início (900-999)
-    }
-
-    // VALIDAÇÃO 2: Garantir que partição de drop não é a mesma de escrita AGORA
-    if (particaoExpurgoDelete == particaoExpurgoWriteMoment) {
-      throw new BusinessException(
-        "A particao de expurgo selecionada para delete e a mesma que a " +
-        "particao de escrita atual, o que pode causar perda de dados. " +
-        "Data de referencia: " + dataReferenciaCalculoParticaoExpurgo
-      );
-    }
-
-    return particaoExpurgoDelete;
-  }
 }
 ```
 
-**Visualização da Janela de Segurança**:
+> **Nota histórica:** esta classe chegou a ter um segundo método, `obterParticaoExpurgoDrop`, que
+> calculava a partição segura para reclamar (`escrita + 2`, com as duas validações descritas nesta
+> POC) e devolvia o resultado para quem chamasse. Ele foi removido em `585f584` por não ter chamador
+> de produção — o `contratocommand` sempre soube **calcular** a partição alvo, mas nunca teve
+> quem a **reclamasse**. Esse método nunca chegou a truncar nem dropar nada sozinho: ele só
+> devolvia o número da partição.
+>
+> A change `reclamar-particao-expurgo-ciclo` fecha essa lacuna com uma aplicação própria,
+> `apps/expurgo-particao` — não uma classe utilitária do `contratocommand`, mas uma Lambda agendada
+> que reimplementa o mesmo cálculo (em Python, já que roda fora da JVM) e efetivamente executa a
+> reclamação. Ver a seção "Expurgo de Partição" abaixo para o desenho atual.
+
+**Visualização da Janela de Segurança** (mecânica do offset, independente de o anel já ter
+completado uma volta):
 ```
-Semana 0 (2026-01-01):
-  Escrita: Partição 900
-  
-Semana 1 (2026-01-08):
-  Escrita: Partição 901
-  
-Semana 2 (2026-01-15):
-  Escrita: Partição 902
-  ✓ Agora: Partição 900 pode ser DROPPED (completou 2 semanas)
-  
-...
-  
-Semana 100 (2027-12-28):
-  Escrita: Partição 900 (volta do ring)
-  ⚠️ NÃO pode dropar ainda (está sendo escrita!)
-  
-Semana 102 (2028-01-11):
-  ✓ Partição 900 pode ser DROPPED (completou novo ciclo)
+Em qualquer semana W, com a partição de escrita = 900 + (W % 100):
+
+  Partição ALVO da reclamação = escrita + 2 (com wraparound)
+
+  O que essa partição alvo CONTÉM depende de quantas voltas o anel já deu:
+
+  Antes da 1ª volta completa (W < 100, ~as primeiras 100 semanas do projeto):
+    Semana 0: escrita = 900, alvo = 902 → 902 está VAZIA (nunca foi escrita)
+    Semana 2: escrita = 902, alvo = 904 → 904 está VAZIA
+    ... nenhuma reclamação tem efeito ainda: não existe "ciclo anterior" pra reclamar
+
+  Depois da 1ª volta completa (W >= 100):
+    Semana 100: escrita = 900 (voltou), alvo = 902
+                → 902 contém dado escrito na semana 2 (98 semanas atrás) — ESSE é o dado
+                  que a reclamação apaga
+    Semana 102: escrita = 902, alvo = 904
+                → 904 contém dado da semana 4 (98 semanas atrás)
+
+  O offset +2 nunca significa "2 semanas atrás". Significa "98 semanas atrás" (100 − 2) —
+  a folga de 2 semanas é o tempo que falta para o PONTEIRO DE ESCRITA chegar lá, não a
+  idade do que já está lá dentro.
 ```
 
 ---
@@ -798,81 +765,89 @@ private Autorizacao transferirParaNovaParticao(Autorizacao autorizacao, Integer 
 
 ---
 
-### 3️⃣ Expurgo de Partição (DROP)
+### 3️⃣ Expurgo de Partição (TRUNCATE)
+
+> Esta seção descrevia originalmente `DETACH PARTITION CONCURRENTLY` + `DROP TABLE` +
+> `CREATE TABLE` como o mecanismo de expurgo. A implementação real (`apps/expurgo-particao`,
+> change `reclamar-particao-expurgo-ciclo`) usa `TRUNCATE` na partição folha — o comparativo
+> abaixo mostra por quê.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Sistema de Manutenção                                        │
-│ (Executa periodicamente via scheduler/cron)                  │
+│ apps/expurgo-particao (Lambda agendada, rate(30 minutes))    │
 └───────────────┬──────────────────────────────────────────────┘
                 │
-    ┌───────────┴────────────────────┐
-    │ PASSO 1: Calcular partição DROP │
-    │ ▼                               │
-    │ dataReferenciaExpurgo =         │
-    │   LocalDate.now()               │
-    │   .plusWeeks(2)                 │
-    │                                 │
-    │ particaoParaDropar =            │
-    │   ControleExpurgoAutorizacao    │
-    │   .obterParticaoExpurgoDrop(    │
-    │     dataReferenciaExpurgo       │
-    │   )                             │
-    │                                 │
-    │ VALIDAÇÕES:                     │
-    │ ✓ Data não está no passado      │
-    │ ✓ Partição != partição escrita  │
-    │                                 │
-    └───────────┬────────────────────┘
-                │
     ┌───────────┴────────────────────────────────┐
-    │ PASSO 2: Desanexar partição (CONCURRENT)  │
-    │ ▼                                          │
-    │ ALTER TABLE autorizacoes                   │
-    │ DETACH PARTITION autorizacoes_pe900       │
-    │ CONCURRENTLY;                              │
-    │                                            │
-    │ ✓ Não bloqueia tabela pai                  │
-    │ ✓ Transações continuam normalmente        │
-    │ ✓ Operação não-bloqueante                 │
-    │                                            │
+    │ PASSO 1: Calcular partição alvo             │
+    │ ▼                                            │
+    │ particaoEscrita = obterParticaoExpurgoWrite(hoje)
+    │ particaoAlvo = particaoEscrita + 2 (wraparound)
+    │                                              │
     └───────────┬────────────────────────────────┘
                 │
     ┌───────────┴────────────────────────────────┐
-    │ PASSO 3: Dropar tabela isolada             │
-    │ ▼                                          │
-    │ DROP TABLE autorizacoes_pe900;             │
-    │                                            │
-    │ RESULTADO:                                 │
-    │ ✓ Espaço em disco liberado instantaneamente│
-    │ ✓ Sem fragmentação                        │
-    │ ✓ Sem VACUUM necessário                   │
-    │ ✓ ~999 GB liberados instantaneamente      │
-    │   (para tabela com 1B registros)          │
-    │                                            │
+    │ PASSO 2: Classificar o estado da alvo       │
+    │ ▼ (na mesma transação do PASSO 3)           │
+    │ VAZIA                → nada a fazer (normal)│
+    │ DADO_CICLO_ANTERIOR  → segue para o PASSO 3 │
+    │ DADO_RECENTE         → ROLLBACK, registra    │
+    │                        anomalia, NÃO trunca  │
     └───────────┬────────────────────────────────┘
-                │
+                │ (só quando DADO_CICLO_ANTERIOR)
     ┌───────────┴────────────────────────────────┐
-    │ PASSO 4: Recriar partição vazia            │
-    │ ▼                                          │
-    │ CREATE TABLE autorizacoes_pe900            │
-    │ PARTITION OF autorizacoes                  │
-    │ FOR VALUES IN (900);                       │
-    │                                            │
-    │ RESULTADO:                                 │
-    │ ✓ Pronta para novo ciclo                  │
-    │ ✓ Ring buffer completou volta completa    │
-    │ ✓ ~2 anos de dados antigos foram limpos   │
-    │                                            │
+    │ PASSO 3: TRUNCATE da partição folha         │
+    │ ▼                                            │
+    │ TRUNCATE autorizacoes_pe<alvo>;              │
+    │                                              │
+    │ RESULTADO:                                   │
+    │ ✓ Espaço em disco liberado instantaneamente  │
+    │ ✓ Sem fragmentação, sem VACUUM necessário    │
+    │ ✓ Partição CONTINUA anexada à tabela pai —   │
+    │   mesmo oid, mesmo relpartbound, índices     │
+    │   ainda válidos (só o relfilenode troca)     │
+    │ ✓ Nenhum lock na tabela pai `autorizacoes`   │
+    │                                              │
     └───────────┬────────────────────────────────┘
                 │
                 ▼
-        ┌──────────────────────────┐
-        │ Conclusão: Expurgo OK    │
-        │ Partição: 900            │
-        │ Status: Pronta p/ escrita│
-        └──────────────────────────┘
+        ┌───────────────────────────────┐
+        │ Toda execução grava registro  │
+        │ estruturado — inclusive       │
+        │ quando a ação foi NENHUMA     │
+        └───────────────────────────────┘
 ```
+
+#### Por que `TRUNCATE`, não `DETACH`+`DROP`+`CREATE`
+
+```mermaid
+flowchart TB
+    subgraph d["DETACH PARTITION"]
+        direction TB
+        d1["Tabela some do pai,<br/>mas continua existindo<br/>por conta própria"] --> d2["Dado PRESERVADO<br/>vínculo DESFEITO"]
+    end
+
+    subgraph t["TRUNCATE (adotado)"]
+        direction TB
+        t1["Arquivo em disco trocado;<br/>oid, bound e índices<br/>permanecem intactos"] --> t2["Dado DESTRUÍDO<br/>vínculo INTACTO<br/>sem lock na tabela pai"]
+    end
+
+    subgraph dc["DROP + CREATE"]
+        direction TB
+        dc1["Tabela removida do catálogo<br/>e recriada do zero"] --> dc2["Dado DESTRUÍDO<br/>vínculo desfeito e refeito<br/>2x ACCESS EXCLUSIVE na tabela pai<br/>índices filhos com nome novo"]
+    end
+
+    style t fill:#1f6f43,color:#ffffff
+    style d fill:#5a5a5a,color:#ffffff
+    style dc fill:#7a2e2e,color:#ffffff
+```
+
+| | `DETACH` | `TRUNCATE` (adotado) | `DROP` + `CREATE` |
+|---|---|---|---|
+| Preserva o dado? | Sim — por isso descartado (o objetivo é expurgar) | Não | Não |
+| Lock na tabela pai `autorizacoes` | Nenhum | Nenhum | `ACCESS EXCLUSIVE` × 2 |
+| Nomes de índice filho | Preservados | Preservados | Auto-gerados (quebra a migration `v1.0.6`, que os nomeia à mão) |
+| Privilégio exigido | Ownership | `GRANT TRUNCATE` (granular) | Ownership |
+| Efeito no `oid`/catálogo | Nenhum | Nenhum | Novo `oid`, catálogo reconstruído |
 
 ---
 
@@ -918,72 +893,51 @@ WHERE id_autorizacao = '019da240-3ee2-7e1a-81da-90f103ed0006'
   AND id_particao_conta = 52;
 ```
 
-### Expurgo: Três Comandos Essenciais
+### Expurgo: Um Único Comando, Numa Transação Com Trava de Sanidade
 
-#### Comando 1️⃣: Desanexar Partição (CONCURRENT)
+`TRUNCATE` não tem `WHERE` — apaga tudo que estiver na partição, sem perguntar. Por isso a
+implementação real nunca executa o `TRUNCATE` sozinho: a classificação do estado da partição
+(vazia / dado do ciclo anterior / dado recente) e o `TRUNCATE` acontecem na **mesma transação**,
+para que uma classificação reprovada nunca deixe efeito residual.
 
 ```sql
--- Desanexa partição sem bloquear tabela pai
--- (Disponível a partir do PostgreSQL 14+)
-ALTER TABLE autorizacoes 
-    DETACH PARTITION autorizacoes_pe900 
-    CONCURRENTLY;
+-- Dentro de uma unica transacao (pseudocodigo SQL do que a Lambda executa):
 
--- Resultado: Partição isolada, mas ainda acessível
--- Transações na tabela pai continuam normalmente
+BEGIN;
+SET LOCAL lock_timeout = '5s';  -- desiste sem efeito se a listagem do contratoquery
+                                 -- estiver segurando a particao; a proxima execucao
+                                 -- (30 min depois) tenta de novo
+
+-- Classificacao: a particao alvo tem dado, e ele e' realmente do ciclo anterior?
+SELECT max(data_hora_ultima_atlz) FROM autorizacoes_pe900;
+-- se vazia -> COMMIT sem fazer nada (resultado normal, nao e' erro)
+-- se dado recente demais -> ROLLBACK, registra anomalia, NAO trunca
+-- se dado do ciclo anterior (~98 semanas) -> segue abaixo
+
+TRUNCATE autorizacoes_pe900;
+
+COMMIT;
 ```
 
-#### Comando 2️⃣: Dropar Tabela
+**Execução em Sequência (Exemplo Real, já com o anel tendo completado uma volta)**:
 
 ```sql
--- Deleta tabela isolada (libera espaço imediatamente)
-DROP TABLE autorizacoes_pe900;
-
--- Resultado: ~999 GB liberados instantaneamente
--- Nenhum lock, nenhuma fragmentação
-```
-
-#### Comando 3️⃣: Recriar Partição Vazia
-
-```sql
--- Recria partição vazia para novo ciclo
-CREATE TABLE autorizacoes_pe900
-    PARTITION OF autorizacoes
-    FOR VALUES IN (900);
-
--- Resultado: Pronta para receber dados no próximo ciclo
--- Ring buffer com ~2 anos de janela de segurança
-```
-
-**Execução em Sequência (Exemplo Real)**:
-
-```sql
--- 2026-04-21 14:30:00
 -- Verificar partição de escrita atual
-SELECT ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(CURRENT_DATE);
--- Resultado: 952
+SELECT 900 + (
+  floor((CURRENT_DATE - DATE '1970-01-01') / 7)::int % 100
+) AS particao_escrita;
+-- Resultado: 955 (equivalente a obterParticaoExpurgoWrite(CURRENT_DATE) no contratocommand)
 
--- Calcular partição segura para dropar
--- (2 semanas à frente da escrita atual)
-SELECT ControleExpurgoAutorizacao.obterParticaoExpurgoDrop(CURRENT_DATE + INTERVAL '2 weeks');
--- Resultado: 900
+-- Partição alvo da reclamação (escrita + 2, com wraparound) — calculada pela Lambda
+-- apps/expurgo-particao, não por um método do contratocommand (que só escreve no anel)
+-- Resultado: 957
 
--- ✓ Seguro dropar 900
+-- ✓ 957 contém dado de 98 semanas atrás — TRUNCATE seguro
+TRUNCATE autorizacoes_pe957;
 
--- PASSO 1: Desanexar
-ALTER TABLE autorizacoes 
-    DETACH PARTITION autorizacoes_pe900 CONCURRENTLY;
-
--- PASSO 2: Dropar
-DROP TABLE autorizacoes_pe900;
-
--- PASSO 3: Recriar
-CREATE TABLE autorizacoes_pe900
-    PARTITION OF autorizacoes
-    FOR VALUES IN (900);
-
--- Conclusão: Ciclo completo da partição 900 (2 anos)
--- finalizou, dados antigos expurgados, pronta para novo ciclo
+-- Conclusão: partição 957 esvaziada; continua anexada à tabela pai,
+-- pronta para receber escrita quando o ponteiro chegar nela de novo, sem
+-- nenhuma cerimônia de reanexação ou recriação de índice
 ```
 
 ---
@@ -1013,33 +967,38 @@ DESVIO STD | ±0.03%    |           | ✓ Excelente
 | Operação | Tempo | Locks | Dead Tuples | VACUUM Necessário |
 |----------|-------|-------|-------------|-------------------|
 | **DELETE tradicional** (1B registros) | ~4h | Table | Sim (800M+) | Sim (~2h) |
-| **DROP PARTITION** (1B registros) | <1s | None | 0 | Não |
+| **TRUNCATE** (1B registros) | <1s | Só na partição folha | 0 | Não |
 | **Economia**: | **~6h/ciclo** | **100%** | **100%** | **100%** |
 
 **Economia Anual**: ~2.400 horas de locks eliminadas (100 ciclos de expurgo)
 
 ### Retenção de Dados
 
+Retenção real: **98 semanas (~22,5 meses)**, não "2 anos" — número deliberado, não
+arredondamento. O anel tem 100 gavetas semanais; 2 delas são a folga de segurança à frente do
+ponteiro de escrita (o offset "+2" da reclamação). Com 100 gavetas semanais, 104 semanas (2 anos
+exatos) é aritmeticamente **inalcançável** — o teto do anel é 99 semanas (offset +1, sem folga
+nenhuma), e 98 é a escolha que preserva 2 semanas de prazo de reação caso a reclamação periódica
+falhe por algumas execuções.
+
 ```
-Timeline Ring Buffer (2 anos de ciclo):
+Timeline Ring Buffer (ciclo de 100 semanas, retenção de 98):
 
-Semana 0:    Partição 900 criada (ESCRITA)
+Semana 0:    Partição 900 é a partição de ESCRITA
              ├─ Registros cancelados alocados aqui
-             └─ Data: 1970-01-01
+             └─ Alvo de reclamação nesta semana: partição 902 (vazia — 1ª volta)
 
-Semana 1-99: Partições 901-999 recebem novos cancelamentos
-             └─ Dados acumulam
+Semana 1-99: Partições 901-999 recebem novos cancelamentos, uma por semana
+             └─ Dados acumulam (1ª volta do anel; nada ainda para reclamar)
 
-Semana 100:  Partição 900 completa ciclo (2 anos depois)
-             ├─ Data: ~2024-02-01
-             ├─ Seguro dropar? Ainda não (em transição)
-             └─ Status: Aguardando +2 semanas
+Semana 100:  Partição 900 volta a ser a de ESCRITA (completou 1 volta)
+             └─ Alvo de reclamação: partição 902 — agora contém dado real,
+                escrito na semana 2, ou seja, 98 semanas atrás
 
-Semana 102:  ✓ Dropar partição 900 (seguro)
-             ├─ DETACH PARTITION autorizacoes_pe900 CONCURRENTLY
-             ├─ DROP TABLE autorizacoes_pe900
-             ├─ CREATE TABLE autorizacoes_pe900 ... (vazia)
-             └─ Espaço liberado: ~999 GB
+Semana 102:  Partição 902 volta a ser a de ESCRITA
+             └─ Alvo de reclamação: partição 904 — dado de 98 semanas atrás
+                é TRUNCATE'd (apps/expurgo-particao); a partição 902
+                continua anexada à tabela pai, pronta para o próximo ciclo
 ```
 
 ### Escalabilidade
@@ -1086,20 +1045,36 @@ autovacuum_naptime = '10s'
 autovacuum_vacuum_scale_factor = 0.01
 ```
 
-### 2. Agendamento de Expurgo (via pg_cron)
+### 2. Agendamento de Expurgo
 
-```sql
--- Instalar extensão pg_cron (necessária)
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-
--- Agendar expurgo toda segunda-feira às 02:00 AM
-SELECT cron.schedule('expurgo-autorizacoes-weekly', '0 2 * * 1', $$
-  BEGIN
-    -- Calcular partição segura
-    PERFORM public.expurgo_autorizacoes_procedure();
-  END;
-$$);
-```
+> Este exemplo original propunha `pg_cron` como o próprio agente de expurgo (`BEGIN ... PERFORM
+> expurgo_autorizacoes_procedure(); END`). A decisão final (design.md D5 da change
+> `reclamar-particao-expurgo-ciclo`) foi diferente: **`pg_cron` nunca expurga.** Dobrar o número de
+> coisas que podem apagar dado irreversivelmente é dobrar a superfície de risco, não redundância —
+> duas implementações da mesma fórmula, mantidas em lugares diferentes, divergem com o tempo.
+>
+> O agente real é uma **Lambda agendada por EventBridge Scheduler** (`apps/expurgo-particao`,
+> `rate(30 minutes)`), e `pg_cron` assume um papel só de **auditoria** — confere o que a Lambda
+> afirmou ter feito, sem recalcular a fórmula e sem privilégio de escrita sobre `autorizacoes`:
+>
+> ```sql
+> -- Job diario: confere se a rotina deixou registro recente (nao recalcula a formula)
+> SELECT cron.schedule_in_database(
+>     'expurgo-particao-confirma-registro', '0 6 * * *',
+>     'SELECT expurgo_particao_auditar_confirmacao_registro();',
+>     current_database(), 'expurgo_particao_auditoria', true
+> );
+>
+> -- Job semanal: invariante estrutural (dado numa particao bate com o offset dela)
+> SELECT cron.schedule_in_database(
+>     'expurgo-particao-invariante-semanal', '0 7 * * 4',
+>     'SELECT expurgo_particao_auditar_invariante_semanal();',
+>     current_database(), 'expurgo_particao_auditoria', true
+> );
+> ```
+>
+> Ver `infra/local/postgres/migrations/v1.0.8` a `v1.0.10` para a implementação completa
+> (tabela de auditoria, roles de privilégio mínimo, as duas funções).
 
 ### 3. Monitoramento
 
@@ -1162,25 +1137,31 @@ OPERAÇÃO:
   particaoExpurgo = 900 + gaveta
 
 COMPLEXIDADE: O(1) - ~0.1 microsegundo
-CICLO: 100 semanas (~2 anos)
+CICLO: 100 semanas
 ```
 
-### Algoritmo 3: Cálculo de Partição de Expurgo (DROP)
+### Algoritmo 3: Cálculo de Partição Alvo da Reclamação (TRUNCATE)
+
+> Implementado em `apps/expurgo-particao` (Python, change `reclamar-particao-expurgo-ciclo`), não
+> no `contratocommand` — o método `obterParticaoExpurgoDrop` que fazia esse cálculo no
+> `contratocommand` foi removido em `585f584` por não ter chamador de produção.
 
 ```
-ENTRADA: dataReferenciaExpurgo (LocalDate)
-SAÍDA: particaoDropSafe ∈ [900, 999]
+ENTRADA: dataReferencia (date)
+SAÍDA: particaoAlvo ∈ [900, 999]
 
 OPERAÇÕES:
-  1. Validar: dataReferencia >= LocalDate.now()
-  2. Calcular: particaoBase = obterParticaoExpurgoWrite(dataReferencia)
-  3. Buffer: particaoDrop = particaoBase + 2
-  4. Wraparound: IF particaoDrop > 999 THEN particaoDrop -= 100
-  5. Validar: particaoDrop ≠ particaoEscritaAgora
+  1. Calcular: particaoEscrita = obterParticaoExpurgoWrite(dataReferencia)
+  2. Buffer: particaoAlvo = particaoEscrita + 2
+  3. Wraparound: IF particaoAlvo > 999 THEN particaoAlvo -= 100
+
+  Antes do TRUNCATE (execução real, não simulação): classificar o estado da
+  partição alvo (vazia / dado do ciclo anterior / dado recente) e só truncar
+  no segundo caso — ver seção "Expurgo de Partição (TRUNCATE)".
 
 COMPLEXIDADE: O(1)
-SEGURANÇA: Buffer de 2 semanas
-VALIDAÇÃO: Dupla (passado + conflito)
+RETENÇÃO RESULTANTE: 98 semanas (100 − 2)
+GARANTIA: particaoAlvo nunca coincide com particaoEscrita do mesmo instante
 ```
 
 ---
@@ -1198,11 +1179,15 @@ VALIDAÇÃO: Dupla (passado + conflito)
 
 1. **Chave Primária Composta**: Precisa ser `(id_autorizacao, id_particao_conta)`
 2. **Movimento de Dados**: DELETE+INSERT necessário para mudar partição
-3. **Janela de Segurança**: 2 semanas deve ser configurável para cada ambiente
+3. **Janela de Segurança**: o offset de 2 semanas define a retenção (98, não 2 semanas) — a folga
+   em si (quantas semanas de margem antes do TRUNCATE) é o que poderia ser configurável por
+   ambiente, trocando a retenção resultante
 
 ### 🚀 Próximos Passos
 
-1. Implementar agendador automático de expurgo (pg_cron)
+1. ~~Implementar agendador automático de expurgo~~ **Feito** — `apps/expurgo-particao`, Lambda
+   agendada a cada 30 minutos (change `reclamar-particao-expurgo-ciclo`); `pg_cron` audita, não
+   expurga (ver seção "Agendamento de Expurgo")
 2. Adicionar métricas de monitoramento em tempo real
 3. Testar com 10B+ registros
 4. Documentar playbook de disaster recovery
@@ -1218,8 +1203,9 @@ VALIDAÇÃO: Dupla (passado + conflito)
 
 ### Codebase do Projeto
 - [IdContaUUIDPartitionDistributor.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/infrastructure/persistence/IdContaUUIDPartitionDistributor.java) - Distribuição
-- [ControleExpurgoAutorizacao.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/infrastructure/persistence/ControleExpurgoAutorizacao.java) - Algoritmos de expurgo
+- [ControleExpurgoAutorizacao.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/infrastructure/persistence/ControleExpurgoAutorizacao.java) - Cálculo da partição de escrita (só o lado WRITE — o `contratocommand` nunca reclama o anel)
 - [ReversibleUUIDv7.java](../../apps/contratocommand/src/main/java/br/com/srportto/contratocommand/infrastructure/persistence/ReversibleUUIDv7.java) - UUID reversível
+- [apps/expurgo-particao/](../../apps/expurgo-particao/) - Reclamação da partição de expurgo (cálculo do alvo, classificação de estado, `TRUNCATE`) — a contraparte que fecha o ring buffer
 
 ### Arquivos de Dados da POC
 - [sql-comandos.sql](sql-comandos.sql) - Scripts SQL
@@ -1228,15 +1214,17 @@ VALIDAÇÃO: Dupla (passado + conflito)
 
 ## ✍️ Conclusão
 
-A POC de **Particionamento com Buffer Ring + UUID-V7 Reversível** provou ser uma solução altamente escalável para o gerenciamento de autorizações PIX automáticas. Ao distribuir dados uniformemente entre 889 partições quentes e gerenciar expurgo via drop instantâneo em 100 partições de anel, o sistema consegue:
+A POC de **Particionamento com Buffer Ring + UUID-V7 Reversível** provou ser uma solução altamente escalável para o gerenciamento de autorizações PIX automáticas. Ao distribuir dados uniformemente entre 889 partições quentes e gerenciar expurgo via `TRUNCATE` instantâneo em 100 partições de anel, o sistema consegue:
 
 - ✅ Suportar bilhões de registros sem degradação
-- ✅ Expurgar dados com custo zero em I/O
-- ✅ Manter janela de retenção previsível (2 anos)
+- ✅ Expurgar dados com custo zero em I/O, sem lock na tabela pai
+- ✅ Manter janela de retenção previsível (98 semanas, ~22,5 meses — deliberada, não "2 anos")
 - ✅ Eliminar hot partitions e concentração de dados
 - ✅ Paralelizar operações em múltiplos discos/CPUs
 
-**Status**: Pronto para produção com extensões pg_partman e pg_cron.
+**Status**: Em produção. O lado de escrita (`contratocommand`) sempre existiu; o lado de reclamação
+(`apps/expurgo-particao`, Lambda agendada + `pg_cron` de auditoria) foi entregue pela change
+`reclamar-particao-expurgo-ciclo`, fechando o ciclo que esta POC descreveu.
 
 ---
 

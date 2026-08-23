@@ -31,8 +31,6 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 > quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
 > delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
 
-Classes de teste existentes: `ContratocommandApplicationTests`, testes dos `*Service` e `AutorizacaoMapper` (`application/usecase/`), dos validators/rules (`domain/service/{contratacao,cancelamento,decisao}/`), `AutorizacaoControllerTest` e `AutorizacaoCompletaResponseDtoTest` (`infrastructure/web/`), `AutorizacaoJpaAdapterTest` e os testes de particionamento — `ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `AchaQtdeSemanasTest` — (`infrastructure/persistence/`), `AutorizacaoEventoPublisherTest`/`AutorizacaoEventoPayloadTest` (`infrastructure/messaging/`), `AutorizacaoTest` (`domain/model/`), `ApiExceptionHandlerTest`, `TipoProdutoTest`/`MotivoStatusAutorizacaoTest` (`domain/enums/`). Helpers em `src/test`: `TestFixtures`, `GeraDatasPorParticao` e a utility `AchaQtdeSemanas` (usada apenas por testes — vive no source set de teste, não em `src/main`).
-
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
@@ -270,8 +268,8 @@ Regras de cancelamento (`domain/service/cancelamento/rules/`): `ProdutoSuportado
 Tabela `autorizacoes` particionada por `id_particao_conta` (range **900–999**). Todo o conhecimento
 de particionamento vive em `infrastructure/persistence/` — o domínio nunca importa essas classes.
 
-- **Partição de escrita**: `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataFimVigencia)` — `900 + (semanas desde Epoch % 100)`.
-- **Partição segura para drop**: `ControleExpurgoAutorizacao.obterParticaoExpurgoDrop(dataReferencia)` — lança `BusinessException` se a data está no passado ou colide com a partição de escrita atual.
+- **Partição de escrita**: `ControleExpurgoAutorizacao.obterParticaoExpurgoWrite(dataReferencia)` — `900 + (semanas desde Epoch % 100)`. `dataReferencia` é o **instante da finalização** da autorização (`dataHoraCancelamento`/`dataHoraUltimaAtualizacao`), não `dataFimVigencia` — ver `transferirParaExpurgo` e a spec `expurgo-estados-terminais`.
+- **Reclamação da partição de expurgo**: `obterParticaoExpurgoDrop` (que calculava `escrita + 2` com validação) foi removido em `585f584` por não ter chamador de produção — o `contratocommand` só escreve no anel, nunca o esvazia. A reclamação (esvaziamento via `TRUNCATE`, alvo = escrita + 2, retenção de 98 semanas) é responsabilidade de `apps/expurgo-particao` (Lambda agendada), fora deste módulo — ver a capability `reclamacao-particao-expurgo` (change `reclamar-particao-expurgo-ciclo`).
 - **UUID com partição embutida**: `IdContaUUIDPartitionDistributor.getPartitionFast(idUnicoContaContratante)` + `ReversibleUUIDv7.generate(particao)`, atrás da porta `GeradorIdentidadeAutorizacao` (`GeradorIdentidadeAutorizacaoAdapter`). `AutorizacaoJpaAdapter` extrai depois com `ReversibleUUIDv7.extract(uuid)` — válido para `findById`/`existeAutorizacaoAtivaComIdEmpresa`/o cálculo de `particaoAtual` em `transferirParaExpurgo`, porque nesses pontos a autorização ainda não passou por expurgo (a partição embutida no UUID ainda é a física).
 - `Autorizacao.inicializaCriacao(UUID idGerado)` recebe o id pronto — não gera nada, não sabe de partição.
 

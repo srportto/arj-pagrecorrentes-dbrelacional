@@ -1,7 +1,12 @@
 # contrato-api-consistente Specification
 
 ## Purpose
-TBD - created by archiving change reconciliar-contrato-spec-doc. Update Purpose after archive.
+
+Descreve as regras de consistência do contrato REST exposto pelo `contratocommand` e pelo
+`contratoquery`: nomenclatura idêntica para o mesmo dado entre serviços, formato único por tipo
+de campo, convenção única de status HTTP por origem de erro, versionamento antes de mudança
+incompatível, e a documentação do contrato mantida fora do código dos serviços.
+
 ## Requirements
 ### Requirement: Nomenclatura idêntica para o mesmo dado entre serviços
 
