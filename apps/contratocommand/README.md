@@ -94,3 +94,4 @@ Contrato completo (schema de request/response, exemplos, códigos de erro): ver
 ## Licença
 
 MIT — veja [LICENSE](../../LICENSE) na raiz do repositório.
+
