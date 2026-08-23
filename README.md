@@ -1,6 +1,6 @@
 # arj-pagrecorrentes-dbrelacional
 
-Sistema de **autorizações de pagamentos recorrentes** (PIX Automático e DDA Automático), composto por cinco microserviços Java que operam sobre um banco PostgreSQL particionado temporalmente.
+Sistema de **autorizações de pagamentos recorrentes** (PIX Automático e DDA Automático), composto por cinco microserviços Java que operam sobre um banco PostgreSQL particionado temporalmente, mais uma Lambda Python agendada (`expurgo-particao`) que fecha o ciclo de expurgo desse particionamento.
 
 ```mermaid
 flowchart TD
@@ -27,6 +27,25 @@ flowchart TD
     Temporiza -->|"PATCH /decisao<br/>acao=EXPIRAR"| Command
 ```
 
+## Ciclo de Expurgo (Ring Buffer)
+
+`contratocommand` e `expurgo-particao` não se conectam entre si — cada um só conhece o Postgres.
+São o escritor e o reclamador do mesmo ring buffer de partições `900`–`999`, fechando um ciclo que
+nenhum evento de negócio atravessa:
+
+```mermaid
+flowchart LR
+    Command["contratocommand<br/>ControleExpurgoAutorizacao"] -->|"autorização em estado terminal:<br/>move para gaveta 900-999"| PG[("PostgreSQL<br/>autorizacoes_pe900..999")]
+    Scheduler["EventBridge Scheduler<br/>a cada 30 min"] --> Lambda["expurgo-particao<br/>(Python, Lambda)"]
+    Lambda -->|"calcula alvo = escrita+2<br/>TRUNCATE se dado do ciclo anterior"| PG
+    Cron["pg_cron<br/>(auditoria, sem escrita)"] -.->|"confere o que a Lambda afirmou"| PG
+```
+
+`expurgo-particao` não é acionada por evento — é agendada, e opera sobre a tabela `autorizacoes`
+por fora do fluxo de requisição descrito acima. Detalhe completo:
+[apps/expurgo-particao/README.md](apps/expurgo-particao/README.md) e a capability
+[reclamacao-particao-expurgo](openspec/specs/reclamacao-particao-expurgo/spec.md).
+
 ## Estados da Autorização PIX_AUTO
 
 Autorizações `PIX_AUTO` nascem `RECEBIDA` e aguardam decisão do cliente pagador (`PATCH
@@ -52,6 +71,14 @@ stateDiagram-v2
 | [autorizacaostatus-producer](apps/autorizacaostatus-producer/README.md) | 8082 | Ponte SQS → Kafka: consome a fila de eventos, converte para Avro e produz no tópico `eventos-autorizacao` de forma idempotente | N/A |
 | [eventos-consumer](apps/eventos-consumer/README.md) | 8083 | Consome o tópico Kafka `eventos-autorizacao`, loga e confirma (ack) | N/A |
 | [temporiza-autorizacao](apps/temporiza-autorizacao/README.md) | 8084 | Temporiza a jornada 1 do PIX_AUTO: agenda a expiração no Valkey e aciona `PATCH /decisao` no vencimento | N/A |
+
+| App | Linguagem | Gatilho | Responsabilidade |
+|---|---|---|---|
+| [expurgo-particao](apps/expurgo-particao/README.md) | Python 3.13 (Lambda) | EventBridge Scheduler, a cada 30 min | Fecha o ring buffer de expurgo do `contratocommand` — ver "Ciclo de Expurgo" acima |
+
+`expurgo-particao` não é um microserviço da tabela acima: não expõe porta HTTP, não é acionada por
+evento de negócio nem por request — é invocação agendada, isolada numa tabela própria por não
+compartilhar o modelo de disparo das outras cinco apps.
 
 `contratocommand` e `contratoquery` compartilham o mesmo banco de dados e a mesma tabela `autorizacoes`, particionada por `id_particao_conta` (range 900–999). O UUID de cada autorização carrega a partição embutida (`ReversibleUUIDv7`), eliminando joins extras na leitura. `autorizacaostatus-producer`, `eventos-consumer` e `temporiza-autorizacao` não acessam o banco: os dois primeiros formam a ponte SQS → Kafka (a primeira consome a fila SQS alimentada pelos eventos publicados pelo `contratocommand` — ver [`infra/envs/local-messaging/`](infra/envs/local-messaging/) para provisionar tópico/filas no Floci — e produz no Kafka local, ver [`infra/local/kafka/`](infra/local/kafka/README.md); a segunda apenas consome esse tópico); `temporiza-autorizacao` consome uma fila **filtrada** do mesmo tópico SNS (só recepção de `PIX_AUTO` em `SPI_J1`), agenda no [Valkey local](infra/local/redis/README.md) e aciona de volta o `contratocommand` no vencimento de 10 minutos, sem nunca ler a tabela `autorizacoes`.
 
@@ -130,7 +157,8 @@ arj-pagrecorrentes-dbrelacional/
 │   ├── autorizacaostatus-producer/  # Ponte SQS -> Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── eventos-consumer/            # Consumidora do tópico Kafka (Java 25 + Spring Boot 4.0.7)
 │   ├── temporiza-autorizacao/       # Temporizador da jornada 1 do PIX_AUTO, sem banco (Java 25 + Spring Boot 4.0.7)
-│   └── docker-compose.yml      # Ambiente local: as 5 apps (Postgres vem só de infra/local/postgres/)
+│   ├── expurgo-particao/            # Lambda agendada que fecha o ring buffer de expurgo (Python 3.13)
+│   └── docker-compose.yml      # Ambiente local: as 5 apps Java (Postgres vem só de infra/local/postgres/)
 ├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
 │   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, elasticache-valkey, observability)
 │   ├── envs/{local,local-messaging,prod}/  # Composição dos módulos por ambiente
@@ -266,8 +294,10 @@ no ar (ver `infra/local/`).
 | [apps/autorizacaostatus-producer/README.md](apps/autorizacaostatus-producer/README.md) | Documentação completa da ponte SQS -> Kafka |
 | [apps/eventos-consumer/README.md](apps/eventos-consumer/README.md) | Documentação completa da consumidora do tópico Kafka |
 | [apps/temporiza-autorizacao/README.md](apps/temporiza-autorizacao/README.md) | Documentação completa do temporizador da jornada 1 do PIX_AUTO |
+| [apps/expurgo-particao/README.md](apps/expurgo-particao/README.md) | Documentação completa da Lambda que fecha o ring buffer de expurgo |
 | [infra/README.md](infra/README.md) | Topologia-alvo de infraestrutura (Terraform, ambientes, escopo) |
 | [infra/envs/local-messaging/README.md](infra/envs/local-messaging/README.md) | Provisionamento do tópico SNS e das filas SQS (eventos + temporização) no Floci |
+| [infra/local/postgres/README.md](infra/local/postgres/README.md) | Postgres 18 local (pg_partman, pg_cron, pgvector — subir, validar, adicionar extensão) |
 | [infra/local/kafka/README.md](infra/local/kafka/README.md) | Kafka local standalone (broker, Schema Registry, dashboard) |
 | [infra/local/redis/README.md](infra/local/redis/README.md) | Valkey local (sorted set + stream de expiração) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |

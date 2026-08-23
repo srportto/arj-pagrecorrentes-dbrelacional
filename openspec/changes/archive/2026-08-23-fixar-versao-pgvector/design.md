@@ -109,11 +109,15 @@ nenhuma direção.
 **Ordem entre changes:** aplicar depois de `documentar-postgres-local-extensoes`, que cria a
 capability e a seção de README onde a documentação desta change se encaixa.
 
-## Open Questions
+## Open Questions (resolvidas)
 
-- **A versão instalada hoje corresponde a alguma tag de release?** Só é respondível com o banco no ar
-  (`SELECT extversion FROM pg_extension WHERE extname = 'pgvector'`), e a resposta decide se a
-  fixação preserva ou atualiza. É a primeira task por isso.
-- **O `LABEL` deve listar a versão das três extensões ou só da fixada?** Listar as três é mais útil a
-  quem lê, mas as duas do `apt` exigiriam consultá-las em tempo de build para não mentir. Fica a
-  decisão de fazer o barato (só a fixada) ou o completo.
+- **A versão instalada hoje corresponde a alguma tag de release?** Sim — consulta ao banco local no
+  ar (`SELECT extname, extversion FROM pg_extension WHERE extname = 'vector'`, nome real da extensão
+  no catálogo, não `pgvector`) retornou `0.8.6`, que corresponde exatamente à tag `v0.8.6` (release
+  mais recente no momento desta change). A fixação **preserva** a versão em uso — não há atualização
+  silenciosa a anunciar.
+- **O `LABEL` deve listar a versão das três extensões ou só da fixada?** Optado pelo barato: só a
+  fixada (`pgvector.version="v0.8.6"`). `pg_partman`/`pg_cron` vêm do PGDG e sua versão já é
+  respondida por `apt-cache policy` em tempo de build — listá-las no `LABEL` exigiria consultar o
+  `apt` durante o build para não mentir, custo que não se paga para pacotes já curados pela
+  distribuição (D2).
