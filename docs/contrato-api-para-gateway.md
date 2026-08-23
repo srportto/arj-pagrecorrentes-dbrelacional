@@ -239,6 +239,7 @@ paginação e ordenação. Parâmetros de borda são validados como regra de neg
   "conteudo": [
     {
       "idAutorizacao": "550e8400-e29b-41d4-a716-446655440000",
+      "tipoProduto": "PIX_AUTO",
       "dataCriacao": "2026-08-11T14:32:00",
       "dataInicioVigencia": "2026-08-11",
       "dataFimVigencia": "2026-12-31",
@@ -332,10 +333,13 @@ para que quem monte o gateway não herde exemplos errados.
    (`CancelarAutorizacaoRequest`) não tem `dataFimVigencia` e **exige**
    `codigoCanalCancelamento` e `idPessoaCancelamento`, ausentes do exemplo antigo. Corrigido acima.
 
-5. **Resposta de listagem do query estava incompleta e com um campo inexistente.** O README antigo
-   incluía `tipoProduto` (que não existe em `AutorizacaoResumidaResponseDto`) e omitia
-   `dataCriacao`, `idPessoaRecebedora`, `nomeRecebedor` e `motivoStatus`, que existem. Corrigido
-   acima.
+5. **Resposta de listagem do query estava incompleta e com um campo inexistente (em 2026-08-11).**
+   Na época, o README antigo incluía `tipoProduto` (que não existia em
+   `AutorizacaoResumidaResponseDto`) e omitia `dataCriacao`, `idPessoaRecebedora`, `nomeRecebedor`
+   e `motivoStatus`, que existiam. **Atualização:** a change `completar-shape-listagem-autorizacoes`
+   acrescentou `tipoProduto` de volta ao DTO real (necessidade concreta de exibir o produto na
+   listagem sem consultar o detalhe item a item) — o exemplo acima já reflete o shape atual, com
+   `tipoProduto` presente de fato, não mais um campo fantasma do README antigo.
 
 6. **Resposta de consulta por id do query estava incompleta.** O README antigo listava 7 campos;
    o DTO real (`AutorizacaoDetalheResponseDto`) tem 17. Também usava a chave `dataHoraInclusao`,

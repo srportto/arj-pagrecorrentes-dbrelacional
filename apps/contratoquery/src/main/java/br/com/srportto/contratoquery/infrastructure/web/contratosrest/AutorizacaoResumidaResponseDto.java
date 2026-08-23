@@ -5,11 +5,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 import tools.jackson.databind.JsonNode;
 
 public record AutorizacaoResumidaResponseDto(
         UUID idAutorizacao,
+        TipoProduto tipoProduto,
         LocalDateTime dataCriacao,
         LocalDate dataInicioVigencia,
         LocalDate dataFimVigencia,
@@ -23,6 +25,7 @@ public record AutorizacaoResumidaResponseDto(
     public static AutorizacaoResumidaResponseDto from(Autorizacao autorizacao) {
         return new AutorizacaoResumidaResponseDto(
                 autorizacao.getIdAutorizacao(),
+                autorizacao.getTipoProduto(),
                 autorizacao.getDataHoraInclusao(),
                 autorizacao.getDataInicioVigencia(),
                 autorizacao.getDataFimVigencia(),
