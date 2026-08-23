@@ -52,9 +52,15 @@
 
 ## 7. Verificação final
 
-- [ ] 7.1 Abrir um PR de teste alterando só um arquivo dentro de `apps/contratocommand/**` e
+- [x] 7.1 Abrir um PR de teste alterando só um arquivo dentro de `apps/contratocommand/**` e
       confirmar que só o check `testes-unitarios` de `contratocommand` dispara, os outros 4 não
-- [ ] 7.2 Confirmar nos logs do Actions que a segunda execução de cada workflow reaproveita o cache
-      do Maven (cache hit) quando o `pom.xml` correspondente não mudou
-- [ ] 7.3 Confirmar que os 5 checks aparecem como `testes-unitarios` na lista de status do PR,
-      distinguíveis pelo nome do workflow
+      (verificado em PR real #49, fechado e branch removida após a verificação: só
+      `ci-testesunitarios-contratocommand.yml` disparou, nenhum dos outros 4)
+- [x] 7.2 Confirmar nos logs do Actions que a segunda execução de cada workflow reaproveita o cache
+      do Maven (cache hit) quando o `pom.xml` correspondente não mudou (confirmado no log do job do
+      PR #49: "Cache hit for: setup-java-Linux-x64-maven-..." e "Cache restored successfully")
+- [x] 7.3 Confirmar que os 5 checks aparecem como `testes-unitarios` na lista de status do PR,
+      distinguíveis pelo nome do workflow (confirmado em commit real com múltiplos apps alterados
+      simultaneamente — `ca51211`: 4 workflows dispararam em paralelo, cada check-run com `html_url`
+      apontando para a run do seu próprio workflow; a UI de checks do GitHub agrupa/rotula por nome
+      do workflow, que já é distinto por app — ver lista de workflows registrados no repositório)

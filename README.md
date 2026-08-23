@@ -280,7 +280,7 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 | Workflow | O quê | Dispara em |
 |---|---|---|
 | `contrato-eventos.yml` | Compara as cópias espelhadas do contrato de evento (`AutorizacaoEventoPayload`, `.avsc`) | `apps/**`, `ci/contrato-eventos/**` |
-| `ci-testesunitarios-<app>.yml` (uma por app) | Roda `mvn test -Dtest='!*IntegrationTest'` — só testes unitários, testes de integração excluídos por convenção de nome | `apps/<app>/**` |
+| `ci-testesunitarios-<app>.yml` (uma por app, 6 no total) | Só testes unitários: `mvn test -Dtest='!*IntegrationTest'` nas 5 apps Java; `pytest --ignore=tests/test_rotina_integracao.py` em `expurgo-particao` (Python) | `apps/<app>/**` |
 
 Testes de integração (Postgres, Floci, Valkey) não rodam no CI hoje — seguem manuais, com infra local
 no ar (ver `infra/local/`).

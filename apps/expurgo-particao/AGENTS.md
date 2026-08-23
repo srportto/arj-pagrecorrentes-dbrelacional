@@ -38,8 +38,11 @@ pytest
 exige o Postgres local no ar com a migration `v1.0.7` aplicada — exercita o `TRUNCATE` de verdade
 com massa sintética e afirma que as gavetas **vizinhas** (alvo−1, alvo+1) ficam intactas.
 
-> Não há workflow de CI dedicado a esta app hoje — as cinco apps Java têm
-> `ci-testesunitarios-<app>.yml`; esta é a única sem esteira própria.
+> `ci-testesunitarios-expurgo-particao.yml` roda `pytest tests --ignore=tests/test_rotina_integracao.py`
+> a cada push/PR que toque `apps/expurgo-particao/**`, mesmo padrão de path das cinco apps Java.
+> Ignora `test_rotina_integracao.py` (exige Postgres real no ar) por nome de arquivo — não há
+> convenção de sufixo `*IntegrationTest` em Python aqui, então a exclusão é por caminho explícito,
+> não por padrão de nome.
 
 ## Decisões de desenho (resumo — detalhe completo no design.md arquivado)
 
