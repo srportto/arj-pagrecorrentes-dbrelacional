@@ -5,7 +5,6 @@
 Definir a listagem paginada de autorizações resumidas por conta contratante no `contratoquery` via `GET /api/autorizacoes`, com filtro por status, paginação e ordenação, e a estrutura do DTO de resposta. A listagem pertence exclusivamente ao `contratoquery` (lado de leitura do CQRS).
 
 > **Nota (2026-08-09):** esta spec é o que o `contratoquery` expõe. O `contratocommand` representa a mesma autorização com nomes de campo e formato de `status` diferentes (`status` como `Integer`, nomes longos como `valorAutorizacao` / `dataHoraInclusao` / `dataHoraUltimaAtualizacao`). Não há migração planejada — ver change `reconciliar-contrato-spec-doc` D1/D2.
-
 ## Requirements
 ### Requirement: Listar autorizações paginadas por conta contratante
 O `contratoquery` SHALL expor o endpoint `GET /api/autorizacoes` que retorna uma página de autorizações resumidas de uma conta contratante, com suporte a filtro por status, paginação e ordenação configuráveis.
@@ -49,7 +48,7 @@ Os parâmetros de paginação e ordenação SHALL respeitar os limites definidos
 - **THEN** o sistema retorna HTTP 200 com `conteudo=[]` e `totalElementos=0`
 
 ### Requirement: Estrutura do DTO de resposta de listagem
-Cada item da listagem SHALL conter os campos resumidos de uma autorização: `idAutorizacao`, `dataCriacao`, `dataInicioVigencia`, `dataFimVigencia`, `idPessoaRecebedora`, `nomeRecebedor`, `valor`, `status` (nome do enum, não o código inteiro) e `metadado`.
+Cada item da listagem SHALL conter os campos resumidos de uma autorização: `idAutorizacao`, `tipoProduto`, `dataCriacao`, `dataInicioVigencia`, `dataFimVigencia`, `idPessoaRecebedora`, `nomeRecebedor`, `valor`, `status` (nome do enum, não o código inteiro), `motivoStatus` e `metadado`.
 
 #### Scenario: Status é retornado como nome do enum
 - **WHEN** a autorização tem `status = 4` (código do `ATIVA`)
@@ -58,6 +57,15 @@ Cada item da listagem SHALL conter os campos resumidos de uma autorização: `id
 #### Scenario: Campo nomeRecebedor está presente mas pode ser nulo
 - **WHEN** a autorização é retornada na listagem
 - **THEN** o campo `nomeRecebedor` está presente na resposta (podendo ser `null` até integração posterior)
+
+#### Scenario: Campo tipoProduto identifica o produto do item da listagem
+- **WHEN** a autorização listada é do produto `PIX_AUTO`
+- **THEN** o campo `tipoProduto` no item da listagem é `"PIX_AUTO"`
+- **AND** o mesmo vale para `DDA_AUTO`, sem exigir uma chamada adicional a `GET /api/autorizacoes/{autorizacaoId}` para descobrir o produto
+
+#### Scenario: Campo motivoStatus está presente na listagem
+- **WHEN** a autorização listada tem um `motivoStatus` registrado (ex.: `RECEPCAO_SPI_J1`)
+- **THEN** o campo `motivoStatus` no item da listagem reflete o mesmo valor exposto em `GET /api/autorizacoes/{autorizacaoId}`
 
 ### Requirement: Listagem de autorizações pertence ao contratoquery
 O endpoint de listagem `GET /api/autorizacoes` SHALL existir apenas no `contratoquery`; o `contratocommand` SHALL expor apenas `POST /api/autorizacoes` e `PATCH /api/autorizacoes/{idAutorizacao}/cancelar`.

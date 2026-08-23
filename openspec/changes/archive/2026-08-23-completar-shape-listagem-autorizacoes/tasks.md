@@ -33,5 +33,6 @@
       confirmar presença de `tipoProduto` e `motivoStatus` no JSON de cada item — confirmado
       contra o ambiente local (`docker compose`), incluindo os dois valores de `TipoProduto`
       (`PIX_AUTO` e `DDA_AUTO`) em itens reais da listagem
-- [ ] 4.4 Rodar `openspec archive completar-shape-listagem-autorizacoes` após merge, sincronizando
-      o delta com `openspec/specs/listar-autorizacoes/spec.md`
+- [x] 4.4 Rodar `openspec archive completar-shape-listagem-autorizacoes` após merge, sincronizando
+      o delta com `openspec/specs/listar-autorizacoes/spec.md` — PR #51 mergeado em
+      `feat-finalizacao-projeto` -> branch atual
