@@ -31,19 +31,21 @@ CREATE ROLE expurgo_particao_rotina LOGIN PASSWORD :'senha_expurgo_particao_roti
 GRANT CONNECT ON DATABASE "db-csp-postgres" TO expurgo_particao_rotina;
 GRANT USAGE ON SCHEMA public TO expurgo_particao_rotina;
 
--- SELECT sobre a tabela-pai basta para consultar qualquer particao (o Postgres roteia a
--- leitura para a particao correta); nao concede SELECT direto em nenhuma particao
--- individual, que seria redundante.
+-- GRANT SELECT na tabela-pai nao basta: persistencia.py (existe_dado,
+-- max_data_hora_ultima_atlz) consulta a particao pelo nome direto
+-- (`SELECT ... FROM autorizacoes_pe<n>`), nao atraves da tabela-pai -- o Postgres so
+-- roteia herdando privilegio quando a consulta entra pela tabela-pai. Por isso SELECT
+-- e' concedido particao a particao (900..999), igual ao TRUNCATE abaixo -- nunca na
+-- tabela-pai isoladamente, nem nas particoes quentes (0..888). Confirmado por falha real
+-- em execucao local (permission denied for table autorizacoes_pe957) antes desta correcao.
 GRANT SELECT ON autorizacoes TO expurgo_particao_rotina;
 
--- TRUNCATE e' concedido particao a particao (900..999) -- nunca na tabela-pai, e nunca
--- nas particoes quentes (0..888). Uma tentativa de truncar a tabela-pai ou uma particao
--- quente falha por falta de privilegio, nao por logica de aplicacao.
 DO $$
 DECLARE
     i INT;
 BEGIN
     FOR i IN 900..999 LOOP
+        EXECUTE format('GRANT SELECT ON autorizacoes_pe%s TO expurgo_particao_rotina;', i);
         EXECUTE format('GRANT TRUNCATE ON autorizacoes_pe%s TO expurgo_particao_rotina;', i);
     END LOOP;
 END $$;
