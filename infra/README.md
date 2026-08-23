@@ -4,12 +4,13 @@ Código de infraestrutura do monorepo, separado do código de aplicação (`apps
 
 ## Estado atual desta pasta
 
-`modules/networking`, `modules/ecs-cluster`, `modules/ecs-service`, `envs/local` e
-`envs/local-messaging` têm Terraform funcional, validado com `terraform apply` real
+`modules/networking`, `modules/ecs-cluster`, `modules/ecs-service`, `modules/lambda-scheduled`,
+`envs/local` e `envs/local-messaging` têm Terraform funcional, validado com `terraform apply` real
 contra o [Floci](../docs/floci-aws-local/floci-aws-local.md) (emulador AWS local — ver
-`openspec/changes/archive/2026-07-20-add-ecs-networking-foundation` e
-`openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs` para o histórico completo das
-mudanças). Nesta fase:
+`openspec/changes/archive/2026-07-20-add-ecs-networking-foundation`,
+`openspec/changes/archive/2026-07-25-add-eventos-autorizacao-sns-sqs` e a capability
+[reclamacao-particao-expurgo](../openspec/specs/reclamacao-particao-expurgo/spec.md) para o
+histórico completo das mudanças). Nesta fase:
 
 - **Nenhum recurso de AWS real é provisionado** — `envs/local` só fala com o
   Floci (`localhost:4566`), com credenciais fake.
@@ -32,6 +33,7 @@ infra/
 │   ├── networking/         # VPC vpc-arj, 6 subnets, IGW, NAT, rotas, SSM         [funcional]
 │   ├── ecs-cluster/        # cluster ECS Fargate + ALB internet-facing            [funcional]
 │   ├── ecs-service/        # ECS Service parametrizavel (instanciado 2x)          [funcional]
+│   ├── lambda-scheduled/   # Lambda + EventBridge Scheduler + IAM (expurgo-particao) [funcional]
 │   ├── elasticache-valkey/ # cluster ElastiCache Valkey (temporiza-autorizacao)   [funcional]
 │   ├── rds-postgres/       # (futuro)
 │   └── observability/      # (futuro)
@@ -44,8 +46,10 @@ infra/
 ```
 
 - [`modules/`](modules/) — blocos Terraform reutilizáveis, um módulo por responsabilidade.
-- [`envs/local/`](envs/local/) — composição dos módulos (VPC/ECS) para rodar contra o
-  Floci. Ver o README de lá para pré-requisitos e o passo a passo de `apply`.
+- [`envs/local/`](envs/local/) — composição dos módulos (VPC/ECS/Lambda) para rodar contra o
+  Floci. Ver o README de lá para pré-requisitos e o passo a passo de `apply`. Provisiona um
+  repositório ECR por app publicável (`contratocommand`, `contratoquery` e `expurgo-particao`,
+  ver `ecr.tf`), com a imagem publicada pelo `build-and-push.sh` já existente.
 - [`envs/local-messaging/`](envs/local-messaging/) — root independente que provisiona o
   tópico SNS `sns-estados-autorizacao` e as filas SQS `SQS-eventos-autorizacao` (sem
   filtro, consumida pelo `autorizacaostatus-producer`) e `SQS-temporizacao-autorizacao`
