@@ -2478,16 +2478,16 @@
     "semantic_hash": "8117ad2b016fc6ef6605613011be3d28"
   },
   "AGENTS.md": {
-    "mtime": 1787497159.9837384,
-    "seen": 1787570085.0683346,
-    "ast_hash": "8d469ce8dc85661f420b6999486090fb",
-    "semantic_hash": "8d469ce8dc85661f420b6999486090fb"
+    "mtime": 1787571934.7916327,
+    "seen": 1787572093.0752468,
+    "ast_hash": "1b1d746e9274614ef17c2b17af09b974",
+    "semantic_hash": "1b1d746e9274614ef17c2b17af09b974"
   },
   "CLAUDE.md": {
-    "mtime": 1787497159.9837384,
-    "seen": 1787570085.0683348,
-    "ast_hash": "8d469ce8dc85661f420b6999486090fb",
-    "semantic_hash": "8d469ce8dc85661f420b6999486090fb"
+    "mtime": 1787571930.1758938,
+    "seen": 1787572093.0752482,
+    "ast_hash": "1b1d746e9274614ef17c2b17af09b974",
+    "semantic_hash": "1b1d746e9274614ef17c2b17af09b974"
   },
   "README.md": {
     "mtime": 1787533714.6432672,
@@ -5350,5 +5350,77 @@
     "seen": 1787570085.06856,
     "ast_hash": "59812a92c148ffd4b3806ed36c8f1bd6",
     "semantic_hash": "59812a92c148ffd4b3806ed36c8f1bd6"
+  },
+  "openspec/changes/archive/2026-07-26-add-maquina-estados-autorizacao/.openspec.yaml": {
+    "mtime": 1786921600.8758926,
+    "seen": 1787572093.075249,
+    "ast_hash": "43b46c3539dc46d9eb3ccb86b47c3f62",
+    "semantic_hash": "43b46c3539dc46d9eb3ccb86b47c3f62"
+  },
+  "openspec/changes/archive/2026-08-02-migrar-sqs-listener-spring-cloud-aws/.openspec.yaml": {
+    "mtime": 1786921600.8758926,
+    "seen": 1787572093.0752497,
+    "ast_hash": "16d96ff269851312c095f7034663f65f",
+    "semantic_hash": "16d96ff269851312c095f7034663f65f"
+  },
+  "openspec/changes/archive/2026-08-16-hexagonal-classico-autorizacaostatus-producer/.openspec.yaml": {
+    "mtime": 1786921600.9334486,
+    "seen": 1787572093.0752501,
+    "ast_hash": "f6a6e960855e04b76357125897208c3b",
+    "semantic_hash": "f6a6e960855e04b76357125897208c3b"
+  },
+  "openspec/changes/archive/2026-08-16-hexagonal-classico-contratoquery/.openspec.yaml": {
+    "mtime": 1786921600.9353733,
+    "seen": 1787572093.0752506,
+    "ast_hash": "f6a6e960855e04b76357125897208c3b",
+    "semantic_hash": "f6a6e960855e04b76357125897208c3b"
+  },
+  "openspec/changes/archive/2026-08-16-hexagonal-classico-eventos-consumer/.openspec.yaml": {
+    "mtime": 1786921600.9353733,
+    "seen": 1787572093.0752513,
+    "ast_hash": "f6a6e960855e04b76357125897208c3b",
+    "semantic_hash": "f6a6e960855e04b76357125897208c3b"
+  },
+  "openspec/changes/archive/2026-08-16-hexagonal-classico-temporiza-autorizacao/.openspec.yaml": {
+    "mtime": 1786921600.9353733,
+    "seen": 1787572093.075252,
+    "ast_hash": "f6a6e960855e04b76357125897208c3b",
+    "semantic_hash": "f6a6e960855e04b76357125897208c3b"
+  },
+  "openspec/changes/archive/2026-08-23-ci-testes-unitarios-apps/.openspec.yaml": {
+    "mtime": 1787524659.0236483,
+    "seen": 1787572093.0752525,
+    "ast_hash": "13cebc24604c00869a926f4036109903",
+    "semantic_hash": "13cebc24604c00869a926f4036109903"
+  },
+  "openspec/changes/archive/2026-08-23-completar-shape-listagem-autorizacoes/.openspec.yaml": {
+    "mtime": 1787524659.0254865,
+    "seen": 1787572093.0752528,
+    "ast_hash": "2806eaf62d9933d9805d6b6f6ac7e5b1",
+    "semantic_hash": "2806eaf62d9933d9805d6b6f6ac7e5b1"
+  },
+  "openspec/changes/archive/2026-08-23-documentar-postgres-local-extensoes/.openspec.yaml": {
+    "mtime": 1787497160.0057936,
+    "seen": 1787572093.0752535,
+    "ast_hash": "425867d962d244459073d01aa410ec12",
+    "semantic_hash": "425867d962d244459073d01aa410ec12"
+  },
+  "openspec/changes/archive/2026-08-23-fixar-versao-pgvector/.openspec.yaml": {
+    "mtime": 1787497160.0057936,
+    "seen": 1787572093.075254,
+    "ast_hash": "425867d962d244459073d01aa410ec12",
+    "semantic_hash": "425867d962d244459073d01aa410ec12"
+  },
+  "openspec/changes/archive/2026-08-23-reclamar-particao-expurgo-ciclo/.openspec.yaml": {
+    "mtime": 1787497160.0057936,
+    "seen": 1787572093.0752542,
+    "ast_hash": "425867d962d244459073d01aa410ec12",
+    "semantic_hash": "425867d962d244459073d01aa410ec12"
+  },
+  "openspec/changes/archive/2026-08-24-testes-de-carga-tps/.openspec.yaml": {
+    "mtime": 1787525686.6398635,
+    "seen": 1787572093.0752547,
+    "ast_hash": "58f06577e7d274d5b858b92a29899d1e",
+    "semantic_hash": "58f06577e7d274d5b858b92a29899d1e"
   }
 }
