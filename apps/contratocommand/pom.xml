@@ -79,6 +79,14 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+		<dependency>
+			<!-- Endpoint /actuator/prometheus: expoe hikaricp_connections_pending para o
+			     kill switch de nivel aplicacao da capability de teste de carga (change
+			     testes-de-carga-tps, design.md D1). Exposicao real do endpoint fica restrita
+			     ao profile local (application-local.yaml); prod continua so com health. -->
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>

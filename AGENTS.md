@@ -2,6 +2,11 @@
 
 > Mapa enxuto para agentes de IA. Diagrama de fluxo, portas e estrutura completa do repo estão no [README.md](README.md).
 
+> Para entender este projeto, comece pela análise do grafo de conhecimento gerado pelo `graphify`
+> (`graphify-out/`, skill `graphify`) — só leia arquivos diretamente quando necessário ou ao
+> desconfiar de alguma imprecisão no grafo. Atualize o `graphify` sempre que encontrar divergência
+> entre o grafo e o código, e sempre ao final da conclusão de uma change.
+
 Monorepo de 5 microserviços Java (hexagonal, Spring Boot 4) em torno de autorizações de pagamentos recorrentes (PIX Automático / DDA Automático).
 
 | Serviço (porta) | O quê | Guia |
@@ -19,7 +24,7 @@ Antes de editar código de um serviço, leia o `CLAUDE.md` dele (armadilhas, flu
 - **Schemas são espelhados manualmente**: `AutorizacaoEventoPayload` (JSON) vive em `contratocommand` e `autorizacaostatus-producer` como cópias independentes; `EventoAutorizacao.avsc` (Avro) vive em `autorizacaostatus-producer` e `eventos-consumer` (o consumer **não** consome o JSON — recebe Avro direto do tópico Kafka, o `.avsc` é o seu espelho). Não há módulo compartilhado. Mudou um, replique nos outros. `temporiza-autorizacao` usa apenas um **subconjunto** do payload (id + data de inclusão), não um espelho completo.
 - Em cada app, `CLAUDE.md` e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.
 - Skills do monorepo (arquitetura hexagonal, JPA, mensageria SQS/Kafka, revisão de código etc.) ficam em `.claude/skills/` — consulte antes de decidir onde um componente novo deve viver.
-- **Modelos dos agents** (`.claude/agents/`): cada agent declara `model:` como lista de fallback `[alias-primário, 'correlato (copilot)']` — o runtime usa o primeiro disponível. Tiers calibrados: `opus`→`Qwen: Qwen3.8 Max`, `sonnet`→`MiniMax: MiniMax M3`, `haiku`→`MoonshotAI: Kimi K2.7 Code`. Mantenha o alias Claude primeiro e o correlato entre aspas com sufixo `(copilot)` (o nome precisa bater com o exibido no seletor de modelos).
+- **Modelos dos agents** (`.claude/agents/`): cada agent declara `model:` como string simples de um tier Claude (`opus`, `sonnet` ou `haiku`) — sem lista de fallback nem correlato copilot.
 - **Autorizações `PIX_AUTO` nascem `RECEBIDA`** e só viram `ATIVA` após aprovação do cliente
   pagador (`PATCH /decisao` no `contratocommand`) — ou `REJEITADA` se o cliente rejeitar
   ou se o prazo de 10 minutos da jornada 1 expirar (temporizado por `temporiza-autorizacao`).

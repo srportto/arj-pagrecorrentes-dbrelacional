@@ -159,6 +159,7 @@ arj-pagrecorrentes-dbrelacional/
 │   ├── temporiza-autorizacao/       # Temporizador da jornada 1 do PIX_AUTO, sem banco (Java 25 + Spring Boot 4.0.7)
 │   ├── expurgo-particao/            # Lambda agendada que fecha o ring buffer de expurgo (Python 3.13)
 │   └── docker-compose.yml      # Ambiente local: as 5 apps Java (Postgres vem só de infra/local/postgres/)
+├── testes-carga/               # Teste de carga (TPS) — módulo Maven independente (Gatling), ver "Teste de Carga (TPS)" abaixo
 ├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
 │   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, elasticache-valkey, observability)
 │   ├── envs/{local,local-messaging,prod}/  # Composição dos módulos por ambiente
@@ -285,6 +286,31 @@ Cada aplicação usa `application.yml` (configuração comum) mais `application-
 Testes de integração (Postgres, Floci, Valkey) não rodam no CI hoje — seguem manuais, com infra local
 no ar (ver `infra/local/`).
 
+## Teste de Carga (TPS)
+
+`testes-carga/` (módulo Maven independente, Gatling) mede o TPS de criação/cancelamento/decisão
+no `contratocommand`, o TPS de consulta no `contratoquery`, e o comportamento do pipeline
+assíncrono (SNS/SQS/Kafka) sob carga — change `testes-de-carga-tps`, ver
+[proposal.md](openspec/changes/testes-de-carga-tps/proposal.md) e
+[design.md](openspec/changes/testes-de-carga-tps/design.md) para o racional completo (critério
+de colapso multi-sinal, kill switches automáticos, classificação de erro em 3 categorias).
+
+> Execução **só local** — os números abaixo refletem o ambiente `docker-compose` local, com
+> `deploy.resources.limits` (CPU/mem) aplicado por container; não representam capacidade de
+> produção.
+
+Achados da execução mais recente (baseline + rodada agressiva,
+[relatório completo](testes-carga/relatorios/RESUMO-baseline-2026-08-23.md)):
+
+| Componente | Resultado |
+|---|---|
+| `contratocommand` (criação → decisão → cancelamento) | ~450 req/s sustentado sem colapso do servidor; teto real não encontrado — o gerador de carga local esbarrou em esgotamento de porta efêmera antes do sistema. HTTP 409 real de idempotência observado sob concorrência, corretamente não contado como colapso. |
+| `contratoquery` (listagem) | **Colapso real confirmado** com massa de dado representativa (~281 mil linhas, 889 partições): p99 salta de 18ms (banco vazio) para **52 segundos**, com conexões fechadas pelo servidor. Confirma empiricamente o gargalo de scan sem poda por partição já documentado (`apps/contratoquery/CLAUDE.md`, armadilha 8). |
+| Pipeline assíncrono (SNS→SQS→Kafka→`eventos-consumer`, SQS→`temporiza-autorizacao`) | 60 req/s sustentado por 8 min, 0 falhas, fila SQS e lag do consumer group Kafka em 0 durante toda a execução — sem sinal de colapso até essa taxa. |
+
+Rodar: ver [testes-carga/README.md](testes-carga/README.md) (pré-requisitos, como executar cada
+cenário, convenção de limpeza de massa de teste).
+
 ## Documentação
 
 | Arquivo | Descrição |
@@ -303,6 +329,8 @@ no ar (ver `infra/local/`).
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
 | [infra/local/postgres/exemplos-queries.sql](infra/local/postgres/exemplos-queries.sql) | Scripts SQL de particionamento |
 | [docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) | POC do particionamento com UUIDv7 reversível (Buffer Ring) |
+| [testes-carga/README.md](testes-carga/README.md) | Teste de carga (TPS): ferramenta, cenários, limites de recursos, como rodar |
+| [testes-carga/relatorios/RESUMO-baseline-2026-08-23.md](testes-carga/relatorios/RESUMO-baseline-2026-08-23.md) | Resultados reais do baseline de TPS e da rodada agressiva (colapso real confirmado no `contratoquery`) |
 
 ## Licença
 

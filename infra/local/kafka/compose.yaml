@@ -32,6 +32,12 @@ services:
       timeout: 10s
       retries: 15
     restart: unless-stopped
+    # Ponto de partida para calibracao (change testes-de-carga-tps, design.md D5).
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   # Cria eventos-autorizacao e eventos-autorizacao.DLT (3 particoes cada) e encerra.
   # auto.create.topics.enable fica desligado no broker: os topicos sao contrato
@@ -72,6 +78,11 @@ services:
       timeout: 5s
       retries: 15
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   kafbat-ui:
     image: ghcr.io/kafbat/kafka-ui:latest
@@ -90,6 +101,11 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 volumes:
   kafka_data:

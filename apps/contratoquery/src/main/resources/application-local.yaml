@@ -2,3 +2,10 @@ management:
     endpoint:
         health:
             show-details: always
+    endpoints:
+        web:
+            exposure:
+                # prometheus: alimenta o kill switch de nivel aplicacao da capability de teste
+                # de carga (change testes-de-carga-tps, design.md D1) via hikaricp_connections_pending.
+                # Restrito ao profile local -- prod continua so com health (application.yaml base).
+                include: health,prometheus
