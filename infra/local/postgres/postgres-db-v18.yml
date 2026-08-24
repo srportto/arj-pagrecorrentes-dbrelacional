@@ -31,6 +31,16 @@ services:
     networks:
       - postgres_default
     restart: unless-stopped
+    # Ponto de partida para calibracao (change testes-de-carga-tps, design.md D5) --
+    # Postgres e compartilhado entre contratocommand e contratoquery, e e o servico com
+    # maior chance de virar gargalo sob carga concorrente (scan de particoes na listagem,
+    # pool Hikari de ambas as apps). Memoria generosa por causa do shared_buffers/cache
+    # de 989 particoes.
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
 
 networks:
   # Nome literal explicito (nao o default implicito derivado do diretorio do projeto):

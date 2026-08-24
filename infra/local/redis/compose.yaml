@@ -15,6 +15,12 @@ services:
     networks:
       - redis_default
     restart: unless-stopped
+    # Ponto de partida para calibracao (change testes-de-carga-tps, design.md D5).
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
 networks:
   # Nome literal explicito (nao mais o default implicito derivado do diretorio do

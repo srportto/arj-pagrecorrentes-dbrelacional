@@ -17,6 +17,16 @@ services:
       - postgres_default
       - floci_default
     restart: unless-stopped
+    # Limite explicito de CPU/mem -- pre-requisito da capability de teste de carga
+    # (change testes-de-carga-tps, design.md D5): sem isso, um teste local mede a
+    # capacidade do Docker Desktop do executor, nao do servico. Valores sao ponto de
+    # partida para calibracao, nao teto definitivo -- mesma convencao de
+    # MAX_CONCURRENT_MESSAGES documentada em SqsListenerContainerFactoryConfig.
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   contratoquery:
     build:
@@ -33,6 +43,11 @@ services:
       - default
       - postgres_default
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   autorizacaostatus-producer:
     build:
@@ -50,6 +65,11 @@ services:
       - floci_default
       - kafka-eventos-autorizacao
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   eventos-consumer:
     build:
@@ -64,6 +84,11 @@ services:
       - default
       - kafka-eventos-autorizacao
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   temporiza-autorizacao:
     build:
@@ -81,6 +106,10 @@ services:
     restart: unless-stopped
     deploy:
       replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 networks:
   default: {}

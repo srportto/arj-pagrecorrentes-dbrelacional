@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>br.com.srportto</groupId>
+    <artifactId>testes-carga</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <!-- Modulo Maven independente, fora do build das 5 apps: nao e empacotado nem
+         deployado com elas. Ferramenta de diagnostico (change testes-de-carga-tps),
+         nao codigo de producao. -->
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <gatling.version>3.13.5</gatling.version>
+        <gatling-maven-plugin.version>4.16.3</gatling-maven-plugin.version>
+        <aws-sdk.version>2.29.0</aws-sdk.version>
+        <kafka-clients.version>3.9.0</kafka-clients.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>${gatling.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Poll de profundidade de fila SQS (kill switch de nivel fila/lag, design.md D2)
+             contra o Floci: mesmo SDK v2 ja usado por apps/contratocommand. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+            <version>${aws-sdk.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Poll de lag de consumer group Kafka (kill switch de nivel fila/lag, design.md D2). -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka-clients.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Cliente Postgres para o script de limpeza de massa de teste (D6) e para consultar
+             pg_stat_activity, se algum cenario precisar de sinal adicional. -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.4</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${gatling-maven-plugin.version}</version>
+                <configuration>
+                    <runMultipleSimulations>false</runMultipleSimulations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

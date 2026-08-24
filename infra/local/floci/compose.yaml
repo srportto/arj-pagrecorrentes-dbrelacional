@@ -13,6 +13,14 @@ services:
     networks:
       - floci_default
     restart: unless-stopped
+    # Ponto de partida para calibracao (change testes-de-carga-tps, design.md D5). Floci
+    # roda ECS/Lambda como containers Docker reais (sibling, via docker.sock) e o registry
+    # ECR emulado como container proprio -- memoria mais generosa que os apps Java simples.
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
 networks:
   # Nome literal explicito (nao mais o default implicito derivado do diretorio do
