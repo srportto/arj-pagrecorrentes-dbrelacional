@@ -17,7 +17,7 @@
 
 ## contratocommand (porta 8080)
 
-Base: `/api/autorizacoes`. API de escrita — cria, cancela e decide autorizações.
+Base: `/api/autorizacoes`. API de escrita — cria, cancela, decide e atualiza dados de autorizações.
 
 ### POST `/api/autorizacoes` — Criar autorização (multi-produto)
 
@@ -180,6 +180,49 @@ linha — sinal para o chamador automatizado não repetir.
 | 500 | Erro inesperado de aplicação | `LayoutErrosApiResponse` |
 
 > Não existe 404 neste endpoint — ver divergência 7 abaixo.
+
+### PATCH `/api/autorizacoes/{idAutorizacao}/atualizar` — Atualizar dados da recorrência
+
+Atualiza, de forma **parcial**, os campos `valorLimite`, `dataFimVigencia`,
+`indicadorUsoLimiteConta` e `quantidadeDividasCiclo` de uma autorização `ATIVA`. Campo ausente ou
+enviado como `null` no corpo **não altera** aquele campo — não é preciso reenviar os 4 campos a
+cada chamada. Endpoint novo, sem contrato prévio no gateway (adicionado após a geração original
+deste documento, ver nota no topo).
+
+**Path param:** `idAutorizacao` (string/UUID)
+**Header obrigatório:** `tipoProduto` (ex.: `PIX_AUTO`) — deve bater com o produto persistido.
+
+**Request body** (`AtualizarDadosRecorrenciaRequest`):
+
+| Campo | Tipo | Obrigatório |
+|---|---|---|
+| `valorLimite` | BigDecimal | não — `null`/ausente não altera; quando informado, deve ser `> 0` |
+| `dataFimVigencia` | Date (`yyyy-MM-dd`) | não — `null`/ausente não altera; quando informada, não pode estar no passado |
+| `indicadorUsoLimiteConta` | Integer | não — `null`/ausente não altera; sem validação de faixa |
+| `quantidadeDividasCiclo` | Integer | não — `null`/ausente não altera; quando informado, deve ser `>= 1` |
+| `codigoCanalAtualizacao` | String | sim |
+| `idPessoaAtualizacao` | UUID | sim |
+
+```json
+{
+  "valorLimite": 5000.00,
+  "codigoCanalAtualizacao": "01",
+  "idPessoaAtualizacao": "550e8400-e29b-41d4-a716-446655440001"
+}
+```
+
+**Respostas:**
+
+| Status | Quando | Schema |
+|---|---|---|
+| 200 | Atualização aplicada | `AutorizacaoCompletaResponseDto` |
+| 409 | Conflito de concorrência (lock otimista) | `LayoutErrosApiResponse` |
+| 422 | Status diferente de `ATIVA`, produto divergente, `dataFimVigencia` no passado, `valorLimite` <= 0, falha de formato (`quantidadeDividasCiclo` < 1, `codigoCanalAtualizacao`/`idPessoaAtualizacao` ausentes) — **inclui autorização inexistente** | `LayoutErrosApiValidationsResponse` ou `LayoutErrosApiResponse` |
+| 500 | Erro inesperado de aplicação | `LayoutErrosApiResponse` |
+
+> Não existe 404 neste endpoint — mesma convenção de `cancelar`/`decisao` (ver divergência 7 abaixo).
+> Não transiciona status: o evento publicado no SNS carrega `tipoEvento=ATIVACAO` (o mesmo de uma
+> ativação real), sem valor de enum dedicado — ver `CLAUDE.md`/`AGENTS.md` de `contratocommand`.
 
 ### Shapes de erro do command
 

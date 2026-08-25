@@ -3,6 +3,11 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
+> Para entender este serviço, comece pela análise do grafo de conhecimento gerado pelo
+> `graphify` (`../../graphify-out/`, skill `graphify`) — só leia arquivos diretamente quando
+> necessário ou ao desconfiar de alguma imprecisão no grafo. Atualize o `graphify` sempre que
+> encontrar divergência entre o grafo e o código, e sempre ao final da conclusão de uma change.
+
 Temporizador da jornada 1 do PIX Automático, em **arquitetura hexagonal clássica**
 (`domain` / `application` / `infrastructure`). Consome os eventos de recepção de
 autorizações `PIX_AUTO`/`SPI_J1` publicados pelo `contratocommand` (via

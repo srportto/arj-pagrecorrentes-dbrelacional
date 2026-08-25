@@ -27,7 +27,13 @@ public record AutorizacaoDetalheResponseDto(
         UUID idPessoaRecebedora,
         String idAutorizacaoEmpresa,
         String descricao,
-        JsonNode metadado) {
+        JsonNode metadado,
+        Short frequenciaPagamento,
+        Short quantidadeDividasCiclo,
+        Short indicadorUsoLimiteConta,
+        Short indicadorTipoMensageria,
+        String codigoCanalContratacao,
+        CancelamentoResponseDto cancelamento) {
 
     public static AutorizacaoDetalheResponseDto from(Autorizacao autorizacao) {
         return new AutorizacaoDetalheResponseDto(
@@ -47,6 +53,12 @@ public record AutorizacaoDetalheResponseDto(
                 autorizacao.getIdPessoaRecebedora(),
                 autorizacao.getIdAutorizacaoEmpresa(),
                 autorizacao.getDescricao(),
-                MetadadoJsonParser.parse(autorizacao.getMetadados()));
+                MetadadoJsonParser.parse(autorizacao.getMetadados()),
+                autorizacao.getFrequenciaPagamento(),
+                autorizacao.getQuantidadeDividasCiclo(),
+                autorizacao.getIndicadorUsoLimiteConta(),
+                autorizacao.getIndicadorTipoMensageria(),
+                autorizacao.getCodigoCanalContratacao(),
+                CancelamentoResponseDto.from(autorizacao.getCancelamento()));
     }
 }

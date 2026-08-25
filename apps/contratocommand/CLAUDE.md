@@ -3,12 +3,17 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
+> Para entender este serviço, comece pela análise do grafo de conhecimento gerado pelo
+> `graphify` (`../../graphify-out/`, skill `graphify`) — só leia arquivos diretamente quando
+> necessário ou ao desconfiar de alguma imprecisão no grafo. Atualize o `graphify` sempre que
+> encontrar divergência entre o grafo e o código, e sempre ao final da conclusão de uma change.
+
 API REST de **autorizações de produtos financeiros** (PIX Automático e DDA Automático), em **arquitetura hexagonal**, com **particionamento temporal** em PostgreSQL e expurgo automático de dados.
 
 ## Comece por aqui
 
 Leia nesta ordem:
-1. [AutorizacaoController.java](src/main/java/br/com/srportto/contratocommand/infrastructure/web/AutorizacaoController.java) — os 3 endpoints REST, traduz request em comando e chama a porta de entrada
+1. [AutorizacaoController.java](src/main/java/br/com/srportto/contratocommand/infrastructure/web/AutorizacaoController.java) — os 4 endpoints REST, traduz request em comando e chama a porta de entrada
 2. [CriarAutorizacaoService.java](src/main/java/br/com/srportto/contratocommand/application/usecase/CriarAutorizacaoService.java) — caso de uso compartilhado (validação → mapper → save), implementa `domain/port/in/CriarAutorizacaoUseCase`
 3. [ContratacaoValidator.java](src/main/java/br/com/srportto/contratocommand/domain/service/contratacao/ContratacaoValidator.java) — validação de regras de negócio via rules
 4. [Autorizacao.java](src/main/java/br/com/srportto/contratocommand/domain/model/Autorizacao.java) — modelo de domínio puro (sem JPA); a entidade JPA é [AutorizacaoJpaEntity.java](src/main/java/br/com/srportto/contratocommand/infrastructure/persistence/AutorizacaoJpaEntity.java)
@@ -79,6 +84,7 @@ da requisição, sem precisar repeti-lo em cada chamada de `log.info`.
 | POST | `/api/autorizacoes` | Criar autorização (multi-produto). Body `CriarAutorizacaoRequest`. → 201 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar. **Header obrigatório `tipoProduto`**. → 200 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/decisao` | Decisão sobre autorização em `RECEBIDA` (jornada 1 do PIX_AUTO): `acao` = `APROVAR`\|`REJEITAR`\|`EXPIRAR`. **Header obrigatório `tipoProduto`**. → 200 (aplicada) / 422 (status não permite — inclui já resolvida) |
+| PATCH | `/api/autorizacoes/{idAutorizacao}/atualizar` | Atualização parcial de `valorLimite`, `dataFimVigencia`, `indicadorUsoLimiteConta`, `quantidadeDividasCiclo` de uma autorização `ATIVA` — campo ausente/`null` no body não altera. **Header obrigatório `tipoProduto`**. Body exige `codigoCanalAtualizacao`+`idPessoaAtualizacao` (auditoria). → 200 / 422 (status != ATIVA, produto divergente, `dataFimVigencia` no passado, `valorLimite` <= 0) |
 | GET | `/actuator/health` | Health-check (Actuator) com readiness de banco (indicador `db`). → 200 (UP) / 503 (DOWN) |
 
 > A base é `/api/autorizacoes` (**plural**). Não existem `/olaMundo` nem `/ativas`. As leituras ficam no `contratoquery` (porta 8081): `GET /api/autorizacoes` (listagem paginada por conta — params `idUnicoContaContratante`, `status`, `pagina`, `tamanho`, `ordenarPor`) e `GET /api/autorizacoes/{autorizacaoId}` (consulta por id, 404 se não encontrado).
@@ -91,10 +97,10 @@ da requisição, sem precisar repeti-lo em cada chamada de `log.info`.
 |---|---|---|
 | 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente não respeitou as validações declarativas. Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
 | 409 | `RecursoJaExisteException` | `id_autorizacao_empresa` já existe no `POST /api/autorizacoes` (constraint UNIQUE em `(id_particao_conta, id_autorizacao_empresa)`) |
-| 409 | `ObjectOptimisticLockingFailureException` | Concorrência em `PATCH /api/autorizacoes/{id}/cancelar` ou `/decisao` — outro chamador já alterou a linha |
+| 409 | `ObjectOptimisticLockingFailureException` | Concorrência em `PATCH /api/autorizacoes/{id}/cancelar`, `/decisao` ou `/atualizar` — outro chamador já alterou a linha |
 | 409 | `ConcurrencyFailureException` (inclui `CannotAcquireLockException`) | Concorrência na troca de partição do `ExpurgoAutorizacaoService`. Quando a transação vencedora move a linha, o Postgres não consegue seguir a cadeia de atualização entre partições e devolve `tuple to be locked was already moved to another partition` (SQLSTATE 40001) — conflito real, não erro interno |
 | 409 | `StaleStateException` / `DataIntegrityViolationException` | Estado obsoleto ou violação de integridade em escrita concorrente |
-| 422 | `BusinessException` | Violação de regra de negócio — **inclui autorização inexistente** em `cancelar`/`decidir` (não existe 404 nestas rotas: `ResourceNotFoundException` não existe no código desta app), validação de produto, dados inválidos, transição de status inválida |
+| 422 | `BusinessException` | Violação de regra de negócio — **inclui autorização inexistente** em `cancelar`/`decidir`/`atualizar` (não existe 404 nestas rotas: `ResourceNotFoundException` não existe no código desta app), validação de produto, dados inválidos, transição de status inválida |
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
 
@@ -123,20 +129,22 @@ domain/           → Java puro, sem Spring/JPA (exceção estreita: domain/serv
                        nunca lidos/decididos pelo domínio (ver design.md da change
                        hexagonal-classico-contratocommand-dominio-puro)
   port/in/          → interfaces de use case (CriarAutorizacaoUseCase, CancelarAutorizacaoUseCase,
-                       DecidirAutorizacaoUseCase) + os comandos (*Command)
+                       DecidirAutorizacaoUseCase, AtualizarDadosRecorrenciaUseCase) + os comandos
+                       (*Command)
   port/out/         → AutorizacaoRepository (save/findById/existeAutorizacaoAtivaComIdEmpresa/
                        transferirParaExpurgo — sem partição na assinatura) e
                        GeradorIdentidadeAutorizacao (UUID gerarPara(UUID idUnicoContaContratante))
-  service/          → framework de validação (Rule, Validator), os três validadores e as dez rules
-                       concretas — única exceção a "domínio sem Spring": @Component/@Order (D2)
+  service/          → framework de validação (Rule, Validator), os quatro validadores (contratacao,
+                       cancelamento, decisao, atualizacao) e as quatorze rules concretas — única
+                       exceção a "domínio sem Spring": @Component/@Order (D2)
   event/            → AutorizacaoPersistidaEvent (evento de domínio)
   exception/        → BusinessException, ApplicationException, RecursoJaExisteException
   enums/            → TipoProduto, StatusAutorizacao, TipoEventoAutorizacao, MotivoStatusAutorizacao,
                        CanaisConhecidosEnum, TipoConta, TipoJornadaAutorizacao, AcaoDecisao
 application/       → Casos de uso, orquestração, sem conhecer transporte nem persistência concreta
-  usecase/          → CriarAutorizacaoService, CancelarAutorizacaoService, DecidirAutorizacaoService
-                       (implementam as portas de entrada), AutorizacaoMapper (MapStruct,
-                       comando→modelo), ExpurgoAutorizacaoService
+  usecase/          → CriarAutorizacaoService, CancelarAutorizacaoService, DecidirAutorizacaoService,
+                       AtualizarDadosRecorrenciaService (implementam as portas de entrada),
+                       AutorizacaoMapper (MapStruct, comando→modelo), ExpurgoAutorizacaoService
 infrastructure/    → Adaptadores: quem fala com banco, HTTP, SNS, e quem sabe que partição existe
   persistence/      → AutorizacaoJpaEntity (@Entity real), IdAutorizacaoJpaEmbeddable,
                        CancelamentoJpaEmbeddable, AutorizacaoPersistenceMapper (paraDominio/
@@ -144,7 +152,8 @@ infrastructure/    → Adaptadores: quem fala com banco, HTTP, SNS, e quem sabe 
                        AutorizacaoJpaAdapter, GeradorIdentidadeAutorizacaoAdapter,
                        ReversibleUUIDv7, IdContaUUIDPartitionDistributor, ControleExpurgoAutorizacao,
                        TipoProdutoConverter, TipoJornadaAutorizacaoConverter
-  web/              → AutorizacaoController, contratosrest/ (DTOs), ApiExceptionHandler e layouts de erro
+  web/              → AutorizacaoController, contratosrest/ (DTOs, inclui
+                       AtualizarDadosRecorrenciaRequest), ApiExceptionHandler e layouts de erro
   messaging/        → AutorizacaoEventoPublisher (`@TransactionalEventListener(AFTER_COMMIT)`), AutorizacaoEventoPayload
   config/           → AwsProperties, SnsClientConfig (bean do SnsClient, AWS SDK v2 puro)
 ```
@@ -219,10 +228,10 @@ chamador automatizado usa para não repetir. O grafo de `StatusAutorizacao` **n�
 
 ### Publicação de eventos (após commit)
 
-Ao final de `CriarAutorizacaoService.execute()`, `CancelarAutorizacaoService.execute()` **e** `DecidirAutorizacaoService.execute()`, um `AutorizacaoPersistidaEvent` (só a entidade final — sem campo de tipo) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher` (`infrastructure/messaging/`), um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
+Ao final de `CriarAutorizacaoService.execute()`, `CancelarAutorizacaoService.execute()`, `DecidirAutorizacaoService.execute()` **e** `AtualizarDadosRecorrenciaService.execute()`, um `AutorizacaoPersistidaEvent` (só a entidade final — sem campo de tipo) é publicado via `ApplicationEventPublisher`. Quem efetivamente fala com o SNS é `AutorizacaoEventoPublisher` (`infrastructure/messaging/`), um `@TransactionalEventListener(phase = AFTER_COMMIT)`:
 
 ```
-CriarAutorizacaoService / CancelarAutorizacaoService / DecidirAutorizacaoService (fim do execute(), ainda na transação)
+CriarAutorizacaoService / CancelarAutorizacaoService / DecidirAutorizacaoService / AtualizarDadosRecorrenciaService (fim do execute(), ainda na transação)
   └─ eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacao))
        ⋮ (commit da transação)
 AutorizacaoEventoPublisher.aoPersistir()   ← só roda se o commit teve sucesso
@@ -232,6 +241,8 @@ AutorizacaoEventoPublisher.aoPersistir()   ← só roda se o commit teve sucesso
 ```
 
 O `tipoEvento` **não é mais informado pelo use case** — é derivado do `status` da entidade (`TipoEventoAutorizacao`, 8 valores em bijeção com `StatusAutorizacao`: `RECEPCAO`, `PENDENCIA_ACEITE`, `INICIO_ATIVACAO`, `ATIVACAO`, `CANCELAMENTO`, `REJEICAO`, `EXPIRACAO`, `FINALIZACAO`). Criação de `DDA_AUTO` (status `ATIVA`) publica `tipoEvento=ATIVACAO`; criação de `PIX_AUTO` (status `RECEBIDA`) publica `RECEPCAO`; cancelamento (status `CANCELADA`) publica `CANCELAMENTO`; decisão `APROVAR` publica `ATIVACAO`, `REJEITAR`/`EXPIRAR` publicam `REJEICAO`. O antigo par `CRIACAO`/`CANCELAMENTO` não existe mais.
+
+> **`PATCH /atualizar` também publica `tipoEvento=ATIVACAO`, sem valor de enum dedicado.** A operação só é permitida em `ATIVA` e não transiciona status — `TipoEventoAutorizacao.porStatus` deriva `ATIVACAO` automaticamente, o mesmo tipo que uma ativação real. Trade-off aceito conscientemente (design.md D1 da change `atualizar-dados-recorrencia`): consumidores do tópico **não distinguem** "autorização foi ativada agora" de "dado de uma autorização já ativa foi atualizado". Introduzir um tipo novo exigiria também mudar `autorizacaostatus-producer` (que recalcula o tipo a partir do `status` do payload, ignorando qualquer attribute do SNS — armadilha nº 9 do `CLAUDE.md` daquele serviço).
 
 Além do `tipoEvento`, todo evento carrega **`tipoProduto`** e **`tipoJornada`** como message
 attributes — espelhos das colunas `tipo_produto`/`tipo_jornada` da própria linha, existentes
@@ -307,6 +318,9 @@ ContratacaoValidator → implements Validator<ContratacaoRule, CriarAutorizacaoC
 
 Regras de contratação existentes (`domain/service/contratacao/rules/`): `ProdutoSuportado` (roda primeiro), `DataFimVigenciaInvalida`, `ValorLimiteContrato`, `MetadadoRule`. Todas recebem `CriarAutorizacaoCommand` e acessam os campos diretamente (`comando.tipoProduto()`, `comando.valor()`, ...) — o comando não carrega mais um DTO de request aninhado. `MetadadoRule` reparseia `comando.metadados()` (`String` JSON) com um `ObjectMapper` local, porque o comando em si não pode importar biblioteca de serialização.
 Regras de cancelamento (`domain/service/cancelamento/rules/`): `ProdutoSuportadoCancelamento` (anotada com `@Order(Ordered.HIGHEST_PRECEDENCE)` — roda **antes** de `TipoProdutoCancelamento`, rejeitando produto não habilitado para cancelamento) e `TipoProdutoCancelamento` (`@Order(5)` — produto do header vs. produto persistido; roda antes de `TransicaoStatusValida` para que divergência de produto falhe com mensagem mais específica que erro de transição). Ambas recebem `CancelarAutorizacaoCommand`.
+Regras de atualização de dados da recorrência (`domain/service/atualizacao/rules/`, comando `AtualizarDadosRecorrenciaCommand`): `TipoProdutoAtualizacao` (`@Order(5)`, produto do header vs. persistido), `StatusPermiteAtualizacao` (`@Order(10)`, exige status `ATIVA` — não é transição do grafo, é rule própria, ver design.md D2 da change `atualizar-dados-recorrencia`), `DataFimVigenciaInvalidaAtualizacao` (`@Order(15)`) e `ValorLimiteAtualizacaoInvalido` (`@Order(20)`, primeira regra de negócio de `valorLimite` — rejeita <= 0 quando informado). Todas as quatro só validam campo != null (semântica de PATCH parcial).
+
+> **`DataFimVigenciaInvalidaAtualizacao` duplica `DataFimVigenciaInvalida`, não a reaproveita** (mesma checagem "não pode ser no passado", ~5 linhas). Segue a convenção já estabelecida no código de duplicar por tipo de comando (`ProdutoSuportado` vs. `ProdutoSuportadoCancelamento`, `TipoProdutoCancelamento` vs. `TipoProdutoDecisao` vs. `TipoProdutoAtualizacao`) em vez de compartilhar abstração entre `Rule<T>` de tipos diferentes (design.md D4 da change `atualizar-dados-recorrencia`). **Se a regra de negócio mudar, replique nas duas rules** — não há um único ponto de verdade para "data no passado" no código.
 
 **Adicionar regra de criação**: crie um `@Component` (não `@Service` — rules são estratégias plugáveis, não o orquestrador) que implemente `ContratacaoRule` com `aceita(CriarAutorizacaoCommand comando)`/`validar(CriarAutorizacaoCommand comando)` — é injetado automaticamente no `ContratacaoValidator`. Use `@Order` se a regra precisar rodar antes/depois de outra.
 

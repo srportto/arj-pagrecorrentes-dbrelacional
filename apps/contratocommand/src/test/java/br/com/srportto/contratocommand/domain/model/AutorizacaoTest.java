@@ -5,6 +5,7 @@ import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -115,5 +116,76 @@ class AutorizacaoTest {
         autorizacao.inicializaCriacao(UUID.randomUUID());
 
         assertEquals("{\"chave\":\"valor\"}", autorizacao.getMetadados());
+    }
+
+    private Autorizacao autorizacaoAtivaComDados() {
+        var aut = new Autorizacao();
+        aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
+        aut.setValorLimite(new BigDecimal("1000.00"));
+        aut.setDataFimVigencia(LocalDate.now().plusDays(30));
+        aut.setIndicadorUsoLimiteConta((short) 0);
+        aut.setQuantidadeDividasCiclo((short) 2);
+        return aut;
+    }
+
+    @Test
+    @DisplayName("atualizarDadosRecorrencia aplica todos os campos informados e atualiza dataHoraUltimaAtualizacao")
+    void atualizarDadosRecorrenciaAplicaTodosOsCampos() {
+        Autorizacao aut = autorizacaoAtivaComDados();
+        var novoLimite = new BigDecimal("5000.00");
+        var novaData = LocalDate.now().plusDays(90);
+
+        aut.atualizarDadosRecorrencia(novoLimite, novaData, 1, 5);
+
+        assertEquals(novoLimite, aut.getValorLimite());
+        assertEquals(novaData, aut.getDataFimVigencia());
+        assertEquals((short) 1, aut.getIndicadorUsoLimiteConta());
+        assertEquals((short) 5, aut.getQuantidadeDividasCiclo());
+        assertNotNull(aut.getDataHoraUltimaAtualizacao());
+    }
+
+    @Test
+    @DisplayName("atualizarDadosRecorrencia com campo isolado preserva os demais campos com o valor anterior")
+    void atualizarDadosRecorrenciaCampoIsoladoPreservaDemais() {
+        Autorizacao aut = autorizacaoAtivaComDados();
+        var valorLimiteOriginal = aut.getValorLimite();
+        var indicadorOriginal = aut.getIndicadorUsoLimiteConta();
+        var quantidadeOriginal = aut.getQuantidadeDividasCiclo();
+        var novaData = LocalDate.now().plusDays(90);
+
+        aut.atualizarDadosRecorrencia(null, novaData, null, null);
+
+        assertEquals(novaData, aut.getDataFimVigencia());
+        assertEquals(valorLimiteOriginal, aut.getValorLimite());
+        assertEquals(indicadorOriginal, aut.getIndicadorUsoLimiteConta());
+        assertEquals(quantidadeOriginal, aut.getQuantidadeDividasCiclo());
+    }
+
+    @Test
+    @DisplayName("atualizarDadosRecorrencia com todos os campos nulos não altera nenhum dado")
+    void atualizarDadosRecorrenciaTodosNulosNaoAlteraNada() {
+        Autorizacao aut = autorizacaoAtivaComDados();
+        var valorLimiteOriginal = aut.getValorLimite();
+        var dataFimVigenciaOriginal = aut.getDataFimVigencia();
+        var indicadorOriginal = aut.getIndicadorUsoLimiteConta();
+        var quantidadeOriginal = aut.getQuantidadeDividasCiclo();
+
+        aut.atualizarDadosRecorrencia(null, null, null, null);
+
+        assertEquals(valorLimiteOriginal, aut.getValorLimite());
+        assertEquals(dataFimVigenciaOriginal, aut.getDataFimVigencia());
+        assertEquals(indicadorOriginal, aut.getIndicadorUsoLimiteConta());
+        assertEquals(quantidadeOriginal, aut.getQuantidadeDividasCiclo());
+        assertNotNull(aut.getDataHoraUltimaAtualizacao());
+    }
+
+    @Test
+    @DisplayName("atualizarDadosRecorrencia não transiciona status")
+    void atualizarDadosRecorrenciaNaoTransicionaStatus() {
+        Autorizacao aut = autorizacaoAtivaComDados();
+
+        aut.atualizarDadosRecorrencia(new BigDecimal("2000.00"), null, null, null);
+
+        assertEquals((int) StatusAutorizacao.ATIVA.getStatusAutorizacao(), aut.getStatus());
     }
 }
