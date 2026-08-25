@@ -3,6 +3,11 @@
 > Guia para agentes de IA (Claude Code, Copilot, etc.) trabalharem neste repositório.
 > **Este arquivo e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.**
 
+> Para entender este serviço, comece pela análise do grafo de conhecimento gerado pelo
+> `graphify` (`../../graphify-out/`, skill `graphify`) — só leia arquivos diretamente quando
+> necessário ou ao desconfiar de alguma imprecisão no grafo. Atualize o `graphify` sempre que
+> encontrar divergência entre o grafo e o código, e sempre ao final da conclusão de uma change.
+
 API REST de **leitura de autorizações de produtos financeiros** (PIX Automático e DDA Automático), em **arquitetura hexagonal**, com **particionamento temporal** em PostgreSQL. Este serviço é **somente leitura** — as operações de escrita ficam no `contratocommand` (porta 8080).
 
 ## Comece por aqui
@@ -31,7 +36,7 @@ mvn test -Dtest=ListarAutorizacoesServiceTest#metodo # Método específico
 > quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
 > delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
 
-Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest` (`domain/enums/`); `PlanCacheModeHikariIntegrationTest` (`integration/`).
+Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `CancelamentoResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest` (`domain/enums/`); `PlanCacheModeHikariIntegrationTest` (`integration/`).
 
 ## Pré-requisitos
 
@@ -232,6 +237,17 @@ mesmo padrão de `TipoProdutoConverter`). Não é exposta nos DTOs de resposta
 (`AutorizacaoDetalheResponseDto`/`AutorizacaoResumidaResponseDto`) — expor ou não é decisão de
 contrato de API em aberto (ver `design.md` da mudança `temporizacao-jornada-01-pix-auto`,
 Open Questions), não bloqueante para esta app funcionar.
+
+### `AutorizacaoDetalheResponseDto` é a representação completa — confira ao adicionar campo
+
+`GET /api/autorizacoes/{autorizacaoId}` SHALL devolver todo campo de `domain/model/Autorizacao`
+que não tenha uma exclusão documentada (hoje só `tipoJornada`, ver acima). O DTO já inclui
+`frequenciaPagamento`, `quantidadeDividasCiclo`, `indicadorUsoLimiteConta`,
+`indicadorTipoMensageria`, `codigoCanalContratacao` e `cancelamento` (`CancelamentoResponseDto`,
+`null` se a autorização nunca foi cancelada, espelha `CancelamentoResponseDto` do
+`contratocommand`) — ver a change `completar-detalhe-consulta-autorizacao`, que fechou o gap
+entre a promessa do Javadoc ("representação completa") e o shape real. Campo novo no domínio =
+campo novo aqui, salvo exclusão documentada.
 
 ## Armadilhas críticas
 

@@ -16,6 +16,7 @@ import java.util.UUID;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
+import br.com.srportto.contratoquery.domain.model.Cancelamento;
 
 @DisplayName("Testes do AutorizacaoDetalheResponseDto.from")
 class AutorizacaoDetalheResponseDtoTest {
@@ -39,6 +40,11 @@ class AutorizacaoDetalheResponseDtoTest {
                 .descricao("desc")
                 .motivoStatus("RECEPCAO_SPI_J1")
                 .metadados(metadados)
+                .frequenciaPagamento((short) 2)
+                .quantidadeDividasCiclo((short) 3)
+                .indicadorUsoLimiteConta((short) 1)
+                .indicadorTipoMensageria((short) 0)
+                .codigoCanalContratacao("C1")
                 .build();
     }
 
@@ -56,6 +62,47 @@ class AutorizacaoDetalheResponseDtoTest {
         assertEquals(a.getIdPessoaPagadora(), dto.idPessoaPagadora());
         assertNotNull(dto.metadado());
         assertTrue(dto.metadado().has("k"));
+        assertEquals((short) 2, dto.frequenciaPagamento());
+        assertEquals((short) 3, dto.quantidadeDividasCiclo());
+        assertEquals((short) 1, dto.indicadorUsoLimiteConta());
+        assertEquals((short) 0, dto.indicadorTipoMensageria());
+        assertEquals("C1", dto.codigoCanalContratacao());
+    }
+
+    @Test
+    @DisplayName("autorização sem cancelamento tem campo cancelamento nulo")
+    void semCancelamentoRetornaNulo() {
+        Autorizacao a = base(4, null);
+        AutorizacaoDetalheResponseDto dto = AutorizacaoDetalheResponseDto.from(a);
+
+        assertNull(dto.cancelamento());
+    }
+
+    @Test
+    @DisplayName("autorização cancelada retorna os dados do cancelamento")
+    void comCancelamentoRetornaDados() {
+        var idPessoa = UUID.randomUUID();
+        var dataHora = LocalDateTime.now();
+        var cancelamento = Cancelamento.builder()
+                .codigoCanalCancelamento("01")
+                .idPessoaCancelamento(idPessoa)
+                .dataHoraCancelamento(dataHora)
+                .motivoCancelamento("SOLICITACAO_CLIENTE")
+                .build();
+        Autorizacao a = Autorizacao.builder()
+                .idAutorizacao(UUID.randomUUID())
+                .tipoProduto(TipoProduto.PIX_AUTO)
+                .status(StatusAutorizacao.obterStatusEnumPorIdStatus(5))
+                .cancelamento(cancelamento)
+                .build();
+
+        AutorizacaoDetalheResponseDto dto = AutorizacaoDetalheResponseDto.from(a);
+
+        assertNotNull(dto.cancelamento());
+        assertEquals("01", dto.cancelamento().codigoCanalCancelamento());
+        assertEquals(idPessoa, dto.cancelamento().idPessoaCancelamento());
+        assertEquals(dataHora, dto.cancelamento().dataHoraCancelamento());
+        assertEquals("SOLICITACAO_CLIENTE", dto.cancelamento().motivoCancelamento());
     }
 
     @Test

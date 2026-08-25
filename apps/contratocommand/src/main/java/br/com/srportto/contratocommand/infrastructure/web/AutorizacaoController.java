@@ -12,6 +12,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
+import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
+import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaUseCase;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
@@ -20,6 +22,7 @@ import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AtualizarDadosRecorrenciaRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CriarAutorizacaoRequest;
@@ -35,6 +38,7 @@ public class AutorizacaoController {
     private final CriarAutorizacaoUseCase criarAutorizacaoUseCase;
     private final CancelarAutorizacaoUseCase cancelarAutorizacaoUseCase;
     private final DecidirAutorizacaoUseCase decidirAutorizacaoUseCase;
+    private final AtualizarDadosRecorrenciaUseCase atualizarDadosRecorrenciaUseCase;
 
     @PostMapping
     public ResponseEntity<AutorizacaoCompletaResponseDto> insert(
@@ -99,5 +103,21 @@ public class AutorizacaoController {
         var autorizacaoDecidida = decidirAutorizacaoUseCase.execute(command);
 
         return ResponseEntity.ok(AutorizacaoCompletaResponseDto.from(autorizacaoDecidida));
+    }
+
+    @PatchMapping("/{idAutorizacao}/atualizar")
+    public ResponseEntity<AutorizacaoCompletaResponseDto> atualizar(
+            @PathVariable String idAutorizacao,
+            @RequestHeader String tipoProduto,
+            @RequestBody @Valid AtualizarDadosRecorrenciaRequest dados) {
+
+        var produto = TipoProduto.obterTipoProdutoEnumPorNome(tipoProduto);
+        var command = AtualizarDadosRecorrenciaCommand.doRequest(idAutorizacao, produto,
+                dados.valorLimite(), dados.dataFimVigencia(), dados.indicadorUsoLimiteConta(),
+                dados.quantidadeDividasCiclo(), dados.codigoCanalAtualizacao(), dados.idPessoaAtualizacao());
+
+        var autorizacaoAtualizada = atualizarDadosRecorrenciaUseCase.execute(command);
+
+        return ResponseEntity.ok(AutorizacaoCompletaResponseDto.from(autorizacaoAtualizada));
     }
 }

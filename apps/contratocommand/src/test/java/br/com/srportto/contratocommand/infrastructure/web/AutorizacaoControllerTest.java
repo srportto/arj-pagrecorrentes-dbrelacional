@@ -2,6 +2,8 @@ package br.com.srportto.contratocommand.infrastructure.web;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
+import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaUseCase;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoUseCase;
@@ -10,6 +12,7 @@ import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AtualizarDadosRecorrenciaRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CriarAutorizacaoRequest;
@@ -48,6 +51,8 @@ class AutorizacaoControllerTest {
     private CancelarAutorizacaoUseCase cancelarAutorizacaoUseCase;
     @Mock
     private DecidirAutorizacaoUseCase decidirAutorizacaoUseCase;
+    @Mock
+    private AtualizarDadosRecorrenciaUseCase atualizarDadosRecorrenciaUseCase;
 
     @InjectMocks
     private AutorizacaoController controller;
@@ -167,4 +172,40 @@ class AutorizacaoControllerTest {
 
     // "acao" invalida/ausente vira 422 dentro do use case (AcaoDecisaoValida / @NotNull), não aqui
     // — ver DecidirAutorizacaoServiceTest.ComValidacaoReal.
+
+    @Test
+    @DisplayName("atualizar resolve o produto pelo header, monta o comando e responde 200")
+    void atualizarRetornaOk() {
+        AtualizarDadosRecorrenciaRequest dados = TestFixtures.atualizarDados();
+        Autorizacao autorizada = autorizacaoComId(UUID.randomUUID());
+        when(atualizarDadosRecorrenciaUseCase.execute(any())).thenReturn(autorizada);
+
+        ResponseEntity<AutorizacaoCompletaResponseDto> resp =
+                controller.atualizar("550e8400-e29b-41d4-a716-446655440000", "PIX_AUTO", dados);
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals(autorizada.getIdAutorizacao(), resp.getBody().getIdAutorizacao());
+
+        ArgumentCaptor<AtualizarDadosRecorrenciaCommand> captor = ArgumentCaptor.forClass(AtualizarDadosRecorrenciaCommand.class);
+        verify(atualizarDadosRecorrenciaUseCase).execute(captor.capture());
+        assertEquals("550e8400-e29b-41d4-a716-446655440000", captor.getValue().idAutorizacao());
+        assertEquals(TipoProduto.PIX_AUTO, captor.getValue().tipoProduto());
+        assertEquals(dados.valorLimite(), captor.getValue().valorLimite());
+        assertEquals(dados.dataFimVigencia(), captor.getValue().dataFimVigencia());
+        assertEquals(dados.indicadorUsoLimiteConta(), captor.getValue().indicadorUsoLimiteConta());
+        assertEquals(dados.quantidadeDividasCiclo(), captor.getValue().quantidadeDividasCiclo());
+        assertEquals(dados.codigoCanalAtualizacao(), captor.getValue().codigoCanalAtualizacao());
+        assertEquals(dados.idPessoaAtualizacao(), captor.getValue().idPessoaAtualizacao());
+    }
+
+    @Test
+    @DisplayName("atualizar com header tipoProduto desconhecido lança BusinessException antes de chamar o use case")
+    void atualizarComTipoProdutoDesconhecidoLancaAntesDoUseCase() {
+        AtualizarDadosRecorrenciaRequest dados = TestFixtures.atualizarDados();
+
+        assertThrows(BusinessException.class,
+                () -> controller.atualizar("550e8400-e29b-41d4-a716-446655440000", "CARTAO_CREDITO", dados));
+
+        verifyNoInteractions(atualizarDadosRecorrenciaUseCase);
+    }
 }

@@ -131,4 +131,26 @@ public class Autorizacao {
         this.dataHoraUltimaAtualizacao = dadosCancelamento.getDataHoraCancelamento();
     }
 
+    /**
+     * Atualização parcial de dados de uma autorização ATIVA: aplica só os campos não-null do
+     * comando, sem transicionar status. Segue o mesmo padrão de {@link #aprovar()}/{@link
+     * #cancelar}, fixando {@code dataHoraUltimaAtualizacao} junto.
+     */
+    public void atualizarDadosRecorrencia(BigDecimal valorLimite, LocalDate dataFimVigencia,
+            Integer indicadorUsoLimiteConta, Integer quantidadeDividasCiclo) {
+        if (valorLimite != null) {
+            this.valorLimite = valorLimite;
+        }
+        if (dataFimVigencia != null) {
+            this.dataFimVigencia = dataFimVigencia;
+        }
+        if (indicadorUsoLimiteConta != null) {
+            this.indicadorUsoLimiteConta = indicadorUsoLimiteConta.shortValue();
+        }
+        if (quantidadeDividasCiclo != null) {
+            this.quantidadeDividasCiclo = quantidadeDividasCiclo.shortValue();
+        }
+        this.dataHoraUltimaAtualizacao = LocalDateTime.now();
+    }
+
 }

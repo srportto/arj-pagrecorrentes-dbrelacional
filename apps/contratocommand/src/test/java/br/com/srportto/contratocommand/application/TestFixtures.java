@@ -1,9 +1,11 @@
 package br.com.srportto.contratocommand.application;
 
+import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AtualizarDadosRecorrenciaRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CriarAutorizacaoRequest;
 import tools.jackson.databind.JsonNode;
@@ -93,5 +95,17 @@ public final class TestFixtures {
         CancelarAutorizacaoRequest dados = cancelarDados();
         return CancelarAutorizacaoCommand.doRequest(idAutorizacao, produtoHeader,
                 dados.codigoCanalCancelamento(), dados.idPessoaCancelamento(), dados.motivoCancelamento());
+    }
+
+    public static AtualizarDadosRecorrenciaRequest atualizarDados() {
+        return new AtualizarDadosRecorrenciaRequest(
+                new BigDecimal("3000.00"), LocalDate.now().plusDays(60), 1, 3, "C1", UUID.randomUUID());
+    }
+
+    public static AtualizarDadosRecorrenciaCommand atualizarContext(String idAutorizacao, TipoProduto produtoHeader) {
+        AtualizarDadosRecorrenciaRequest dados = atualizarDados();
+        return AtualizarDadosRecorrenciaCommand.doRequest(idAutorizacao, produtoHeader,
+                dados.valorLimite(), dados.dataFimVigencia(), dados.indicadorUsoLimiteConta(),
+                dados.quantidadeDividasCiclo(), dados.codigoCanalAtualizacao(), dados.idPessoaAtualizacao());
     }
 }
