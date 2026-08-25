@@ -17,7 +17,7 @@ flowchart TD
     Command -->|"publica evento após cada<br/>commit (criação/cancelamento/decisão)"| SNS["sns-estados-autorizacao (SNS)"]
     SNS -->|"subscription<br/>(raw delivery)"| SQS["SQS-eventos-autorizacao (SQS)"]
     SQS --> Producer["autorizacaostatus-producer<br/>porta 8082 · ponte SQS → Kafka"]
-    Producer -->|"produz evento Avro<br/>(idempotente)"| Kafka["eventos-autorizacao<br/>(tópico Kafka, Schema Registry)"]
+    Producer -->|"produz evento Avro<br/>(key determinística p/ dedupe a jusante)"| Kafka["eventos-autorizacao<br/>(tópico Kafka, Schema Registry)"]
     Kafka --> Consumer["eventos-consumer<br/>porta 8083"]
 
     SNS -->|"subscription filtrada<br/>(RECEPCAO+PIX_AUTO+SPI_J1)"| SQST["SQS-temporizacao-autorizacao (SQS)"]
@@ -68,7 +68,7 @@ stateDiagram-v2
 |---------|-------|-----------------|-----------|
 | [contratocommand](apps/contratocommand/README.md) | 8080 | Criar, cancelar e decidir autorizações (POST, PATCH); publica eventos de estado no SNS | Não |
 | [contratoquery](apps/contratoquery/README.md) | 8081 | Listar e consultar autorizações (GET) | Sim |
-| [autorizacaostatus-producer](apps/autorizacaostatus-producer/README.md) | 8082 | Ponte SQS → Kafka: consome a fila de eventos, converte para Avro e produz no tópico `eventos-autorizacao` de forma idempotente | N/A |
+| [autorizacaostatus-producer](apps/autorizacaostatus-producer/README.md) | 8082 | Ponte SQS → Kafka: consome a fila de eventos, converte para Avro e produz no tópico `eventos-autorizacao` com key determinística (dedupe é responsabilidade de quem consome) | N/A |
 | [eventos-consumer](apps/eventos-consumer/README.md) | 8083 | Consome o tópico Kafka `eventos-autorizacao`, loga e confirma (ack) | N/A |
 | [temporiza-autorizacao](apps/temporiza-autorizacao/README.md) | 8084 | Temporiza a jornada 1 do PIX_AUTO: agenda a expiração no Valkey e aciona `PATCH /decisao` no vencimento | N/A |
 
@@ -138,7 +138,7 @@ flowchart LR
     SNS --> SQS1
     SNS --> SQS2
     SQS1 --> ASP
-    ASP -->|"produz Avro idempotente"| KAFKA
+    ASP -->|"produz Avro, key determinística"| KAFKA
     KAFKA --> EC
     SQS2 --> TA
     TA -->|"ZADD (agenda expiração)"| VALKEY

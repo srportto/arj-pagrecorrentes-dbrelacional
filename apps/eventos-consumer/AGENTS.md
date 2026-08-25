@@ -12,18 +12,21 @@ Consumidora do tópico Kafka `eventos-autorizacao`, em **arquitetura hexagonal c
 (`domain` / `application` / `infrastructure`). Recebe os eventos Avro produzidos pela
 `autorizacaostatus-producer` (ponte SQS → Kafka), loga o consumo com sucesso (identificadores
 apenas: `idAutorizacao`, `tipoEvento`) e comita o offset (ack) somente após o log. Nesta fase não
-há processamento de negócio — apenas log + ack. Mensagens que esgotam as tentativas de
-processamento (falha de negócio ou de desserialização) vão para a DLT (`eventos-autorizacao.DLT`).
+há processamento de negócio além de mapear Avro→domínio e derivar o tipo do evento a partir do
+status — apenas log + ack. Mensagens que esgotam as tentativas de processamento (falha de negócio
+ou de desserialização) vão para a DLT (`eventos-autorizacao.DLT`).
 
 ## Comece por aqui
 
 Leia nesta ordem:
 1. [EventoAutorizacaoKafkaListener.java](src/main/java/br/com/srportto/eventosconsumer/infrastructure/messaging/EventoAutorizacaoKafkaListener.java) — `@KafkaListener` (AckMode.RECORD), driving adapter que injeta a porta de entrada
-2. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/eventosconsumer/domain/port/in/ProcessarEventoAutorizacaoUseCase.java) — porta de entrada (interface)
-3. [ProcessarEventoAutorizacaoService.java](src/main/java/br/com/srportto/eventosconsumer/application/usecase/ProcessarEventoAutorizacaoService.java) — implementação: loga o evento consumido
-4. [StatusAutorizacao.java](src/main/java/br/com/srportto/eventosconsumer/domain/enums/StatusAutorizacao.java) / [TipoEventoAutorizacao.java](src/main/java/br/com/srportto/eventosconsumer/domain/enums/TipoEventoAutorizacao.java) — enum de negócio (grafo de transições) e sua derivação
-5. [KafkaConsumerConfig.java](src/main/java/br/com/srportto/eventosconsumer/infrastructure/config/KafkaConsumerConfig.java) — `ConsumerFactory`, container factory (AckMode.RECORD), `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` (DLT)
-6. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro consumido (espelho manual do da `autorizacaostatus-producer`)
+2. [EventoAutorizacaoAvroMapper.java](src/main/java/br/com/srportto/eventosconsumer/infrastructure/messaging/EventoAutorizacaoAvroMapper.java) — único ponto de tradução Avro→domínio, chamado pelo listener antes de acionar o use case
+3. [EventoAutorizacaoConsumido.java](src/main/java/br/com/srportto/eventosconsumer/domain/model/EventoAutorizacaoConsumido.java) — modelo de domínio puro do evento (record `idAutorizacao`+`status`), sem import de `org.apache.avro.*`
+4. [ProcessarEventoAutorizacaoUseCase.java](src/main/java/br/com/srportto/eventosconsumer/domain/port/in/ProcessarEventoAutorizacaoUseCase.java) — porta de entrada (interface), recebe `EventoAutorizacaoConsumido`
+5. [ProcessarEventoAutorizacaoService.java](src/main/java/br/com/srportto/eventosconsumer/application/usecase/ProcessarEventoAutorizacaoService.java) — implementação: loga o evento consumido
+6. [StatusAutorizacao.java](src/main/java/br/com/srportto/eventosconsumer/domain/enums/StatusAutorizacao.java) / [TipoEventoAutorizacao.java](src/main/java/br/com/srportto/eventosconsumer/domain/enums/TipoEventoAutorizacao.java) — enum de negócio (grafo de transições) e sua derivação; `porStatus` lança [EventoAutorizacaoInvalidoException.java](src/main/java/br/com/srportto/eventosconsumer/domain/exception/EventoAutorizacaoInvalidoException.java) para status sem tipo mapeado
+7. [KafkaConsumerConfig.java](src/main/java/br/com/srportto/eventosconsumer/infrastructure/config/KafkaConsumerConfig.java) — `ConsumerFactory`, container factory (AckMode.RECORD), `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` (DLT)
+8. [EventoAutorizacao.avsc](src/main/resources/avro/EventoAutorizacao.avsc) — schema Avro consumido (espelho manual do da `autorizacaostatus-producer`)
 
 ## Build & Testes
 
@@ -92,16 +95,20 @@ registros).
 ## Arquitetura (hexagonal clássica)
 
 ```
-domain/port/in/            → ProcessarEventoAutorizacaoUseCase (porta de entrada, interface pura)
-domain/enums/               → StatusAutorizacao (grafo de transições), TipoEventoAutorizacao (derivado do status)
-application/usecase/        → ProcessarEventoAutorizacaoService (implementa a porta; loga o evento)
-infrastructure/messaging/   → EventoAutorizacaoKafkaListener (driving adapter, @KafkaListener, injeta a porta)
-infrastructure/config/      → KafkaProperties, KafkaConsumerConfig (ConsumerFactory, container factory, DLT)
+domain/model/                → EventoAutorizacaoConsumido (modelo de domínio puro, record idAutorizacao+status)
+domain/port/in/               → ProcessarEventoAutorizacaoUseCase (porta de entrada, interface pura)
+domain/enums/                 → StatusAutorizacao (grafo de transições), TipoEventoAutorizacao (derivado do status)
+domain/exception/             → EventoAutorizacaoInvalidoException (status sem tipo de evento mapeado)
+application/usecase/          → ProcessarEventoAutorizacaoService (implementa a porta; loga o evento)
+infrastructure/messaging/     → EventoAutorizacaoKafkaListener (driving adapter, @KafkaListener, injeta a porta),
+                                 EventoAutorizacaoAvroMapper (único ponto de tradução Avro→domínio)
+infrastructure/config/        → KafkaProperties, KafkaConsumerConfig (ConsumerFactory, container factory, DLT)
 ```
 
 Sem persistência (sem `JPA`/`PostgreSQL`) e sem API REST de negócio, mas o app **tem**
-`domain/` (regra de negócio pura: o grafo de transições de `StatusAutorizacao`, mais a porta de
-entrada) — alinhado com a skill `arquitetura-limpa-java` v2.0.0 do monorepo. Esta app foi a
+`domain/` (regra de negócio pura: modelo `EventoAutorizacaoConsumido`, grafo de transições de
+`StatusAutorizacao`, exceção de validação e porta de entrada) — alinhado com a skill
+`arquitetura-limpa-java` v2.0.0 do monorepo. Esta app foi a
 primeira das cinco a migrar do layout anterior (`entrypoint`/`application`/`domain`/`shared`)
 para o hexagonal clássico — ver a change `hexagonal-classico-eventos-consumer` em
 `openspec/changes/` para as decisões de nomenclatura herdadas pelas outras quatro migrações.
@@ -111,8 +118,10 @@ para o hexagonal clássico — ver a change `hexagonal-classico-eventos-consumer
 ```
 EventoAutorizacaoKafkaListener.escutar()  (@KafkaListener, containerFactory com AckMode.RECORD)
   ├─ recebe o EventoAutorizacao desserializado (specific.avro.reader=true, via ErrorHandlingDeserializer)
-  ├─ ProcessarEventoAutorizacaoUseCase.processar(evento)  (porta; implementação é ProcessarEventoAutorizacaoService)
-  │    ├─ TipoEventoAutorizacao.porStatus(evento.getStatus()) → deriva o tipo do evento
+  ├─ EventoAutorizacaoAvroMapper.paraDominio(evento) → EventoAutorizacaoConsumido (Avro→domínio)
+  ├─ ProcessarEventoAutorizacaoUseCase.processar(eventoConsumido)  (porta; implementação é ProcessarEventoAutorizacaoService)
+  │    ├─ TipoEventoAutorizacao.porStatus(evento.status()) → deriva o tipo do evento (lança
+  │    │    EventoAutorizacaoInvalidoException se o status não tiver tipo mapeado)
   │    └─ loga sucesso: idAutorizacao e tipo derivado (nunca o record Avro inteiro — ele contém PII)
   └─ offset avança automaticamente — só se o método retornar sem lançar exceção
 ```
