@@ -7,7 +7,7 @@
 > desconfiar de alguma imprecisão no grafo. Atualize o `graphify` sempre que encontrar divergência
 > entre o grafo e o código, e sempre ao final da conclusão de uma change.
 
-Monorepo de 5 microserviços Java (hexagonal, Spring Boot 4) em torno de autorizações de pagamentos recorrentes (PIX Automático / DDA Automático).
+Monorepo de 5 microserviços Java (hexagonal, Spring Boot 4) + 1 Lambda Python em torno de autorizações de pagamentos recorrentes (PIX Automático / DDA Automático).
 
 | Serviço (porta) | O quê | Guia |
 |---|---|---|
@@ -16,6 +16,7 @@ Monorepo de 5 microserviços Java (hexagonal, Spring Boot 4) em torno de autoriz
 | autorizacaostatus-producer (8082) | Ponte SQS → Kafka, converte payload para Avro | [CLAUDE.md](apps/autorizacaostatus-producer/CLAUDE.md) |
 | eventos-consumer (8083) | Consome o tópico Kafka, loga e comita (ack) | [CLAUDE.md](apps/eventos-consumer/CLAUDE.md) |
 | temporiza-autorizacao (8084) | Temporiza a jornada 1 do PIX_AUTO (agenda/expira via Valkey), sem banco | [CLAUDE.md](apps/temporiza-autorizacao/CLAUDE.md) |
+| expurgo-particao (Lambda, sem porta HTTP) | Python, agendada a cada 30 min: fecha o ring buffer de expurgo escrito pelo `contratocommand` | [CLAUDE.md](apps/expurgo-particao/CLAUDE.md) |
 
 Antes de editar código de um serviço, leia o `CLAUDE.md` dele (armadilhas, fluxos e checklist específicos).
 

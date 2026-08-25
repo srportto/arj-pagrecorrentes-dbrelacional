@@ -86,6 +86,8 @@ Testes de integração exigem PostgreSQL rodando localmente.
 | POST | `/api/autorizacoes` | Criar autorização (multi-produto) | 201 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/cancelar` | Cancelar (header `tipoProduto` obrigatório) | 200 |
 | PATCH | `/api/autorizacoes/{idAutorizacao}/decisao` | Decisão sobre autorização em `RECEBIDA` (jornada 1 do PIX_AUTO) — `acao` = `APROVAR`\|`REJEITAR`\|`EXPIRAR` (header `tipoProduto` obrigatório) | 200 (aplicada) / 422 (status não permite) |
+| PATCH | `/api/autorizacoes/{idAutorizacao}/atualizar` | Atualização parcial de `valorLimite`, `dataFimVigencia`, `indicadorUsoLimiteConta`, `quantidadeDividasCiclo` de uma autorização `ATIVA` — campo ausente/`null` no body não altera (header `tipoProduto` obrigatório) | 200 / 422 (status != ATIVA, dados inválidos) |
+| GET | `/actuator/health` | Health-check (Actuator) com readiness de banco (indicador `db`) | 200 (UP) / 503 (DOWN) |
 
 Contrato completo (schema de request/response, exemplos, códigos de erro): ver
 [CLAUDE.md](CLAUDE.md#códigos-de-erro-handler-global) e

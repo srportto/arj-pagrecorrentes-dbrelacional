@@ -98,19 +98,22 @@ mensagens).
 ## Arquitetura (hexagonal clássica)
 
 ```
-domain/port/in/              → AgendarExpiracaoUseCase, ProcessarExpiracaoUseCase, VarrerAgendamentosVencidosUseCase
-domain/port/out/              → AgendamentoRepository, DecisaoAutorizacaoClient
-domain/exception/              → AgendamentoInvalidoException (não-retryable), ExpiracaoRetryavelException (retryable)
-application/usecase/           → AgendarExpiracaoService, ProcessarExpiracaoService, VarrerAgendamentosVencidosService (script Lua)
-infrastructure/messaging/      → TemporizacaoEventoListener (@SqsListener, traduz payload → tipos simples),
-                                  TemporizacaoEventoErrorInterceptor, AutorizacaoEventoPayload (formato de fio),
-                                  ExpiracaoStreamListener (worker, ack manual), ConsumidorStreamRemovedor (remoção segura de consumidor)
-infrastructure/scheduler/      → VarreduraAgendamentoScheduler, ConsumidoresOrfaosLimpezaScheduler,
-                                  PendenciasSchedulerReivindicador (XCLAIM) — os três @Scheduled
-infrastructure/web/            → TemporizacaoHealthIndicator
-infrastructure/persistence/    → ValkeyAgendamentoRepository (adapter, ZADD — estado próprio da app)
-infrastructure/external/       → CommandDecisaoAutorizacaoClient (adapter, RestClient — sistema de outro dono)
-infrastructure/config/         → TemporizacaoProperties, SqsListenerContainerFactoryConfig, CommandClientConfig, ValkeyStreamConfig
+domain/model/                 → CalculadoraVencimento (vencimento = dataHoraInclusao + prazo, UTC explícito)
+domain/port/in/               → AgendarExpiracaoUseCase, ProcessarExpiracaoUseCase, VarrerAgendamentosVencidosUseCase
+domain/port/out/               → AgendamentoRepository, DecisaoAutorizacaoClient
+domain/exception/               → AgendamentoInvalidoException (não-retryable), ExpiracaoRetryavelException (retryable)
+application/usecase/            → AgendarExpiracaoService, ProcessarExpiracaoService, VarrerAgendamentosVencidosService (script Lua)
+infrastructure/messaging/       → TemporizacaoEventoListener (@SqsListener, traduz payload → tipos simples),
+                                   TemporizacaoEventoErrorInterceptor, AutorizacaoEventoPayload (formato de fio),
+                                   ExpiracaoStreamListener (worker, ack manual), ConsumidorStreamRemovedor (remoção segura de consumidor)
+infrastructure/scheduler/       → VarreduraAgendamentoScheduler, ConsumidoresOrfaosLimpezaScheduler,
+                                   PendenciasSchedulerReivindicador (XCLAIM), ExpiracaoStreamTrimScheduler
+                                   (XTRIM MINID das entradas já confirmadas) — os quatro @Scheduled
+infrastructure/web/             → TemporizacaoHealthIndicator
+infrastructure/persistence/     → ValkeyAgendamentoRepository (adapter, ZADD — estado próprio da app)
+infrastructure/external/        → CommandDecisaoAutorizacaoClient (adapter, RestClient — sistema de outro dono)
+infrastructure/config/          → TemporizacaoProperties, SqsListenerContainerFactoryConfig, CommandClientConfig,
+                                   ValkeyStreamConfig, ObjectMapperConfig
 ```
 
 Categorias de adaptador seguem o **gatilho**, não a tecnologia: `scheduler/` é para tudo
@@ -308,6 +311,14 @@ ack/retenção:
 14. **Rodar a app fora do Docker cria o consumidor `worker-local`** (o default de
     `${HOSTNAME:worker-local}`). Duas execuções locais simultâneas compartilhariam o mesmo
     consumidor e disputariam o mesmo PEL.
+15. **`ExpiracaoStreamTrimScheduler` não é cosmético — sem ele o Valkey trava a app inteira.**
+    `XACK` só remove entradas do PEL, nunca do stream em si; sem poda periódica (`XTRIM MINID`
+    até o menor id ainda pendente, ou o último entregue se o PEL estiver vazio) o stream cresce
+    indefinidamente. O ElastiCache Valkey provisionado não define `parameter_group_name`, então
+    herda `volatile-lru`; como nenhuma chave desta app tem TTL, nenhuma é elegível a eviction —
+    ao atingir `maxmemory`, toda escrita (inclusive o `ZADD` de agendamento) passa a falhar,
+    deixando autorizações PIX_AUTO presas em `RECEBIDA` para sempre. Não remova/desative este
+    scheduler achando-o redundante com o `XACK`.
 
 ## Documentação relacionada
 
