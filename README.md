@@ -327,6 +327,7 @@ cenário, convenção de limpeza de massa de teste).
 | [infra/local/kafka/README.md](infra/local/kafka/README.md) | Kafka local standalone (broker, Schema Registry, dashboard) |
 | [infra/local/redis/README.md](infra/local/redis/README.md) | Valkey local (sorted set + stream de expiração) |
 | [docs/info_build-my-image-and-execute.md](docs/info_build-my-image-and-execute.md) | Build e execução via Docker |
+| [graphify-out/README.md](graphify-out/README.md) | Grafo de conhecimento (graphify) — opcional, instalação em Windows/macOS/Linux, reduz consumo de tokens em sessões de IA |
 | [infra/local/postgres/exemplos-queries.sql](infra/local/postgres/exemplos-queries.sql) | Scripts SQL de particionamento |
 | [docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md](docs/arquitetura/modelo-dados-e-dados-poc-testada-para-essa-implementacao.md) | POC do particionamento com UUIDv7 reversível (Buffer Ring) |
 | [testes-carga/README.md](testes-carga/README.md) | Teste de carga (TPS): ferramenta, cenários, limites de recursos, como rodar |
