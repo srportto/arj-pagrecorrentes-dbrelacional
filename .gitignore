@@ -85,3 +85,7 @@ terraform.rc
 __pycache__/
 *.pyc
 .pytest_cache/
+
+### graphify (grafo de conhecimento local, opcional) ###
+graphify-out/*
+!graphify-out/README.md
