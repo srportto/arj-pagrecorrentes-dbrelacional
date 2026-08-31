@@ -1,12 +1,12 @@
 ---
 name: java-construtor
-description: "Use quando precisar GERAR ou EXPANDIR aplicação Java hexagonal — criar app a partir do esqueleto, aplicar variante (REST/SQS/Kafka/banco), adicionar módulo estrutural. Segue `criar-aplicacao-java` e `arquitetura-limpa-java`. NÃO use para revisar (java-revisor)."
+description: "Use quando precisar GERAR ou EXPANDIR aplicação Java hexagonal — criar app a partir do esqueleto, aplicar variante (REST/SQS/Kafka/banco), adicionar módulo estrutural. Segue `criar-aplicacao-java`, `arquitetura-limpa-java` e `qualidade-codigo-java` (clean code aplicado já na geração). NÃO use para revisar (java-revisor)."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
 maxTurns: 20
-skills: [criar-aplicacao-java, arquitetura-limpa-java, mensageria-sqs-kafka, persistencia-jpa, java-moderno]
+skills: [criar-aplicacao-java, arquitetura-limpa-java, mensageria-sqs-kafka, persistencia-jpa, java-moderno, qualidade-codigo-java]
 memory: project
 background: true
 isolation: worktree
@@ -30,6 +30,8 @@ Skills que você consome:
 - `.claude/skills/mensageria-sqs-kafka` e `.claude/skills/persistencia-jpa` — quando a
   variante envolver broker ou banco
 - `.claude/skills/java-moderno` — para features de Java 25+ (records, sealed, virtual threads)
+- `.claude/skills/qualidade-codigo-java` — clean code (DRY/KISS/YAGNI), Object Calisthenics e
+  convenções de nomenclatura a aplicar **durante** a geração, não só depois na revisão
 
 ## Fluxo
 
@@ -38,7 +40,9 @@ Skills que você consome:
 2. Gere a base hexagonal clássica (`domain` com `model`/`port/in`/`port/out`, `application/usecase`,
    `infrastructure` com os adapters, classe principal, rota `/disponibilidade`) seguindo
    `arquitetura-limpa-java`, com pacote `br.com.srportto.<nome>`. Aplicação nova **nunca** nasce no
-   layout legado `entrypoint`/`shared`.
+   layout legado `entrypoint`/`shared`. Todo código gerado nesta etapa já segue
+   `qualidade-codigo-java` (DRY/KISS/YAGNI, Object Calisthenics, nomenclatura) — não gere primeiro
+   e "limpe depois".
 3. Se houver variante, gere seus componentes obrigatórios conforme a tabela "Variante — componentes
    obrigatórios" de `criar-aplicacao-java`. **Variante com SQS**: a fila SHALL nascer com DLQ +
    `RedrivePolicy` e o listener SHALL delegar a classificação de erro a um interceptor central
