@@ -6,14 +6,13 @@ license: MIT
 metadata:
   author: https://github.com/srportto/srportto
   co-author: https://github.com/Jeffallan/claude-skills
-  version: "1.1.0"
+  version: "1.3.0"
   domain: code-review
   triggers: revise, code review, está bom?, melhore este código, PR, checklist, severidade
   role: reviewer
   scope: code-review
   output-format: document
   related-skills: qualidade-codigo-java, padroes-de-projeto-java, java-moderno, padrao-de-logs-java, persistencia-jpa, mensageria-sqs-kafka, seguranca-aplicacao-java
----
 ---
 
 # Revisão de Código Java
@@ -282,6 +281,32 @@ de domínio, `Info`, `Common`, `Base`. Use nomes de domínio: `AutorizacaoComman
 `PixBufferRingPartitionPurgeManager` é aceitável **quando** o domínio é esse, mas
 `Manager<Algo>` sozinho não é.
 
+**Parâmetros de método** seguem a mesma regra "Don't Abbreviate" — sem sigla, e com a unidade de
+medida explícita no nome quando o valor for numérico ou temporal:
+
+**[❌ Código Não Aderente]:**
+```java
+// parametros abreviados e sem unidade obrigam o agente a abrir o corpo do metodo
+public void register(String fn, String ln, int age, double amt) { ... }
+public void schedule(long timeout, long delay) { ... }
+```
+
+**[🚨 Violação e Explicação]:** `fn`, `ln`, `amt` escondem nome/sobrenome/valor; `timeout` e
+`delay` sem unidade obrigam o caller a abrir a implementação para saber se é milissegundos ou
+segundos — erro clássico de integração entre serviços.
+
+**[✅ Exemplo de Refatoração]:**
+```java
+// nomes completos, com a unidade explicita no proprio nome
+public void registerUser(String firstName, String lastName, int ageInYears, double transactionAmount) { ... }
+public void schedule(long timeoutInMilliseconds, long delayInSeconds) { ... }
+```
+
+> Grupo de parâmetros que sempre viaja junto (ex.: `latitude`/`longitude`) vira value object
+> (`Coordinate`) — ver 6.2 (Primitive Obsession) e `qualidade-codigo-java` seção "Introduce
+> Parameter Object". Parâmetro restrito a um conjunto conhecido de valores (`String status`,
+> `int tipo`) vira `enum` — ver 5.1 (Magic Numbers).
+
 ### 5.1. Magic Numbers (Replace Magic Number with Symbolic Constant)
 
 Qualquer literal numérico ou `String` com significado de negócio é proibido no meio de validações,
@@ -331,6 +356,26 @@ inferir tipos a cada leitura e não recebe proteção contra `ClassCastException
 // tipos explicitos na assinatura
 public Map<AutorizacaoId, Autorizacao> buscarPorFiltro(FiltroAutorizacao filtro) { ... }
 public void executar(AutorizacaoParaExpirar autorizacao) { ... }
+```
+
+**Interface em vez de implementação concreta** — parâmetro (e retorno, quando fizer sentido) deve
+usar o tipo mais genérico que atenda o contrato (`List`, `Map`, `Set`), nunca a implementação
+concreta (`ArrayList`, `HashMap`, `HashSet`):
+
+**[❌ Código Não Aderente]:**
+```java
+// amarra o caller a ArrayList; List.of(...) (imutavel) ou LinkedList exigiriam copia so pra chamar
+public void processarClientes(ArrayList<String> customerNames) { ... }
+```
+
+**[🚨 Violação e Explicação]:** o método não deveria se importar com a implementação, só com o
+contrato (`List`); um caller com `List.of(...)` ou `LinkedList` precisa copiar a coleção só para
+satisfazer a assinatura.
+
+**[✅ Exemplo de Refatoração]:**
+```java
+// aceita qualquer List; caller escolhe a implementacao que fizer sentido
+public void processarClientes(List<String> customerNames) { ... }
 ```
 
 ### 5.3. Comentários "por que", não "o que"
@@ -506,6 +551,100 @@ mal distribuído. Centralize configurações e isole escopo por injeção de dep
   responsabilidade (SRP).
 - **Configuração dispersa** — `@Value("${limite.pix}")` espalhado por 10 arquivos? Mover para
   um `@ConfigurationProperties` único.
+
+### 6.4. First Class Collections (Object Calisthenics)
+
+Classe que contém uma coleção não deve conter **outras** variáveis de membro; extraia uma classe
+dedicada para agrupar comportamento de filtro/agrupamento sobre essa coleção.
+
+**[❌ Código Não Aderente]:**
+```java
+// colecao misturada com outro atributo: comportamento de filtro polui a classe hospedeira
+public class Empresa {
+    private String razaoSocial;
+    private List<Funcionario> funcionarios;
+
+    public List<Funcionario> buscarContadores() {
+        return funcionarios.stream()
+                .filter(f -> f.getCargo().equals("contador"))
+                .toList();
+    }
+}
+```
+
+**[🚨 Violação e Explicação]:** os comportamentos de filtro/agrupamento de `funcionarios` poluem
+`Empresa`; o acoplamento entre a coleção e a classe hospedeira dificulta evolução e teste isolado.
+
+**[✅ Exemplo de Refatoração]:**
+```java
+// First Class Collection: comportamento sobre a colecao tem um lar proprio
+public class QuadroFuncionarios {
+    private final List<Funcionario> funcionarios;
+
+    public QuadroFuncionarios(List<Funcionario> funcionarios) {
+        this.funcionarios = funcionarios;
+    }
+
+    public List<Funcionario> buscarContadores() {
+        return funcionarios.stream()
+                .filter(f -> f.getCargo().equals("contador"))
+                .toList();
+    }
+}
+```
+
+### 6.5. One Dot Per Line / Law of Demeter (Object Calisthenics)
+
+Evite cadeias de chamadas que atravessam vários objetos (`a.getB().getC().getD()`) — o objeto
+intermediário passa a saber demais sobre a estrutura interna dos outros.
+
+**[❌ Código Não Aderente]:**
+```java
+// navegando a estrutura interna: quebra de encapsulamento
+String nomeChefe = funcionario.getDepartamento().getChefe().getNome();
+```
+
+**[🚨 Violação e Explicação]:** a estrutura interna `Funcionario -> Departamento -> Chefe` fica
+exposta; qualquer mudança nessa hierarquia quebra todos os call sites.
+
+**[✅ Exemplo de Refatoração]:**
+```java
+// o objeto expressa a intencao via metodo comportamental direto
+String nomeChefe = funcionario.getNomeChefeDepartamento();
+```
+
+> **Exceção (não marque como achado):** DTOs flattenizados de borda (`endereco.cidade.uf`) e
+> fluent builders encadeados são aceitáveis — a regra vale para chamadas de **comportamento**
+> que atravessam domínios.
+
+### 6.6. No Classes With More Than Two Instance Variables (Object Calisthenics)
+
+Classes de domínio com mais de duas variáveis de instância geralmente acumulam mais de uma razão
+para mudar (SRP ferida); agrupe os campos relacionados em objetos menores.
+
+**[❌ Código Não Aderente]:**
+```java
+public class Funcionario {
+    private String nome;
+    private int idade;
+    private String cargo;
+    private String departamento;
+}
+```
+
+**[🚨 Violação e Explicação]:** a classe mistura informações pessoais e contratuais; mudar uma
+exige mexer na mesma classe que cuida da outra.
+
+**[✅ Exemplo de Refatoração]:**
+```java
+public class Funcionario {
+    private InformacoesPessoais dadosPessoais;   // agrupa nome e idade
+    private InformacoesTrabalho dadosTrabalho;   // agrupa cargo e departamento
+}
+```
+
+> **Exceção (não marque como achado):** entidades JPA e DTOs de borda naturalmente carregam
+> vários campos — a regra vale para agregados, value objects e serviços de domínio.
 
 ### 7. DRY com bom senso
 
