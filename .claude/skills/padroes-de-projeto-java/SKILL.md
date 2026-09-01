@@ -1,11 +1,10 @@
 ---
 
 name: padroes-de-projeto-java
-description: "Quick-reference catalog of the 21 GoF design patterns (creational, structural, behavioral) with before/after examples — and the criteria for when **not** to apply a pattern. Use when deciding which pattern solves a concrete problem, when refactoring rigid or coupled code, or when the user asks to apply a specific pattern. Uso: agents `java-revisor` / `refatorador-java` or manual invocation via `/padroes-de-projeto-java`; não deve ser carregada proativamente pela sessão principal."
+description: "Catálogo de referência rápida dos 21 padrões GoF (criacionais, estruturais, comportamentais) com exemplos antes/depois — e os critérios de quando **não** aplicar um padrão. Use ao decidir qual padrão resolve um problema concreto, refatorar código rígido/acoplado ou quando pedirem um padrão específico. Uso: agents `java-revisor`/`refatorador-java` ou `/padroes-de-projeto-java`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: design-patterns
   triggers: aplique o pattern, usa strategy, refatorar com factory, esse código está rígido, GoF, factory, builder, strategy, observer, decorator

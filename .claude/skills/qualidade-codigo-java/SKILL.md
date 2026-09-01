@@ -1,12 +1,10 @@
 ---
 
 name: qualidade-codigo-java
-description: 'Application-side guide for clean code in Java - DRY, KISS, YAGNI, naming, immutability, `Optional`, streams, exception handling, Object Calisthenics - and for Fowler''s refactorings (Remove Parameter, Extract Method, Replace Magic Number, etc.). This is the "active" side of review: `revisao-de-codigo-java` says what to review; this one says how to apply what the review points out. Uso: sessao principal e agent `java-construtor`, carregada proativamente sempre que codigo Java for gerado ou alterado; tambem consumida por `java-revisor` / `refatorador-java` ou invocacao manual via `/qualidade-codigo-java`.'
+description: 'Guia de clean code aplicado a Java — DRY, KISS, YAGNI, naming, imutabilidade, `Optional`, streams, tratamento de exceção, Object Calisthenics — e refactorings do Fowler (Remove Parameter, Extract Method, Replace Magic Number, etc.). É o lado "ativo" da revisão: `revisao-de-codigo-java` diz o que revisar; esta diz como aplicar. Uso: sessão principal e agent `java-construtor` (carregada proativamente quando código Java for gerado/alterado); também `java-revisor`/`refatorador-java` ou `/qualidade-codigo-java`.'
 license: MIT
 metadata:
-
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.3.0"
   domain: code-quality
   triggers: clean code, boas praticas, refatorar, DRY, KISS, YAGNI, imutabilidade, Optional, streams, Fowler, Object Calisthenics, Wrap All Primitives, First Class Collections, Law of Demeter, Tell Don't Ask

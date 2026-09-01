@@ -1,11 +1,10 @@
 ---
 
 name: monitoramento-java
-description: "Configures the three observability pillars for Java/Spring Boot — structured logs, Micrometer + Prometheus metrics (RED/USE), distributed tracing with OpenTelemetry — and the surrounding stack (Grafana, alerting rules, liveness/readiness probes). Use when instrumenting a new service, adding custom metrics, configuring alerts, or investigating a production incident. Uso: agents `engenheiro-devops` (variante `k8s`) / `especialista-monitoramento` or manual invocation via `/monitoramento-java`; não deve ser carregada proativamente pela sessão principal."
+description: "Configura os três pilares de observabilidade em Java/Spring Boot — logs estruturados, métricas Micrometer + Prometheus (RED/USE), tracing distribuído com OpenTelemetry — e a stack ao redor (Grafana, alerting rules, probes liveness/readiness). Use ao instrumentar serviço, adicionar métricas, configurar alertas ou investigar incidente. Uso: agents `engenheiro-devops` (variante `k8s`)/`especialista-monitoramento` ou `/monitoramento-java`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: observability
   triggers: monitoramento, observabilidade, Prometheus, Grafana, OpenTelemetry, tracing distribuído, alert, MTTR, Micrometer, RED, USE

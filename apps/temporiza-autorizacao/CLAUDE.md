@@ -326,6 +326,7 @@ ack/retenção:
 - [agendamento-expiracao-valkey](../../openspec/specs/agendamento-expiracao-valkey/spec.md) — contrato vigente do sorted set + stream (decididos pela change arquivada `temporizacao-jornada-01-pix-auto`)
 - [infra/local/redis/README.md](../../infra/local/redis/README.md) — como subir o Valkey local
 - [infra/envs/local-messaging/README.md](../../infra/envs/local-messaging/README.md) — fila, DLQ e filter policy da subscription
+- Skill `spring-data-redis` (`.claude/skills/spring-data-redis/`) — referência de `RedisTemplate`, sorted sets, streams com consumer groups, cache e convenções Redis/Valkey
 
 ## Checklist antes do commit
 

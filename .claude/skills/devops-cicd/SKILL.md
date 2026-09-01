@@ -1,11 +1,10 @@
 ---
 
 name: devops-cicd
-description: "Builds the deploy chain for a Java application — CI/CD pipeline (GitHub Actions, GitLab CI, Jenkins), Dockerfile multi-stage, and Kubernetes manifests (Deployment, Service, ConfigMap, health probes, graceful shutdown). Focused on the path from code to running app, not on cluster provisioning or Terraform for cloud infrastructure. Uso: agent `engenheiro-devops` (variants `pipeline`/`docker`/`k8s`/`all`) or manual invocation via `/devops-cicd`; não deve ser carregada proativamente pela sessão principal."
+description: "Cadeia de deploy de app Java — pipeline CI/CD (GitHub Actions, GitLab CI, Jenkins), Dockerfile multi-stage e manifests Kubernetes (Deployment, Service, ConfigMap, probes, graceful shutdown). Foco no caminho do código ao app rodando, não em provisionamento de cluster/Terraform. Uso: agent `engenheiro-devops` (variantes `pipeline`/`docker`/`k8s`/`all`) ou `/devops-cicd`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: devops
   triggers: GitHub Actions, pipeline CI, Dockerfile, Kubernetes deployment, k8s manifest, rolling update, graceful shutdown, Maven

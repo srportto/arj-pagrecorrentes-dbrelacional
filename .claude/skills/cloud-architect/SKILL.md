@@ -1,11 +1,10 @@
 ---
 
 name: cloud-architect
-description: "Designs cloud architectures, creates migration plans, generates cost optimization recommendations, and produces disaster recovery strategies across AWS, Azure, and GCP. Use when designing cloud topologies, planning migrations, applying the Well-Architected Framework, building landing zones, or optimizing multi-cloud deployments. Invoke for security architecture (zero-trust, IAM), FinOps/cost optimization, disaster recovery (RTO/RPO), managed services selection, and serverless design. Uso: agent `cloud-architect` ou invocação manual via `/cloud-architect`; não deve ser carregada proativamente pela sessão principal."
+description: "Desenho e auditoria de topologia de nuvem (AWS/Azure/GCP) — VPC, subnets, IAM least-privilege, FinOps, disaster recovery (RTO/RPO), landing zone, Well-Architected Framework. Use para topologia cloud, migração, otimização de custo ou DR. Uso: agent `cloud-architect` ou `/cloud-architect`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: infrastructure
   triggers: AWS, Azure, GCP, Google Cloud, cloud migration, cloud architecture, multi-cloud, cloud cost, Well-Architected, landing zone, cloud security, disaster recovery, cloud native, serverless architecture

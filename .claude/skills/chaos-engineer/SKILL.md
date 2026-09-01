@@ -1,11 +1,10 @@
 ---
 
 name: chaos-engineer
-description: "Designs chaos experiments, creates failure injection frameworks, and facilitates game day exercises for distributed systems — producing runbooks, experiment manifests, rollback procedures, and post-mortem templates. Use when designing chaos experiments, implementing failure injection frameworks, or conducting game day exercises. Invoke for resilience testing, blast radius control, game days, antifragile systems, fault injection, Chaos Monkey, Litmus Chaos, toxiproxy. Uso: agent `engenheiro-chaos` ou invocação manual via `/chaos-engineer`; não deve ser carregada proativamente pela sessão principal."
+description: "Desenho e execução de experimentos de chaos em sistemas distribuídos — failure injection (Chaos Monkey, Litmus, toxiproxy), game days, blast radius, rollback, post-mortem. Use para teste de resiliência, injeção de falha ou game day. Uso: agent `engenheiro-chaos` ou `/chaos-engineer`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: devops
   triggers: chaos engineering, resilience testing, failure injection, game day, blast radius, chaos experiment, fault injection, Chaos Monkey, Litmus Chaos, antifragile

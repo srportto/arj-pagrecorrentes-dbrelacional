@@ -111,6 +111,8 @@ importa para quem mexe neste código:
   Postgres local, incluindo o registro de que `pg_partman` sem consumidor é intencional
 - `openspec/changes/archive/2026-08-23-reclamar-particao-expurgo-ciclo/` — proposal, design e tasks
   completos desta app
+- Skill `python-pro` (`.claude/skills/python-pro/`) — referência de type hints, mypy strict, pytest
+  e padrões Python 3.11+ aplicáveis a este serviço
 
 ## Checklist antes do commit
 
