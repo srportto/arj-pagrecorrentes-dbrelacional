@@ -1,11 +1,10 @@
 ---
 
 name: padrao-de-logs-java
-description: "Single logging standard for Java/Spring Boot hexagonal applications — SLF4J as the only API, JSON structured by default, MDC correlation with `traceId`, and an objective criterion of level and \"what to log\" per layer. Use when the user asks to add/improve logs, configure structured JSON, or correlate requests via MDC. Uso: agents `engenheiro-seguranca` / `especialista-monitoramento` / `java-revisor` or manual invocation via `/padrao-de-logs-java`; não deve ser carregada proativamente pela sessão principal."
+description: "Padrão único de logging para apps Java/Spring Boot hexagonais — SLF4J como única API, JSON estruturado por padrão, correlação MDC com `traceId`, critério objetivo de nível e \"o que logar\" por camada. Use ao adicionar/melhorar logs, configurar JSON estruturado ou correlacionar requests via MDC. Uso: agents `engenheiro-seguranca`/`especialista-monitoramento`/`java-revisor` ou `/padrao-de-logs-java`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: logging
   triggers: adicione logs, melhore os logs, log estruturado, traceId, correlação, MDC, JSON, SLF4J

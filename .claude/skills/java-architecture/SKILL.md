@@ -1,11 +1,10 @@
 ---
 
 name: java-architecture
-description: "Reference for designing the internal architecture of an enterprise Java/Spring Boot 4 + Java 25 application — classic layered structure (controller / service / repository / domain / dto), dependency injection conventions, choice of Spring modules (Web vs WebFlux, JPA, Security, Data Redis), and test structure (slice, integration, Testcontainers). Use when reviewing the internal design of a non-hexagonal application or making framework-level decisions. Uso: sessão principal ou invocação manual via `/java-architecture`; não deve ser carregada proativamente pela sessão principal."
+description: "Referência para arquitetura interna de app Java/Spring Boot 4 + Java 25 — camadas clássicas (controller/service/repository/domain/dto), injeção de dependência, escolha de módulos Spring (Web vs WebFlux, JPA, Security, Data Redis) e estrutura de testes (slice, integração, Testcontainers). Use em app não-hexagonal ou decisão de framework. Uso: sessão principal ou `/java-architecture`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: architecture
   triggers: arquitetura Spring Boot, design interno, estrutura de pacotes, Spring Security, Spring Data JPA, WebFlux, testcontainers, camadas clássicas

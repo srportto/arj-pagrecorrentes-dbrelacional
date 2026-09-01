@@ -1,11 +1,10 @@
 ---
 
 name: banco-de-dados-performance
-description: "Optimizes relational databases (PostgreSQL/MySQL) at the SQL/SGBD level — EXPLAIN ANALYZE, index strategy (covering, partial, multi-column, `CREATE INDEX CONCURRENTLY`), tuning of SGBD configuration, vacuum/bloat diagnosis, replication, JSONB/GIN, connection pooling, slow query identification. Use when investigating a slow query, creating an index, or tuning database configuration. Uso: agent `especialista-banco-dados` ou invocação manual via `/banco-de-dados-performance`; não deve ser carregada proativamente pela sessão principal."
+description: "Otimização de banco relacional (PostgreSQL/MySQL) no nível SQL/SGBD — EXPLAIN ANALYZE, estratégia de índices, tuning de configuração, vacuum/bloat, replicação, JSONB/GIN, connection pooling, identificação de slow query. Use ao investigar query lenta, criar índice ou tunar configuração. Uso: agent `especialista-banco-dados` ou `/banco-de-dados-performance`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: database
   triggers: query lenta, EXPLAIN, índice, tuning de banco, N+1, plano de execução, pg_stat_statements, slow query, vacuum, JSONB

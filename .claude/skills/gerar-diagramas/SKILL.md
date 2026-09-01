@@ -1,11 +1,10 @@
 ---
 
 name: gerar-diagramas
-description: "Standardizes how technical diagrams are drawn and saved in this monorepo — always Mermaid when the result is written to a versioned `.md` file (architecture, sequence, data-flow, state machine), never ASCII art in those files. ASCII remains normal for diagrams drawn directly in conversation. Use when the user asks to create, update, or document a flow visually. Uso: sessão principal, carregada proativamente sempre que o pedido casar com os gatilhos acima; também disponível via `/gerar-diagramas`."
+description: "Padroniza diagramas técnicos do monorepo — sempre Mermaid em `.md` versionado (arquitetura, sequência, fluxo de dados, máquina de estados), nunca ASCII art nesses arquivos. ASCII vale em conversa direta. Use ao criar, atualizar ou documentar fluxo visualmente. Uso: sessão principal (carregada proativamente quando o pedido casar) ou `/gerar-diagramas`."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: documentation
   triggers: criar diagrama, documentar o fluxo, desenhar a arquitetura, diagrama de sequência, modelar o banco visualmente, atualizar o CLAUDE.md com o fluxo, Mermaid

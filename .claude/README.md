@@ -40,7 +40,7 @@ Fluxo típico:
 
 ```
 .claude/
-├── skills/                                # 21 skills (+ 5 skills openspec, fora deste catálogo)
+├── skills/                                # 24 skills (+ 5 skills openspec, fora deste catálogo)
 │   ├── api-rest-design/                   # REST + OpenAPI + RFC 9457
 │   ├── arquitetura-limpa-java/            # Hexagonal clássica (ports & adapters) + DDD + microservices
 │   ├── banco-de-dados-performance/        # SQL + EXPLAIN + tuning (PostgreSQL/MySQL)
@@ -57,11 +57,14 @@ Fluxo típico:
 │   ├── padrao-de-logs-java/               # JSON estruturado + MDC + traceId
 │   ├── padroes-de-projeto-java/           # 21 patterns GoF + Strategy por lista injetada
 │   ├── persistencia-jpa/                  # JPA/Hibernate (N+1, transações, locking)
+│   ├── python-pro/                        # Python 3.11+ (mypy, pytest, async) — apps/expurgo-particao
 │   ├── qualidade-codigo-java/             # Clean code + refactorings do Fowler
 │   ├── refactoring-remove-parameter/      # Foco Remove Parameter (passo a passo)
 │   ├── remover-imports-nao-usados/        # Limpeza de imports multi-linguagem
 │   ├── revisao-de-codigo-java/            # Checklist de revisão por severidade
-│   └── seguranca-aplicacao-java/          # OWASP Top 10 + JWT + CORS + secrets
+│   ├── seguranca-aplicacao-java/          # OWASP Top 10 + JWT + CORS + secrets
+│   ├── spring-data-redis/                 # Redis/Valkey — cache, sorted sets, streams, consumer groups
+│   └── terraform-engineer/                # Terraform IaC — módulos, state, providers
 └── agents/                                # 11 agents (após padronização de 2026-08-04)
     ├── arquiteto-sistemas.md              # Design de sistemas / ADRs / revisão arquitetural
     ├── cloud-architect.md                 # Topologia AWS/Azure/GCP + FinOps + DR
@@ -76,11 +79,11 @@ Fluxo típico:
     └── refatorador-java.md                # Aplicar refactorings do Fowler
 ```
 
-> **Nota sobre `design-system-architecture`:** a skill foi renomeada em 2026-08-04
-> (de `architecture-designer`) para deixar claro o escopo de **sistemas distribuídos**
-> (topologia, ADRs, escolha entre monolito e microsserviços) e evitar sobreposição
-> com `arquitetura-limpa-java` (hexagonal) e `java-architecture` (camadas clássicas
-> Spring). O conteúdo técnico base é adaptado de `https://github.com/Jeffallan/claude-skills`.
+> **Crédito do conteúdo técnico:** as skills deste catálogo foram traduzidas, adaptadas e
+> estendidas a partir do catálogo original de [`Jeffallan/claude-skills`](https://github.com/Jeffallan/claude-skills)
+> — fonte base do conteúdo técnico das skills (exceto as de openspec, que vêm do próprio openspec).
+> Cada frontmatter de skill mantém apenas o `author` local do catálogo (`srportto/srportto`);
+> a origem é creditada aqui, em ponto único, para não poluir o frontmatter de cada skill.
 
 ## Padrão de cada skill
 
@@ -136,25 +139,28 @@ Três atalhos:
 | Topologia de nuvem (VPC, IAM, DR, FinOps) | `cloud-architect` | `devops-cicd` |
 | Experimento de chaos / game day | `chaos-engineer` | `monitoramento-java` |
 | Gerar diagrama Mermaid versionado | `gerar-diagramas` | `design-system-architecture` |
+| Cache, agendamento ou fila de trabalho com Redis/Valkey | `spring-data-redis` | `arquitetura-limpa-java` (adapter), `mensageria-sqs-kafka` (comparável) |
+| Criar ou revisar código Python (Lambda, scripts) | `python-pro` | `arquitetura-limpa-java` (estrutura hexagonal em outros serviços) |
+| Terraform IaC (módulos, state, providers) | `terraform-engineer` | `cloud-architect` (topologia), `devops-cicd` (deploy) |
 
 ## Como escolher o agent certo
 
 ### Por papel
 
-| Papel | Agent | Esforço | Quando invocar |
-|---|---|---|---|
-| Construtor | `java-construtor` | medium | Gerar/expandir aplicação Java |
-| Revisor (tempestivo) | `java-revisor` (modo `tempestivo`) | medium | Revisão de diff pequeno (uma classe, um método) |
-| Revisor (auditoria) | `java-revisor` (modo `auditoria`) | high | Veredicto final de merge / auditoria completa |
-| Designer de API | `projetista-api` | medium | Desenhar/auditar contrato de API REST |
-| DBA / SRE de banco | `especialista-banco-dados` | medium | Investigar query lenta, criar índice, tuning |
-| SRE de observabilidade | `especialista-monitoramento` | medium | Configurar observabilidade, métricas, alertas |
-| Refatorador | `refatorador-java` | medium | Aplicar refactorings do Fowler |
-| DevOps | `engenheiro-devops` | medium | Pipeline CI/CD + Dockerfile + manifest K8s (variantes) |
-| Segurança (auditoria dedicada) | `engenheiro-seguranca` | medium | Varredura de CVEs, pentest interno, pré-produção |
-| Arquiteto de sistemas | `arquiteto-sistemas` | medium | Desenhar/revisar arquitetura distribuída, escrever ADR |
-| Arquiteto de nuvem | `cloud-architect` | medium | Topologia AWS/Azure/GCP, IAM, DR, FinOps |
-| Chaos engineer | `engenheiro-chaos` | medium | Desenhar/executar experimento de falha, game day |
+| Papel | Agent | Modelo | Esforço | Quando invocar |
+|---|---|---|---|---|
+| Construtor | `java-construtor` | sonnet | medium | Gerar/expandir aplicação Java (inclui variantes cache/stream com Redis/Valkey e Lambda Python) |
+| Revisor (tempestivo) | `java-revisor` (modo `tempestivo`) | opus | high | Revisão de diff pequeno (uma classe, um método) |
+| Revisor (auditoria) | `java-revisor` (modo `auditoria`) | opus | high | Veredicto final de merge / auditoria completa |
+| Designer de API | `projetista-api` | sonnet | medium | Desenhar/auditar contrato de API REST |
+| DBA / SRE de banco | `especialista-banco-dados` | sonnet | medium | Investigar query lenta, criar índice, tuning |
+| SRE de observabilidade | `especialista-monitoramento` | sonnet | medium | Configurar observabilidade, métricas, alertas, tracing |
+| Refatorador | `refatorador-java` | sonnet | medium | Aplicar refactorings do Fowler |
+| DevOps | `engenheiro-devops` | sonnet | medium | Pipeline CI/CD + Dockerfile + manifest K8s (variantes) |
+| Segurança (auditoria dedicada) | `engenheiro-seguranca` | sonnet | medium | Varredura de CVEs, pentest interno, pré-produção |
+| Arquiteto de sistemas | `arquiteto-sistemas` | sonnet | medium | Desenhar/revisar arquitetura distribuída, escrever ADR |
+| Arquiteto de nuvem | `cloud-architect` | sonnet | medium | Topologia AWS/Azure/GCP, IAM, DR, FinOps, Terraform |
+| Chaos engineer | `engenheiro-chaos` | sonnet | medium | Desenhar/executar experimento de falha, game day |
 
 ### Por fluxo de trabalho
 
@@ -173,15 +179,22 @@ Três atalhos:
 
 ### Regra de esforço
 
-`java-revisor` no modo `auditoria` é o único ponto com `effort: high` neste catálogo. É a
+`java-revisor` é o **único** agent com `model: opus` e `effort: high` neste catálogo. É a
 **última linha de defesa** antes de algo ser declarado pronto. Use-o para:
 
 - Veredicto final de merge de mudança grande.
 - Auditoria do trabalho de outro agent (ex.: saída do `java-construtor`).
 - Pré-produção de feature crítica.
 
-Para o dia a dia, prefira `java-revisor` no modo `tempestivo` (effort `medium`) — feedback
-rápido sem bloquear o fluxo.
+A diferença entre os dois modos do `java-revisor` é **amplitude da varredura**, não o tier
+do modelo (sempre opus/high):
+
+- `tempestivo` — feedback rápido sobre diff/classe; não bloqueia o fluxo.
+- `auditoria` — varredura completa de todos os arquivos da entrega, com veredicto
+  APROVADO/REPROVADO.
+
+Todos os demais agents são `sonnet` + `medium` — calibrados para o trabalho tático do dia
+a dia (gerar, revisar fragmento, investigar, configurar) sem o overhead do opus.
 
 ## Princípios do catálogo
 

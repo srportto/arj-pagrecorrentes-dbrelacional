@@ -6,7 +6,7 @@ model: sonnet
 effort: medium
 permissionMode: acceptEdits
 maxTurns: 20
-skills: [criar-aplicacao-java, arquitetura-limpa-java, mensageria-sqs-kafka, persistencia-jpa, java-moderno, qualidade-codigo-java]
+skills: [criar-aplicacao-java, arquitetura-limpa-java, mensageria-sqs-kafka, persistencia-jpa, java-moderno, qualidade-codigo-java, spring-data-redis, python-pro]
 memory: project
 background: true
 isolation: worktree
@@ -29,6 +29,12 @@ Skills que você consome:
 - `.claude/skills/arquitetura-limpa-java` — em qual camada vai cada classe
 - `.claude/skills/mensageria-sqs-kafka` e `.claude/skills/persistencia-jpa` — quando a
   variante envolver broker ou banco
+- `.claude/skills/spring-data-redis` — quando a variante envolver Redis/Valkey (cache, agenda
+  em sorted set, fila de trabalho em stream com consumer group — padrão do
+  `temporiza-autorizacao`)
+- `.claude/skills/python-pro` — quando a app for Lambda Python (`apps/expurgo-particao`):
+  type hints mypy strict, async/await, pytest; o domínio em si vive em
+  `criar-aplicacao-java`/`arquitetura-limpa-java` adaptados para Python
 - `.claude/skills/java-moderno` — para features de Java 25+ (records, sealed, virtual threads)
 - `.claude/skills/qualidade-codigo-java` — clean code (DRY/KISS/YAGNI), Object Calisthenics e
   convenções de nomenclatura a aplicar **durante** a geração, não só depois na revisão

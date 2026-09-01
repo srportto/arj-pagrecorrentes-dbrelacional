@@ -1,11 +1,10 @@
 ---
 
 name: java-moderno
-description: "Reference for modern Java 25 features (records, sealed classes, pattern matching, switch expressions, text blocks, virtual threads, `var`) with before/after examples. Use when writing new code that can benefit from modern features, migrating code from Java 8/11/17/21 to 25, or when asking \"what is the modern way to do X in Java\". Uso: agents `java-construtor` / `java-revisor` or manual invocation via `/java-moderno`; não deve ser carregada proativamente pela sessão principal."
+description: "Referência de features modernas do Java 25 (records, sealed classes, pattern matching, switch expressions, text blocks, virtual threads, `var`) com exemplos antes/depois. Use ao escrever código que se beneficia de feature moderna, migrar de Java 8/11/17/21, ou perguntar \"qual o jeito moderno de fazer X em Java\". Uso: agents `java-construtor`/`java-revisor` ou `/java-moderno`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: language-features
   triggers: records, sealed classes, pattern matching, virtual threads, text blocks, switch expressions, Java 25, var

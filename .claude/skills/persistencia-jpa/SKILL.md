@@ -1,11 +1,10 @@
 ---
 
 name: persistencia-jpa
-description: "Pocket reference for the most common JPA/Hibernate problems — N+1, `LazyInitializationException`, misplaced transactions, lost-update concurrency, slow listings without pagination, entity/projection design, optimistic locking. Use whenever there is doubt about persistence performance or behavior, or when reviewing code that touches `Repository`/`@Entity`. Uso: agents `especialista-banco-dados` / `java-construtor` / `java-revisor` or manual invocation via `/persistencia-jpa`; não deve ser carregada proativamente pela sessão principal."
+description: "Referência de bolso dos problemas mais comuns de JPA/Hibernate — N+1, `LazyInitializationException`, transações mal posicionadas, lost-update, listagens lentas sem paginação, design de entidade/projeção, optimistic locking. Use em dúvida de performance ou comportamento de persistência, ou ao revisar código que toca `Repository`/`@Entity`. Uso: agents `especialista-banco-dados`/`java-construtor`/`java-revisor` ou `/persistencia-jpa`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: persistence
   triggers: muitas queries, N+1, LazyInitializationException, transação, lock, paginação lenta, JPA, Hibernate, dirty checking

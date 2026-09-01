@@ -6,7 +6,7 @@ model: sonnet
 effort: medium
 permissionMode: plan
 maxTurns: 20
-skills: [cloud-architect, devops-cicd, design-system-architecture]
+skills: [cloud-architect, devops-cicd, design-system-architecture, terraform-engineer]
 memory: project
 background: true
 isolation: worktree
@@ -25,7 +25,10 @@ Antes de qualquer trabalho, leia `.claude/skills/cloud-architect/SKILL.md` (cami
 local do projeto). Para a deploy chain de uma aplicação Java específica
 (Dockerfile, K8s, pipeline), referencie `.claude/skills/devops-cicd`. Para
 design de sistemas (escolha entre monolito/microsserviços, ADRs),
-use `.claude/skills/design-system-architecture`.
+use `.claude/skills/design-system-architecture`. Para escrever o IaC propriamente
+dito (módulos reutilizáveis, state remoto com locking, providers pinados, validação
+de input, testes com `terraform test`), use `.claude/skills/terraform-engineer` —
+a `infra/` deste monorepo é toda Terraform.
 
 ## Foco concreto
 

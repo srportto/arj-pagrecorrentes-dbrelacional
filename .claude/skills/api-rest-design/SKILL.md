@@ -1,11 +1,10 @@
 ---
 
 name: api-rest-design
-description: "Designs and audits REST API contracts for Java/Spring Boot — resource modeling, OpenAPI 3.1, versioning, pagination (offset/cursor), HATEOAS, error handling with RFC 9457 Problem Details, edge validation. Use when designing a new API, reviewing an existing contract, or standardizing error/pagination patterns. Uso: agent `projetista-api` ou invocação manual via `/api-rest-design`; não deve ser carregada proativamente pela sessão principal."
+description: "Design e auditoria de contratos REST para Java/Spring Boot — modelagem de recursos, OpenAPI 3.1, versionamento, paginação (offset/cursor), HATEOAS, RFC 9457 Problem Details, validação de borda. Use ao desenhar API nova, revisar contrato ou padronizar erro/paginação. Uso: agent `projetista-api` ou `/api-rest-design`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: api-design
   triggers: REST API, OpenAPI, swagger, versionamento, paginação, HATEOAS, RFC 9457, Problem Details, contrato HTTP

@@ -1,11 +1,10 @@
 ---
 
 name: criar-aplicacao-java
-description: "Generates a buildable Spring Boot 4 + Java 25 application skeleton following the classic hexagonal (ports & adapters) layout — `domain` (model, port/in, port/out) / `application` (use cases) / `infrastructure` (adapters) —, with a `/disponibilidade` health route and a chosen variant (REST, CRUD with DB, SQS listener, Kafka consumer, SQS-to-Kafka bridge, REST publishing to Kafka, etc.). Use when the user asks to create a new application, microservice, or skeleton. Uso: agent `java-construtor` (and `java-revisor` modo `auditoria` for final validation) or manual invocation via `/criar-aplicacao-java`; não deve ser carregada proativamente pela sessão principal."
+description: "Gera esqueleto buildável de app Spring Boot 4 + Java 25 em hexagonal clássica (domain/application/infrastructure), com rota `/disponibilidade` e variante escolhida (REST, CRUD com banco, SQS listener, Kafka consumer, ponte SQS→Kafka, etc.). Use ao criar aplicação, microsserviço ou esqueleto novo. Uso: agent `java-construtor` (validado por `java-revisor` modo `auditoria`) ou `/criar-aplicacao-java`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "2.0.0"
   domain: application-scaffolding
   triggers: crie uma aplicação, novo microserviço, esqueleto de app java, app que consome fila, consumidor kafka, hexagonal Spring Boot, ports and adapters

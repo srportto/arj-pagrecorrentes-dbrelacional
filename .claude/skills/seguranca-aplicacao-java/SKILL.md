@@ -1,11 +1,10 @@
 ---
 
 name: seguranca-aplicacao-java
-description: "Application-security guide focused on Java/Spring Boot code (not cloud infrastructure or corporate compliance) — OWASP Top 10 applied to Java, password hashing, input validation, parameterized queries, JWT, security headers, CORS, vulnerable-dependency scanning. Use when implementing auth/authz, preventing OWASP, configuring CORS/CSP, issuing/validating JWT, or auditing dependencies. Uso: agents `engenheiro-seguranca` / `java-revisor` / `engenheiro-devops` or manual invocation via `/seguranca-aplicacao-java`; não deve ser carregada proativamente pela sessão principal."
+description: "Guia de segurança de aplicação focado em código Java/Spring Boot (não infra de nuvem nem compliance) — OWASP Top 10 aplicado a Java, hashing de senha, validação de entrada, queries parametrizadas, JWT, headers de segurança, CORS, varredura de dependências vulneráveis. Use ao implementar auth/authz, prevenir OWASP, configurar CORS/CSP, emitir/validar JWT ou auditar dependências. Uso: agents `engenheiro-seguranca`/`java-revisor`/`engenheiro-devops` ou `/seguranca-aplicacao-java`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: security
   triggers: segurança, OWASP, JWT, bcrypt, SQL injection, XSS, headers de segurança, segredo hardcoded, CVE, CORS

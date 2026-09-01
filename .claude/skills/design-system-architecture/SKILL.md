@@ -1,11 +1,10 @@
 ---
 
 name: design-system-architecture
-description: "Use when designing or reviewing the high-level architecture of a distributed system — choosing between monolith and microservices, writing Architecture Decision Records (ADRs), mapping component interactions, evaluating technology trade-offs, and planning for scalability and resilience. Distinct from `arquitetura-limpa-java` (which addresses intra-application layering) and `java-architecture` (Spring stack). Use for system design, architecture review, ADR authoring, scalability planning, and infrastructure pattern selection. Uso: agent `arquiteto-sistemas` ou invocação manual via `/design-system-architecture`; não deve ser carregada proativamente pela sessão principal."
+description: "Desenho e revisão de arquitetura de alto nível de sistemas distribuídos — monolito vs microsserviços, ADRs, interação entre componentes, trade-offs de tecnologia, escalabilidade e resiliência. Distinta de `arquitetura-limpa-java` (camadas internas) e `java-architecture` (stack Spring). Uso: agent `arquiteto-sistemas` ou `/design-system-architecture`; não carregar proativamente."
 license: MIT
 metadata:
   author: https://github.com/srportto/srportto
-  co-author: https://github.com/Jeffallan/claude-skills
   version: "1.1.0"
   domain: system-architecture
   triggers: system design, architecture, ADR, microservices, scalability, technical design, infrastructure, distributed systems, monolith decomposition
