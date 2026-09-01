@@ -4,6 +4,7 @@ name: qualidade-codigo-java
 description: 'Guia de clean code aplicado a Java — DRY, KISS, YAGNI, naming, imutabilidade, `Optional`, streams, tratamento de exceção, Object Calisthenics — e refactorings do Fowler (Remove Parameter, Extract Method, Replace Magic Number, etc.). É o lado "ativo" da revisão: `revisao-de-codigo-java` diz o que revisar; esta diz como aplicar. Uso: sessão principal e agent `java-construtor` (carregada proativamente quando código Java for gerado/alterado); também `java-revisor`/`refatorador-java` ou `/qualidade-codigo-java`.'
 license: MIT
 metadata:
+
   author: https://github.com/srportto/srportto
   version: "1.3.0"
   domain: code-quality
