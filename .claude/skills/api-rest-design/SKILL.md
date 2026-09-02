@@ -13,7 +13,6 @@ metadata:
   output-format: document
   related-skills: arquitetura-limpa-java, java-architecture, revisao-de-codigo-java, seguranca-aplicacao-java
 ---
----
 
 # API REST Design (Java/Spring Boot)
 

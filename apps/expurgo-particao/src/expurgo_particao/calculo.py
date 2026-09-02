@@ -49,7 +49,7 @@ def obter_particao_alvo(data_referencia: dt.date) -> int:
 
 
 def agora_utc_date(agora: dt.datetime | None = None) -> dt.date:
-    """"Hoje", fixado em UTC -- nunca no fuso horario local do processo.
+    """ "Hoje", fixado em UTC -- nunca no fuso horario local do processo.
 
     A gaveta vira toda quinta-feira 00:00 UTC (o epoch, 1970-01-01, foi quinta). Se a
     rotina calculasse a semana no fuso local do container, ela discordaria do
@@ -57,9 +57,9 @@ def agora_utc_date(agora: dt.datetime | None = None) -> dt.date:
     ver design.md, secao Risks, "Divergencia de relogio".
     """
     if agora is None:
-        agora = dt.datetime.now(dt.timezone.utc)
+        agora = dt.datetime.now(dt.UTC)
     elif agora.tzinfo is None:
         raise ValueError("agora precisa ser timezone-aware; passe um datetime com tzinfo")
     else:
-        agora = agora.astimezone(dt.timezone.utc)
+        agora = agora.astimezone(dt.UTC)
     return agora.date()

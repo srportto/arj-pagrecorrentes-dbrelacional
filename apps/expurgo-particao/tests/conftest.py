@@ -14,9 +14,11 @@ from __future__ import annotations
 import datetime as dt
 import os
 import uuid
+from collections.abc import Iterator
 
 import psycopg
 import pytest
+from psycopg.rows import TupleRow
 
 
 def _dsn() -> str:
@@ -37,13 +39,13 @@ def dsn() -> str:
 
 
 @pytest.fixture
-def conexao(dsn: str):
+def conexao(dsn: str) -> Iterator[psycopg.Connection[TupleRow]]:
     with psycopg.connect(dsn, autocommit=False) as conn:
         yield conn
 
 
 def inserir_autorizacao_sintetica(
-    cur,
+    cur: psycopg.Cursor[TupleRow],
     particao: int,
     data_hora_ultima_atlz: dt.datetime,
 ) -> uuid.UUID:
@@ -86,36 +88,37 @@ def inserir_autorizacao_sintetica(
 
 
 def truncar_particoes(dsn_str: str, *particoes: int) -> None:
-    with psycopg.connect(dsn_str, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            for p in particoes:
-                cur.execute(f"TRUNCATE autorizacoes_pe{p}")
+    with psycopg.connect(dsn_str, autocommit=True) as conn, conn.cursor() as cur:
+        for p in particoes:
+            cur.execute(f"TRUNCATE autorizacoes_pe{p}")
 
 
 def contar_linhas(dsn_str: str, particao: int) -> int:
-    with psycopg.connect(dsn_str, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute(f"SELECT count(*) FROM autorizacoes_pe{particao}")
-            return cur.fetchone()[0]
+    with psycopg.connect(dsn_str, autocommit=True) as conn, conn.cursor() as cur:
+        cur.execute(f"SELECT count(*) FROM autorizacoes_pe{particao}")
+        linha = cur.fetchone()
+        if linha is None:
+            raise RuntimeError("count(*) nao devolveu linha")
+        total: int = linha[0]
+        return total
 
 
 def particao_ainda_anexada(dsn_str: str, particao: int) -> bool:
     """Confirma que a particao continua sendo filha de `autorizacoes` no pg_inherits,
     com o mesmo relpartbound -- a prova de que TRUNCATE nao desanexou nada."""
     nome = f"autorizacoes_pe{particao}"
-    with psycopg.connect(dsn_str, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT i.inhparent::regclass::text, pg_get_expr(c.relpartbound, c.oid)
-                FROM pg_class c
-                JOIN pg_inherits i ON i.inhrelid = c.oid
-                WHERE c.relname = %s
-                """,
-                (nome,),
-            )
-            row = cur.fetchone()
-            if row is None:
-                return False
-            pai, bound = row
-            return pai == "autorizacoes" and f"({particao})" in bound
+    with psycopg.connect(dsn_str, autocommit=True) as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT i.inhparent::regclass::text, pg_get_expr(c.relpartbound, c.oid)
+            FROM pg_class c
+            JOIN pg_inherits i ON i.inhrelid = c.oid
+            WHERE c.relname = %s
+            """,
+            (nome,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            return False
+        pai, bound = row
+        return pai == "autorizacoes" and f"({particao})" in bound

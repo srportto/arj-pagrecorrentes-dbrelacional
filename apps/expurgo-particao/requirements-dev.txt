@@ -1,2 +1,10 @@
 -r requirements.txt
+
+# Instala a propria app em modo editavel: os testes importam `expurgo_particao`
+# sem depender de PYTHONPATH definido pela esteira.
+-e .
+
 pytest==8.0.0
+mypy==1.14.1
+ruff==0.9.6
+black==25.1.0

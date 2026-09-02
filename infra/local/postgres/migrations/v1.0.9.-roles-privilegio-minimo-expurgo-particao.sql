@@ -31,8 +31,8 @@ CREATE ROLE expurgo_particao_rotina LOGIN PASSWORD :'senha_expurgo_particao_roti
 GRANT CONNECT ON DATABASE "db-csp-postgres" TO expurgo_particao_rotina;
 GRANT USAGE ON SCHEMA public TO expurgo_particao_rotina;
 
--- GRANT SELECT na tabela-pai nao basta: persistencia.py (existe_dado,
--- max_data_hora_ultima_atlz) consulta a particao pelo nome direto
+-- GRANT SELECT na tabela-pai nao basta: persistencia.py
+-- (max_data_hora_ultima_atlz) consulta a particao pelo nome direto
 -- (`SELECT ... FROM autorizacoes_pe<n>`), nao atraves da tabela-pai -- o Postgres so
 -- roteia herdando privilegio quando a consulta entra pela tabela-pai. Por isso SELECT
 -- e' concedido particao a particao (900..999), igual ao TRUNCATE abaixo -- nunca na

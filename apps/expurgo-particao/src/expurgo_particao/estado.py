@@ -13,17 +13,24 @@ import datetime as dt
 import enum
 
 
-class EstadoParticao(str, enum.Enum):
+class EstadoParticao(enum.StrEnum):
     VAZIA = "VAZIA"
     DADO_CICLO_ANTERIOR = "DADO_CICLO_ANTERIOR"
     DADO_RECENTE = "DADO_RECENTE"
 
 
-class Acao(str, enum.Enum):
+class Acao(enum.StrEnum):
     NENHUMA = "NENHUMA"
     TRUNCATE = "TRUNCATE"
     RECUSA_DADO_RECENTE = "RECUSA_DADO_RECENTE"
     RECUSA_LOCK_TIMEOUT = "RECUSA_LOCK_TIMEOUT"
+    # Erro nao previsto. Sem esta acao, a execucao terminava sem registro algum -- e como
+    # a ausencia de registro e' o proprio sinal de "rotina parada", uma rotina que falha a
+    # cada ciclo era indistinguivel de uma rotina que nao esta sendo invocada.
+    FALHA = "FALHA"
+    # Esvaziamento impedido pelo interruptor EXPURGO_PARTICAO_DESARMAR_TRUNCATE. Antes
+    # gravava NENHUMA, obrigando o auditor a deduzir o desarme cruzando estado com acao.
+    RECUSA_DESARMADO = "RECUSA_DESARMADO"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -38,14 +45,16 @@ class ResultadoExecucao:
     semana: int
     particao_escrita: int
     particao_alvo: int
-    # None só no caso de RECUSA_LOCK_TIMEOUT: a verificação nem chegou a rodar, então não
-    # há estado observado para relatar -- não é o mesmo que VAZIA.
+    # None só no caso de RECUSA_LOCK_TIMEOUT e FALHA: a verificação nem chegou a rodar,
+    # então não há estado observado para relatar -- não é o mesmo que VAZIA.
     estado: EstadoParticao | None
     acao: Acao
     modo_consulta: bool
     executado_em: dt.datetime
+    # Natureza do erro, preenchido só quando acao == FALHA.
+    detalhe: str | None = None
 
-    def como_registro(self) -> dict:
+    def como_registro(self) -> dict[str, object]:
         return {
             "semana": self.semana,
             "particao_escrita": self.particao_escrita,
@@ -54,4 +63,5 @@ class ResultadoExecucao:
             "acao": self.acao.value,
             "modo_consulta": self.modo_consulta,
             "executado_em": self.executado_em.isoformat(),
+            "detalhe": self.detalhe,
         }

@@ -20,15 +20,31 @@ jobs:
           cache: pip
           cache-dependency-path: apps/expurgo-particao/requirements-dev.txt
 
+      # `requirements-dev.txt` inclui `-e .`, entao a app fica instalada e os testes
+      # importam `expurgo_particao` sem PYTHONPATH definido aqui.
       - name: Instalar dependencias
         working-directory: apps/expurgo-particao
         run: pip install -r requirements-dev.txt
 
+      # Verificacao estatica antes dos testes: erro de tipo ou de lint reprova a esteira.
+      # A configuracao vive em apps/expurgo-particao/pyproject.toml, versionada -- e' a
+      # mesma que o desenvolvedor executa localmente.
+      - name: Verificar tipos (mypy strict)
+        working-directory: apps/expurgo-particao
+        run: mypy
+
+      - name: Verificar lint (ruff)
+        working-directory: apps/expurgo-particao
+        run: ruff check .
+
+      - name: Verificar formatacao (black)
+        working-directory: apps/expurgo-particao
+        run: black --check .
+
+      # Ignora test_rotina_integracao.py (exige Postgres real no ar) -- mesma
+      # convencao de separacao das 5 apps Java (`!*IntegrationTest`), adaptada ao
+      # nome de arquivo Python. A arvore de decisao do expurgo continua coberta aqui
+      # por test_rotina_decisao.py, que usa duplo de teste em vez de banco.
       - name: Rodar testes unitarios
         working-directory: apps/expurgo-particao
-        env:
-          PYTHONPATH: src
-        # Ignora test_rotina_integracao.py (exige Postgres real no ar) -- mesma
-        # convencao de separacao das 5 apps Java (`!*IntegrationTest`), adaptada ao
-        # nome de arquivo Python.
         run: pytest tests --ignore=tests/test_rotina_integracao.py

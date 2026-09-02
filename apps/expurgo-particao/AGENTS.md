@@ -34,14 +34,22 @@ Leia nesta ordem:
 
 ```bash
 cd apps/expurgo-particao
-pip install -r requirements-dev.txt
+pip install -r requirements-dev.txt   # inclui `-e .`: nao e' preciso PYTHONPATH
 export EXPURGO_PARTICAO_TEST_DSN="postgresql://docker:<sua-senha>@localhost:5432/db-csp-postgres"
-pytest
+mypy && ruff check . && black --check . && pytest
 ```
 
-`test_calculo.py` e `test_classificacao.py` são puros (sem banco). `test_rotina_integracao.py`
-exige o Postgres local no ar com a migration `v1.0.7` aplicada — exercita o `TRUNCATE` de verdade
-com massa sintética e afirma que as gavetas **vizinhas** (alvo−1, alvo+1) ficam intactas.
+Puros, sem banco (rodam no CI): `test_calculo.py`, `test_classificacao.py`, `test_estado.py`,
+`test_handler.py` (DSN, evento, ambiente) e `test_rotina_decisao.py` — este último exercita a
+**árvore de decisão do expurgo** com duplo de conexão, para que a lógica que decide destruir dado
+tenha verificação automática mesmo com o teste de integração excluído da esteira.
+
+`test_rotina_integracao.py` exige o Postgres local no ar com as migrations `v1.0.7` e `v1.1.0`
+aplicadas — exercita o `TRUNCATE` de verdade com massa sintética, afirma que as gavetas
+**vizinhas** (alvo−1, alvo+1) ficam intactas, e prova que esvaziamento e registro aparecem juntos.
+
+A configuração de `mypy --strict`, `ruff` e `black` vive em `pyproject.toml` — é a mesma que a
+esteira executa, que roda as três antes do `pytest`.
 
 > `ci-testesunitarios-expurgo-particao.yml` roda `pytest tests --ignore=tests/test_rotina_integracao.py`
 > a cada push/PR que toque `apps/expurgo-particao/**`, mesmo padrão de path das cinco apps Java.
@@ -92,14 +100,28 @@ importa para quem mexe neste código:
 4. **`gaveta vazia` é resultado normal, não erro.** Por ~87 semanas desde o primeiro commit do
    projeto, toda execução encontra a gaveta alvo vazia. Não trate `EstadoParticao.VAZIA` como
    anomalia nem adicione alarme sobre ausência de `TRUNCATE`.
-5. **`RECUSA_LOCK_TIMEOUT` tem `estado=None`, não `VAZIA`.** Quando o `lock_timeout` (5s) esgota, a
+5. **`RECUSA_LOCK_TIMEOUT` e `FALHA` têm `estado=None`, não `VAZIA`.** Nos dois casos a
    verificação nem chegou a rodar — não confunda ausência de leitura com partição vazia observada.
+   As seis ações possíveis são `NENHUMA`, `TRUNCATE`, `RECUSA_DADO_RECENTE`, `RECUSA_LOCK_TIMEOUT`,
+   `RECUSA_DESARMADO` e `FALHA`; o `CHECK` que as aceita está na migration `v1.1.0`, e `FALHA` é a
+   única que preenche a coluna `detalhe` (classe e mensagem do erro, nunca dado de linha).
 6. **Nomes de tabela de partição nunca são parametrizados como bind.** `nome_tabela_particao`
    valida a faixa (`900..999`) antes de montar `sql.Identifier` — é a defesa contra SQL injection
    neste módulo. Não troque por f-string nem remova a validação de faixa.
-7. **Verificação e `TRUNCATE` vivem na mesma transação.** Se a classificação decidir por não
-   truncar, `rotina.py` sempre chama `ROLLBACK` explícito — não há como a verificação deixar efeito
-   residual mesmo sendo só leitura.
+7. **Verificação, `TRUNCATE` e registro vivem na mesma transação.** `_classificar_e_decidir`
+   **não commita** no caminho de esvaziamento de propósito: deixa a transação aberta para que
+   `executar` grave o registro e feche os dois num commit só. Não pode existir gaveta esvaziada sem
+   registro — a ausência de registro é o sinal de "rotina parada" (job `pg_cron` da `v1.0.10`), e um
+   commit entre os dois faria a supervisão concluir o oposto do que aconteceu. Se a classificação
+   decidir por não truncar, `rotina.py` sempre chama `ROLLBACK` explícito.
+
+8. **Falha não prevista é registrada e re-lançada, nunca engolida.** `executar` captura `Exception`
+   (jamais `BaseException`), grava `acao=FALHA` em transação própria e propaga o erro original —
+   engolir zeraria a métrica de erro da Lambda, e a supervisão não pode depender só dela.
+
+9. **Migrations rodam em ordem ALFABÉTICA.** `v1.0.11` ordenaria logo após `v1.0.1`, antes da
+   `v1.0.7`; por isso a migration desta app é `v1.1.0`. (A `v1.0.10` já sofre desse problema hoje —
+   roda em 3º lugar, antes das tabelas que referencia.)
 
 ## Documentação relacionada
 

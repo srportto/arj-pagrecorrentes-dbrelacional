@@ -10,7 +10,7 @@ import datetime as dt
 
 from expurgo_particao.estado import EstadoParticao
 
-# Retenção deliberada e' de 98 semanas (ver design.md, D2). Um dado corretamente
+# A retenção deliberada é de 98 semanas (ver design.md, D2). Um dado corretamente
 # esvaziável na partição alvo tem, por construção, idade de ~98 semanas (a variação de
 # +-3.5 dias vem de onde dentro da semana ele foi escrito). Uma margem de segurança
 # ampla -- 90 semanas -- separa "dado do ciclo anterior" (idade real) de "dado recente"
