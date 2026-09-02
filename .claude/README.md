@@ -40,7 +40,7 @@ Fluxo típico:
 
 ```
 .claude/
-├── skills/                                # 24 skills (+ 5 skills openspec, fora deste catálogo)
+├── skills/                                # 25 skills (+ 5 skills openspec, fora deste catálogo)
 │   ├── api-rest-design/                   # REST + OpenAPI + RFC 9457
 │   ├── arquitetura-limpa-java/            # Hexagonal clássica (ports & adapters) + DDD + microservices
 │   ├── banco-de-dados-performance/        # SQL + EXPLAIN + tuning (PostgreSQL/MySQL)
@@ -60,6 +60,7 @@ Fluxo típico:
 │   ├── python-pro/                        # Python 3.11+ (mypy, pytest, async) — apps/expurgo-particao
 │   ├── qualidade-codigo-java/             # Clean code + refactorings do Fowler
 │   ├── refactoring-remove-parameter/      # Foco Remove Parameter (passo a passo)
+│   ├── refinamento-de-historias/          # Refinar história/demanda em spec pronta (INVEST + BDD observável)
 │   ├── remover-imports-nao-usados/        # Limpeza de imports multi-linguagem
 │   ├── revisao-de-codigo-java/            # Checklist de revisão por severidade
 │   ├── seguranca-aplicacao-java/          # OWASP Top 10 + JWT + CORS + secrets
@@ -125,6 +126,8 @@ Três atalhos:
 | Configurar observabilidade (Prometheus, OTel) | `monitoramento-java` | `padrao-de-logs-java` |
 | Implementar autenticação/autorização | `seguranca-aplicacao-java` | `arquitetura-limpa-java`, `java-architecture` |
 | Auditar segurança pré-produção | `seguranca-aplicacao-java` | `padrao-de-logs-java` |
+| Refinar demanda/história bruta em spec pronta | `refinamento-de-historias` | `openspec-propose` (formalizar), `api-rest-design` (contrato), `design-system-architecture` |
+| Escrever ou criticar critério de aceite | `refinamento-de-historias` | `mensageria-sqs-kafka` (idempotência), `persistencia-jpa` |
 | Revisar diff/PR | `revisao-de-codigo-java` | `padrao-de-logs-java`, `arquitetura-limpa-java`, `persistencia-jpa` |
 | Auditar trabalho de outro agent | `revisao-de-codigo-java` | (todas conforme o tema do trabalho) |
 | Aplicar refactoring | `qualidade-codigo-java` | `refactoring-remove-parameter` (foco) |
