@@ -83,6 +83,12 @@ terraform.rc
 
 ### Python (apps/expurgo-particao) ###
 __pycache__/
+
+# Artefatos de `pip install -e .` (apps/expurgo-particao)
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 *.pyc
 .pytest_cache/
 
