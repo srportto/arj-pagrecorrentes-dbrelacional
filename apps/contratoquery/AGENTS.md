@@ -36,7 +36,7 @@ mvn test -Dtest=ListarAutorizacoesServiceTest#metodo # Método específico
 > quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
 > delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
 
-Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `CancelamentoResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest` (`domain/enums/`); `PlanCacheModeHikariIntegrationTest` (`integration/`).
+Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ListarPorContaIntegrationTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `CancelamentoResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest`, `DirecaoOrdenacaoTest` (`domain/enums/`); `OrdenacaoTest` (`domain/model/`); `PlanCacheModeHikariIntegrationTest` (`integration/`).
 
 ## Pré-requisitos
 
@@ -97,7 +97,7 @@ requisições).
 | `idUnicoContaContratante` | opcional no controller; se **omitido**, o caso de uso valida nulidade | 422 — `BusinessException`: "idUnicoContaContratante é obrigatório" |
 | `pagina` | deve ser **≥ 0** | 422 — `BusinessException`: "pagina deve ser maior ou igual a 0" |
 | `tamanho` | deve ser **entre 1 e 100** (inclusive) | 422 — `BusinessException`: "tamanho deve estar entre 1 e 100" |
-| `ordenarPor` | aceita apenas a **whitelist** de campos ordenáveis (atualmente: `dataHoraInclusao,desc` é o default; outros valores reconhecidos dependem do mapeamento de campos) | 422 — `BusinessException` listando os campos aceitos |
+| `ordenarPor` | formato `campo` ou `campo,direcao`, parseado inteiro por `Ordenacao.de` (`domain/model/`): campo contra whitelist fechada, direção contra `asc`/`desc` (qualquer caixa); campo vazio, direção vazia ou mais de duas partes são rejeitados — nada disso vira padrão silencioso. Omitido/em branco → `Ordenacao.padrao()` (`dataHoraInclusao,desc`) | 422 — `BusinessException` citando o valor recebido e os aceitos (campo ou direção, conforme o caso) |
 
 > **Teto de `tamanho` = 100** impede `?tamanho=999999`, que dispararia varredura completa de partições sem limite.
 > **Quebra de contrato (mudança de versão anterior a esta migração):** clientes que enviam `idUnicoContaContratante` vazio e esperavam 400 do Spring agora recebem **422** desta API — o controller deixou o binding ser opcional e a validação virou de negócio. Era 400 (Spring) → agora 422 (handler).
@@ -109,7 +109,7 @@ requisições).
 | 422 | `MethodArgumentNotValidException` | Falha de `@Valid` no body / params — payload do cliente não respeitou as validações declarativas. Resposta no formato `LayoutErrosApiValidationsResponse`, com `occurrences` por campo. |
 | 404 | `ResourceNotFoundException` | Autorização inexistente no `GET /{autorizacaoId}` — significa "não existe em partição alguma", após esgotar os níveis habilitados da cascata. Também cobre UUID com partição embutida fora da faixa 0–889, aí sem tocar no banco |
 | 500 | `ApplicationException` | Mesma autorização encontrada em mais de uma partição — corrupção, provável resíduo de transferência de partição interrompida. Nenhuma linha é escolhida |
-| 422 | `BusinessException` | Violação de regra de negócio — borda de paginação (ver tabela acima), `idUnicoContaContratante` ausente, `ordenarPor` desconhecido |
+| 422 | `BusinessException` | Violação de regra de negócio — borda de paginação (ver tabela acima), `idUnicoContaContratante` ausente, `ordenarPor` com campo, direção ou formato inválido (`Ordenacao.de`) |
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
 
@@ -124,13 +124,16 @@ domain/            → Java puro, sem Spring/JPA
   model/              → Autorizacao, Cancelamento — imutáveis (Lombok @Value @Builder, sem setter).
                         idAutorizacao é UUID plano (sem partição — extração é detalhe de
                         armazenamento, D4); sem version (controle de concorrência não interessa
-                        a quem só lê, D2)
+                        a quem só lê, D2). Ordenacao (record campo+direção) — único ponto de parse
+                        de `ordenarPor`, fábrica `Ordenacao.de(String)`/`Ordenacao.padrao()`
   port/in/            → ConsultarAutorizacaoUseCase, ListarAutorizacoesUseCase (+ o record
                         ResultadoListagem, envelope de paginação em domínio puro)
-  port/out/           → AutorizacaoRepository: buscarPorId(UUID) e listarPorConta(...) — devolve
-                        PaginaAutorizacoes (conteúdo + total), nunca Page do Spring Data
+  port/out/           → AutorizacaoRepository: buscarPorId(UUID) e
+                        listarPorConta(..., Ordenacao) — devolve PaginaAutorizacoes (conteúdo +
+                        total), nunca Page do Spring Data
   exception/          → BusinessException, ApplicationException, ResourceNotFoundException
-  enums/              → StatusAutorizacao, TipoEventoAutorizacao, TipoJornadaAutorizacao, TipoProduto
+  enums/              → StatusAutorizacao, TipoEventoAutorizacao, TipoJornadaAutorizacao,
+                        TipoProduto, CampoOrdenacao, DirecaoOrdenacao
 application/
   usecase/            → ConsultarAutorizacaoService (só traduz ausência em 404 — a cascata não
                         está mais aqui), ListarAutorizacoesService (validação, defaults, whitelist
@@ -152,12 +155,13 @@ infrastructure/
 AutorizacaoController.listar()
   └─ ListarAutorizacoesUseCase.listar()   (application/usecase/ListarAutorizacoesService)
        ├─ valida idUnicoContaContratante (BusinessException se nulo) e os limites de paginação
-       ├─ mapeia ordenarPor para (CampoOrdenacao, ascendente) via whitelist — vocabulário de
-       │    domínio, sem conhecer caminho JPA (ver domain/enums/CampoOrdenacao)
-       └─ AutorizacaoRepository.listarPorConta(...)   (domain/port/out, implementado por
-            infrastructure/persistence/AutorizacaoJpaAdapter)
-            ├─ traduz CampoOrdenacao → caminho de propriedade JPA, monta Pageable/Sort e chama
-            │    o Spring Data (JPQL explícito) — única tradução para vocabulário de persistência
+       ├─ delega ordenarPor a Ordenacao.de(String) — parse único, valida campo (whitelist) e
+       │    direção (asc/desc) juntos, sem conhecer caminho JPA (ver domain/model/Ordenacao)
+       └─ AutorizacaoRepository.listarPorConta(..., Ordenacao)   (domain/port/out, implementado
+            por infrastructure/persistence/AutorizacaoJpaAdapter)
+            ├─ traduz Ordenacao.campo() → caminho de propriedade JPA e Ordenacao.direcao() →
+            │    Sort.Direction, monta Pageable/Sort e chama o Spring Data (JPQL explícito) —
+            │    única tradução para vocabulário de persistência
             └─ mapeia cada AutorizacaoJpaEntity → Autorizacao (domínio) e devolve
                PaginaAutorizacoes(conteúdo, total)
   └─ controller monta PaginacaoResponseDto a partir do ResultadoListagem

@@ -1,9 +1,11 @@
 package br.com.srportto.contratoquery.infrastructure.persistence;
 
 import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
+import br.com.srportto.contratoquery.domain.enums.DirecaoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
+import br.com.srportto.contratoquery.domain.model.Ordenacao;
 import br.com.srportto.contratoquery.domain.model.PaginaAutorizacoes;
 import br.com.srportto.contratoquery.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratoquery.integration.PostgresLocalDisponivelCondition;
@@ -137,7 +139,7 @@ class ListarPorContaIntegrationTest {
         inserir(UUID.randomUUID(), StatusAutorizacao.ATIVA, "de outra conta, nao deve aparecer");
 
         PaginaAutorizacoes pagina = repository.listarPorConta(
-                conta, null, 0, 20, CampoOrdenacao.DATA_CRIACAO, true);
+                conta, null, 0, 20, new Ordenacao(CampoOrdenacao.DATA_CRIACAO, DirecaoOrdenacao.ASC));
 
         assertEquals(2, pagina.totalElementos());
         assertEquals(2, pagina.conteudo().size());
@@ -150,7 +152,8 @@ class ListarPorContaIntegrationTest {
         inserir(conta, StatusAutorizacao.ATIVA, "aceita por todos");
 
         PaginaAutorizacoes pagina = repository.listarPorConta(
-                conta, List.of(StatusAutorizacao.ATIVA), 0, 20, CampoOrdenacao.DATA_CRIACAO, true);
+                conta, List.of(StatusAutorizacao.ATIVA), 0, 20,
+                new Ordenacao(CampoOrdenacao.DATA_CRIACAO, DirecaoOrdenacao.ASC));
 
         assertEquals(1, pagina.totalElementos());
         assertEquals(StatusAutorizacao.ATIVA, pagina.conteudo().get(0).getStatus());
@@ -165,7 +168,7 @@ class ListarPorContaIntegrationTest {
 
         PaginaAutorizacoes pagina = repository.listarPorConta(
                 conta, List.of(StatusAutorizacao.ATIVA, StatusAutorizacao.REJEITADA),
-                0, 20, CampoOrdenacao.DATA_CRIACAO, true);
+                0, 20, new Ordenacao(CampoOrdenacao.DATA_CRIACAO, DirecaoOrdenacao.ASC));
 
         assertEquals(2, pagina.totalElementos());
         assertTrue(pagina.conteudo().stream()
@@ -180,7 +183,7 @@ class ListarPorContaIntegrationTest {
         inserir(conta, StatusAutorizacao.ATIVA, "aceita por todos");
 
         PaginaAutorizacoes pagina = repository.listarPorConta(
-                conta, null, 0, 20, campo, true);
+                conta, null, 0, 20, new Ordenacao(campo, DirecaoOrdenacao.ASC));
 
         assertEquals(2, pagina.totalElementos());
     }

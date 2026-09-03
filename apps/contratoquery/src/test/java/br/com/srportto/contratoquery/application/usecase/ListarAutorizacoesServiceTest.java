@@ -9,9 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,9 +25,11 @@ import java.util.List;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
+import br.com.srportto.contratoquery.domain.enums.DirecaoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
+import br.com.srportto.contratoquery.domain.model.Ordenacao;
 import br.com.srportto.contratoquery.domain.model.PaginaAutorizacoes;
 import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase.ResultadoListagem;
 import br.com.srportto.contratoquery.domain.port.out.AutorizacaoRepository;
@@ -83,7 +86,7 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve listar todas as autorizações sem filtro de status")
     void testListarSemFiltroStatus() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(Arrays.asList(autorizacao1, autorizacao2), 2));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, null, 0, 20, null);
@@ -96,13 +99,13 @@ class ListarAutorizacoesServiceTest {
         assertEquals(20, resultado.tamanho());
 
         verify(repository, times(1)).listarPorConta(
-                eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean());
+                eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(Ordenacao.class));
     }
 
     @Test
     @DisplayName("Deve listar autorizações com filtro de status")
     void testListarComFiltroStatus() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), eq(List.of(StatusAutorizacao.RECEBIDA)), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), eq(List.of(StatusAutorizacao.RECEBIDA)), eq(0), eq(20), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(List.of(autorizacao1), 1));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, List.of("RECEBIDA"), 0, 20, null);
@@ -112,7 +115,7 @@ class ListarAutorizacoesServiceTest {
         assertEquals(0, resultado.paginaAtual());
 
         verify(repository, times(1)).listarPorConta(
-                eq(idUnicoContaContratante), eq(List.of(StatusAutorizacao.RECEBIDA)), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean());
+                eq(idUnicoContaContratante), eq(List.of(StatusAutorizacao.RECEBIDA)), eq(0), eq(20), any(Ordenacao.class));
     }
 
     @Test
@@ -125,7 +128,7 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve aplicar valores padrão de paginação")
     void testListarComValoresPadrao() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(List.of(autorizacao1), 1));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, null, null, null, null);
@@ -138,7 +141,7 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve retornar lista vazia sem erro quando nenhuma autorização encontrada")
     void testListarSemResultados() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(List.of(), 0));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, null, 0, 20, null);
@@ -151,7 +154,7 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve suportar múltiplos status no filtro")
     void testListarComMultiplosStatus() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), eq(List.of(StatusAutorizacao.RECEBIDA, StatusAutorizacao.ATIVA)), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), eq(List.of(StatusAutorizacao.RECEBIDA, StatusAutorizacao.ATIVA)), eq(0), eq(20), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(Arrays.asList(autorizacao1, autorizacao2), 2));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, List.of("RECEBIDA", "ATIVA"), 0, 20, null);
@@ -161,22 +164,23 @@ class ListarAutorizacoesServiceTest {
     }
 
     @Test
-    @DisplayName("Deve repassar o campo de ordenação mapeado e a direção corretos para a porta")
+    @DisplayName("Deve repassar o campo de ordenação mapeado e a direção corretas para a porta")
     void testOrdenacaoRepassaCampoEDirecaoParaAPorta() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), eq(CampoOrdenacao.VALOR), eq(true)))
+        Ordenacao esperado = new Ordenacao(CampoOrdenacao.VALOR, DirecaoOrdenacao.ASC);
+        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), eq(esperado)))
                 .thenReturn(new PaginaAutorizacoes(List.of(autorizacao1), 1));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, null, 0, 20, "valor,asc");
 
         assertNotNull(resultado);
         verify(repository).listarPorConta(
-                eq(idUnicoContaContratante), isNull(), eq(0), eq(20), eq(CampoOrdenacao.VALOR), eq(true));
+                eq(idUnicoContaContratante), isNull(), eq(0), eq(20), eq(esperado));
     }
 
     @Test
-    @DisplayName("Deve mapear todos os campos de ordenação válidos e tolerar direção inválida")
+    @DisplayName("Deve mapear todos os campos de ordenação válidos")
     void testOrdenacaoCobreMapeamentoDeCampos() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(List.of(autorizacao1), 1));
 
         List<String> ordenacoes = Arrays.asList(
@@ -200,6 +204,52 @@ class ListarAutorizacoesServiceTest {
     void testOrdenacaoComCampoDesconhecido() {
         assertThrows(BusinessException.class, () ->
                 service.listar(idUnicoContaContratante, null, 0, 20, "campoDesconhecido,asc"));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar direção de ordenação desconhecida sem consultar o repositório")
+    void testOrdenacaoComDirecaoDesconhecida() {
+        assertThrows(BusinessException.class, () ->
+                service.listar(idUnicoContaContratante, null, 0, 20, "valor,ascc"));
+        assertThrows(BusinessException.class, () ->
+                service.listar(idUnicoContaContratante, null, 0, 20, "valor,ASCENDING"));
+
+        verify(repository, never()).listarPorConta(any(), any(), anyInt(), anyInt(), any());
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar expressão de ordenação malformada (campo vazio, direção vazia ou excedente)")
+    void testOrdenacaoComExpressaoMalformada() {
+        assertThrows(BusinessException.class, () ->
+                service.listar(idUnicoContaContratante, null, 0, 20, "valor,"));
+        assertThrows(BusinessException.class, () ->
+                service.listar(idUnicoContaContratante, null, 0, 20, ",asc"));
+        assertThrows(BusinessException.class, () ->
+                service.listar(idUnicoContaContratante, null, 0, 20, "valor,asc,extra"));
+
+        verify(repository, never()).listarPorConta(any(), any(), anyInt(), anyInt(), any());
+    }
+
+    @Test
+    @DisplayName("Deve preservar o comportamento atual para expressões válidas de regressão")
+    void testOrdenacaoRegressaoComportamentoAtual() {
+        when(repository.listarPorConta(any(), any(), anyInt(), anyInt(), any(Ordenacao.class)))
+                .thenReturn(new PaginaAutorizacoes(List.of(autorizacao1), 1));
+
+        service.listar(idUnicoContaContratante, null, 0, 20, "valor,asc");
+        verify(repository).listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20),
+                eq(new Ordenacao(CampoOrdenacao.VALOR, DirecaoOrdenacao.ASC)));
+
+        service.listar(idUnicoContaContratante, null, 0, 20, "valor");
+        verify(repository).listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20),
+                eq(new Ordenacao(CampoOrdenacao.VALOR, DirecaoOrdenacao.DESC)));
+
+        service.listar(idUnicoContaContratante, null, 0, 20, "dataHoraInclusao,desc");
+        service.listar(idUnicoContaContratante, null, 0, 20, null);
+        // "dataHoraInclusao,desc" e ordenarPor ausente resolvem para a mesma Ordenacao (D4/D5) — 2 chamadas.
+        verify(repository, times(2)).listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(20),
+                eq(new Ordenacao(CampoOrdenacao.DATA_CRIACAO, DirecaoOrdenacao.DESC)));
+        assertEquals(new Ordenacao(CampoOrdenacao.DATA_CRIACAO, DirecaoOrdenacao.DESC), Ordenacao.padrao());
     }
 
     @Test
@@ -233,7 +283,7 @@ class ListarAutorizacoesServiceTest {
     @Test
     @DisplayName("Deve aceitar tamanho no limite máximo (100)")
     void testTamanhoNoTeto() {
-        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(100), any(CampoOrdenacao.class), anyBoolean()))
+        when(repository.listarPorConta(eq(idUnicoContaContratante), isNull(), eq(0), eq(100), any(Ordenacao.class)))
                 .thenReturn(new PaginaAutorizacoes(List.of(autorizacao1), 1));
 
         ResultadoListagem resultado = service.listar(idUnicoContaContratante, null, 0, 100, null);

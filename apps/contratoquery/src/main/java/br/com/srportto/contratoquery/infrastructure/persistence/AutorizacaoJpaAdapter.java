@@ -14,9 +14,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
+import br.com.srportto.contratoquery.domain.enums.DirecaoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.exception.ApplicationException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
+import br.com.srportto.contratoquery.domain.model.Ordenacao;
 import br.com.srportto.contratoquery.domain.model.PaginaAutorizacoes;
 import br.com.srportto.contratoquery.domain.port.out.AutorizacaoRepository;
 
@@ -127,11 +129,10 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
             List<StatusAutorizacao> statuses,
             int pagina,
             int tamanho,
-            CampoOrdenacao campoOrdenacao,
-            boolean ordenacaoAscendente) {
+            Ordenacao ordenacao) {
 
-        Sort.Direction direcao = ordenacaoAscendente ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(pagina, tamanho, Sort.by(direcao, campoJpaPara(campoOrdenacao)));
+        Sort.Direction direcao = direcaoJpaPara(ordenacao.direcao());
+        Pageable pageable = PageRequest.of(pagina, tamanho, Sort.by(direcao, campoJpaPara(ordenacao.campo())));
 
         Page<AutorizacaoJpaEntity> paginaJpa = (statuses == null || statuses.isEmpty())
                 ? springDataRepository.findByIdUnicoContaContratante(idUnicoContaContratante, pageable)
@@ -143,6 +144,14 @@ public class AutorizacaoJpaAdapter implements AutorizacaoRepository {
                 .toList();
 
         return new PaginaAutorizacoes(conteudo, paginaJpa.getTotalElements());
+    }
+
+    /** Única tradução de {@link DirecaoOrdenacao} para {@link Sort.Direction}. */
+    private Sort.Direction direcaoJpaPara(DirecaoOrdenacao direcao) {
+        return switch (direcao) {
+            case ASC -> Sort.Direction.ASC;
+            case DESC -> Sort.Direction.DESC;
+        };
     }
 
     /** Única tradução de {@link CampoOrdenacao} para caminho de propriedade JPA — a porta não conhece esse caminho. */
