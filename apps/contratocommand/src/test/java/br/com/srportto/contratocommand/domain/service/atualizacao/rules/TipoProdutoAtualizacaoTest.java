@@ -18,13 +18,13 @@ class TipoProdutoAtualizacaoTest {
     @Test
     @DisplayName("aceita sempre retorna true")
     void aceitaTrue() {
-        assertTrue(regra.aceita(TestFixtures.atualizarContext("id", TipoProduto.PIX_AUTO)));
+        assertTrue(regra.aceita(TestFixtures.atualizarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)));
     }
 
     @Test
     @DisplayName("produto do header igual ao da autorização não lança")
     void produtosIguais() {
-        AtualizarDadosRecorrenciaCommand context = TestFixtures.atualizarContext("id", TipoProduto.PIX_AUTO)
+        AtualizarDadosRecorrenciaCommand context = TestFixtures.atualizarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA);
         assertDoesNotThrow(() -> regra.validar(context));
     }
@@ -32,7 +32,7 @@ class TipoProdutoAtualizacaoTest {
     @Test
     @DisplayName("produto do header divergente do da autorização lança BusinessException")
     void produtosDivergentes() {
-        AtualizarDadosRecorrenciaCommand context = TestFixtures.atualizarContext("id", TipoProduto.PIX_AUTO)
+        AtualizarDadosRecorrenciaCommand context = TestFixtures.atualizarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.DDA_AUTO, StatusAutorizacao.ATIVA);
         assertThrows(BusinessException.class, () -> regra.validar(context));
     }

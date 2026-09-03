@@ -22,6 +22,7 @@ import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AtualizarDadosRecorrenciaRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
@@ -82,7 +83,7 @@ public class AutorizacaoController {
             @RequestBody @Valid CancelarAutorizacaoRequest dados) {
 
         var produto = TipoProduto.obterTipoProdutoEnumPorNome(tipoProduto);
-        var command = CancelarAutorizacaoCommand.doRequest(idAutorizacao, produto,
+        var command = CancelarAutorizacaoCommand.doRequest(AutorizacaoId.de(idAutorizacao), produto,
                 dados.codigoCanalCancelamento(), dados.idPessoaCancelamento(), dados.motivoCancelamento());
 
         var autorizacaoCancelada = cancelarAutorizacaoUseCase.execute(command);
@@ -97,7 +98,7 @@ public class AutorizacaoController {
             @RequestBody @Valid DecisaoAutorizacaoRequest dados) {
 
         var produto = TipoProduto.obterTipoProdutoEnumPorNome(tipoProduto);
-        var command = DecidirAutorizacaoCommand.doRequest(idAutorizacao, produto,
+        var command = DecidirAutorizacaoCommand.doRequest(AutorizacaoId.de(idAutorizacao), produto,
                 dados.acao(), dados.codigoCanalDecisao(), dados.idPessoaDecisao());
 
         var autorizacaoDecidida = decidirAutorizacaoUseCase.execute(command);
@@ -112,7 +113,7 @@ public class AutorizacaoController {
             @RequestBody @Valid AtualizarDadosRecorrenciaRequest dados) {
 
         var produto = TipoProduto.obterTipoProdutoEnumPorNome(tipoProduto);
-        var command = AtualizarDadosRecorrenciaCommand.doRequest(idAutorizacao, produto,
+        var command = AtualizarDadosRecorrenciaCommand.doRequest(AutorizacaoId.de(idAutorizacao), produto,
                 dados.valorLimite(), dados.dataFimVigencia(), dados.indicadorUsoLimiteConta(),
                 dados.quantidadeDividasCiclo(), dados.codigoCanalAtualizacao(), dados.idPessoaAtualizacao());
 

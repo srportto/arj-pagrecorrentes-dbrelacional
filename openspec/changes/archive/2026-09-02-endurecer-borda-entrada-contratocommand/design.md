@@ -183,5 +183,22 @@ impede novas ocorrências. Vale uma consulta de verificação em produção ante
 1. **Existe teto de negócio real para `quantidadeDividasCiclo`?** A change adota 32767 (limite do
    `short`) por não haver regra documentada. Se negócio definir um teto — algo como "máximo 12
    dívidas por ciclo" —, a constante muda e o gatilho de D4 (alargar o tipo) perde relevância.
+   **Status: pendente, registrada explicitamente.** Não foi possível consultar o time de negócio
+   dentro do escopo desta implementação (execução autônoma, sem canal síncrono disponível). Mantém-se
+   a decisão original (32767, teto técnico) até alguém com autoridade de negócio definir um valor.
+   Não bloqueia o fechamento/arquivamento desta change — é dívida documentada, com gatilho de
+   revisão já registrado em D4.
 2. **A verificação de dado já truncado em produção retorna linhas?** Determina se é preciso abrir
    trabalho de correção de dado histórico.
+   **Status: não executada — registrada explicitamente, não respondida.** Ambiente desta
+   implementação não tem acesso a `DB_PASSWORD` (variável obrigatória, sem default, conforme
+   `PostgresLocalDisponivelCondition`); o container Postgres local (`postgres18-kiq`, ver `docker ps`)
+   está no ar, mas sem credencial disponível nesta sessão a consulta não pôde ser executada nem
+   contra ele, nem contra produção (que este agente não tem acesso de rede/credencial para alcançar).
+   **Query pendente de execução, registrada aqui para quem tiver acesso:**
+   ```sql
+   SELECT count(*) FROM autorizacoes
+   WHERE quantidade_dividas_ciclo < 0 OR indicador_uso_limite_conta NOT IN (0, 1);
+   ```
+   Se retornar linhas > 0, abrir trabalho de correção de dado histórico separado (esta change não
+   corrige dado, só impede novas ocorrências — ver Migration Plan acima).

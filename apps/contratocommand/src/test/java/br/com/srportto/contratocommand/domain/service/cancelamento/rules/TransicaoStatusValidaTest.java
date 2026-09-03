@@ -19,7 +19,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("aceita sempre retorna true")
     void aceitaTrue() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA);
         assertTrue(regra.aceita(context));
     }
@@ -27,7 +27,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em ATIVA: transição permitida, não lança")
     void autEmAtiva_Permitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA);
         assertDoesNotThrow(() -> regra.validar(context));
     }
@@ -35,7 +35,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em PENDENTE_ACEITE: transição não permitida (grafo não permite), lança BusinessException")
     void autEmPendenteAceite_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.PENDENTE_ACEITE);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));
@@ -44,7 +44,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em CANCELADA: transição não permitida, lança BusinessException")
     void autEmCancelada_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.CANCELADA);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));
@@ -53,7 +53,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em REJEITADA: transição não permitida, lança BusinessException")
     void autEmRejeitada_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.REJEITADA);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));
@@ -62,7 +62,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em EXPIRADA: transição não permitida, lança BusinessException")
     void autEmExpirada_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.EXPIRADA);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));
@@ -71,7 +71,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em FINALIZADA: transição não permitida, lança BusinessException")
     void autEmFinalizada_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.FINALIZADA);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));
@@ -80,7 +80,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em RECEBIDA: transição não permitida (esperado apenas ATIVA), lança BusinessException")
     void autEmRecebida_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.RECEBIDA);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));
@@ -89,7 +89,7 @@ class TransicaoStatusValidaTest {
     @Test
     @DisplayName("autorização em EM_PROCESSO_ATIVACAO: transição não permitida, lança BusinessException")
     void autEmProcessoAtivacao_NaoPermitida() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.EM_PROCESSO_ATIVACAO);
         BusinessException ex = assertThrows(BusinessException.class, () -> regra.validar(context));
         assertTrue(ex.getMessage().contains("não permite cancelamento"));

@@ -9,6 +9,7 @@ import br.com.srportto.contratocommand.domain.service.cancelamento.rules.TipoPro
 import br.com.srportto.contratocommand.domain.service.cancelamento.rules.TransicaoStatusValida;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
@@ -22,10 +23,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,6 +48,8 @@ class CancelarAutorizacaoServiceTest {
     private CancelamentoValidator cancelamentoValidator;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private CarregadorAutorizacao carregadorAutorizacao;
 
     @InjectMocks
     private CancelarAutorizacaoService service;
@@ -62,7 +65,7 @@ class CancelarAutorizacaoServiceTest {
         aut.setIdParticaoConta(PARTICAO);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         Autorizacao resp = service.execute(command);
@@ -78,11 +81,12 @@ class CancelarAutorizacaoServiceTest {
     }
 
     @Test
-    @DisplayName("lança BusinessException quando a autorização não é encontrada e não publica evento")
+    @DisplayName("propaga BusinessException lançada pelo carregador quando a autorização não é encontrada, sem publicar evento")
     void naoEncontrada() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
-        when(repository.findById(uuid)).thenReturn(Optional.empty());
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class)))
+                .thenThrow(new BusinessException("Autorização não encontrada com ID: " + uuid));
 
         assertThrows(BusinessException.class, () -> service.execute(command));
 
@@ -100,7 +104,7 @@ class CancelarAutorizacaoServiceTest {
         aut.setIdParticaoConta(PARTICAO);
         aut.setTipoProduto(TipoProduto.PIX_AUTO);
         aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class)))
                 .thenThrow(new RuntimeException("falha ao reinserir na nova particao"));
 
@@ -110,18 +114,33 @@ class CancelarAutorizacaoServiceTest {
     }
 
     @Test
-    @DisplayName("encapsula exceção de repository em ApplicationException preservando a causa")
-    void encapsulaExcecaoRepositoryComCausa() {
+    @DisplayName("propaga a exceção do carregador sem reembalar (fonte única de carregamento, design.md D2)")
+    void propagaExcecaoDoCarregador() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
-        RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
-        when(repository.findById(uuid)).thenThrow(causaOriginal);
+        ApplicationException causaOriginal = new ApplicationException("Falha ao obter autorização " + uuid, new RuntimeException("erro de banco"));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenThrow(causaOriginal);
 
         ApplicationException ex = assertThrows(ApplicationException.class, () -> service.execute(command));
 
-        assertNotNull(ex.getCause());
-        assertSame(causaOriginal, ex.getCause());
+        assertSame(causaOriginal, ex);
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+    }
+
+    @Test
+    @DisplayName("conflito de concorrência no carregamento propaga sem virar ApplicationException (design.md, D3 — resulta em 409, não 500)")
+    void propagaConflitoDeConcorrenciaNoCarregamento() {
+        UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+        CancelarAutorizacaoCommand command = TestFixtures.cancelarContext(uuid.toString(), TipoProduto.PIX_AUTO);
+
+        OptimisticLockingFailureException conflito = new OptimisticLockingFailureException("versão divergente");
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenThrow(conflito);
+
+        OptimisticLockingFailureException ex = assertThrows(OptimisticLockingFailureException.class,
+                () -> service.execute(command));
+
+        assertSame(conflito, ex);
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 
@@ -137,7 +156,7 @@ class CancelarAutorizacaoServiceTest {
             var validatorReal = new CancelamentoValidator(
                     List.of(new ProdutoSuportadoCancelamento(), new TipoProdutoCancelamento(), new TransicaoStatusValida()));
             useCaseComValidacaoReal = new CancelarAutorizacaoService(
-                    repository, validatorReal, eventPublisher);
+                    repository, validatorReal, eventPublisher, carregadorAutorizacao);
         }
 
         @Test
@@ -151,7 +170,7 @@ class CancelarAutorizacaoServiceTest {
             aut.setIdParticaoConta(PARTICAO);
             aut.setTipoProduto(TipoProduto.PIX_AUTO);
             aut.setStatus((int) StatusAutorizacao.CANCELADA.getStatusAutorizacao());
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
@@ -171,7 +190,7 @@ class CancelarAutorizacaoServiceTest {
             aut.setIdParticaoConta(PARTICAO);
             aut.setTipoProduto(TipoProduto.PIX_AUTO);
             aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
             when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(command);

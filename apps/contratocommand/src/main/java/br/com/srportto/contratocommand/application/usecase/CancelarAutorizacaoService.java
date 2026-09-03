@@ -2,8 +2,6 @@ package br.com.srportto.contratocommand.application.usecase;
 
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.domain.exception.ApplicationException;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.model.Cancelamento;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
@@ -18,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /** Caso de uso único de cancelamento, compartilhado por todos os produtos: marca status, registra dados e transfere a autorização para a partição de expurgo. */
 @Service
@@ -30,14 +27,14 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
     private final AutorizacaoRepository repository;
     private final CancelamentoValidator cancelamentoValidator;
     private final ApplicationEventPublisher eventPublisher;
+    private final CarregadorAutorizacao carregadorAutorizacao;
 
     @Override
     @Transactional
     public Autorizacao execute(CancelarAutorizacaoCommand command) {
-        log.info("Iniciando cancelamento de autorização {}", command.idAutorizacao());
+        log.info("Iniciando cancelamento de autorização {}", command.idAutorizacao().valor());
 
-        var idAutorizacaoUuid = UUID.fromString(command.idAutorizacao());
-        var autorizacao = obterAutorizacaoPorId(idAutorizacaoUuid);
+        var autorizacao = carregadorAutorizacao.carregar(command.idAutorizacao());
 
         var statusAtual = StatusAutorizacao.obterStatusEnumPorIdStatus(autorizacao.getStatus());
         var comandoValidado = command.comAutorizacaoCarregada(autorizacao.getTipoProduto(), statusAtual);
@@ -62,16 +59,5 @@ public class CancelarAutorizacaoService implements CancelarAutorizacaoUseCase {
         eventPublisher.publishEvent(new AutorizacaoPersistidaEvent(autorizacaoCanceladaEmNovaParticao));
 
         return autorizacaoCanceladaEmNovaParticao;
-    }
-
-    private Autorizacao obterAutorizacaoPorId(UUID idAutorizacao) {
-        try {
-            return repository.findById(idAutorizacao)
-                    .orElseThrow(() -> new BusinessException("Autorização não encontrada com ID: " + idAutorizacao));
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ApplicationException("Falha ao obter autorização " + idAutorizacao, e);
-        }
     }
 }

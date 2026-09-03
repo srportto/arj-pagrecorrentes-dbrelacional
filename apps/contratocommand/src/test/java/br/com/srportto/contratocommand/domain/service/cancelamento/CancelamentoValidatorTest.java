@@ -38,7 +38,7 @@ class CancelamentoValidatorTest {
     @Test
     @DisplayName("validar passa quando produto do header e da autorização coincidem")
     void validarOk() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA);
         assertDoesNotThrow(() -> validator.validar(context));
     }
@@ -46,7 +46,7 @@ class CancelamentoValidatorTest {
     @Test
     @DisplayName("validar propaga BusinessException quando produtos divergem")
     void validarDivergente() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)
                 .comAutorizacaoCarregada(TipoProduto.DDA_AUTO, StatusAutorizacao.ATIVA);
         assertThrows(BusinessException.class, () -> validator.validar(context));
     }
@@ -57,7 +57,7 @@ class CancelamentoValidatorTest {
         TipoProduto produtoDesabilitado = mock(TipoProduto.class);
         when(produtoDesabilitado.habilitadoParaCancelar()).thenReturn(false);
 
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", produtoDesabilitado)
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", produtoDesabilitado)
                 .comAutorizacaoCarregada(TipoProduto.DDA_AUTO, StatusAutorizacao.ATIVA);
 
         BusinessException ex = assertThrows(BusinessException.class,

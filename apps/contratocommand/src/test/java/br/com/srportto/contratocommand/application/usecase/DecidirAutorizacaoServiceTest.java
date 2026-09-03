@@ -8,6 +8,7 @@ import br.com.srportto.contratocommand.domain.service.decisao.rules.TipoProdutoD
 import br.com.srportto.contratocommand.domain.service.decisao.rules.TransicaoValidaDecisao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
@@ -21,10 +22,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,6 +47,8 @@ class DecidirAutorizacaoServiceTest {
     private DecisaoValidator decisaoValidator;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private CarregadorAutorizacao carregadorAutorizacao;
 
     @InjectMocks
     private DecidirAutorizacaoService service;
@@ -61,7 +64,7 @@ class DecidirAutorizacaoServiceTest {
     }
 
     private DecidirAutorizacaoCommand contexto(UUID uuid, String acao) {
-        return DecidirAutorizacaoCommand.doRequest(uuid.toString(), TipoProduto.PIX_AUTO,
+        return DecidirAutorizacaoCommand.doRequest(AutorizacaoId.de(uuid.toString()), TipoProduto.PIX_AUTO,
                 acao, "C1", null);
     }
 
@@ -70,7 +73,7 @@ class DecidirAutorizacaoServiceTest {
     void aprova() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Autorizacao resp = service.execute(contexto(uuid, "APROVAR"));
@@ -88,7 +91,7 @@ class DecidirAutorizacaoServiceTest {
     void rejeita() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         service.execute(contexto(uuid, "REJEITAR"));
@@ -104,7 +107,7 @@ class DecidirAutorizacaoServiceTest {
     void expira() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         Autorizacao aut = autorizacaoRecebida(uuid);
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
         service.execute(contexto(uuid, "EXPIRAR"));
@@ -116,10 +119,11 @@ class DecidirAutorizacaoServiceTest {
     }
 
     @Test
-    @DisplayName("lança BusinessException quando a autorização não é encontrada e não publica evento")
+    @DisplayName("propaga BusinessException lançada pelo carregador quando a autorização não é encontrada, sem publicar evento")
     void naoEncontrada() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
-        when(repository.findById(uuid)).thenReturn(Optional.empty());
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class)))
+                .thenThrow(new BusinessException("Autorização não encontrada com ID: " + uuid));
 
         assertThrows(BusinessException.class, () -> service.execute(contexto(uuid, "APROVAR")));
 
@@ -127,18 +131,32 @@ class DecidirAutorizacaoServiceTest {
     }
 
     @Test
-    @DisplayName("encapsula exceção de repository em ApplicationException preservando a causa")
-    void encapsulaExcecaoRepositoryComCausa() {
+    @DisplayName("propaga a exceção do carregador sem reembalar (fonte única de carregamento, design.md D2)")
+    void propagaExcecaoDoCarregador() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
 
-        RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
-        when(repository.findById(uuid)).thenThrow(causaOriginal);
+        ApplicationException causaOriginal = new ApplicationException("Falha ao obter autorização " + uuid, new RuntimeException("erro de banco"));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenThrow(causaOriginal);
 
         ApplicationException ex = assertThrows(ApplicationException.class,
                 () -> service.execute(contexto(uuid, "APROVAR")));
 
-        assertNotNull(ex.getCause());
-        assertSame(causaOriginal, ex.getCause());
+        assertSame(causaOriginal, ex);
+        verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
+    }
+
+    @Test
+    @DisplayName("conflito de concorrência no carregamento propaga sem virar ApplicationException (design.md, D3 — resulta em 409, não 500)")
+    void propagaConflitoDeConcorrenciaNoCarregamento() {
+        UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
+
+        OptimisticLockingFailureException conflito = new OptimisticLockingFailureException("versão divergente");
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenThrow(conflito);
+
+        OptimisticLockingFailureException ex = assertThrows(OptimisticLockingFailureException.class,
+                () -> service.execute(contexto(uuid, "APROVAR")));
+
+        assertSame(conflito, ex);
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 
@@ -154,7 +172,7 @@ class DecidirAutorizacaoServiceTest {
             var validatorReal = new DecisaoValidator(
                     List.of(new AcaoDecisaoValida(), new TipoProdutoDecisao(), new TransicaoValidaDecisao()));
             useCaseComValidacaoReal = new DecidirAutorizacaoService(
-                    repository, validatorReal, eventPublisher);
+                    repository, validatorReal, eventPublisher, carregadorAutorizacao);
         }
 
         @Test
@@ -164,7 +182,7 @@ class DecidirAutorizacaoServiceTest {
             var aut = autorizacaoRecebida(uuid);
             aut.setStatus((int) StatusAutorizacao.ATIVA.getStatusAutorizacao());
             aut.setMotivoStatus("AUTORIZACAO_ACEITA_POR_TODOS");
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class,
                     () -> useCaseComValidacaoReal.execute(contexto(uuid, "EXPIRAR")));
@@ -180,7 +198,7 @@ class DecidirAutorizacaoServiceTest {
         void decisaoRepetidaPublicaUmUnicoEvento() {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
             var aut = autorizacaoRecebida(uuid);
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
             when(repository.transferirParaExpurgo(eq(aut), any(LocalDate.class))).thenReturn(aut);
 
             useCaseComValidacaoReal.execute(contexto(uuid, "EXPIRAR"));
@@ -198,7 +216,7 @@ class DecidirAutorizacaoServiceTest {
         void acaoDesconhecida() {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
             var aut = autorizacaoRecebida(uuid);
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class,
                     () -> useCaseComValidacaoReal.execute(contexto(uuid, "CONFIRMAR")));

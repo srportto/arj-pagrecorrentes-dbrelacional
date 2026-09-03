@@ -31,9 +31,13 @@ public record CriarAutorizacaoRequest(
 
     @NotNull(message = "O campo 'quantidadeDividasCiclo' é obrigatório.")
     @Min(value = 1, message = "O campo 'quantidadeDividasCiclo' deve ser maior ou igual a 1.")
+    // Teto = limite físico do short (destino no modelo), não regra de negócio (design.md, D4).
+    @Max(value = 32767, message = "O campo 'quantidadeDividasCiclo' deve ser menor ou igual a 32767.")
     Integer quantidadeDividasCiclo,
 
-    @NotNull(message = "O campo 'indicadorUsoLimiteConta' é obrigatório.") 
+    @NotNull(message = "O campo 'indicadorUsoLimiteConta' é obrigatório.")
+    @Min(value = 0, message = "O campo 'indicadorUsoLimiteConta' deve ser maior ou igual a 0.")
+    @Max(value = 1, message = "O campo 'indicadorUsoLimiteConta' deve ser menor ou igual a 1.")
     Integer indicadorUsoLimiteConta,
 
     @NotNull(message = "o campo 'codigoCanalContratacao' é obrigatorio.")

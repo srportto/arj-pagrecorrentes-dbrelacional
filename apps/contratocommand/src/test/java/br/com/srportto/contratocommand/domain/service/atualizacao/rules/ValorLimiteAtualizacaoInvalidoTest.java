@@ -1,6 +1,7 @@
 package br.com.srportto.contratocommand.domain.service.atualizacao.rules;
 
 import br.com.srportto.contratocommand.application.TestFixtures;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -20,7 +21,7 @@ class ValorLimiteAtualizacaoInvalidoTest {
     @Test
     @DisplayName("aceita sempre retorna true")
     void aceitaTrue() {
-        assertTrue(regra.aceita(TestFixtures.atualizarContext("id", TipoProduto.PIX_AUTO)));
+        assertTrue(regra.aceita(TestFixtures.atualizarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)));
     }
 
     @Test
@@ -46,7 +47,7 @@ class ValorLimiteAtualizacaoInvalidoTest {
 
     private AtualizarDadosRecorrenciaCommand comValorLimite(BigDecimal valorLimite) {
         return new AtualizarDadosRecorrenciaCommand(
-                "id", TipoProduto.PIX_AUTO, TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA,
+                AutorizacaoId.de("11111111-1111-1111-1111-111111111111"), TipoProduto.PIX_AUTO, TipoProduto.PIX_AUTO, StatusAutorizacao.ATIVA,
                 valorLimite, null, null, null, "C1", null);
     }
 }
