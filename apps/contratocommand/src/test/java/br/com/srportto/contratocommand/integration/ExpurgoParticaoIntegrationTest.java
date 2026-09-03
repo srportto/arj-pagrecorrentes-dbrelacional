@@ -6,6 +6,7 @@ import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoUseCase
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
@@ -240,7 +241,7 @@ class ExpurgoParticaoIntegrationTest {
     }
 
     private DecidirAutorizacaoCommand decisao(UUID idAutorizacao, String acao) {
-        return DecidirAutorizacaoCommand.doRequest(idAutorizacao.toString(), TipoProduto.PIX_AUTO,
+        return DecidirAutorizacaoCommand.doRequest(AutorizacaoId.de(idAutorizacao.toString()), TipoProduto.PIX_AUTO,
                 acao, "C1", UUID.randomUUID());
     }
 

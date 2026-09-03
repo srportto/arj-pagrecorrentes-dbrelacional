@@ -100,11 +100,32 @@ da requisição, sem precisar repeti-lo em cada chamada de `log.info`.
 | 409 | `ObjectOptimisticLockingFailureException` | Concorrência em `PATCH /api/autorizacoes/{id}/cancelar`, `/decisao` ou `/atualizar` — outro chamador já alterou a linha |
 | 409 | `ConcurrencyFailureException` (inclui `CannotAcquireLockException`) | Concorrência na troca de partição do `ExpurgoAutorizacaoService`. Quando a transação vencedora move a linha, o Postgres não consegue seguir a cadeia de atualização entre partições e devolve `tuple to be locked was already moved to another partition` (SQLSTATE 40001) — conflito real, não erro interno |
 | 409 | `StaleStateException` / `DataIntegrityViolationException` | Estado obsoleto ou violação de integridade em escrita concorrente |
-| 422 | `BusinessException` | Violação de regra de negócio — **inclui autorização inexistente** em `cancelar`/`decidir`/`atualizar` (não existe 404 nestas rotas: `ResourceNotFoundException` não existe no código desta app), validação de produto, dados inválidos, transição de status inválida |
+| 422 | `BusinessException` | Violação de regra de negócio — **inclui autorização inexistente** em `cancelar`/`decidir`/`atualizar` (não existe 404 nestas rotas: `ResourceNotFoundException` não existe no código desta app), validação de produto, dados inválidos, transição de status inválida, **e identificador de autorização malformado no path** (`AutorizacaoId.de` lança `BusinessException` antes de alcançar o use case — ver "Identificador validado na borda" abaixo) |
 | 500 | `ApplicationException` | Erro inesperado de aplicação (resposta genérica; detalhe fica no log do servidor) |
 | 500 | `Exception` (catch-all) | Qualquer outra exceção não mapeada (resposta genérica; detalhe fica no log) |
 
 > **Convenção mantida (D3, 2026-08-09):** entrada inválida do cliente — tanto falha de formato (`@Valid`/`MethodArgumentNotValidException`) quanto violação de regra de negócio (`BusinessException`) — retorna **422**. A distinção entre as duas é carregada pelo **shape da resposta** (`LayoutErrosApiValidationsResponse` vs `LayoutErrosApiResponse`), não pelo primeiro byte do status. Decisão registrada em `openspec/changes/archive/2026-08-09-reconciliar-contrato-spec-doc/design.md` (D3).
+
+### Identificador validado na borda
+
+O `idAutorizacao` do path das três rotas `PATCH` **não viaja como `String`** entre o controller e
+os use cases: `AutorizacaoController` constrói um `AutorizacaoId` (`domain/model/`, value object —
+record com fábrica `AutorizacaoId.de(String)`) logo na entrada, validando o formato UUID **antes**
+de alcançar `application/usecase/`. Id malformado (`nao-e-uuid`) lança `BusinessException` no
+próprio controller → **422** com `LayoutErrosApiResponse`, sem log `ERROR` e sem contar como 5xx —
+antes desta correção o parsing acontecia dentro do use case (`UUID.fromString`), e um id malformado
+caía no catch-all de `Exception` → 500 (ver `openspec/changes/archive/*-endurecer-borda-entrada-contratocommand`).
+Os três `*Command` (`CancelarAutorizacaoCommand`, `DecidirAutorizacaoCommand`,
+`AtualizarDadosRecorrenciaCommand`) carregam `AutorizacaoId`, não `String`; nenhum use case chama
+`UUID.fromString`. O carregamento por id nos três use cases de escrita passa por uma fonte única —
+`CarregadorAutorizacao` (`application/usecase/`) — que não reembala `ConcurrencyFailureException`
+(e subclasses) em `ApplicationException`, preservando o 409 que o `ApiExceptionHandler` já mapeia.
+
+`quantidadeDividasCiclo` e `indicadorUsoLimiteConta` (`CriarAutorizacaoRequest` e
+`AtualizarDadosRecorrenciaRequest`) têm `@Max`/`@Min` alinhados à largura do `short` de destino no
+modelo `Autorizacao` (`@Max(32767)` — limite físico do tipo, não regra de negócio — e
+`@Min(0) @Max(1)` para a flag booleana), evitando *narrowing cast* silencioso na conversão para
+`short`.
 
 > **Nenhuma resposta expõe nome de classe, stack trace, nome de tabela/coluna/constraint.** O log do servidor carrega a cadeia completa de causas.
 

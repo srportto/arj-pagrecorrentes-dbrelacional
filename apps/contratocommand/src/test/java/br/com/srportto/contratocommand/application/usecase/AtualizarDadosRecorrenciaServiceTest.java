@@ -7,6 +7,7 @@ import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.exception.ApplicationException;
 import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import br.com.srportto.contratocommand.domain.service.atualizacao.AtualizacaoValidator;
@@ -27,7 +28,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,6 +48,8 @@ class AtualizarDadosRecorrenciaServiceTest {
     private AtualizacaoValidator atualizacaoValidator;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private CarregadorAutorizacao carregadorAutorizacao;
 
     @InjectMocks
     private AtualizarDadosRecorrenciaService service;
@@ -69,11 +71,11 @@ class AtualizarDadosRecorrenciaServiceTest {
     @DisplayName("atualiza somente o campo informado e publica evento com o estado final")
     void atualizaCampoIsolado() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
-        var command = new AtualizarDadosRecorrenciaCommand(uuid.toString(), TipoProduto.PIX_AUTO, null, null,
+        var command = new AtualizarDadosRecorrenciaCommand(AutorizacaoId.de(uuid.toString()), TipoProduto.PIX_AUTO, null, null,
                 new BigDecimal("5000.00"), null, null, null, "C1", UUID.randomUUID());
 
         Autorizacao aut = autorizacaoAtiva(uuid);
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.save(aut)).thenReturn(aut);
 
         Autorizacao resp = service.execute(command);
@@ -92,11 +94,11 @@ class AtualizarDadosRecorrenciaServiceTest {
     void atualizaTodosOsCampos() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         var novaData = LocalDate.now().plusDays(90);
-        var command = new AtualizarDadosRecorrenciaCommand(uuid.toString(), TipoProduto.PIX_AUTO, null, null,
+        var command = new AtualizarDadosRecorrenciaCommand(AutorizacaoId.de(uuid.toString()), TipoProduto.PIX_AUTO, null, null,
                 new BigDecimal("7000.00"), novaData, 1, 5, "C1", UUID.randomUUID());
 
         Autorizacao aut = autorizacaoAtiva(uuid);
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.save(aut)).thenReturn(aut);
 
         service.execute(command);
@@ -111,13 +113,13 @@ class AtualizarDadosRecorrenciaServiceTest {
     @DisplayName("nenhum campo informado não altera nenhum dado, mas atualiza dataHoraUltimaAtualizacao")
     void nenhumCampoInformadoNaoAltera() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
-        var command = new AtualizarDadosRecorrenciaCommand(uuid.toString(), TipoProduto.PIX_AUTO, null, null,
+        var command = new AtualizarDadosRecorrenciaCommand(AutorizacaoId.de(uuid.toString()), TipoProduto.PIX_AUTO, null, null,
                 null, null, null, null, "C1", UUID.randomUUID());
 
         Autorizacao aut = autorizacaoAtiva(uuid);
         var valorLimiteOriginal = aut.getValorLimite();
         var dataFimVigenciaOriginal = aut.getDataFimVigencia();
-        when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
         when(repository.save(aut)).thenReturn(aut);
 
         service.execute(command);
@@ -128,11 +130,12 @@ class AtualizarDadosRecorrenciaServiceTest {
     }
 
     @Test
-    @DisplayName("lança BusinessException quando a autorização não é encontrada e não publica evento")
+    @DisplayName("propaga BusinessException lançada pelo carregador quando a autorização não é encontrada, sem publicar evento")
     void naoEncontrada() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         AtualizarDadosRecorrenciaCommand command = TestFixtures.atualizarContext(uuid.toString(), TipoProduto.PIX_AUTO);
-        when(repository.findById(uuid)).thenReturn(Optional.empty());
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class)))
+                .thenThrow(new BusinessException("Autorização não encontrada com ID: " + uuid));
 
         assertThrows(BusinessException.class, () -> service.execute(command));
 
@@ -140,18 +143,17 @@ class AtualizarDadosRecorrenciaServiceTest {
     }
 
     @Test
-    @DisplayName("encapsula exceção de repository em ApplicationException preservando a causa")
-    void encapsulaExcecaoRepositoryComCausa() {
+    @DisplayName("propaga a exceção do carregador sem reembalar (fonte única de carregamento, design.md D2)")
+    void propagaExcecaoDoCarregador() {
         UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
         AtualizarDadosRecorrenciaCommand command = TestFixtures.atualizarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
-        RuntimeException causaOriginal = new RuntimeException("Erro de acesso ao banco de dados");
-        when(repository.findById(uuid)).thenThrow(causaOriginal);
+        ApplicationException causaOriginal = new ApplicationException("Falha ao obter autorização " + uuid, new RuntimeException("erro de banco"));
+        when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenThrow(causaOriginal);
 
         ApplicationException ex = assertThrows(ApplicationException.class, () -> service.execute(command));
 
-        assertNotNull(ex.getCause());
-        assertSame(causaOriginal, ex.getCause());
+        assertSame(causaOriginal, ex);
         verify(eventPublisher, never()).publishEvent(any(AutorizacaoPersistidaEvent.class));
     }
 
@@ -168,7 +170,7 @@ class AtualizarDadosRecorrenciaServiceTest {
                     new TipoProdutoAtualizacao(), new StatusPermiteAtualizacao(),
                     new DataFimVigenciaInvalidaAtualizacao(), new ValorLimiteAtualizacaoInvalido()));
             useCaseComValidacaoReal = new AtualizarDadosRecorrenciaService(
-                    repository, validatorReal, eventPublisher);
+                    repository, validatorReal, eventPublisher, carregadorAutorizacao);
         }
 
         @Test
@@ -179,7 +181,7 @@ class AtualizarDadosRecorrenciaServiceTest {
 
             Autorizacao aut = autorizacaoAtiva(uuid);
             aut.setStatus((int) StatusAutorizacao.RECEBIDA.getStatusAutorizacao());
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
@@ -194,7 +196,7 @@ class AtualizarDadosRecorrenciaServiceTest {
             AtualizarDadosRecorrenciaCommand command = TestFixtures.atualizarContext(uuid.toString(), TipoProduto.DDA_AUTO);
 
             Autorizacao aut = autorizacaoAtiva(uuid); // PIX_AUTO persistido
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
@@ -205,11 +207,11 @@ class AtualizarDadosRecorrenciaServiceTest {
         @DisplayName("dataFimVigencia no passado rejeitada com BusinessException")
         void dataFimVigenciaPassadoNaoPublicaEvento() {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
-            var command = new AtualizarDadosRecorrenciaCommand(uuid.toString(), TipoProduto.PIX_AUTO, null, null,
+            var command = new AtualizarDadosRecorrenciaCommand(AutorizacaoId.de(uuid.toString()), TipoProduto.PIX_AUTO, null, null,
                     null, LocalDate.now().minusDays(1), null, null, "C1", UUID.randomUUID());
 
             Autorizacao aut = autorizacaoAtiva(uuid);
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
@@ -220,11 +222,11 @@ class AtualizarDadosRecorrenciaServiceTest {
         @DisplayName("valorLimite zero ou negativo rejeitado com BusinessException")
         void valorLimiteInvalidoNaoPublicaEvento() {
             UUID uuid = ReversibleUUIDv7.generate(PARTICAO);
-            var command = new AtualizarDadosRecorrenciaCommand(uuid.toString(), TipoProduto.PIX_AUTO, null, null,
+            var command = new AtualizarDadosRecorrenciaCommand(AutorizacaoId.de(uuid.toString()), TipoProduto.PIX_AUTO, null, null,
                     BigDecimal.ZERO, null, null, null, "C1", UUID.randomUUID());
 
             Autorizacao aut = autorizacaoAtiva(uuid);
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
 
             assertThrows(BusinessException.class, () -> useCaseComValidacaoReal.execute(command));
 
@@ -238,7 +240,7 @@ class AtualizarDadosRecorrenciaServiceTest {
             AtualizarDadosRecorrenciaCommand command = TestFixtures.atualizarContext(uuid.toString(), TipoProduto.PIX_AUTO);
 
             Autorizacao aut = autorizacaoAtiva(uuid);
-            when(repository.findById(uuid)).thenReturn(Optional.of(aut));
+            when(carregadorAutorizacao.carregar(any(AutorizacaoId.class))).thenReturn(aut);
             when(repository.save(aut)).thenReturn(aut);
 
             Autorizacao resp = useCaseComValidacaoReal.execute(command);

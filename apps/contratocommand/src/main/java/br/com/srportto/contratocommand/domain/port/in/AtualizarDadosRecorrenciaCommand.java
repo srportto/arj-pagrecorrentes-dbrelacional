@@ -2,6 +2,7 @@ package br.com.srportto.contratocommand.domain.port.in;
 
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,10 +12,11 @@ import java.util.UUID;
  * Comando de atualização parcial de dados de uma autorização ATIVA (path + header + corpo).
  * Espelha {@code DecidirAutorizacaoCommand}/{@code CancelarAutorizacaoCommand}: dados do banco
  * preenchidos via {@link #comAutorizacaoCarregada}, sem mutar o comando original. Campo nulo
- * significa "não altera" (ver design.md, D3).
+ * significa "não altera" (ver design.md, D3). O identificador já chega validado como
+ * {@link AutorizacaoId}.
  */
 public record AtualizarDadosRecorrenciaCommand(
-        String idAutorizacao,
+        AutorizacaoId idAutorizacao,
         TipoProduto tipoProduto,
         TipoProduto tipoProdutoAutorizacao,
         StatusAutorizacao statusAtual,
@@ -25,7 +27,7 @@ public record AtualizarDadosRecorrenciaCommand(
         String codigoCanalAtualizacao,
         UUID idPessoaAtualizacao) {
 
-    public static AtualizarDadosRecorrenciaCommand doRequest(String idAutorizacao, TipoProduto tipoProduto,
+    public static AtualizarDadosRecorrenciaCommand doRequest(AutorizacaoId idAutorizacao, TipoProduto tipoProduto,
             BigDecimal valorLimite, LocalDate dataFimVigencia, Integer indicadorUsoLimiteConta,
             Integer quantidadeDividasCiclo, String codigoCanalAtualizacao, UUID idPessoaAtualizacao) {
         return new AtualizarDadosRecorrenciaCommand(idAutorizacao, tipoProduto, null, null,

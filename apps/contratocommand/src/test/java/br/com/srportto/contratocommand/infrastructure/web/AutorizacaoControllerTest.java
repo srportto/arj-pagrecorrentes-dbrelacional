@@ -12,6 +12,7 @@ import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AtualizarDadosRecorrenciaRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.AutorizacaoCompletaResponseDto;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
@@ -119,7 +120,7 @@ class AutorizacaoControllerTest {
 
         ArgumentCaptor<CancelarAutorizacaoCommand> captor = ArgumentCaptor.forClass(CancelarAutorizacaoCommand.class);
         verify(cancelarAutorizacaoUseCase).execute(captor.capture());
-        assertEquals("550e8400-e29b-41d4-a716-446655440000", captor.getValue().idAutorizacao());
+        assertEquals(AutorizacaoId.de("550e8400-e29b-41d4-a716-446655440000"), captor.getValue().idAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, captor.getValue().tipoProduto());
         assertEquals(dados.codigoCanalCancelamento(), captor.getValue().codigoCanalCancelamento());
         assertEquals(dados.idPessoaCancelamento(), captor.getValue().idPessoaCancelamento());
@@ -152,7 +153,7 @@ class AutorizacaoControllerTest {
 
         ArgumentCaptor<DecidirAutorizacaoCommand> captor = ArgumentCaptor.forClass(DecidirAutorizacaoCommand.class);
         verify(decidirAutorizacaoUseCase).execute(captor.capture());
-        assertEquals("550e8400-e29b-41d4-a716-446655440000", captor.getValue().idAutorizacao());
+        assertEquals(AutorizacaoId.de("550e8400-e29b-41d4-a716-446655440000"), captor.getValue().idAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, captor.getValue().tipoProduto());
         assertEquals(dados.acao(), captor.getValue().acao());
         assertEquals(dados.codigoCanalDecisao(), captor.getValue().codigoCanalDecisao());
@@ -188,7 +189,7 @@ class AutorizacaoControllerTest {
 
         ArgumentCaptor<AtualizarDadosRecorrenciaCommand> captor = ArgumentCaptor.forClass(AtualizarDadosRecorrenciaCommand.class);
         verify(atualizarDadosRecorrenciaUseCase).execute(captor.capture());
-        assertEquals("550e8400-e29b-41d4-a716-446655440000", captor.getValue().idAutorizacao());
+        assertEquals(AutorizacaoId.de("550e8400-e29b-41d4-a716-446655440000"), captor.getValue().idAutorizacao());
         assertEquals(TipoProduto.PIX_AUTO, captor.getValue().tipoProduto());
         assertEquals(dados.valorLimite(), captor.getValue().valorLimite());
         assertEquals(dados.dataFimVigencia(), captor.getValue().dataFimVigencia());
@@ -205,6 +206,43 @@ class AutorizacaoControllerTest {
 
         assertThrows(BusinessException.class,
                 () -> controller.atualizar("550e8400-e29b-41d4-a716-446655440000", "CARTAO_CREDITO", dados));
+
+        verifyNoInteractions(atualizarDadosRecorrenciaUseCase);
+    }
+
+    /**
+     * Grupo 2 (validacao-borda-entrada): id malformado no path lanca BusinessException (422) antes
+     * de alcancar o use case — nao mais IllegalArgumentException/500 (design.md, D1).
+     */
+    @Test
+    @DisplayName("cancelar com id malformado lança BusinessException antes de chamar o use case")
+    void cancelarComIdMalformadoLancaAntesDoUseCase() {
+        CancelarAutorizacaoRequest dados = new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste");
+
+        assertThrows(BusinessException.class,
+                () -> controller.cancelar("nao-e-uuid", "PIX_AUTO", dados));
+
+        verifyNoInteractions(cancelarAutorizacaoUseCase);
+    }
+
+    @Test
+    @DisplayName("decidir com id malformado lança BusinessException antes de chamar o use case")
+    void decidirComIdMalformadoLancaAntesDoUseCase() {
+        DecisaoAutorizacaoRequest dados = new DecisaoAutorizacaoRequest("APROVAR", "C1", UUID.randomUUID());
+
+        assertThrows(BusinessException.class,
+                () -> controller.decidir("nao-e-uuid", "PIX_AUTO", dados));
+
+        verifyNoInteractions(decidirAutorizacaoUseCase);
+    }
+
+    @Test
+    @DisplayName("atualizar com id malformado lança BusinessException antes de chamar o use case")
+    void atualizarComIdMalformadoLancaAntesDoUseCase() {
+        AtualizarDadosRecorrenciaRequest dados = TestFixtures.atualizarDados();
+
+        assertThrows(BusinessException.class,
+                () -> controller.atualizar("nao-e-uuid", "PIX_AUTO", dados));
 
         verifyNoInteractions(atualizarDadosRecorrenciaUseCase);
     }

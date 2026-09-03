@@ -1,6 +1,7 @@
 package br.com.srportto.contratoquery.infrastructure.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
+import br.com.srportto.contratoquery.domain.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 import br.com.srportto.contratoquery.domain.port.in.ConsultarAutorizacaoUseCase;
 import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase;
@@ -67,6 +69,25 @@ class AutorizacaoControllerTest {
         assertEquals(1L, resp.getBody().totalElementos());
         assertEquals(20, resp.getBody().tamanho());
         verify(listarAutorizacoesUseCase).listar(eq(conta), any(), eq(0), eq(20), any());
+    }
+
+    @Test
+    @DisplayName("listar com direção de ordenação inválida propaga BusinessException, mapeada para 422 pelo ApiExceptionHandler")
+    void listarComDirecaoInvalidaPropagaBusinessExceptionMapeadaPara422() {
+        UUID conta = UUID.randomUUID();
+        when(listarAutorizacoesUseCase.listar(eq(conta), any(), eq(0), eq(20), eq("valor,ascc")))
+                .thenThrow(new BusinessException(
+                        "Direção de ordenação inválida: ascc. Direções aceitas: asc, desc"));
+
+        BusinessException ex = assertThrows(BusinessException.class, () ->
+                controller.listar(conta, List.of(), 0, 20, "valor,ascc"));
+
+        jakarta.servlet.http.HttpServletRequest req = org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletRequest.class);
+        when(req.getRequestURI()).thenReturn("/api/autorizacoes");
+        ResponseEntity<LayoutErrosApiResponse> resp = new ApiExceptionHandler().erroNegocio(ex, req);
+
+        assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, resp.getStatusCode());
+        assertEquals("Direção de ordenação inválida: ascc. Direções aceitas: asc, desc", resp.getBody().message());
     }
 
     @Test

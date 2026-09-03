@@ -1,5 +1,6 @@
 package br.com.srportto.contratocommand.application;
 
+import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
 import br.com.srportto.contratocommand.domain.port.in.CancelarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
@@ -91,9 +92,12 @@ public final class TestFixtures {
         return new CancelarAutorizacaoRequest("C1", UUID.randomUUID(), "teste cancelamento");
     }
 
+    /** Aceita {@code String} (não {@link AutorizacaoId}) para preservar os call sites existentes
+     * dos testes de regra, que passam qualquer id sintático — a validação de formato UUID
+     * acontece aqui, na borda simulada pelo fixture (espelha {@code AutorizacaoController}). */
     public static CancelarAutorizacaoCommand cancelarContext(String idAutorizacao, TipoProduto produtoHeader) {
         CancelarAutorizacaoRequest dados = cancelarDados();
-        return CancelarAutorizacaoCommand.doRequest(idAutorizacao, produtoHeader,
+        return CancelarAutorizacaoCommand.doRequest(AutorizacaoId.de(idAutorizacao), produtoHeader,
                 dados.codigoCanalCancelamento(), dados.idPessoaCancelamento(), dados.motivoCancelamento());
     }
 
@@ -104,7 +108,7 @@ public final class TestFixtures {
 
     public static AtualizarDadosRecorrenciaCommand atualizarContext(String idAutorizacao, TipoProduto produtoHeader) {
         AtualizarDadosRecorrenciaRequest dados = atualizarDados();
-        return AtualizarDadosRecorrenciaCommand.doRequest(idAutorizacao, produtoHeader,
+        return AtualizarDadosRecorrenciaCommand.doRequest(AutorizacaoId.de(idAutorizacao), produtoHeader,
                 dados.valorLimite(), dados.dataFimVigencia(), dados.indicadorUsoLimiteConta(),
                 dados.quantidadeDividasCiclo(), dados.codigoCanalAtualizacao(), dados.idPessoaAtualizacao());
     }

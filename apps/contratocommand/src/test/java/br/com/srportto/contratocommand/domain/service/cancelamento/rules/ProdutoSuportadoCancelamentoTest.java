@@ -22,13 +22,13 @@ class ProdutoSuportadoCancelamentoTest {
     @Test
     @DisplayName("aceita sempre retorna true")
     void aceitaTrue() {
-        assertTrue(regra.aceita(TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO)));
+        assertTrue(regra.aceita(TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO)));
     }
 
     @Test
     @DisplayName("produto habilitado para cancelar não lança")
     void produtoHabilitadoNaoLanca() {
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", TipoProduto.PIX_AUTO);
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", TipoProduto.PIX_AUTO);
         assertDoesNotThrow(() -> regra.validar(context));
     }
 
@@ -38,7 +38,7 @@ class ProdutoSuportadoCancelamentoTest {
         TipoProduto produtoDesabilitado = mock(TipoProduto.class);
         when(produtoDesabilitado.habilitadoParaCancelar()).thenReturn(false);
 
-        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("id", produtoDesabilitado);
+        CancelarAutorizacaoCommand context = TestFixtures.cancelarContext("11111111-1111-1111-1111-111111111111", produtoDesabilitado);
 
         assertThrows(BusinessException.class, () -> regra.validar(context));
     }

@@ -3,8 +3,6 @@ package br.com.srportto.contratocommand.application.usecase;
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
-import br.com.srportto.contratocommand.domain.exception.ApplicationException;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoUseCase;
@@ -16,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 /**
  * Caso de uso único de decisão sobre autorização em RECEBIDA: aprovar (-> ATIVA), rejeitar pelo
@@ -34,14 +30,14 @@ public class DecidirAutorizacaoService implements DecidirAutorizacaoUseCase {
     private final AutorizacaoRepository repository;
     private final DecisaoValidator decisaoValidator;
     private final ApplicationEventPublisher eventPublisher;
+    private final CarregadorAutorizacao carregadorAutorizacao;
 
     @Override
     @Transactional
     public Autorizacao execute(DecidirAutorizacaoCommand command) {
-        log.info("Iniciando decisão '{}' sobre autorização {}", command.acao(), command.idAutorizacao());
+        log.info("Iniciando decisão '{}' sobre autorização {}", command.acao(), command.idAutorizacao().valor());
 
-        var idAutorizacaoUuid = UUID.fromString(command.idAutorizacao());
-        var autorizacao = obterAutorizacaoPorId(idAutorizacaoUuid);
+        var autorizacao = carregadorAutorizacao.carregar(command.idAutorizacao());
 
         var statusAtual = StatusAutorizacao.obterStatusEnumPorIdStatus(autorizacao.getStatus());
         var comandoValidado = command.comAutorizacaoCarregada(autorizacao.getTipoProduto(), statusAtual);
@@ -67,17 +63,6 @@ public class DecidirAutorizacaoService implements DecidirAutorizacaoUseCase {
             case APROVAR -> autorizacao.aprovar();
             case REJEITAR -> autorizacao.rejeitarPeloPagador();
             case EXPIRAR -> autorizacao.expirarJornada1();
-        }
-    }
-
-    private Autorizacao obterAutorizacaoPorId(UUID idAutorizacao) {
-        try {
-            return repository.findById(idAutorizacao)
-                    .orElseThrow(() -> new BusinessException("Autorização não encontrada com ID: " + idAutorizacao));
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ApplicationException("Falha ao obter autorização " + idAutorizacao, e);
         }
     }
 }
