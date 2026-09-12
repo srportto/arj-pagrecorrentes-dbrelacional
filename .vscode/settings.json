@@ -10,7 +10,9 @@
     "activityBarTop.activeBackground": "#515f7b",
     "activityBarTop.background": "#515f7b",
     "activityBarTop.foreground": "#e7e7e7",
-    "activityBarTop.inactiveForeground": "#e7e7e799"
+    "activityBarTop.inactiveForeground": "#e7e7e799",
+    "activityBar.activeBorder": "#e7e7e7",
+    "activityBarTop.activeBorder": "#e7e7e7"
   },
   "peacock.color": "#3d475c",
   "maven.view": "hierarchical",
