@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
-import br.com.srportto.contratoquery.domain.exception.ApplicationException;
+import br.com.srportto.commons.exception.ApplicationException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

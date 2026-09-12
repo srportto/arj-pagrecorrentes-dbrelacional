@@ -2,7 +2,7 @@ package br.com.srportto.contratoquery.domain.model;
 
 import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.DirecaoOrdenacao;
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 
 /**
  * Ordenação da listagem — campo + direção validados juntos, único ponto de parse da expressão

@@ -1,5 +1,6 @@
 package br.com.srportto.contratocommand.infrastructure.persistence;
 
+import br.com.srportto.commons.persistence.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.domain.port.out.GeradorIdentidadeAutorizacao;
 import org.springframework.stereotype.Component;
 

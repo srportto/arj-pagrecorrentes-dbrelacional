@@ -46,7 +46,30 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<!-- GitHub Packages do proprio repositorio: fonte da lib srportto-commons-java (D5) -->
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages - arj-pagrecorrentes-dbrelacional</name>
+			<url>https://maven.pkg.github.com/srportto/arj-pagrecorrentes-dbrelacional</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<dependencies>
+
+		<!-- Utilitarios compartilhados: ReversibleUUIDv7, BusinessException, ApplicationException.
+		     Versao fixa (D4) — nunca RELEASE/LATEST/range. -->
+		<dependency>
+			<groupId>br.com.srportto</groupId>
+			<artifactId>srportto-commons-java</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

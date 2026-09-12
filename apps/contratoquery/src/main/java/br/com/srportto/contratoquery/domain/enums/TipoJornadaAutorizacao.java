@@ -1,6 +1,6 @@
 package br.com.srportto.contratoquery.domain.enums;
 
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 
 public enum TipoJornadaAutorizacao {
     // Default 0 no banco: usada só para ler registros anteriores à coluna tipo_jornada existir.

@@ -17,8 +17,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
-import br.com.srportto.contratoquery.domain.exception.ApplicationException;
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.ApplicationException;
+import br.com.srportto.commons.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 

@@ -3,7 +3,7 @@ package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoRule;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;

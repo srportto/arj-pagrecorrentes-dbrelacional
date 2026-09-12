@@ -3,7 +3,7 @@ package br.com.srportto.contratoquery.infrastructure.persistence;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
-import br.com.srportto.contratoquery.domain.exception.ApplicationException;
+import br.com.srportto.commons.exception.ApplicationException;
 
 /** Mesmo padrão de {@link TipoProdutoConverter}/{@link TipoJornadaAutorizacaoConverter} — status deixa de ser traduzido tarde, na borda web, duplicado em dois DTOs. */
 @Converter(autoApply = true)

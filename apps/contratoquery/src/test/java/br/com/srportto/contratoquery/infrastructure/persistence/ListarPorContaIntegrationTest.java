@@ -1,5 +1,6 @@
 package br.com.srportto.contratoquery.infrastructure.persistence;
 
+import br.com.srportto.commons.persistence.ReversibleUUIDv7;
 import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.DirecaoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;

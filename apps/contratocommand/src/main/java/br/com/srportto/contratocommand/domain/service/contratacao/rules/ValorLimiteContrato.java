@@ -2,7 +2,7 @@ package br.com.srportto.contratocommand.domain.service.contratacao.rules;
 
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoRule;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.springframework.stereotype.Component;
 
 /** Limite de valor por produto vem de {@code TipoProduto.getValorLimiteContratacao()} — produto novo sem limite configurado não compila. */

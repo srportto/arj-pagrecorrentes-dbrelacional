@@ -1,0 +1,56 @@
+name: CI publish srportto-commons-java
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "libs/srportto-commons-java/pom.xml"
+      - "libs/srportto-commons-java/src/**"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # necessario para publicar pacote no GitHub Packages do proprio repositorio
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: libs/srportto-commons-java/pom.xml
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Rodar testes
+        working-directory: libs/srportto-commons-java
+        run: mvn -B test
+
+      - name: Verificar se a versao ja foi publicada (deploy idempotente)
+        id: verificar-versao
+        working-directory: libs/srportto-commons-java
+        run: |
+          VERSAO=$(mvn -B -q -DforceStdout help:evaluate -Dexpression=project.version)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://maven.pkg.github.com/srportto/arj-pagrecorrentes-dbrelacional/br/com/srportto/srportto-commons-java/$VERSAO/srportto-commons-java-$VERSAO.pom")
+          if [ "$STATUS" = "200" ]; then
+            echo "Versao $VERSAO ja publicada no GitHub Packages - deploy idempotente, nada a fazer."
+            echo "ja-publicada=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ja-publicada=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar no GitHub Packages
+        if: steps.verificar-versao.outputs.ja-publicada != 'true'
+        working-directory: libs/srportto-commons-java
+        run: mvn -B deploy -DskipTests
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

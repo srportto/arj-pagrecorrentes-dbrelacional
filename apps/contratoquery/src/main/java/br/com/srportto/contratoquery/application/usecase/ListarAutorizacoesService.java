@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.model.Ordenacao;
 import br.com.srportto.contratoquery.domain.model.PaginaAutorizacoes;
 import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase;

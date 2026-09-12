@@ -1,5 +1,6 @@
 package br.com.srportto.contratocommand.infrastructure.persistence;
 
+import br.com.srportto.commons.persistence.ReversibleUUIDv7;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
 import jakarta.persistence.EntityManager;

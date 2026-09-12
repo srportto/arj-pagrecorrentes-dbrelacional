@@ -7,7 +7,7 @@ import br.com.srportto.contratocommand.domain.service.contratacao.rules.ProdutoS
 import br.com.srportto.contratocommand.domain.service.contratacao.rules.ValorLimiteContrato;
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,6 +1,6 @@
 package br.com.srportto.contratoquery.domain.enums;
 
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 
 public enum TipoProduto {
     PIX_AUTO(1L),

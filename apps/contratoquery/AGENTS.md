@@ -36,11 +36,15 @@ mvn test -Dtest=ListarAutorizacoesServiceTest#metodo # Método específico
 > quebrado acima). Exclui por convenção de nome toda classe terminada em `IntegrationTest` — nenhuma
 > delas roda no CI hoje, guardada por `PostgresLocalDisponivelCondition` ou não.
 
-Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ListarPorContaIntegrationTest`, `ReversibleUUIDv7Test`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `CancelamentoResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest`, `DirecaoOrdenacaoTest` (`domain/enums/`); `OrdenacaoTest` (`domain/model/`); `PlanCacheModeHikariIntegrationTest` (`integration/`).
+Classes de teste existentes: `ContratoqueryApplicationTests`; `ConsultarAutorizacaoServiceTest`, `ListarAutorizacoesServiceTest` (`application/usecase/`); `AutorizacaoJpaAdapterTest` (cascata de partições), `AutorizacaoPersistenceMapperTest`, `ConsultaCascataIntegrationTest`, `ListarPorContaIntegrationTest`, `TipoProdutoConverterTest`, `TipoJornadaAutorizacaoConverterTest` (`infrastructure/persistence/`); `AutorizacaoControllerTest`, `ApiExceptionHandlerTest`, `AutorizacaoDetalheResponseDtoTest`, `AutorizacaoResumidaResponseDtoTest`, `CancelamentoResponseDtoTest` (`infrastructure/web/`); `StatusAutorizacaoTest`, `TipoProdutoTest`, `TipoEventoAutorizacaoTest`, `DirecaoOrdenacaoTest` (`domain/enums/`); `OrdenacaoTest` (`domain/model/`); `PlanCacheModeHikariIntegrationTest` (`integration/`). `ReversibleUUIDv7Test` migrou para `libs/srportto-commons-java`.
 
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
+- **Personal Access Token pessoal com escopo `read:packages`**, configurado no `~/.m2/settings.xml`
+  — GitHub Packages exige autenticação até para leitura, mesmo em repositório público. Necessário
+  para `mvn test`/`mvn spring-boot:run` resolverem a dependência `br.com.srportto:srportto-commons-java`
+  (ver [libs/srportto-commons-java/CLAUDE.md](../../libs/srportto-commons-java/CLAUDE.md)).
 - **PostgreSQL 18** com `pg_partman` e `pg_cron` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
 - Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):
@@ -131,7 +135,8 @@ domain/            → Java puro, sem Spring/JPA
   port/out/           → AutorizacaoRepository: buscarPorId(UUID) e
                         listarPorConta(..., Ordenacao) — devolve PaginaAutorizacoes (conteúdo +
                         total), nunca Page do Spring Data
-  exception/          → BusinessException, ApplicationException, ResourceNotFoundException
+  exception/          → ResourceNotFoundException (BusinessException/ApplicationException vêm de
+                        libs/srportto-commons-java, não são mais cópia local — ver CLAUDE.md raiz)
   enums/              → StatusAutorizacao, TipoEventoAutorizacao, TipoJornadaAutorizacao,
                         TipoProduto, CampoOrdenacao, DirecaoOrdenacao
 application/

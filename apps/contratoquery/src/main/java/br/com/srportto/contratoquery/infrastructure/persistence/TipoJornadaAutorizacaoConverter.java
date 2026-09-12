@@ -3,7 +3,7 @@ package br.com.srportto.contratoquery.infrastructure.persistence;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import br.com.srportto.contratoquery.domain.enums.TipoJornadaAutorizacao;
-import br.com.srportto.contratoquery.domain.exception.ApplicationException;
+import br.com.srportto.commons.exception.ApplicationException;
 
 @Converter(autoApply = true)
 public class TipoJornadaAutorizacaoConverter implements AttributeConverter<TipoJornadaAutorizacao, Long> {

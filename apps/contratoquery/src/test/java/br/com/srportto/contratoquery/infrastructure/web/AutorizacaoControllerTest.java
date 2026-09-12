@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 import br.com.srportto.contratoquery.domain.port.in.ConsultarAutorizacaoUseCase;
 import br.com.srportto.contratoquery.domain.port.in.ListarAutorizacoesUseCase;
