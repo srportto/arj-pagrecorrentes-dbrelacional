@@ -28,6 +28,11 @@ jobs:
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
 
+      # Garante a compilação mesmo antes de a versão chegar ao GitHub Packages.
+      - name: Instalar biblioteca compartilhada
+        working-directory: libs/srportto-commons-java
+        run: mvn -B install -DskipTests
+
       - name: Rodar testes unitarios
         working-directory: apps/contratocommand
         run: mvn -B test -Dtest='!*IntegrationTest'
