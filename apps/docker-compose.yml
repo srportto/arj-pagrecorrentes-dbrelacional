@@ -2,6 +2,8 @@ services:
   contratocommand:
     build:
       context: ./contratocommand
+      secrets:
+        - github_token
     ports:
       - "8080:8080"
     environment:
@@ -31,6 +33,8 @@ services:
   contratoquery:
     build:
       context: ./contratoquery
+      secrets:
+        - github_token
     ports:
       - "8081:8081"
     environment:
@@ -110,6 +114,15 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
+
+# Secret de build usado so por contratocommand/contratoquery para resolver
+# br.com.srportto:srportto-commons-java no GitHub Packages (leitura exige autenticacao mesmo em
+# repo publico). Fonte = variavel de ambiente GITHUB_TOKEN da sua sessao -- nunca grave o token
+# num arquivo do repositorio (.env incluido). Export antes de `docker compose build`/`up --build`:
+#   export GITHUB_TOKEN=ghp_xxx  (PAT pessoal, escopo read:packages)
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN
 
 networks:
   default: {}
