@@ -3,7 +3,7 @@ package br.com.srportto.contratocommand.domain.service.atualizacao.rules;
 import br.com.srportto.contratocommand.domain.port.in.AtualizarDadosRecorrenciaCommand;
 import br.com.srportto.contratocommand.domain.service.atualizacao.AtualizacaoRule;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 

@@ -23,6 +23,17 @@ Antes de editar código de um serviço, leia o `CLAUDE.md` dele (armadilhas, flu
 ## Regras que atravessam os serviços
 
 - **Schemas são espelhados manualmente**: `AutorizacaoEventoPayload` (JSON) vive em `contratocommand` e `autorizacaostatus-producer` como cópias independentes; `EventoAutorizacao.avsc` (Avro) vive em `autorizacaostatus-producer` e `eventos-consumer` (o consumer **não** consome o JSON — recebe Avro direto do tópico Kafka, o `.avsc` é o seu espelho). Não há módulo compartilhado. Mudou um, replique nos outros. `temporiza-autorizacao` usa apenas um **subconjunto** do payload (id + data de inclusão), não um espelho completo.
+- **`libs/srportto-commons-java` é a única lib Java compartilhada do monorepo** — módulo Java puro
+  (sem Spring/Jakarta), publicado no GitHub Packages, hoje hospedando só `ReversibleUUIDv7`,
+  `BusinessException` e `ApplicationException`, consumidas por `contratocommand` e `contratoquery`
+  com versão fixa (sem range). Critério de elegibilidade de classe (as três condições devem ser
+  **todas** verdadeiras): (1) não carrega regra de negócio de domínio de autorização; (2) não
+  participa de contrato de rede entre serviços (payload de evento, schema Avro, enum de máquina de
+  estados); (3) hoje existe como cópia idêntica em duas ou mais apps. **Não** se estende a
+  `AutorizacaoEventoPayload`, `.avsc`, `StatusAutorizacao`, `TipoEventoAutorizacao` ou qualquer
+  outro contrato/enum de máquina de estados — esses continuam espelhados à mão, ver bullet acima.
+  Ver `openspec/changes/archive/*-criar-lib-utilitarios-java/design.md` para o racional completo
+  (D1–D5) e `libs/srportto-commons-java/CLAUDE.md` para publicar uma versão nova.
 - Em cada app, `CLAUDE.md` e `AGENTS.md` são espelhos — mantenha-os idênticos ao editar.
 - Skills do monorepo (arquitetura hexagonal, JPA, mensageria SQS/Kafka, revisão de código etc.) ficam em `.claude/skills/` — consulte antes de decidir onde um componente novo deve viver.
 - **Modelos dos agents** (`.claude/agents/`): cada agent declara `model:` como string simples de um tier Claude (`opus`, `sonnet` ou `haiku`) — sem lista de fallback nem correlato copilot.

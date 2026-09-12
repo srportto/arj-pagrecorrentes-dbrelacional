@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import br.com.srportto.contratoquery.domain.enums.CampoOrdenacao;
 import br.com.srportto.contratoquery.domain.enums.DirecaoOrdenacao;
-import br.com.srportto.contratoquery.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 
 @DisplayName("Testes do Ordenacao")
 class OrdenacaoTest {

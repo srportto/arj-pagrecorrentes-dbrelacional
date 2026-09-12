@@ -159,6 +159,8 @@ arj-pagrecorrentes-dbrelacional/
 │   ├── temporiza-autorizacao/       # Temporizador da jornada 1 do PIX_AUTO, sem banco (Java 25 + Spring Boot 4.0.7)
 │   ├── expurgo-particao/            # Lambda agendada que fecha o ring buffer de expurgo (Python 3.13)
 │   └── docker-compose.yml      # Ambiente local: as 5 apps Java (Postgres vem só de infra/local/postgres/)
+├── libs/
+│   └── srportto-commons-java/  # Módulo Java puro compartilhado (sem Spring/Jakarta), não-deployável como serviço — publicado no GitHub Packages, consumido por contratocommand/contratoquery
 ├── testes-carga/               # Teste de carga (TPS) — módulo Maven independente (Gatling), ver "Teste de Carga (TPS)" abaixo
 ├── infra/                      # Código de infraestrutura (esqueleto Terraform, ver infra/README.md)
 │   ├── modules/                 # Módulos Terraform reutilizáveis (networking, rds-postgres, ecs-*, elasticache-valkey, observability)

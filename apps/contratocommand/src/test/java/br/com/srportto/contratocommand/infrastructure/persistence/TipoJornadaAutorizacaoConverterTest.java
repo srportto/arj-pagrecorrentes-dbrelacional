@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.infrastructure.persistence;
 
 import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -18,7 +18,7 @@ import br.com.srportto.contratocommand.infrastructure.web.contratosrest.Autoriza
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CancelarAutorizacaoRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.CriarAutorizacaoRequest;
 import br.com.srportto.contratocommand.infrastructure.web.contratosrest.DecisaoAutorizacaoRequest;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

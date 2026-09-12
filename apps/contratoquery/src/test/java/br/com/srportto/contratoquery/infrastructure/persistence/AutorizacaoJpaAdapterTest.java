@@ -1,5 +1,6 @@
 package br.com.srportto.contratoquery.infrastructure.persistence;
 
+import br.com.srportto.commons.persistence.ReversibleUUIDv7;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import java.util.UUID;
 
 import br.com.srportto.contratoquery.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratoquery.domain.enums.TipoProduto;
-import br.com.srportto.contratoquery.domain.exception.ApplicationException;
+import br.com.srportto.commons.exception.ApplicationException;
 import br.com.srportto.contratoquery.domain.model.Autorizacao;
 
 /**

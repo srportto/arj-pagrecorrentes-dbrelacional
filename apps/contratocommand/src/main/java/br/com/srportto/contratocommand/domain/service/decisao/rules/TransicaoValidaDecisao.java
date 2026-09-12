@@ -4,7 +4,7 @@ import br.com.srportto.contratocommand.domain.port.in.DecidirAutorizacaoCommand;
 import br.com.srportto.contratocommand.domain.service.decisao.DecisaoRule;
 import br.com.srportto.contratocommand.domain.enums.AcaoDecisao;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.springframework.stereotype.Component;
 
 /**

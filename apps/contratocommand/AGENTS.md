@@ -39,6 +39,10 @@ mvn test -Dtest=ControleExpurgoAutorizacaoTest#metodo   # Método específico
 ## Pré-requisitos
 
 - **Java 25** (JDK 25+) — usa `public static void main()`; a forma `void main()` do Java 25 está pendente de suporte do maven plugin (ver `// TODO` no entrypoint)
+- **Personal Access Token pessoal com escopo `read:packages`**, configurado no `~/.m2/settings.xml`
+  — GitHub Packages exige autenticação até para leitura, mesmo em repositório público. Necessário
+  para `mvn test`/`mvn spring-boot:run` resolverem a dependência `br.com.srportto:srportto-commons-java`
+  (ver [libs/srportto-commons-java/CLAUDE.md](../../libs/srportto-commons-java/CLAUDE.md)).
 - **PostgreSQL 18** com `pg_partman`, `pg_cron` e `pgvector` — **sem fallback para H2**
 - Variáveis de ambiente obrigatórias: `DB_NAME`, `DB_USER_NAME`, `DB_PASSWORD`
 - Variáveis de ambiente opcionais (datasource, com defaults no `application.yaml`):
@@ -159,7 +163,8 @@ domain/           → Java puro, sem Spring/JPA (exceção estreita: domain/serv
                        cancelamento, decisao, atualizacao) e as quatorze rules concretas — única
                        exceção a "domínio sem Spring": @Component/@Order (D2)
   event/            → AutorizacaoPersistidaEvent (evento de domínio)
-  exception/        → BusinessException, ApplicationException, RecursoJaExisteException
+  exception/        → RecursoJaExisteException (BusinessException/ApplicationException vêm de
+                      libs/srportto-commons-java, não são mais cópia local — ver CLAUDE.md raiz)
   enums/            → TipoProduto, StatusAutorizacao, TipoEventoAutorizacao, MotivoStatusAutorizacao,
                        CanaisConhecidosEnum, TipoConta, TipoJornadaAutorizacao, AcaoDecisao
 application/       → Casos de uso, orquestração, sem conhecer transporte nem persistência concreta
@@ -371,7 +376,7 @@ anteriores a essa coluna existir têm `tipo_jornada = 0` (`TipoJornadaAutorizaca
 - DTOs de **request** são **records imutáveis** (`infrastructure/web/contratosrest/`): `CriarAutorizacaoRequest` (só os 15 campos do body) e `CancelarAutorizacaoRequest`. O controller traduz cada request nos campos do comando correspondente em `domain/port/in/` — o comando **não** carrega o DTO de request nem importa `jakarta.validation`/Jackson: `CriarAutorizacaoCommand` carrega `tipoJornada` (header) + os 15 campos do body explícitos (`metadados` como `String` JSON, não `JsonNode`); `CancelarAutorizacaoCommand` carrega `idAutorizacao` (path), `tipoProduto` (header), o produto lido do banco e os campos do corpo de cancelamento, todos explícitos. (`tipoProduto` é `String` no request de criação. O response `AutorizacaoCompletaResponseDto` ainda é `@Data @Builder`, montado pelo controller a partir do `Autorizacao` devolvido pelo use case.)
 - Mappers `@Mapper(componentModel = "spring")` com callbacks `@AfterMapping`.
 - `@Transactional` nos métodos `execute()` dos **`*Service`** de `application/usecase/`, chamados pelo `AutorizacaoController` através das interfaces de porta de entrada (`domain/port/in/`) — sem orquestrador/strategy intermediário.
-- Testes de particionamento (`ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`, `ReversibleUUIDv7Test`) vivem em `infrastructure/persistence/` — lógica pura, mas não é mais domínio.
+- Testes de particionamento (`ControleExpurgoAutorizacaoTest`, `IdContaUUIDPartitionDistributorTest`) vivem em `infrastructure/persistence/` — lógica pura, mas não é mais domínio. `ReversibleUUIDv7Test` migrou para `libs/srportto-commons-java`.
 
 ## Armadilhas críticas
 

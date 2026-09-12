@@ -6,7 +6,7 @@ import br.com.srportto.contratocommand.domain.service.cancelamento.rules.Produto
 import br.com.srportto.contratocommand.domain.service.cancelamento.rules.TipoProdutoCancelamento;
 import br.com.srportto.contratocommand.domain.enums.StatusAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

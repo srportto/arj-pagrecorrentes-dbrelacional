@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.infrastructure.web;
 
-import br.com.srportto.contratocommand.domain.exception.ApplicationException;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.ApplicationException;
+import br.com.srportto.commons.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.exception.RecursoJaExisteException;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;

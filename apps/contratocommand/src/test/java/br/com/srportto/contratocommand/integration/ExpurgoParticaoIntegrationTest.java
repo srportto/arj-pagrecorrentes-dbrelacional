@@ -12,7 +12,7 @@ import br.com.srportto.contratocommand.domain.enums.TipoJornadaAutorizacao;
 import br.com.srportto.contratocommand.domain.enums.TipoProduto;
 import br.com.srportto.contratocommand.infrastructure.persistence.ControleExpurgoAutorizacao;
 import br.com.srportto.contratocommand.infrastructure.persistence.IdContaUUIDPartitionDistributor;
-import br.com.srportto.contratocommand.infrastructure.persistence.ReversibleUUIDv7;
+import br.com.srportto.commons.persistence.ReversibleUUIDv7;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;

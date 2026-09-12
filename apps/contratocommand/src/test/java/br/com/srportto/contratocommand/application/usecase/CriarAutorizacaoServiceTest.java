@@ -7,7 +7,7 @@ import br.com.srportto.contratocommand.domain.service.contratacao.ContratacaoVal
 import br.com.srportto.contratocommand.domain.event.AutorizacaoPersistidaEvent;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.port.in.CriarAutorizacaoCommand;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.exception.RecursoJaExisteException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

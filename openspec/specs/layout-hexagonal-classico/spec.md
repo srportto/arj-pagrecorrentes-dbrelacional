@@ -96,8 +96,10 @@ seguem o layout hexagonal clássico.
 - **WHEN** `infrastructure/persistence/` do `contratocommand` é inspecionado
 - **THEN** contém `AutorizacaoJpaEntity`, os embeddables de chave composta e cancelamento,
   `AutorizacaoPersistenceMapper`, `AutorizacaoJpaAdapter`, `SpringDataAutorizacaoRepository`,
-  `TipoProdutoConverter`, `TipoJornadaAutorizacaoConverter`, `ReversibleUUIDv7`,
+  `TipoProdutoConverter`, `TipoJornadaAutorizacaoConverter`,
   `IdContaUUIDPartitionDistributor`, `ControleExpurgoAutorizacao` e o adaptador da porta de identidade
+- **AND** `ReversibleUUIDv7` não reside mais localmente — vem de `libs/srportto-commons-java`
+  (`br.com.srportto.commons.persistence.ReversibleUUIDv7`), consumida como dependência Maven
 
 #### Scenario: Unicidade parcial continua não declarada na entidade
 
@@ -235,7 +237,11 @@ Esta é a primeira de duas etapas: ao final dela `Autorizacao` ainda é a entida
 - **AND** `domain/port/out/` contém `AutorizacaoRepository`, que não estende `JpaRepository`
 - **AND** `domain/service/` contém o framework de validação, os três validadores e as dez regras
 - **AND** `domain/event/` contém `AutorizacaoPersistidaEvent`
-- **AND** `domain/exception/` contém `BusinessException`, `ApplicationException` e `RecursoJaExisteException`
+- **AND** `domain/exception/` contém `RecursoJaExisteException`
+- **AND** `BusinessException` e `ApplicationException` não residem mais localmente em
+  `domain/exception/` — vêm de `libs/srportto-commons-java`
+  (`br.com.srportto.commons.exception.{BusinessException,ApplicationException}`), consumidas
+  como dependência Maven
 - **AND** `application/usecase/` contém `CriarAutorizacaoService`, `CancelarAutorizacaoService`,
   `DecidirAutorizacaoService`, `ExpurgoAutorizacaoService` e `AutorizacaoMapper`
 - **AND** `infrastructure/persistence/` contém `SpringDataAutorizacaoRepository` e `AutorizacaoJpaAdapter`
@@ -699,11 +705,17 @@ com modelo de domínio puro, portas próprias e a cascata de partições confina
 - **THEN** `domain/model/` contém `Autorizacao` em Java puro
 - **AND** `domain/port/in/` contém `ConsultarAutorizacaoUseCase` e `ListarAutorizacoesUseCase`
 - **AND** `domain/port/out/` contém `AutorizacaoRepository`, que não estende `JpaRepository`
-- **AND** `domain/exception/` contém `BusinessException`, `ApplicationException` e `ResourceNotFoundException`
+- **AND** `domain/exception/` contém `ResourceNotFoundException`
+- **AND** `BusinessException` e `ApplicationException` não residem mais localmente em
+  `domain/exception/` — vêm de `libs/srportto-commons-java`
+  (`br.com.srportto.commons.exception.{BusinessException,ApplicationException}`), consumidas
+  como dependência Maven
 - **AND** `application/usecase/` contém `ConsultarAutorizacaoService` e `ListarAutorizacoesService`
 - **AND** `infrastructure/persistence/` contém `AutorizacaoJpaEntity`, `AutorizacaoPersistenceMapper`,
-  `AutorizacaoJpaAdapter`, `SpringDataAutorizacaoRepository`, `ReversibleUUIDv7`, `TipoProdutoConverter`
+  `AutorizacaoJpaAdapter`, `SpringDataAutorizacaoRepository`, `TipoProdutoConverter`
   e `TipoJornadaAutorizacaoConverter`
+- **AND** `ReversibleUUIDv7` não reside mais localmente — vem de `libs/srportto-commons-java`
+  (`br.com.srportto.commons.persistence.ReversibleUUIDv7`), consumida como dependência Maven
 - **AND** `infrastructure/web/` contém `AutorizacaoController`, os DTOs de resposta e `ApiExceptionHandler`
 
 #### Scenario: Caso de uso não devolve DTO de resposta

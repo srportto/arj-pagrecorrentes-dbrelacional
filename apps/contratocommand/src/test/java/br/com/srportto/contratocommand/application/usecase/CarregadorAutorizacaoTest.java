@@ -1,7 +1,7 @@
 package br.com.srportto.contratocommand.application.usecase;
 
-import br.com.srportto.contratocommand.domain.exception.ApplicationException;
-import br.com.srportto.contratocommand.domain.exception.BusinessException;
+import br.com.srportto.commons.exception.ApplicationException;
+import br.com.srportto.commons.exception.BusinessException;
 import br.com.srportto.contratocommand.domain.model.Autorizacao;
 import br.com.srportto.contratocommand.domain.model.AutorizacaoId;
 import br.com.srportto.contratocommand.domain.port.out.AutorizacaoRepository;
